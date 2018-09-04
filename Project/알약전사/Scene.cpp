@@ -5,6 +5,11 @@
 CScene::CScene()
 {
 	//m_pd3dPipelineState = NULL;
+
+	CONSOLE_CURSOR_INFO C;
+	C.bVisible = 0;
+	C.dwSize = 1;
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &C);
 }
 
 
@@ -124,6 +129,13 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	{
 		m_pShaders[i].Render(pd3dCommandList, pCamera);
 	}
+
+	COORD pos;
+	pos.X = 0;
+	pos.Y = 0;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+
+	std::cout << m_HitCount << std::endl;
 }
 
 void CScene::ReleaseUploadBuffers()
