@@ -68,6 +68,8 @@ private:
 	_TCHAR						m_pszFrameRate[50];
 
 	CScene *m_pScene;
+	bool m_LButtonDown = FALSE;
+
 public:
 	CGameFramework();
 	~CGameFramework();

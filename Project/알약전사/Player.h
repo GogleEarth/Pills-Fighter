@@ -10,6 +10,8 @@
 #define DIR_UP 0x10
 #define DIR_DOWN 0x20
 
+#define SHOT_COOLTIME 0.05f
+
 class CObjectsShader;
 
 class CPlayer : public CGameObject
@@ -62,8 +64,12 @@ public:
 
 private:
 	CObjectsShader *m_pBulletShader = NULL;
+	bool m_Shotable = TRUE;
+	float m_ShotTime;
 
 public:
 	void SetBullet(CObjectsShader* Bullet) { m_pBulletShader = Bullet; }
 	void Shot();
+	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
+
 };

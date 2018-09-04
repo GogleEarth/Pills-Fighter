@@ -72,14 +72,36 @@ void CScene::CheckCollision()
 		{
 			if (Object->GetOOBB().Intersects(Bullet->GetOOBB()))
 			{
-				exit(0);
+				Bullet->DeleteObject();
 			}
+		}
+	}
+}
+
+void CScene::CheckDeleteObject()
+{
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		auto& Objects = m_pShaders[i].GetObjects();
+
+		for (auto& Object = Objects.begin(); Object != Objects.end() ;)
+		{
+			if ((*Object)->IsDelete())
+			{
+				//delete *Object;
+				Object = Objects.erase(Object);
+				m_HitCount++;
+			}
+			else
+				Object++;
 		}
 	}
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)
 {
+	CheckDeleteObject();
+
 	for (int i = 0; i < m_nShaders; i++)
 	{
 		m_pShaders[i].AnimateObjects(fTimeElapsed);

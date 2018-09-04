@@ -338,12 +338,16 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 		}
 		else
 		{
-			m_pPlayer->Shot();
+			m_LButtonDown = TRUE;
 		}
 		break;
 	case WM_RBUTTONDOWN:
 		break;
 	case WM_LBUTTONUP:
+	{
+		m_LButtonDown = FALSE;
+		break;
+	}
 	case WM_RBUTTONUP:
 		break;
 	case WM_MOUSEMOVE:
@@ -495,6 +499,12 @@ void CGameFramework::ProcessInput()
 		if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_GameTimer.GetTimeElapsed());
 	}
 
+	// 현재 발사버튼(왼쪽 마우스)이 눌러진 상태일 경우
+	if (m_LButtonDown)
+	{
+		m_pPlayer->Shot();
+	}
+
 	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
 }
@@ -569,7 +579,6 @@ void CGameFramework::FrameAdvance()
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
 	&d3dDsvCPUDescriptorHandle);
 
-
 	/////////////// 렌더링 코드는 여기에 추가될 것이다.  ///////////////
 
 	if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
@@ -581,7 +590,7 @@ void CGameFramework::FrameAdvance()
 #endif
 	//3인칭 카메라일 때 플레이어를 렌더링한다. 
 	if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
-
+	
 	//////////////////////////////////////////////////////////////////
 
 

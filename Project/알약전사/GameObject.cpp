@@ -249,7 +249,7 @@ void RandomMoveObject::Animate(float ElapsedTime)
 Bullet::Bullet()
 {
 	m_ElapsedTime = 0;
-	m_DurationTime = 5.0f;
+	m_DurationTime = 3.0f;
 	//m_MovingSpeed = 0.0f;
 	m_MovingSpeed = 500.0f;
 	m_RotationSpeed = 1440.0f;
@@ -257,17 +257,20 @@ Bullet::Bullet()
 
 Bullet::~Bullet()
 {
-
+	if (m_pMesh) m_pMesh->Release();
+	if (m_pShader)
+	{
+		m_pShader->ReleaseShaderVariables();
+		m_pShader->Release();
+	}
 }
 
 void Bullet::Animate(float ElapsedTime)
 {
 	if (m_ElapsedTime >= m_DurationTime)
 	{
-		// 총알 삭제 코드
+		DeleteObject();
 	}
-
-
 	else
 	{
 		CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * ElapsedTime);

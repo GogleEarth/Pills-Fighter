@@ -37,6 +37,8 @@ protected:
 	CShader *m_pShader = NULL;
 
 	BoundingOrientedBox	m_xmOOBB;
+	bool m_Delete = FALSE;
+
 public:
 	CGameObject();
 	virtual ~CGameObject();
@@ -85,6 +87,8 @@ public:
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
 	BoundingOrientedBox GetOOBB() { return m_xmOOBB; }
+	void DeleteObject() { m_Delete = TRUE; }
+	bool IsDelete() { return m_Delete; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

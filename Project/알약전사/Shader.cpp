@@ -236,7 +236,7 @@ void CObjectsShader::ReleaseObjects()
 	{
 		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
 		{
-			delete *Object;
+			//delete *Object;
 			Object = m_vObjects.erase(Object);
 		}
 	}

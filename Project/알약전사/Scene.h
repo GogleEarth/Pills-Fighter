@@ -26,7 +26,11 @@ public:
 	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
 	ID3D12RootSignature *GetGraphicsRootSignature();
 
+	// 충돌 체크를 검사한다.
 	void CheckCollision();
+
+	// 오브젝트가 삭제되어야하는지 검사한다.
+	void CheckDeleteObject();
 
 protected:
 	//씬은 게임 객체들의 집합이다. 게임 객체는 셰이더를 포함한다.
@@ -37,4 +41,6 @@ protected:
 	//배치(Batch) 처리를 하기 위하여 씬을 셰이더들의 리스트로 표현한다. 
 	CObjectsShader *m_pShaders = NULL;
 	int m_nShaders = 0;
+
+	int m_HitCount = 0;
 };

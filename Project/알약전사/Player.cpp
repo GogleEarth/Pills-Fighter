@@ -29,6 +29,8 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CObjectsShader *pShader = new CObjectsShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetShader(pShader);
+
+	m_ShotTime = 0;
 }
 
 CPlayer::~CPlayer()
@@ -187,6 +189,8 @@ void CPlayer::Update(float fTimeElapsed)
 
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
+
+	CheckElapsedTime(fTimeElapsed);
 }
 
 /*플레이어의 위치와 회전축으로부터 월드 변환 행렬을 생성하는 함수이다. 
@@ -200,17 +204,36 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 void CPlayer::Shot()
 {
-	Bullet *pBullet = NULL;
+	if (m_Shotable)
+	{
+		Bullet *pBullet = NULL;
 
-	pBullet = new Bullet();
-	pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+		pBullet = new Bullet();
+		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
-	XMFLOAT3 xmfPosition = GetPosition();
-	xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 15.0f, 0.0f));
-	pBullet->SetPosition(xmfPosition);
-	pBullet->SetRight(GetRight());
-	pBullet->SetUp(GetUp());
-	pBullet->SetLook(GetLook());
+		XMFLOAT3 xmfPosition = GetPosition();
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 15.0f, 0.0f));
+		pBullet->SetPosition(xmfPosition);
+		pBullet->SetRight(GetRight());
+		pBullet->SetUp(GetUp());
+		pBullet->SetLook(GetLook());
 
-	m_pBulletShader->InsertObject(pBullet);
+		m_pBulletShader->InsertObject(pBullet);
+
+		m_Shotable = FALSE;
+	}
+}
+
+void CPlayer::CheckElapsedTime(float ElapsedTime)
+{
+	if (!m_Shotable)
+	{
+		if (m_ShotTime > SHOT_COOLTIME)
+		{
+			m_ShotTime = 0.0f;
+			m_Shotable = TRUE;
+		}
+		else
+			m_ShotTime += ElapsedTime;
+	}
 }
