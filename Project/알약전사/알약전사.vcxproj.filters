@@ -31,6 +31,15 @@
     <ClCompile Include="알약전사.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Utilities.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MathHelper.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="FBXExporter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -67,6 +76,21 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="알약전사.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MathHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FBXExporter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

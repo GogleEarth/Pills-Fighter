@@ -1,16 +1,16 @@
 ﻿  stdafx.cpp
   Camera.cpp
+  FBXExporter.cpp
+c:\users\gogleearth\desktop\졸작\pills-fighter\project\알약전사\fbxexporter.cpp(293): warning C4101: 'binormal' :참조되지 않은 지역 변수입니다.
+c:\users\gogleearth\desktop\졸작\pills-fighter\project\알약전사\fbxexporter.cpp(292): warning C4101: 'tangent' :참조되지 않은 지역 변수입니다.
   GameFramework.cpp
   GameObject.cpp
+  MathHelper.cpp
   Mesh.cpp
   Player.cpp
   Scene.cpp
   Shader.cpp
   Timer.cpp
+  Utilities.cpp
   알약전사.cpp
-  코드를 생성하고 있습니다.
-  497 of 497 functions (100.0%) were compiled.
-    14 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
-  코드를 생성했습니다.
-  알약전사.vcxproj -> C:\Users\GogleEarth\Desktop\졸작\Pills-Fighter\Project\Release\알약전사.exe
+libfbxsdk-md.lib(fbxanimstack.obj) : fatal error LNK1112: 'x64' 모듈 컴퓨터 종류가 'x86' 대상 컴퓨터 종류와 충돌합니다.
