@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Player.h"
 #include "Shader.h"
-#include "FBXExporter.h"
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
@@ -11,13 +10,6 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	m_pPlayerUpdatedContext = NULL;
 	m_pCameraUpdatedContext = NULL;
-
-	// FBXExporter 생성
-	FBXExporter* myExporter = new FBXExporter();
-	myExporter->Initialize();
-	// FBX메쉬파일로드
-	myExporter->LoadScene("test.fbx");
-	myExporter->ExportFBX();
 
 	//비행기 메쉬를 생성한다. 
 	CMesh *pMesh = new CMesh(pd3dDevice, pd3dCommandList, L"testmesh.txt");

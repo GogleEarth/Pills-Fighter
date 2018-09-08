@@ -34,6 +34,12 @@ public:
 		m_xmf4Diffuse = xmf4Diffuse;
 	}
 	~CDiffusedVertex() {}
+
+	void print()
+	{
+		std::cout << m_xmf3Position.x << " " << m_xmf3Position.x << " " 
+<< m_xmf3Position.z << std::endl;
+	}
 };
 
 class CMesh

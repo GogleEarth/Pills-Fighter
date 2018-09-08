@@ -2,6 +2,7 @@
 #include "Utilities.h"
 #include <unordered_map>
 #include "Material.h"
+#include "Mesh.h"
 
 class FBXExporter
 {
@@ -11,7 +12,10 @@ public:
 	bool Initialize();
 	bool LoadScene(const char* inFileName);
 
-	void ExportFBX();
+	void ExportFBX(UINT* nVertices, UINT* nIndices);
+	void WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices);
+
+	void CleanupFbxManager();
 
 private:
 	FbxManager * mFBXManager;
@@ -52,7 +56,5 @@ private:
 	void PrintMaterial();
 	void PrintTriangles();
 
-	void CleanupFbxManager();
-	void WriteMeshToStream(std::ostream& inStream);
 	void WriteAnimationToStream(std::ostream& inStream);
 };

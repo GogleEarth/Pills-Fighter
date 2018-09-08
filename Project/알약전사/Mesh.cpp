@@ -1,13 +1,25 @@
 #include "stdafx.h"
 #include "Mesh.h"
-
+#include "FBXExporter.h"
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, TCHAR *pstrFileName)
 {
-	std::wifstream InFile(pstrFileName);
 
-	TCHAR pstrToken[64] = { '\0' };
+	// FBXExporter 생성
+	FBXExporter* myExporter = new FBXExporter();
+	myExporter->Initialize();
+	// FBX메쉬파일로드
+	myExporter->LoadScene("test.fbx");
+	myExporter->ExportFBX(&m_nVertices, &m_nIndices);
+	m_pVertices = new CDiffusedVertex[m_nVertices];
+	m_pnIndices = new UINT[m_nIndices];
+	myExporter->WriteMeshToStream(m_pVertices, m_pnIndices);
+	std::cout << m_nVertices << " " << m_nIndices << std::endl;
+	
+	//std::wifstream InFile(pstrFileName);
 
+	//TCHAR pstrToken[64] = { '\0' };
+/*
 	for (; ; )
 	{
 		InFile >> pstrToken;
@@ -44,7 +56,7 @@ CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandLis
 
 			SetOOBB(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(x, y, z), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		}
-	}
+	}*/
 
 	m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pVertices,
 		sizeof(CDiffusedVertex) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT,
