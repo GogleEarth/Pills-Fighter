@@ -27,18 +27,18 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pShaders = new CObjectsShader[m_nShaders];
 
 	m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pShaders[0].SetMesh(pd3dDevice, pd3dCommandList, L"testmesh.txt");
+	m_pShaders[0].SetMesh(pd3dDevice, pd3dCommandList, "test.fbx");
 
 	RandomMoveObject *pGameObject = NULL;
 
 	pGameObject = new RandomMoveObject();
-	pGameObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pGameObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pGameObject->SetPosition(0.0f, 0.0f, 150.0f);
 
 	m_pShaders[0].InsertObject(pGameObject);
 
 	m_pShaders[1].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pShaders[1].SetMesh(pd3dDevice, pd3dCommandList, L"Bullet.txt");
+	m_pShaders[1].SetMesh(pd3dDevice, pd3dCommandList, "bullet.fbx");
 }
 
 void CScene::ReleaseObjects()

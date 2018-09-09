@@ -73,6 +73,8 @@ void CGameObject::OnPrepareRender()
 
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+	
+
 }
 
 void CGameObject::Animate(float fTimeElapsed)

@@ -217,7 +217,7 @@ void CObjectsShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	CShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 }
 
-void CObjectsShader::SetMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, TCHAR* FileName)
+void CObjectsShader::SetMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char* FileName)
 {
 	Mesh = new CMesh(pd3dDevice, pd3dCommandList, FileName);
 

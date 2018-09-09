@@ -298,7 +298,7 @@ void CGameFramework::BuildObjects()
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature());
-	pPlayer->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
 
 	m_pPlayer = pPlayer;

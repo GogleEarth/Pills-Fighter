@@ -76,7 +76,7 @@ protected:
 
 
 public:
-	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, TCHAR *pstrFileName);
+	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
 	virtual ~CMesh();
 
 	void AddRef() { m_nReferences++; }

@@ -12,7 +12,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pCameraUpdatedContext = NULL;
 
 	//비행기 메쉬를 생성한다. 
-	CMesh *pMesh = new CMesh(pd3dDevice, pd3dCommandList, L"testmesh.txt");
+	CMesh *pMesh = new CMesh(pd3dDevice, pd3dCommandList, "test.fbx");
 	SetMesh(pMesh);
 
 	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
@@ -72,7 +72,7 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	m_pCamera->SetTimeLag(0.0f);
 	//m_pCamera->SetTimeLag(1.0f);
 
-	m_pCamera->SetOffset(XMFLOAT3(0.0f, 50.0f, -100.0f));
+	m_pCamera->SetOffset(XMFLOAT3(0.0f, 150.0f, -400.0f));
 	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 	m_pCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
 	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
@@ -211,7 +211,7 @@ void CPlayer::Shot()
 		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
 		XMFLOAT3 xmfPosition = GetPosition();
-		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 15.0f, 0.0f));
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 75.0f, 0.0f));
 		pBullet->SetPosition(xmfPosition);
 		pBullet->SetRight(GetRight());
 		pBullet->SetUp(GetUp());

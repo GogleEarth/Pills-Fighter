@@ -27,12 +27,11 @@ bool FBXExporter::Initialize()
 	return true;
 }
 
-bool FBXExporter::LoadScene(const char* inFileName)
+bool FBXExporter::LoadScene(const char* pstrFileName)
 {
 	LARGE_INTEGER start;
 	LARGE_INTEGER end;
-	mInputFilePath = inFileName;
-
+	mInputFilePath = pstrFileName;
 	QueryPerformanceCounter(&start);
 	FbxImporter* fbxImporter = FbxImporter::Create(mFBXManager, "myImporter");
 
@@ -41,7 +40,7 @@ bool FBXExporter::LoadScene(const char* inFileName)
 		return false;
 	}
 
-	if (!fbxImporter->Initialize(inFileName, -1, mFBXManager->GetIOSettings()))
+	if (!fbxImporter->Initialize(mInputFilePath, -1, mFBXManager->GetIOSettings()))
 	{
 		return false;
 	}
@@ -63,8 +62,8 @@ void FBXExporter::ExportFBX(UINT* nVertices, UINT* nIndices)
 	LARGE_INTEGER end;
 
 	// Get the clean name of the model
-	std::string genericFileName = Utilities::GetFileName(mInputFilePath);
-	genericFileName = Utilities::RemoveSuffix(genericFileName);
+	//std::string genericFileName = Utilities::GetFileName(mInputFilePath);
+	//genericFileName = Utilities::RemoveSuffix(genericFileName);
 
 	QueryPerformanceCounter(&start);
 	ProcessSkeletonHierarchy(mFBXScene->GetRootNode());
@@ -73,7 +72,7 @@ void FBXExporter::ExportFBX(UINT* nVertices, UINT* nIndices)
 		mHasAnimation = false;
 	}
 
-	std::cout << "\n\n\n\nExporting Model:" << genericFileName << "\n";
+	//std::cout << "\n\n\n\nExporting Model:" << genericFileName << "\n";
 	QueryPerformanceCounter(&end);
 	std::cout << "Processing Skeleton Hierarchy: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 
@@ -106,9 +105,9 @@ void FBXExporter::ExportFBX(UINT* nVertices, UINT* nIndices)
 
 	if (mHasAnimation)
 	{
-		std::string outputNnimName = mOutputFilePath + genericFileName + ".itpanim";
-		std::ofstream animOutput(outputNnimName);
-		WriteAnimationToStream(animOutput);
+		//std::string outputNnimName = mOutputFilePath + genericFileName + ".itpanim";
+		//std::ofstream animOutput(outputNnimName);
+		//WriteAnimationToStream(animOutput);
 	}
 	//CleanupFbxManager();
 }
@@ -914,7 +913,7 @@ void FBXExporter::WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices)
 		std::cout << "\t<format>pnt</format>" << std::endl;
 	}
 	//std::cout << "\t<texture>" << mMaterialLookUp[0]->mDiffuseMapName << "</texture>" << std::endl;
-	std::cout << "\t<triangles count='" << mTriangleCount << "'>" << std::endl;
+	//std::cout << "\t<triangles count='" << mTriangleCount << "'>" << std::endl;
 	for (unsigned int i = 0; i < mTriangleCount; ++i)
 	{
 		// We need to change the culling order
@@ -922,7 +921,7 @@ void FBXExporter::WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices)
 		{
 			//std::cout << "\t\t<tri>" << mTriangles[i].mIndices[j] << std::endl;
 			pnIndices[i * 3 + j] = mTriangles[i].mIndices[j];
-			std::cout << pnIndices[i * 3 + j] << std::endl;
+			//std::cout << pnIndices[i * 3 + j] << std::endl;
 		}
 	}
 
@@ -931,7 +930,7 @@ void FBXExporter::WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices)
 	{
 		//std::cout << "\t\t<vtx>" << std::endl;
 		//std::cout << "\t\t\t<pos>" << mVertices[i].mPosition.x << "," << mVertices[i].mPosition.y << "," << -mVertices[i].mPosition.z << "</pos>" << std::endl;
-		pVertices[i] = CDiffusedVertex(XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, -mVertices[i].mPosition.z), RANDOM_COLOR);
+		pVertices[i] = CDiffusedVertex(XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z), RANDOM_COLOR);
 		//std::cout << "\t\t\t<norm>" << mVertices[i].mNormal.x << "," << mVertices[i].mNormal.y << "," << -mVertices[i].mNormal.z << "</norm>" << std::endl;
 		//if (mHasAnimation)
 		//{

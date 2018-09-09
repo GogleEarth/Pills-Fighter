@@ -50,7 +50,7 @@ public:
 	CObjectsShader();
 	virtual ~CObjectsShader() {}
 	virtual void SetMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
-		*pd3dCommandList, TCHAR* FileName);
+		*pd3dCommandList, const char* FileName);
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void ReleaseObjects();
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();

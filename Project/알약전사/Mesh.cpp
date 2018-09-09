@@ -2,19 +2,19 @@
 #include "Mesh.h"
 #include "FBXExporter.h"
 
-CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, TCHAR *pstrFileName)
+CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName)
 {
 
 	// FBXExporter 생성
 	FBXExporter* myExporter = new FBXExporter();
 	myExporter->Initialize();
 	// FBX메쉬파일로드
-	myExporter->LoadScene("test.fbx");
+	myExporter->LoadScene(pstrFileName);
 	myExporter->ExportFBX(&m_nVertices, &m_nIndices);
 	m_pVertices = new CDiffusedVertex[m_nVertices];
 	m_pnIndices = new UINT[m_nIndices];
 	myExporter->WriteMeshToStream(m_pVertices, m_pnIndices);
-	std::cout << m_nVertices << " " << m_nIndices << std::endl;
+	//std::cout << m_nVertices << " " << m_nIndices << std::endl;
 	
 	//std::wifstream InFile(pstrFileName);
 
@@ -54,9 +54,10 @@ CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandLis
 			float x, y, z;
 			InFile >> x >> y >> z;
 
-			SetOOBB(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(x, y, z), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		}
 	}*/
+
+	SetOOBB(XMFLOAT3(0.0f, 12.0f, 0.0f), XMFLOAT3(50, 50, 50), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pVertices,
 		sizeof(CDiffusedVertex) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT,

@@ -10,7 +10,7 @@ public:
 	FBXExporter();
 	~FBXExporter();
 	bool Initialize();
-	bool LoadScene(const char* inFileName);
+	bool LoadScene(const char *pstrFileName);
 
 	void ExportFBX(UINT* nVertices, UINT* nIndices);
 	void WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices);
@@ -20,8 +20,7 @@ public:
 private:
 	FbxManager * mFBXManager;
 	FbxScene* mFBXScene;
-	std::string mInputFilePath;
-	std::string mOutputFilePath;
+	const char* mInputFilePath;
 	bool mHasAnimation;
 	std::unordered_map<unsigned int, CtrlPoint*> mControlPoints;
 	unsigned int mTriangleCount;
