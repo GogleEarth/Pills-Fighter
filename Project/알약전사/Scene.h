@@ -1,9 +1,6 @@
 #pragma once
 
-#include "Timer.h"
 #include "Shader.h"
-#include "Camera.h"
-#include "GameObject.h"
 
 class CScene
 {
@@ -14,33 +11,42 @@ public:
 	//씬에서 마우스와 키보드 메시지를 처리한다. 
 	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+
 	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void ReleaseObjects();
-	bool ProcessInput(UCHAR *pKeysBuffer);
-	void AnimateObjects(float fTimeElapsed);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	void ReleaseUploadBuffers();
-	CObjectsShader* GetShader(UINT Index) { return &m_pShaders[Index]; }
 
 	//그래픽 루트 시그너쳐를 생성한다. 
 	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
-	ID3D12RootSignature *GetGraphicsRootSignature();
+	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
+	void SetGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList) { pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature); }
 
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void ReleaseShaderVariables() {};
+
+	bool ProcessInput(UCHAR *pKeysBuffer);
+	void AnimateObjects(float fTimeElapsed);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+	void ReleaseUploadBuffers();
+
+protected:
+	CPlayer						*m_pPlayer = NULL;
+
+	CObjectsShader				**m_ppShaders = NULL;
+	int							m_nShaders = 0;
+
+	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
+
+	int m_HitCount = 0;
+
+public:
 	// 충돌 체크를 검사한다.
 	void CheckCollision();
 
 	// 오브젝트가 삭제되어야하는지 검사한다.
 	void CheckDeleteObject();
 
-protected:
-	//씬은 게임 객체들의 집합이다. 게임 객체는 셰이더를 포함한다.
-	ID3D12RootSignature *m_pd3dGraphicsRootSignature = NULL;
-	CCamera *pCamera;
-
-protected:
-	//배치(Batch) 처리를 하기 위하여 씬을 셰이더들의 리스트로 표현한다. 
-	CObjectsShader *m_pShaders = NULL;
-	int m_nShaders = 0;
-
-	int m_HitCount = 0;
+	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer;}
+	CObjectsShader* GetShader(UINT index) { return m_ppShaders[index]; }
 };

@@ -2,32 +2,42 @@
 #include "Player.h"
 #include "Shader.h"
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature)
+#define CAMERA_POSITION XMFLOAT3(0.0f, 200.0f, -400.0f)
+
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int nMeshes) : CGameObject(nMeshes)
 {
-	SetGameObjectInf();
-
-	m_pCamera = NULL;
-
-	m_pPlayerUpdatedContext = NULL;
-	m_pCameraUpdatedContext = NULL;
-
-	//비행기 메쉬를 생성한다. 
-	CMesh *pMesh = new CMesh(pd3dDevice, pd3dCommandList, "test.fbx");
-	SetMesh(pMesh);
-
 	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
 	m_pCamera = SetCamera(0.0f);
 
-	//플레이어를 위한 셰이더 변수를 생성한다. 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	// 플레이어 메쉬를 생성 
+	CMesh *pMesh = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/chest.FBX");
+	SetMesh(0, pMesh);
+
+	// 플레이어 텍스쳐를 생성
+	CTexture* pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/chest.dds", 0);
+
+	UINT ncbElementBytes = ((sizeof(CB_PLAYER_INFO) + 255) & ~255); //256의 배수
+
+	CTexturedShader *pShader = new CTexturedShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	pShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pShader->CreateCbvAndSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1, 1); // nPlayer, nTexture
+	pShader->CreateConstantBufferViews(pd3dDevice, pd3dCommandList, 1, m_pd3dcbPlayer, ncbElementBytes);
+
+	pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTexture, 3, false);
+
+	CMaterial* pMaterial = new CMaterial();
+	pMaterial->SetTexture(pTexture);
+
+	SetMaterial(pMaterial);
+	SetCbvGPUDescriptorHandle(pShader->GetGPUCbvDescriptorStartHandle());
+	SetShader(pShader);
 
 	//플레이어의 위치를 설정한다. 
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
-
-	//플레이어(비행기) 메쉬를 렌더링할 때 사용할 셰이더를 생성한다. 
-	CObjectsShader *pShader = new CObjectsShader();
-	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	SetShader(pShader);
 
 	m_ShotTime = 0;
 }
@@ -40,20 +50,35 @@ CPlayer::~CPlayer()
 
 void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	CGameObject::CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	if (m_pCamera) m_pCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	UINT ncbElementBytes = ((sizeof(CB_PLAYER_INFO) + 255) & ~255); //256의 배수
+	m_pd3dcbPlayer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, 
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_pd3dcbPlayer->Map(0, NULL, (void **)&m_pcbMappedPlayer);
 }
 
 void CPlayer::ReleaseShaderVariables()
 {
-	CGameObject::ReleaseShaderVariables();
 	if (m_pCamera) m_pCamera->ReleaseShaderVariables();
+
+	if (m_pd3dcbPlayer)
+	{
+		m_pd3dcbPlayer->Unmap(0, NULL);
+		m_pd3dcbPlayer->Release();
+	}
+
+	CGameObject::ReleaseShaderVariables();
 
 }
 
 void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	CGameObject::UpdateShaderVariables(pd3dCommandList);
+	XMStoreFloat4x4(&m_pcbMappedPlayer->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbPlayer->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(0, d3dGpuVirtualAddress);
 }
 
 CCamera *CPlayer::SetCamera(float fTimeElapsed)
@@ -67,12 +92,10 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 	m_pCamera->SetPlayer(this);
 
-	//3인칭 카메라의 지연 효과를 설정한다. 값을 0.25f 대신에 0.0f와 1.0f로 설정한 결과를 비교하기 바란다. 
-	//m_pCamera->SetTimeLag(0.25f);
+	//3인칭 카메라의 지연 효과를 설정한다.
 	m_pCamera->SetTimeLag(0.0f);
-	//m_pCamera->SetTimeLag(1.0f);
 
-	m_pCamera->SetOffset(XMFLOAT3(0.0f, 150.0f, -400.0f));
+	m_pCamera->SetOffset(CAMERA_POSITION);
 	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 	m_pCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
 	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
@@ -211,11 +234,13 @@ void CPlayer::Shot()
 		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
 		XMFLOAT3 xmfPosition = GetPosition();
-		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 75.0f, 0.0f));
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 0.0f, 0.0f));
 		pBullet->SetPosition(xmfPosition);
 		pBullet->SetRight(GetRight());
 		pBullet->SetUp(GetUp());
 		pBullet->SetLook(GetLook());
+
+		std::cout << pBullet->GetPosition().x << ", " << pBullet->GetPosition().y << ", " << pBullet->GetPosition().z << std::endl;
 
 		m_pBulletShader->InsertObject(pBullet);
 

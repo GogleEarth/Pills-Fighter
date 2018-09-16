@@ -2,9 +2,132 @@
 #include "GameObject.h"
 #include "Shader.h"
 
-CGameObject::CGameObject()
+CTexture::CTexture(int nTextures, UINT nTextureType, int nSamplers)
+{
+	m_nTextureType = nTextureType;
+	m_nTextures = nTextures;
+
+	if (m_nTextures > 0)
+	{
+		m_pRootArgumentInfos = new SRVROOTARGUMENTINFO[m_nTextures];
+		m_ppd3dTextureUploadBuffers = new ID3D12Resource*[m_nTextures];
+		m_ppd3dTextures = new ID3D12Resource*[m_nTextures];
+	}
+
+	m_nSamplers = nSamplers;
+	if (m_nSamplers > 0) m_pd3dSamplerGpuDescriptorHandles = new D3D12_GPU_DESCRIPTOR_HANDLE[m_nSamplers];
+}
+
+CTexture::~CTexture()
+{
+	if (m_ppd3dTextures)
+	{
+		for (int i = 0; i < m_nTextures; i++) if (m_ppd3dTextures[i]) m_ppd3dTextures[i]->Release();
+	}
+
+	if (m_pRootArgumentInfos) delete[] m_pRootArgumentInfos;
+
+	if (m_pd3dSamplerGpuDescriptorHandles) delete[] m_pd3dSamplerGpuDescriptorHandles;
+}
+
+void CTexture::SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle)
+{
+	m_pRootArgumentInfos[nIndex].m_nRootParameterIndex = nRootParameterIndex;
+	m_pRootArgumentInfos[nIndex].m_d3dSrvGpuDescriptorHandle = d3dSrvGpuDescriptorHandle;
+}
+
+void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle)
+{
+	m_pd3dSamplerGpuDescriptorHandles[nIndex] = d3dSamplerGpuDescriptorHandle;
+}
+
+void CTexture::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_nTextureType == RESOURCE_TEXTURE2D_ARRAY)
+	{
+		pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[0].m_nRootParameterIndex, m_pRootArgumentInfos[0].m_d3dSrvGpuDescriptorHandle);
+	}
+	else
+	{
+		for (int i = 0; i < m_nTextures; i++)
+		{
+			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[i].m_nRootParameterIndex, m_pRootArgumentInfos[i].m_d3dSrvGpuDescriptorHandle);
+		}
+	}
+}
+
+void CTexture::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex)
+{
+	pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[nIndex].m_nRootParameterIndex, m_pRootArgumentInfos[nIndex].m_d3dSrvGpuDescriptorHandle);
+}
+
+void CTexture::ReleaseUploadBuffers()
+{
+	if (m_ppd3dTextureUploadBuffers)
+	{
+		for (int i = 0; i < m_nTextures; i++) if (m_ppd3dTextureUploadBuffers[i]) m_ppd3dTextureUploadBuffers[i]->Release();
+		delete[] m_ppd3dTextureUploadBuffers;
+		m_ppd3dTextureUploadBuffers = NULL;
+	}
+}
+
+void CTexture::ReleaseShaderVariables()
+{
+}
+
+void CTexture::LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex)
+{
+	m_ppd3dTextures[nIndex] = ::CreateTextureResourceFromFile(pd3dDevice, pd3dCommandList, pszFileName, &m_ppd3dTextureUploadBuffers[nIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+CMaterial::CMaterial()
+{
+}
+
+CMaterial::~CMaterial()
+{
+	if (m_pTexture) m_pTexture->Release();
+	if (m_pShader) m_pShader->Release();
+}
+
+void CMaterial::SetTexture(CTexture *pTexture)
+{
+	if (m_pTexture) m_pTexture->Release();
+	m_pTexture = pTexture;
+	if (m_pTexture) m_pTexture->AddRef();
+}
+
+void CMaterial::SetShader(CShader *pShader)
+{
+	if (m_pShader) m_pShader->Release();
+	m_pShader = pShader;
+	if (m_pShader) m_pShader->AddRef();
+}
+
+void CMaterial::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pTexture) m_pTexture->UpdateShaderVariables(pd3dCommandList);
+}
+
+void CMaterial::ReleaseShaderVariables()
+{
+	if (m_pShader) m_pShader->ReleaseShaderVariables();
+	if (m_pTexture) m_pTexture->ReleaseShaderVariables();
+}
+
+void CMaterial::ReleaseUploadBuffers()
+{
+	if (m_pTexture) m_pTexture->ReleaseUploadBuffers();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CGameObject::CGameObject(int nMeshes)
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
+	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
@@ -12,48 +135,82 @@ CGameObject::CGameObject()
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
+
+	m_nMeshes = nMeshes;
+	m_ppMeshes = NULL;
+
+	if (m_nMeshes > 0)
+	{
+		m_ppMeshes = new CMesh*[m_nMeshes];
+		for (int i = 0; i < m_nMeshes; i++)	m_ppMeshes[i] = NULL;
+	}
 }
 
 CGameObject::~CGameObject()
 {
-	if (m_pMesh) m_pMesh->Release();
-	if (m_pShader)
+	ReleaseShaderVariables();
+
+	if (m_ppMeshes)
 	{
-		m_pShader->ReleaseShaderVariables();
-		m_pShader->Release();
+		for (int i = 0; i < m_nMeshes; i++)
+		{
+			if (m_ppMeshes[i]) m_ppMeshes[i]->Release();
+			m_ppMeshes[i] = NULL;
+		}
+		delete[] m_ppMeshes;
 	}
+	if (m_pMaterial) m_pMaterial->Release();
 }
 
-void CGameObject::SetGameObjectInf()
+void CGameObject::SetMesh(int nIndex, CMesh *pMesh)
 {
-	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
-
-	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	if (m_ppMeshes)
+	{
+		if (m_ppMeshes[nIndex]) m_ppMeshes[nIndex]->Release();
+		m_ppMeshes[nIndex] = pMesh;
+		if (pMesh) pMesh->AddRef();
+	}
 }
 
 void CGameObject::SetShader(CShader *pShader)
 {
-	if (m_pShader) m_pShader->Release();
-
-	m_pShader = pShader;
-	if (m_pShader) m_pShader->AddRef();
+	if (!m_pMaterial)
+	{
+		CMaterial *pMaterial = new CMaterial();
+		SetMaterial(pMaterial);
+	}
+	if (m_pMaterial) m_pMaterial->SetShader(pShader);
 }
 
-void CGameObject::SetMesh(CMesh *pMesh)
+void CGameObject::SetMaterial(CMaterial *pMaterial)
 {
-	if (m_pMesh) m_pMesh->Release();
-
-	m_pMesh = pMesh;
-	if (m_pMesh) m_pMesh->AddRef();
+	if (m_pMaterial) m_pMaterial->Release();
+	m_pMaterial = pMaterial;
+	if (m_pMaterial) m_pMaterial->AddRef();
 }
 
-void CGameObject::ReleaseUploadBuffers()
+void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	//정점 버퍼를 위한 업로드 버퍼를 소멸시킨다. 
-	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
+	UINT ncbElementBytes = ((sizeof(CB_GAMEOBJECT_INFO) + 255) & ~255); //256의 배수
+	m_pd3dcbGameObject = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, 
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_pd3dcbGameObject->Map(0, NULL, (void **)&m_pcbMappedGameObject);
+}
+
+void CGameObject::ReleaseShaderVariables()
+{
+	if (m_pd3dcbGameObject)
+	{
+		m_pd3dcbGameObject->Unmap(0, NULL);
+		m_pd3dcbGameObject->Release();
+	}
+	if (m_pMaterial) m_pMaterial->ReleaseShaderVariables();
+}
+
+void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMStoreFloat4x4(&m_pcbMappedGameObject->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
 }
 
 void CGameObject::OnPrepareRender()
@@ -73,19 +230,20 @@ void CGameObject::OnPrepareRender()
 
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
-	
-
 }
 
 void CGameObject::Animate(float fTimeElapsed)
 {
-	if (m_pMesh)
+	for (int i = 0; i < m_nMeshes; i++)
 	{
-		XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
-		XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+		if (m_ppMeshes[i])
+		{
+			XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
+			XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 
-		m_pMesh->m_xmOOBB.Transform(m_xmOOBB, XMLoadFloat4x4(&xmf4x4World));
-		XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB.Orientation)));
+			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB, XMLoadFloat4x4(&xmf4x4World));
+			XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB.Orientation)));
+		}
 	}
 }
 
@@ -93,23 +251,49 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 {
 	OnPrepareRender();
 
-	//객체의 정보를 셰이더 변수(상수 버퍼)로 복사한다. 
-	UpdateShaderVariables(pd3dCommandList);
-
-	if (m_pShader)
+	if (m_pMaterial)
 	{
-		m_pShader->Render(pd3dCommandList, pCamera);
+		if (m_pMaterial->m_pShader)
+		{
+			m_pMaterial->m_pShader->Render(pd3dCommandList, pCamera);
+			m_pMaterial->m_pShader->UpdateShaderVariables(pd3dCommandList);
+
+			UpdateShaderVariables(pd3dCommandList);
+		}
+
+		if (m_pMaterial->m_pTexture)
+		{
+			m_pMaterial->m_pTexture->UpdateShaderVariables(pd3dCommandList);
+		}
 	}
 
-	//게임 객체에 메쉬가 연결되어 있으면 메쉬를 렌더링한다. 
-	if (m_pMesh) m_pMesh->Render(pd3dCommandList);
+	pd3dCommandList->SetGraphicsRootDescriptorTable(2, m_d3dCbvGPUDescriptorHandle);
+
+	if (m_ppMeshes)
+	{
+		for (int i = 0; i < m_nMeshes; i++)
+		{
+			if (m_ppMeshes[i]) m_ppMeshes[i]->Render(pd3dCommandList);
+		}
+	}
 }
 
-void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
-{/*
-	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(fPitch), XMConvertToRadians(fYaw), XMConvertToRadians(fRoll));
-	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);*/
+void CGameObject::ReleaseUploadBuffers()
+{
+	if (m_ppMeshes)
+	{
+		for (int i = 0; i < m_nMeshes; i++)
+		{
+			if (m_ppMeshes[i]) m_ppMeshes[i]->ReleaseUploadBuffers();
+		}
+	}
 
+	if (m_pMaterial) m_pMaterial->ReleaseUploadBuffers();
+}
+
+
+void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
+{
 	if (fPitch != 0.0f)
 	{
 		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Right),
@@ -135,22 +319,6 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
 	m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3Look, true);
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
-}
-
-void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-}
-void CGameObject::ReleaseShaderVariables()
-{
-}
-
-void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	XMFLOAT4X4 xmf4x4World;
-	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
-
-	//객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
-	pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
 }
 
 void CGameObject::SetPosition(float x, float y, float z)
@@ -194,9 +362,8 @@ void CGameObject::MoveForward(float fDistance)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-RandomMoveObject::RandomMoveObject()
+RandomMoveObject::RandomMoveObject(int nMeshes)
 {
-	SetGameObjectInf();
 	InitRandomRotate();
 
 	m_Time = 5.0f;
@@ -205,12 +372,6 @@ RandomMoveObject::RandomMoveObject()
 
 RandomMoveObject::~RandomMoveObject()
 {
-	if (m_pMesh) m_pMesh->Release();
-	if (m_pShader)
-	{
-		m_pShader->ReleaseShaderVariables();
-		m_pShader->Release();
-	}
 }
 
 void RandomMoveObject::InitRandomRotate()
@@ -248,23 +409,16 @@ void RandomMoveObject::Animate(float ElapsedTime)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-Bullet::Bullet()
+Bullet::Bullet(int nMeshes)
 {
 	m_ElapsedTime = 0;
 	m_DurationTime = 3.0f;
-	//m_MovingSpeed = 0.0f;
 	m_MovingSpeed = 500.0f;
 	m_RotationSpeed = 1440.0f;
 }
 
 Bullet::~Bullet()
 {
-	if (m_pMesh) m_pMesh->Release();
-	if (m_pShader)
-	{
-		m_pShader->ReleaseShaderVariables();
-		m_pShader->Release();
-	}
 }
 
 void Bullet::Animate(float ElapsedTime)

@@ -3,32 +3,38 @@
 #include "GameObject.h"
 #include "Camera.h"
 
-#define DIR_FORWARD 0x01
-#define DIR_BACKWARD 0x02
-#define DIR_LEFT 0x04
-#define DIR_RIGHT 0x08
-#define DIR_UP 0x10
-#define DIR_DOWN 0x20
+#define DIR_FORWARD				0x01
+#define DIR_BACKWARD			0x02
+#define DIR_LEFT				0x04
+#define DIR_RIGHT				0x08
+#define DIR_UP					0x10
+#define DIR_DOWN				0x20
 
-#define SHOT_COOLTIME 0.05f
+#define SHOT_COOLTIME			0.05f
 
 class CObjectsShader;
+
+struct CB_PLAYER_INFO
+{
+	XMFLOAT4X4					m_xmf4x4World;
+};
 
 class CPlayer : public CGameObject
 {
 protected:
-
 	//플레이어의 위치가 바뀔 때마다 호출되는 OnPlayerUpdateCallback() 함수에서 사용하는 데이터이다. 
-	LPVOID m_pPlayerUpdatedContext;
+	LPVOID m_pPlayerUpdatedContext = NULL;
 
 	//카메라의 위치가 바뀔 때마다 호출되는 OnCameraUpdateCallback() 함수에서 사용하는 데이터이다. 
-	LPVOID m_pCameraUpdatedContext;
+	LPVOID m_pCameraUpdatedContext = NULL;
 
 	//플레이어에 현재 설정된 카메라이다. 
 	CCamera *m_pCamera = NULL;
 
+	ID3D12Resource					*m_pd3dcbPlayer = NULL;
+	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 public:
-	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL, int nMeshes = 1);
 	virtual ~CPlayer();
 
 	CCamera *GetCamera() { return(m_pCamera); }

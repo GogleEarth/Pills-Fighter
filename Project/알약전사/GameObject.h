@@ -3,24 +3,103 @@
 #include "Mesh.h"
 #include "Camera.h"
 
+#define RESOURCE_TEXTURE2D			0x01
+#define RESOURCE_TEXTURE2D_ARRAY	0x02	//[]
+#define RESOURCE_TEXTURE2DARRAY		0x03
+#define RESOURCE_TEXTURE_CUBE		0x04
+#define RESOURCE_BUFFER				0x05
+
 class CShader;
+
+struct CB_GAMEOBJECT_INFO
+{
+	XMFLOAT4X4						m_xmf4x4World;
+};
+
+struct SRVROOTARGUMENTINFO
+{
+	UINT							m_nRootParameterIndex = 0;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGpuDescriptorHandle;
+};
+
+class CTexture
+{
+	int								m_nReferences = 0;
+
+	UINT							m_nTextureType = RESOURCE_TEXTURE2D;
+	int								m_nTextures = 0;
+	ID3D12Resource					**m_ppd3dTextures = NULL;
+	ID3D12Resource					**m_ppd3dTextureUploadBuffers;
+
+	SRVROOTARGUMENTINFO				*m_pRootArgumentInfos = NULL;
+
+	int								m_nSamplers = 0;
+	D3D12_GPU_DESCRIPTOR_HANDLE		*m_pd3dSamplerGpuDescriptorHandles = NULL;
+
+public:
+	CTexture(int nTextureResources = 1, UINT nResourceType = RESOURCE_TEXTURE2D, int nSamplers = 0);
+	virtual ~CTexture();
+
+	void AddRef() { m_nReferences++; }
+	void Release() { if (--m_nReferences <= 0) delete this; }
+
+	void SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dsrvGpuDescriptorHandle);
+	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);
+
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
+	void ReleaseShaderVariables();
+
+	void LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex);
+
+	int GetTextures() { return(m_nTextures); }
+	ID3D12Resource *GetTexture(int nIndex) { return(m_ppd3dTextures[nIndex]); }
+	UINT GetTextureType() { return(m_nTextureType); }
+
+	void ReleaseUploadBuffers();
+};
+
+class CMaterial
+{
+private:
+	int								m_nReferences = 0;
+
+public:
+	CMaterial();
+	virtual ~CMaterial();
+
+	void AddRef() { m_nReferences++; }
+	void Release() { if (--m_nReferences <= 0) delete this; }
+
+	XMFLOAT4						m_xmf4Albedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	CTexture						*m_pTexture = NULL;
+	CShader							*m_pShader = NULL;
+
+	void SetAlbedo(XMFLOAT4 xmf4Albedo) { m_xmf4Albedo = xmf4Albedo; }
+	void SetTexture(CTexture *pTexture);
+	void SetShader(CShader *pShader);
+
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	void ReleaseShaderVariables();
+
+	void ReleaseUploadBuffers();
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 class CGameObject
 {
-private:
-	int m_nReferences = 0;
-
-protected:
-	//월드 변환 행렬
+public:
 	XMFLOAT4X4 m_xmf4x4World;
 
-	//위치 벡터, x-축(Right), y-축(Up), z-축(Look) 벡터이다. 
+protected:
+
 	XMFLOAT3 m_xmf3Position;
 	XMFLOAT3 m_xmf3Right;
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;
 
-	//로컬 x-축(Right), y-축(Up), z-축(Look)으로 얼마만큼 회전했는가를 나타낸다. 
 	float m_fPitch;
 	float m_fYaw;
 	float m_fRoll;
@@ -33,33 +112,41 @@ protected:
 	// 이동 속력
 	float m_MovingSpeed;
 	
-	CMesh *m_pMesh = NULL;
-	CShader *m_pShader = NULL;
+	int		m_nMeshes = 0;
+	CMesh	**m_ppMeshes = NULL;
+
+	CMaterial						*m_pMaterial = NULL;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
+
+	ID3D12Resource					*m_pd3dcbGameObject = NULL;
+	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObject = NULL;
 
 	BoundingOrientedBox	m_xmOOBB;
 	bool m_Delete = FALSE;
 
 public:
-	CGameObject();
+	CGameObject(int nMeshes = 1);
 	virtual ~CGameObject();
-	void SetGameObjectInf();
 
-	void AddRef() { m_nReferences++; }
-	void Release() { if (--m_nReferences <= 0) delete this; }
+	void SetMesh(int nIndex, CMesh *pMesh);
+	void SetShader(CShader *pShader);
+	void SetMaterial(CMaterial *pMaterial);
 
-	virtual void ReleaseUploadBuffers();
-	virtual void SetMesh(CMesh *pMesh);
-	virtual void SetShader(CShader *pShader);
+	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
+	void SetCbvGPUDescriptorHandlePtr(UINT64 nCbvGPUDescriptorHandlePtr) { m_d3dCbvGPUDescriptorHandle.ptr = nCbvGPUDescriptorHandlePtr; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetCbvGPUDescriptorHandle() { return(m_d3dCbvGPUDescriptorHandle); }
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+
 	virtual void Animate(float fTimeElapsed);
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 
-	//상수 버퍼를 생성한다. 
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-
-	//상수 버퍼의 내용을 갱신한다. 
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
+	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
+	virtual void ReleaseUploadBuffers();
 
 	//게임 객체의 월드 변환 행렬에서 위치 벡터와 방향(x-축, y-축, z-축) 벡터를 반환한다. 
 	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
@@ -70,6 +157,7 @@ public:
 	XMFLOAT3 GetUp() { return m_xmf3Up; }
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
+	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
 
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
@@ -96,7 +184,7 @@ public:
 class RandomMoveObject : public CGameObject
 {
 public:
-	RandomMoveObject();
+	RandomMoveObject(int nMeshes = 1);
 	virtual ~RandomMoveObject();
 
 	void InitRandomRotate();
@@ -118,7 +206,7 @@ private:
 class Bullet : public CGameObject
 {
 public:
-	Bullet();
+	Bullet(int nMeshes = 1);
 	virtual ~Bullet();
 
 	virtual void Animate(float ElapsedTime);

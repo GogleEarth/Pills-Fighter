@@ -4,74 +4,38 @@
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName)
 {
-
 	// FBXExporter 생성
 	FBXExporter* myExporter = new FBXExporter();
 	myExporter->Initialize();
+
 	// FBX메쉬파일로드
 	myExporter->LoadScene(pstrFileName);
-	myExporter->ExportFBX(&m_nVertices, &m_nIndices);
-	m_pVertices = new CDiffusedVertex[m_nVertices];
+	myExporter->ExportFBX(&m_nVertices, &m_nIndices); // 정점 및 인덱스 갯수 불러오기
+
+	m_pVertices = new CTexturedVertex[m_nVertices];
 	m_pnIndices = new UINT[m_nIndices];
 	myExporter->WriteMeshToStream(m_pVertices, m_pnIndices);
-	//std::cout << m_nVertices << " " << m_nIndices << std::endl;
-	
-	//std::wifstream InFile(pstrFileName);
 
-	//TCHAR pstrToken[64] = { '\0' };
-/*
-	for (; ; )
-	{
-		InFile >> pstrToken;
-		if (!InFile) break;
+	m_nStride = sizeof(CTexturedVertex);
+	m_nOffset = 0;
+	m_nSlot = 0;
 
-		if (!_tcscmp(pstrToken, _T("<Vertices>:")))
-		{
-			InFile >> m_nVertices;
-			m_pVertices = new CDiffusedVertex[m_nVertices];
-
-			float x, y, z;
-
-			for (UINT i = 0; i < m_nVertices; i++)
-			{
-				InFile >> x >> y >> z;
-				m_pVertices[i] = CDiffusedVertex(XMFLOAT3(x, y, z), RANDOM_COLOR);
-			}
-
-		}
-		else if (!_tcscmp(pstrToken, _T("<Indices>:")))
-		{
-			InFile >> m_nIndices;
-			m_pnIndices = new UINT[m_nIndices];
-			for (UINT i = 0; i < m_nIndices; i++)
-			{
-				InFile >> m_pnIndices[i];
-				m_pnIndices[i]--;
-			}
-		}
-		else if (!_tcscmp(pstrToken, _T("<BoundingBox>")))
-		{
-			float x, y, z;
-			InFile >> x >> y >> z;
-
-		}
-	}*/
-
-	SetOOBB(XMFLOAT3(0.0f, 12.0f, 0.0f), XMFLOAT3(50, 50, 50), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-
+	// 정점 버퍼 생성
 	m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pVertices,
-		sizeof(CDiffusedVertex) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT,
+		m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT,
 		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
 
 	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
-	m_d3dVertexBufferView.StrideInBytes = sizeof(CDiffusedVertex);
-	m_d3dVertexBufferView.SizeInBytes = sizeof(CDiffusedVertex) * m_nVertices;
+	m_d3dVertexBufferView.StrideInBytes = m_nStride;
+	m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
 
 	m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
 
 	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+
+	SetOOBB(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(10.0f, 10.0f, 10.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 CMesh::~CMesh()

@@ -295,8 +295,8 @@ void FBXExporter::ProcessMesh(FbxNode* inNode)
 	for (unsigned int i = 0; i < mTriangleCount; ++i)
 	{
 		XMFLOAT3 normal[3];
-		XMFLOAT3 tangent[3];
-		XMFLOAT3 binormal[3];
+		//XMFLOAT3 tangent[3];
+		//XMFLOAT3 binormal[3];
 		XMFLOAT2 UV[3][2];
 		Triangle currTriangle;
 		mTriangles.push_back(currTriangle);
@@ -901,7 +901,7 @@ void FBXExporter::CleanupFbxManager()
 	mMaterialLookUp.clear();
 }
 
-void FBXExporter::WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices)
+void FBXExporter::WriteMeshToStream(CTexturedVertex* pVertices, UINT* pnIndices)
 {
 	if (mHasAnimation)
 	{
@@ -930,7 +930,7 @@ void FBXExporter::WriteMeshToStream(CDiffusedVertex* pVertices, UINT* pnIndices)
 	{
 		//std::cout << "\t\t<vtx>" << std::endl;
 		//std::cout << "\t\t\t<pos>" << mVertices[i].mPosition.x << "," << mVertices[i].mPosition.y << "," << -mVertices[i].mPosition.z << "</pos>" << std::endl;
-		pVertices[i] = CDiffusedVertex(XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z), RANDOM_COLOR);
+		pVertices[i] = CTexturedVertex(XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z), XMFLOAT2(mVertices[i].mUV.x, mVertices[i].mUV.y));
 		//std::cout << "\t\t\t<norm>" << mVertices[i].mNormal.x << "," << mVertices[i].mNormal.y << "," << -mVertices[i].mNormal.z << "</norm>" << std::endl;
 		//if (mHasAnimation)
 		//{
