@@ -45,6 +45,9 @@ CMesh::~CMesh()
 
 	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
 	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
+
+	if (m_pVertices) delete[] m_pVertices;
+	if (m_pnIndices) delete[] m_pnIndices;
 }
 
 void CMesh::ReleaseUploadBuffers()

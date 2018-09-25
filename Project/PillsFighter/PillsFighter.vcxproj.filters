@@ -113,13 +113,13 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="헤더 파일">
-      <UniqueIdentifier>{23e7a71f-98f6-40d3-8ef7-57c917e8fbaa}</UniqueIdentifier>
+      <UniqueIdentifier>{e83bedfd-1750-421a-a2a0-09f44b8bb173}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일">
-      <UniqueIdentifier>{9804c9c4-409d-4c06-aeca-49d304992434}</UniqueIdentifier>
+      <UniqueIdentifier>{a847e95a-055e-4377-8e3f-25cc99b7f57a}</UniqueIdentifier>
     </Filter>
     <Filter Include="리소스 파일">
-      <UniqueIdentifier>{3ea72589-c657-4708-8f28-dbcd9b37c33b}</UniqueIdentifier>
+      <UniqueIdentifier>{26a91eff-e3e5-483f-9429-f165624cbcf5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

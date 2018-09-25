@@ -12,6 +12,7 @@
 
 #define SHOT_COOLTIME			0.05f
 
+class CPlayerShader;
 class CObjectsShader;
 
 struct CB_PLAYER_INFO
@@ -40,6 +41,7 @@ public:
 	CCamera *GetCamera() { return(m_pCamera); }
 	void SetCamera(CCamera *pCamera) { m_pCamera = pCamera; }
 
+	void SetShader(CShader* pShader) { m_pShader = pShader; }
 	//플레이어를 이동하는 함수이다. 
 	void Move(ULONG nDirection, float fDistance);
 	void Move(const XMFLOAT3& xmf3Shift);
@@ -62,20 +64,20 @@ public:
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	//카메라를 변경하기 위하여 호출하는 함수이다. 
 	virtual CCamera *SetCamera(float fTimeElapsed);
 
-	//플레이어의 카메라가 3인칭 카메라일 때 플레이어(메쉬)를 렌더링한다. 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
 
 private:
+	CShader *m_pShader = NULL;
+
 	CObjectsShader *m_pBulletShader = NULL;
 	bool m_Shotable = TRUE;
 	float m_ShotTime;
 
 public:
 	void SetBullet(CObjectsShader* Bullet) { m_pBulletShader = Bullet; }
-	void Shot();
+	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
 
 };

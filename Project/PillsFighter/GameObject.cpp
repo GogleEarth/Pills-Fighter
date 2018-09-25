@@ -88,22 +88,11 @@ CMaterial::CMaterial()
 
 CMaterial::~CMaterial()
 {
-	if (m_pTexture) m_pTexture->Release();
-	if (m_pShader) m_pShader->Release();
 }
 
 void CMaterial::SetTexture(CTexture *pTexture)
 {
-	if (m_pTexture) m_pTexture->Release();
 	m_pTexture = pTexture;
-	if (m_pTexture) m_pTexture->AddRef();
-}
-
-void CMaterial::SetShader(CShader *pShader)
-{
-	if (m_pShader) m_pShader->Release();
-	m_pShader = pShader;
-	if (m_pShader) m_pShader->AddRef();
 }
 
 void CMaterial::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -113,7 +102,6 @@ void CMaterial::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 
 void CMaterial::ReleaseShaderVariables()
 {
-	if (m_pShader) m_pShader->ReleaseShaderVariables();
 	if (m_pTexture) m_pTexture->ReleaseShaderVariables();
 }
 
@@ -154,39 +142,24 @@ CGameObject::~CGameObject()
 	{
 		for (int i = 0; i < m_nMeshes; i++)
 		{
-			if (m_ppMeshes[i]) m_ppMeshes[i]->Release();
 			m_ppMeshes[i] = NULL;
 		}
+
 		delete[] m_ppMeshes;
 	}
-	if (m_pMaterial) m_pMaterial->Release();
 }
 
 void CGameObject::SetMesh(int nIndex, CMesh *pMesh)
 {
 	if (m_ppMeshes)
 	{
-		if (m_ppMeshes[nIndex]) m_ppMeshes[nIndex]->Release();
 		m_ppMeshes[nIndex] = pMesh;
-		if (pMesh) pMesh->AddRef();
 	}
-}
-
-void CGameObject::SetShader(CShader *pShader)
-{
-	if (!m_pMaterial)
-	{
-		CMaterial *pMaterial = new CMaterial();
-		SetMaterial(pMaterial);
-	}
-	if (m_pMaterial) m_pMaterial->SetShader(pShader);
 }
 
 void CGameObject::SetMaterial(CMaterial *pMaterial)
 {
-	if (m_pMaterial) m_pMaterial->Release();
 	m_pMaterial = pMaterial;
-	if (m_pMaterial) m_pMaterial->AddRef();
 }
 
 void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -198,6 +171,14 @@ void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphics
 	m_pd3dcbGameObject->Map(0, NULL, (void **)&m_pcbMappedGameObject);
 }
 
+void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMStoreFloat4x4(&m_pcbMappedGameObject->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbGameObject->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(0, d3dGpuVirtualAddress);
+}
+
 void CGameObject::ReleaseShaderVariables()
 {
 	if (m_pd3dcbGameObject)
@@ -206,11 +187,6 @@ void CGameObject::ReleaseShaderVariables()
 		m_pd3dcbGameObject->Release();
 	}
 	if (m_pMaterial) m_pMaterial->ReleaseShaderVariables();
-}
-
-void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	XMStoreFloat4x4(&m_pcbMappedGameObject->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
 }
 
 void CGameObject::OnPrepareRender()
@@ -253,21 +229,13 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 
 	if (m_pMaterial)
 	{
-		if (m_pMaterial->m_pShader)
-		{
-			m_pMaterial->m_pShader->Render(pd3dCommandList, pCamera);
-			m_pMaterial->m_pShader->UpdateShaderVariables(pd3dCommandList);
-
-			UpdateShaderVariables(pd3dCommandList);
-		}
-
 		if (m_pMaterial->m_pTexture)
 		{
 			m_pMaterial->m_pTexture->UpdateShaderVariables(pd3dCommandList);
 		}
 	}
 
-	pd3dCommandList->SetGraphicsRootDescriptorTable(2, m_d3dCbvGPUDescriptorHandle);
+	UpdateShaderVariables(pd3dCommandList);
 
 	if (m_ppMeshes)
 	{

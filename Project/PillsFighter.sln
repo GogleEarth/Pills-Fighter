@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PillFighter", "PillsFighter\PillFighter.vcxproj", "{1331E2CD-9C84-4267-9690-F116C1C82A3D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PillFighter", "PillsFighter.vcxproj", "{1331E2CD-9C84-4267-9690-F116C1C82A3D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {90240107-0DA3-4AD9-9500-A006172E8B5B}
+		SolutionGuid = {23A86826-28F2-43FA-8361-294C25D8C3D9}
 	EndGlobalSection
 EndGlobal

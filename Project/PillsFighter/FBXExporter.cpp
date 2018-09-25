@@ -930,7 +930,7 @@ void FBXExporter::WriteMeshToStream(CTexturedVertex* pVertices, UINT* pnIndices)
 	{
 		//std::cout << "\t\t<vtx>" << std::endl;
 		//std::cout << "\t\t\t<pos>" << mVertices[i].mPosition.x << "," << mVertices[i].mPosition.y << "," << -mVertices[i].mPosition.z << "</pos>" << std::endl;
-		pVertices[i] = CTexturedVertex(XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z), XMFLOAT2(mVertices[i].mUV.x, mVertices[i].mUV.y));
+		pVertices[i] = CTexturedVertex(XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z), XMFLOAT2(mVertices[i].mUV.x, 1.0f - mVertices[i].mUV.y));
 		//std::cout << "\t\t\t<norm>" << mVertices[i].mNormal.x << "," << mVertices[i].mNormal.y << "," << -mVertices[i].mNormal.z << "</norm>" << std::endl;
 		//if (mHasAnimation)
 		//{

@@ -24,8 +24,6 @@ struct SRVROOTARGUMENTINFO
 
 class CTexture
 {
-	int								m_nReferences = 0;
-
 	UINT							m_nTextureType = RESOURCE_TEXTURE2D;
 	int								m_nTextures = 0;
 	ID3D12Resource					**m_ppd3dTextures = NULL;
@@ -39,9 +37,6 @@ class CTexture
 public:
 	CTexture(int nTextureResources = 1, UINT nResourceType = RESOURCE_TEXTURE2D, int nSamplers = 0);
 	virtual ~CTexture();
-
-	void AddRef() { m_nReferences++; }
-	void Release() { if (--m_nReferences <= 0) delete this; }
 
 	void SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dsrvGpuDescriptorHandle);
 	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);
@@ -61,24 +56,16 @@ public:
 
 class CMaterial
 {
-private:
-	int								m_nReferences = 0;
-
 public:
 	CMaterial();
 	virtual ~CMaterial();
 
-	void AddRef() { m_nReferences++; }
-	void Release() { if (--m_nReferences <= 0) delete this; }
-
 	XMFLOAT4						m_xmf4Albedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	CTexture						*m_pTexture = NULL;
-	CShader							*m_pShader = NULL;
 
 	void SetAlbedo(XMFLOAT4 xmf4Albedo) { m_xmf4Albedo = xmf4Albedo; }
 	void SetTexture(CTexture *pTexture);
-	void SetShader(CShader *pShader);
 
 	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	void ReleaseShaderVariables();
@@ -130,7 +117,6 @@ public:
 	virtual ~CGameObject();
 
 	void SetMesh(int nIndex, CMesh *pMesh);
-	void SetShader(CShader *pShader);
 	void SetMaterial(CMaterial *pMaterial);
 
 	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }

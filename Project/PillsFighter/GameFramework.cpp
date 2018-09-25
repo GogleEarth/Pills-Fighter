@@ -523,7 +523,7 @@ void CGameFramework::ProcessInput()
 	// 현재 발사버튼(왼쪽 마우스)이 눌러진 상태일 경우
 	if (m_LButtonDown)
 	{
-		m_pPlayer->Shot();
+		m_pPlayer->Shot(m_pd3dDevice, m_pd3dCommandList);
 	}
 
 	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 

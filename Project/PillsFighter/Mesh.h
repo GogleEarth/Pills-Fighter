@@ -60,9 +60,6 @@ public:
 
 class CMesh
 {
-private:
-	int m_nReferences = 0;
-
 protected:
 	UINT							m_nVertices = 0;
 	CTexturedVertex					*m_pVertices = NULL;
@@ -92,10 +89,7 @@ public:
 	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
 	virtual ~CMesh();
 
-	void AddRef() { m_nReferences++; }
-	void Release() { if (--m_nReferences <= 0) delete this; }
 	void ReleaseUploadBuffers();
-
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	BoundingOrientedBox m_xmOOBB;

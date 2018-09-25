@@ -1,17 +1,12 @@
-cbuffer cbPlayerInfo : register(b0)
+cbuffer cbGameObjectInfo : register(b0)
 {
-	matrix		gmtxPlayerWorld : packoffset(c0);
+	matrix		gmtxGameObject : packoffset(c0);
 };
 
 cbuffer cbCameraInfo : register(b1)
 {
 	matrix		gmtxView : packoffset(c0);
 	matrix		gmtxProjection : packoffset(c4);
-};
-
-cbuffer cbGameObjectInfo : register(b2)
-{
-	matrix		gmtxGameObject : packoffset(c0);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

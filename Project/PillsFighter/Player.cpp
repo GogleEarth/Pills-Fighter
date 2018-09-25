@@ -19,21 +19,16 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CTexture* pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/chest.dds", 0);
 
-	UINT ncbElementBytes = ((sizeof(CB_PLAYER_INFO) + 255) & ~255); //256의 배수
-
-	CTexturedShader *pShader = new CTexturedShader();
-	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pShader->CreateCbvAndSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1, 1); // nPlayer, nTexture
-	pShader->CreateConstantBufferViews(pd3dDevice, pd3dCommandList, 1, m_pd3dcbPlayer, ncbElementBytes);
-
-	pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTexture, 3, false);
-
 	CMaterial* pMaterial = new CMaterial();
 	pMaterial->SetTexture(pTexture);
 
 	SetMaterial(pMaterial);
-	SetCbvGPUDescriptorHandle(pShader->GetGPUCbvDescriptorStartHandle());
+
+	CPlayerShader *pShader = new CPlayerShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1); // nTexture
+	pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTexture, 2, false);
+
 	SetShader(pShader);
 
 	//플레이어의 위치를 설정한다. 
@@ -215,16 +210,15 @@ void CPlayer::Update(float fTimeElapsed)
 	CheckElapsedTime(fTimeElapsed);
 }
 
-/*플레이어의 위치와 회전축으로부터 월드 변환 행렬을 생성하는 함수이다. 
-플레이어의 Right 벡터가 월드 변환 행렬의 첫 번째 행 벡터, Up 벡터가 두 번째 행 벡터, Look 벡터가 세 번째 행 벡터, 
-플레이어의 위치 벡터가 네 번째 행 벡터가 된다.*/
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	m_pShader->OnPrepareRender(pd3dCommandList);
+
 	//플레이어 객체를 렌더링한다. 
 	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
-void CPlayer::Shot()
+void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_Shotable)
 	{
@@ -232,6 +226,7 @@ void CPlayer::Shot()
 
 		pBullet = new Bullet();
 		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+		pBullet->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		XMFLOAT3 xmfPosition = GetPosition();
 		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 0.0f, 0.0f));
