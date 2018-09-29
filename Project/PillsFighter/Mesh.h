@@ -9,6 +9,8 @@ public:
 	CVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); }
 	CVertex(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	~CVertex() { }
+
+	XMFLOAT3 GetPosition() { return m_xmf3Position; }
 };
 
 class CDiffusedVertex : public CVertex
@@ -86,12 +88,26 @@ protected:
 	D3D12_INDEX_BUFFER_VIEW			m_d3dIndexBufferView;
 
 public:
+	CMesh() {};
 	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
 	virtual ~CMesh();
 
 	void ReleaseUploadBuffers();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
+	//BoundingBox m_xmAABB;
+	//void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
+
 	BoundingOrientedBox m_xmOOBB;
 	void SetOOBB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents, XMFLOAT4& xmOrientation) { m_xmOOBB = BoundingOrientedBox(xmCenter, xmExtents, xmOrientation); }
+	XMFLOAT3& GetExtents() { return m_xmOOBB.Extents; }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CCubeMesh : public CMesh
+{
+public:
+	CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f);
+	virtual ~CCubeMesh();
 };

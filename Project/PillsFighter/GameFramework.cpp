@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "GameFramework.h"
 
-
 CGameFramework::CGameFramework()
 {
 	m_pdxgiFactory = NULL;
@@ -314,7 +313,7 @@ void CGameFramework::BuildObjects()
 	m_pScene = new CScene();
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL, 1);
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL, 7, 7);
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
 

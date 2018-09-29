@@ -4,30 +4,35 @@
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 200.0f, -400.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int nMeshes) : CGameObject(nMeshes)
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
 {
 	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
 	m_pCamera = SetCamera(0.0f);
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	// 플레이어 메쉬를 생성 
-	CMesh *pMesh = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/chest.FBX");
-	SetMesh(0, pMesh);
-
-	// 플레이어 텍스쳐를 생성
-	CTexture* pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/chest.dds", 0);
-
-	CMaterial* pMaterial = new CMaterial();
-	pMaterial->SetTexture(pTexture);
-
-	SetMaterial(pMaterial);
-
+	// 플레이어 쉐이더 생성
 	CPlayerShader *pShader = new CPlayerShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1); // nTexture
-	pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTexture, 2, false);
+
+	// 플레이어 메쉬 생성 
+	CMesh **ppMesh;
+	CTexture **ppTexture;
+	CCubeMesh **ppCubeMesh;
+
+	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMesh, ppCubeMesh);
+	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture);
+	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, pShader);
+
+	for(UINT i = 0; i <m_nMeshes; i++) SetMesh(i, ppMesh[i], ppCubeMesh[i]);
+
+	for (UINT i = 0; i < m_nMaterials; i++)
+	{
+		CMaterial* pMaterial = new CMaterial();
+
+		pMaterial->SetTexture(ppTexture[i]);
+		SetMaterial(i, pMaterial);
+	}
 
 	SetShader(pShader);
 
@@ -229,13 +234,11 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 		pBullet->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		XMFLOAT3 xmfPosition = GetPosition();
-		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 0.0f, 0.0f));
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 100.0f, 0.0f));
 		pBullet->SetPosition(xmfPosition);
 		pBullet->SetRight(GetRight());
 		pBullet->SetUp(GetUp());
 		pBullet->SetLook(GetLook());
-
-		std::cout << pBullet->GetPosition().x << ", " << pBullet->GetPosition().y << ", " << pBullet->GetPosition().z << std::endl;
 
 		m_pBulletShader->InsertObject(pBullet);
 

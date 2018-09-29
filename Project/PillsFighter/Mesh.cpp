@@ -2,6 +2,31 @@
 #include "Mesh.h"
 #include "FBXExporter.h"
 
+void FindXYZ(CTexturedVertex* pVertices, UINT nVertices, XMFLOAT3& Center, XMFLOAT3& Extents)
+{
+	XMFLOAT3 MinMaxVertex[2]; // [0] Min, [1] Max
+	MinMaxVertex[0] = MinMaxVertex[1] = pVertices[0].GetPosition();
+
+	for (UINT i = 1; i < nVertices; i++)
+	{
+		XMFLOAT3 Position = pVertices[i].GetPosition();
+
+		if (Position.x < MinMaxVertex[0].x) MinMaxVertex[0].x = Position.x;
+		if (Position.y < MinMaxVertex[0].y) MinMaxVertex[0].y = Position.y;
+		if (Position.z < MinMaxVertex[0].z) MinMaxVertex[0].z = Position.z;
+
+		if (Position.x > MinMaxVertex[1].x) MinMaxVertex[1].x = Position.x;
+		if (Position.y > MinMaxVertex[1].y) MinMaxVertex[1].y = Position.y;
+		if (Position.z > MinMaxVertex[1].z) MinMaxVertex[1].z = Position.z;
+	}
+
+	Center = Vector3::Add(MinMaxVertex[0], MinMaxVertex[1]);
+	Center.x /= 2; Center.y /= 2; Center.z /= 2;
+
+	Extents = Vector3::Subtract(MinMaxVertex[1], MinMaxVertex[0]);
+	Extents.x /= 2; Extents.y /= 2; Extents.z /= 2;
+}
+
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName)
 {
 	// FBXExporter »ý¼º
@@ -35,6 +60,11 @@ CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandLis
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
 
+	XMFLOAT3 Center, Extents;
+	FindXYZ(m_pVertices, m_nVertices, Center, Extents);
+
+	//SetAABB(Center, Extents);
+	//SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 	SetOOBB(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(10.0f, 10.0f, 10.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
@@ -75,4 +105,60 @@ void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 	{
 		pd3dCommandList->DrawInstanced(m_nVertices, 1, m_nOffset, 0);
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight, float fDepth) : CMesh()
+{
+	m_nVertices = 8;
+	m_nStride = sizeof(CDiffusedVertex);
+	m_nOffset = 0;
+	m_nSlot = 0;
+	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+	float fx = fWidth * 0.5f, fy = fHeight * 0.5f, fz = fDepth * 0.5f;
+
+	CDiffusedVertex pVertices[8];
+
+	pVertices[0] = CDiffusedVertex(XMFLOAT3(-fx, +fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[1] = CDiffusedVertex(XMFLOAT3(+fx, +fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[2] = CDiffusedVertex(XMFLOAT3(+fx, +fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[3] = CDiffusedVertex(XMFLOAT3(-fx, +fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[4] = CDiffusedVertex(XMFLOAT3(-fx, -fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[5] = CDiffusedVertex(XMFLOAT3(+fx, -fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[6] = CDiffusedVertex(XMFLOAT3(+fx, -fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[7] = CDiffusedVertex(XMFLOAT3(-fx, -fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+
+	m_pd3dVertexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, pVertices, m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
+
+	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
+	m_d3dVertexBufferView.StrideInBytes = m_nStride;
+	m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
+
+	m_nIndices = 36;
+	UINT pnIndices[36];
+
+	pnIndices[0] = 3; pnIndices[1] = 1; pnIndices[2] = 0;
+	pnIndices[3] = 2; pnIndices[4] = 1; pnIndices[5] = 3;
+	pnIndices[6] = 0; pnIndices[7] = 5; pnIndices[8] = 4;
+	pnIndices[9] = 1; pnIndices[10] = 5; pnIndices[11] = 0;
+	pnIndices[12] = 3; pnIndices[13] = 4; pnIndices[14] = 7;
+	pnIndices[15] = 0; pnIndices[16] = 4; pnIndices[17] = 3;
+	pnIndices[18] = 1; pnIndices[19] = 6; pnIndices[20] = 5;
+	pnIndices[21] = 2; pnIndices[22] = 6; pnIndices[23] = 1;
+	pnIndices[24] = 2; pnIndices[25] = 7; pnIndices[26] = 6;
+	pnIndices[27] = 3; pnIndices[28] = 7; pnIndices[29] = 2;
+	pnIndices[30] = 6; pnIndices[31] = 4; pnIndices[32] = 5;
+	pnIndices[33] = 7; pnIndices[34] = 4; pnIndices[35] = 6;
+
+	m_pd3dIndexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
+
+	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
+	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+}
+
+CCubeMesh::~CCubeMesh()
+{
 }

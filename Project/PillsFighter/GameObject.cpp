@@ -112,7 +112,7 @@ void CMaterial::ReleaseUploadBuffers()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CGameObject::CGameObject(int nMeshes)
+CGameObject::CGameObject(int nMeshes, int nMaterials)
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -126,11 +126,23 @@ CGameObject::CGameObject(int nMeshes)
 
 	m_nMeshes = nMeshes;
 	m_ppMeshes = NULL;
-
 	if (m_nMeshes > 0)
 	{
 		m_ppMeshes = new CMesh*[m_nMeshes];
-		for (int i = 0; i < m_nMeshes; i++)	m_ppMeshes[i] = NULL;
+		m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
+		for (UINT i = 0; i < m_nMeshes; i++)
+		{
+			m_ppMeshes[i] = m_ppCubeMeshes[i] = NULL;
+
+		}
+	}
+
+	m_nMaterials = nMaterials;
+	m_ppMaterials = NULL;
+	if (m_nMaterials > 0)
+	{
+		m_ppMaterials = new CMaterial*[m_nMaterials];
+		for (UINT i = 0; i < m_nMaterials; i++) m_ppMaterials[i] = NULL;
 	}
 }
 
@@ -140,26 +152,42 @@ CGameObject::~CGameObject()
 
 	if (m_ppMeshes)
 	{
-		for (int i = 0; i < m_nMeshes; i++)
+		for (UINT i = 0; i < m_nMeshes; i++)
 		{
 			m_ppMeshes[i] = NULL;
+			m_ppCubeMeshes[i] = NULL;
 		}
 
 		delete[] m_ppMeshes;
+		delete[] m_ppCubeMeshes;
+	}
+
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+		{
+			m_ppMaterials[i] = NULL;
+		}
+
+		delete[] m_ppMaterials;
 	}
 }
 
-void CGameObject::SetMesh(int nIndex, CMesh *pMesh)
+void CGameObject::SetMesh(int nIndex, CMesh *pMesh, CCubeMesh *pCubeMesh)
 {
 	if (m_ppMeshes)
 	{
 		m_ppMeshes[nIndex] = pMesh;
+		m_ppCubeMeshes[nIndex] = pCubeMesh;
 	}
 }
 
-void CGameObject::SetMaterial(CMaterial *pMaterial)
+void CGameObject::SetMaterial(int nIndex, CMaterial *pMaterial)
 {
-	m_pMaterial = pMaterial;
+	if (m_ppMaterials)
+	{
+		m_ppMaterials[nIndex] = pMaterial;
+	}
 }
 
 void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -186,7 +214,13 @@ void CGameObject::ReleaseShaderVariables()
 		m_pd3dcbGameObject->Unmap(0, NULL);
 		m_pd3dcbGameObject->Release();
 	}
-	if (m_pMaterial) m_pMaterial->ReleaseShaderVariables();
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+		{
+			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseShaderVariables();
+		}
+	}	
 }
 
 void CGameObject::OnPrepareRender()
@@ -210,13 +244,14 @@ void CGameObject::OnPrepareRender()
 
 void CGameObject::Animate(float fTimeElapsed)
 {
-	for (int i = 0; i < m_nMeshes; i++)
+	for (UINT i = 0; i < m_nMeshes; i++)
 	{
 		if (m_ppMeshes[i])
 		{
 			XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
 			XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 
+			//m_ppMeshes[i]->m_xmAABB.Transform(m_xmAABB, XMLoadFloat4x4(&xmf4x4World));
 			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB, XMLoadFloat4x4(&xmf4x4World));
 			XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB.Orientation)));
 		}
@@ -227,21 +262,39 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 {
 	OnPrepareRender();
 
-	if (m_pMaterial)
+	UpdateShaderVariables(pd3dCommandList);
+
+	for (UINT i = 0; i < m_nMeshes; i++)
 	{
-		if (m_pMaterial->m_pTexture)
+		if (i < m_nMaterials)
 		{
-			m_pMaterial->m_pTexture->UpdateShaderVariables(pd3dCommandList);
+			if (m_ppMaterials[i])
+			{
+				if (m_ppMaterials[i]->m_pTexture)
+				{
+					m_ppMaterials[i]->m_pTexture->UpdateShaderVariables(pd3dCommandList);
+				}
+			}
+		}
+
+		if (m_ppMeshes)
+		{
+			if (m_ppMeshes[i]) m_ppMeshes[i]->Render(pd3dCommandList);
 		}
 	}
+}
+
+void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+{
+	OnPrepareRender();
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	if (m_ppMeshes)
+	for (UINT i = 0; i < m_nMeshes; i++)
 	{
-		for (int i = 0; i < m_nMeshes; i++)
+		if (m_ppCubeMeshes)
 		{
-			if (m_ppMeshes[i]) m_ppMeshes[i]->Render(pd3dCommandList);
+			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->Render(pd3dCommandList);
 		}
 	}
 }
@@ -250,13 +303,18 @@ void CGameObject::ReleaseUploadBuffers()
 {
 	if (m_ppMeshes)
 	{
-		for (int i = 0; i < m_nMeshes; i++)
+		for (UINT i = 0; i < m_nMeshes; i++)
 		{
 			if (m_ppMeshes[i]) m_ppMeshes[i]->ReleaseUploadBuffers();
+			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->ReleaseUploadBuffers();
 		}
 	}
 
-	if (m_pMaterial) m_pMaterial->ReleaseUploadBuffers();
+	if (m_ppMaterials)
+	{
+		for(UINT i = 0; i<m_nMaterials; i++)
+			if( m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
+	}
 }
 
 
@@ -330,7 +388,7 @@ void CGameObject::MoveForward(float fDistance)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-RandomMoveObject::RandomMoveObject(int nMeshes)
+RandomMoveObject::RandomMoveObject(int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
 {
 	InitRandomRotate();
 
@@ -377,7 +435,7 @@ void RandomMoveObject::Animate(float ElapsedTime)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-Bullet::Bullet(int nMeshes)
+Bullet::Bullet(int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
 {
 	m_ElapsedTime = 0;
 	m_DurationTime = 3.0f;
@@ -404,4 +462,70 @@ void Bullet::Animate(float ElapsedTime)
 	}
 
 	CGameObject::Animate(ElapsedTime);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMesh**& ppMeshes, CCubeMesh**& ppCubeMeshes)
+{
+	ppMeshes = new CMesh*[7];
+	::ZeroMemory(ppMeshes, sizeof(CMesh*) * 7);
+	ppCubeMeshes = new CCubeMesh*[7];
+	::ZeroMemory(ppCubeMeshes, sizeof(CCubeMesh*) * 7);
+
+	XMFLOAT3 Extents;
+
+	ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.FBX");
+	Extents = ppMeshes[0]->GetExtents();
+	ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	ppMeshes[1] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/UpperBody.FBX");
+	Extents = ppMeshes[1]->GetExtents();
+	ppCubeMeshes[1] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	ppMeshes[2] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/LowerBody.FBX");
+	Extents = ppMeshes[2]->GetExtents();
+	ppCubeMeshes[2] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	ppMeshes[3] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Left.FBX");
+	Extents = ppMeshes[3]->GetExtents();
+	ppCubeMeshes[3] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	ppMeshes[4] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Right.FBX");
+	Extents = ppMeshes[4]->GetExtents();
+	ppCubeMeshes[4] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	ppMeshes[5] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Left.FBX");
+	Extents = ppMeshes[5]->GetExtents();
+	ppCubeMeshes[5] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	ppMeshes[6] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Right.FBX");
+	Extents = ppMeshes[6]->GetExtents();
+	ppCubeMeshes[6] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+
+	//if (*pShader) (*pShader)->SetMesh(ppMesh, 7);
+}
+
+void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTextures)
+{
+	ppTextures = new CTexture*[7];
+	::ZeroMemory(ppTextures, sizeof(CTexture*) * 7);
+
+	for (int i = 0; i < 7; i++)
+		ppTextures[i] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", 0);
+	ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Body/UpperBody.dds", 0);
+	ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Body/LowerBody.dds", 0);
+	ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Arm/Arm.dds", 0);
+	ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Arm/Arm.dds", 0);
+	ppTextures[5]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Leg/Leg.dds", 0);
+	ppTextures[6]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Leg/Leg.dds", 0);
+}
+
+void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTextures, CShader* pShader)
+{
+	pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 7); // nTexture
+
+	for (int i = 0; i < 7; i++)
+		pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, ppTextures[i], 2, false);
 }

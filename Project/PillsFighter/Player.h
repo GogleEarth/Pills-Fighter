@@ -35,7 +35,7 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayer = NULL;
 	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 public:
-	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL, int nMeshes = 1);
+	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL, int nMeshes = 1, int nMaterials = 1);
 	virtual ~CPlayer();
 
 	CCamera *GetCamera() { return(m_pCamera); }

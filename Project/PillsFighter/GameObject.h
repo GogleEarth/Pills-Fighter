@@ -10,6 +10,7 @@
 #define RESOURCE_BUFFER				0x05
 
 class CShader;
+class CObjectsShader;
 
 struct CB_GAMEOBJECT_INFO
 {
@@ -99,10 +100,12 @@ protected:
 	// 이동 속력
 	float m_MovingSpeed;
 	
-	int		m_nMeshes = 0;
-	CMesh	**m_ppMeshes = NULL;
+	UINT							m_nMeshes = 0;
+	CMesh							**m_ppMeshes = NULL;
+	CCubeMesh						**m_ppCubeMeshes = NULL;
 
-	CMaterial						*m_pMaterial = NULL;
+	UINT							m_nMaterials = 0;
+	CMaterial						**m_ppMaterials = NULL;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
 
@@ -110,14 +113,16 @@ protected:
 	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObject = NULL;
 
 	BoundingOrientedBox	m_xmOOBB;
+	//BoundingBox	m_xmAABB;
+
 	bool m_Delete = FALSE;
 
 public:
-	CGameObject(int nMeshes = 1);
+	CGameObject(int nMeshes = 1, int nMaterials = 1);
 	virtual ~CGameObject();
 
-	void SetMesh(int nIndex, CMesh *pMesh);
-	void SetMaterial(CMaterial *pMaterial);
+	void SetMesh(int nIndex, CMesh *pMesh, CCubeMesh *Mesh);
+	void SetMaterial(int nIndex, CMaterial *pMaterial);
 
 	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
 	void SetCbvGPUDescriptorHandlePtr(UINT64 nCbvGPUDescriptorHandlePtr) { m_d3dCbvGPUDescriptorHandle.ptr = nCbvGPUDescriptorHandlePtr; }
@@ -130,6 +135,7 @@ public:
 	virtual void Animate(float fTimeElapsed);
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 
 	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
 	virtual void ReleaseUploadBuffers();
@@ -161,6 +167,7 @@ public:
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
 	BoundingOrientedBox GetOOBB() { return m_xmOOBB; }
+	//BoundingBox GetAABB() { return m_xmAABB; }
 	void DeleteObject() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 };
@@ -170,7 +177,7 @@ public:
 class RandomMoveObject : public CGameObject
 {
 public:
-	RandomMoveObject(int nMeshes = 1);
+	RandomMoveObject(int nMeshes = 1, int nMaterials = 1);
 	virtual ~RandomMoveObject();
 
 	void InitRandomRotate();
@@ -192,7 +199,7 @@ private:
 class Bullet : public CGameObject
 {
 public:
-	Bullet(int nMeshes = 1);
+	Bullet(int nMeshes = 1, int nMaterials = 1);
 	virtual ~Bullet();
 
 	virtual void Animate(float ElapsedTime);
@@ -204,3 +211,7 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+extern void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMesh**& ppMesh, CCubeMesh**& ppCubeMeshes);
+extern void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture);
+extern void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, CShader* pShader);

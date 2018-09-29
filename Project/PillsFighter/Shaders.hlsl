@@ -42,3 +42,32 @@ float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 
 	return(cColor);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+struct VS_DIFFUSED_INPUT
+{
+	float3 position : POSITION;
+	float4 color : COLOR;
+};
+
+struct VS_DIFFUSED_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+};
+
+VS_DIFFUSED_OUTPUT VSDiffused(VS_DIFFUSED_INPUT input)
+{
+	VS_DIFFUSED_OUTPUT output;
+
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.color = input.color;
+
+	return(output);
+}
+
+float4 PSDiffused(VS_DIFFUSED_OUTPUT input) : SV_TARGET
+{
+	return(input.color);
+}

@@ -11,11 +11,15 @@ public:
 	virtual ~CShader();
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayoutWire();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerStateWire();
 	virtual D3D12_BLEND_DESC CreateBlendState();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderWire(ID3DBlob **ppd3dShaderBlob);
 	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName,
 		LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
 
@@ -47,6 +51,7 @@ public:
 
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateWire = NULL;
 
 private:
 	ID3D12DescriptorHeap			*m_pd3dSrvDescriptorHeap = NULL;
@@ -81,11 +86,6 @@ public:
 	virtual ~CPlayerShader();
 
 private:
-	CMesh*		m_pMesh;
-
-	CTexture**	m_ppTextures;
-	UINT		m_nTextures;
-
 	CMaterial**	m_ppMaterials;
 	UINT		m_nMaterials;
 };
@@ -111,21 +111,21 @@ public:
 	virtual void InsertObject(CGameObject* Object);
 
 	std::vector<CGameObject*>& GetObjects() { return m_vObjects; }
-	//CGameObject** GetObjects() { return m_ppObjects;}
-	//int GetnObjects() { return m_nObjects; }
 
 	void CheckDeleteObjects();
 
+	void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) {m_ppMaterials = ppMaterials; m_nMaterials = nMaterials;}
+
+	void SetMesh(CMesh** ppMeshes, UINT nMeshes) { m_ppMeshes = ppMeshes; m_nMeshes = nMeshes;}
+
 protected:
-	CMesh*		m_pMesh;
+	UINT		m_nMeshes;
+	CMesh**		m_ppMeshes = NULL;
+	CCubeMesh**	m_ppCubeMeshes = NULL;
 
-	CTexture**	m_ppTextures;
-	UINT		m_nTextures;
-
-	CMaterial**	m_ppMaterials;
 	UINT		m_nMaterials;
+	CMaterial**	m_ppMaterials = NULL;
 
 	std::vector<CGameObject*> m_vObjects;
-	//CGameObject						**m_ppObjects = NULL;
-	//int								m_nObjects = 0;
+
 };

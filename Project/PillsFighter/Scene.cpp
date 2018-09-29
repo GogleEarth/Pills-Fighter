@@ -94,12 +94,30 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	// Enemy Shader
 	CObjectsShader *pObjectShader = new CObjectsShader();
 	pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/testbox.dds", "./Resource/testbox.fbx", NULL);
+	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", "./Resource/GM/Head/Head.FBX", NULL);
+
+	//CMesh** ppMeshes;
+	//::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, &pObjectShader);
+	//pObjectShader->SetMesh(ppMeshes, 7);
+
+	//CTexture** ppTextures;
+	//::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures);
+
+	//::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, pObjectShader);
+
+	//CMaterial** ppMaterial = new CMaterial*[7];
+	//for (int i = 0; i < 7; i++)
+	//{
+	//	ppMaterial[i] = new CMaterial();
+	//	ppMaterial[i]->SetTexture(ppTextures[i]);
+	//}
+	//pObjectShader->SetMaterial(ppMaterial, 7);
 
 	m_ppShaders[0] = pObjectShader;
 
 	RandomMoveObject *pGameObject = NULL;
 
+	//pGameObject = new RandomMoveObject(7, 7);
 	pGameObject = new RandomMoveObject();
 	pGameObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pGameObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
@@ -162,7 +180,11 @@ void CScene::CheckCollision()
 			if (Object->GetOOBB().Intersects(Bullet->GetOOBB()))
 			{
 				Bullet->DeleteObject();
-			}
+			}			
+			//if (Object->GetAABB().Intersects(Bullet->GetAABB()))
+			//{
+			//	Bullet->DeleteObject();
+			//}
 		}
 	}
 }
@@ -177,14 +199,13 @@ void CScene::CheckDeleteObject()
 
 void CScene::AnimateObjects(float fTimeElapsed)
 {
-	CheckCollision();
-
-	CheckDeleteObject();
-
 	for (int i = 0; i < m_nShaders; i++)
 	{
 		m_ppShaders[i]->AnimateObjects(fTimeElapsed);
 	}
+
+	CheckCollision();
+	CheckDeleteObject();
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
