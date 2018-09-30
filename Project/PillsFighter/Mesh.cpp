@@ -24,7 +24,6 @@ void FindXYZ(CTexturedVertex* pVertices, UINT nVertices, XMFLOAT3& Center, XMFLO
 	Center.x /= 2; Center.y /= 2; Center.z /= 2;
 
 	Extents = Vector3::Subtract(MinMaxVertex[1], MinMaxVertex[0]);
-	Extents.x /= 2; Extents.y /= 2; Extents.z /= 2;
 }
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName)
@@ -63,9 +62,7 @@ CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandLis
 	XMFLOAT3 Center, Extents;
 	FindXYZ(m_pVertices, m_nVertices, Center, Extents);
 
-	//SetAABB(Center, Extents);
-	//SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-	SetOOBB(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(10.0f, 10.0f, 10.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 CMesh::~CMesh()
@@ -109,7 +106,7 @@ void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight, float fDepth) : CMesh()
+CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, float fWidth, float fHeight, float fDepth) : CMesh()
 {
 	m_nVertices = 8;
 	m_nStride = sizeof(CDiffusedVertex);
@@ -121,14 +118,14 @@ CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 
 	CDiffusedVertex pVertices[8];
 
-	pVertices[0] = CDiffusedVertex(XMFLOAT3(-fx, +fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[1] = CDiffusedVertex(XMFLOAT3(+fx, +fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[2] = CDiffusedVertex(XMFLOAT3(+fx, +fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[3] = CDiffusedVertex(XMFLOAT3(-fx, +fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[4] = CDiffusedVertex(XMFLOAT3(-fx, -fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[5] = CDiffusedVertex(XMFLOAT3(+fx, -fy, -fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[6] = CDiffusedVertex(XMFLOAT3(+fx, -fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
-	pVertices[7] = CDiffusedVertex(XMFLOAT3(-fx, -fy, +fz), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[0] = CDiffusedVertex(XMFLOAT3(-fx + xmf3Center.x, +fy + xmf3Center.y, -fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[1] = CDiffusedVertex(XMFLOAT3(+fx + xmf3Center.x, +fy + xmf3Center.y, -fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[2] = CDiffusedVertex(XMFLOAT3(+fx + xmf3Center.x, +fy + xmf3Center.y, +fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[3] = CDiffusedVertex(XMFLOAT3(-fx + xmf3Center.x, +fy + xmf3Center.y, +fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[4] = CDiffusedVertex(XMFLOAT3(-fx + xmf3Center.x, -fy + xmf3Center.y, -fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[5] = CDiffusedVertex(XMFLOAT3(+fx + xmf3Center.x, -fy + xmf3Center.y, -fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[6] = CDiffusedVertex(XMFLOAT3(+fx + xmf3Center.x, -fy + xmf3Center.y, +fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
+	pVertices[7] = CDiffusedVertex(XMFLOAT3(-fx + xmf3Center.x, -fy + xmf3Center.y, +fz + xmf3Center.z), XMFLOAT4(255.0f, 0.0f, 0.0f, 255.0f));
 
 	m_pd3dVertexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, pVertices, m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
 

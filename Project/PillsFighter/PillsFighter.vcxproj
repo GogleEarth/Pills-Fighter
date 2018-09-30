@@ -147,14 +147,14 @@
       <ConformanceMode>false</ConformanceMode>
       <OmitFramePointers>
       </OmitFramePointers>
-      <AdditionalIncludeDirectories>F:\졸업작품\Pills-Fighter\Library\FBXSDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\Library\FBXSDK\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\졸업작품\Pills-Fighter\Library\FBXSDK\lib\x64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\Library\FBXSDK\lib\x64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

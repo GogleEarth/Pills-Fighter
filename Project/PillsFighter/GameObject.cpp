@@ -130,10 +130,11 @@ CGameObject::CGameObject(int nMeshes, int nMaterials)
 	{
 		m_ppMeshes = new CMesh*[m_nMeshes];
 		m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
+		m_xmOOBB = new BoundingOrientedBox[m_nMeshes];
+
 		for (UINT i = 0; i < m_nMeshes; i++)
 		{
 			m_ppMeshes[i] = m_ppCubeMeshes[i] = NULL;
-
 		}
 	}
 
@@ -248,12 +249,11 @@ void CGameObject::Animate(float fTimeElapsed)
 	{
 		if (m_ppMeshes[i])
 		{
-			XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
-			XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+			//XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPitch), XMConvertToRadians(m_fYaw), XMConvertToRadians(m_fRoll));
+			//XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 
-			//m_ppMeshes[i]->m_xmAABB.Transform(m_xmAABB, XMLoadFloat4x4(&xmf4x4World));
-			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB, XMLoadFloat4x4(&xmf4x4World));
-			XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB.Orientation)));
+			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB[i], XMLoadFloat4x4(&m_xmf4x4World));
+			XMStoreFloat4(&m_xmOOBB[i].Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB[i].Orientation)));
 		}
 	}
 }
@@ -288,12 +288,12 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 {
 	OnPrepareRender();
 
-	UpdateShaderVariables(pd3dCommandList);
-
 	for (UINT i = 0; i < m_nMeshes; i++)
 	{
 		if (m_ppCubeMeshes)
 		{
+			UpdateShaderVariables(pd3dCommandList);
+
 			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->Render(pd3dCommandList);
 		}
 	}
@@ -474,34 +474,42 @@ void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *
 	::ZeroMemory(ppCubeMeshes, sizeof(CCubeMesh*) * 7);
 
 	XMFLOAT3 Extents;
+	XMFLOAT3 Center;
 
 	ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.FBX");
 	Extents = ppMeshes[0]->GetExtents();
-	ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[0]->GetCenter();
+	ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	ppMeshes[1] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/UpperBody.FBX");
 	Extents = ppMeshes[1]->GetExtents();
-	ppCubeMeshes[1] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[1]->GetCenter();
+	ppCubeMeshes[1] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	ppMeshes[2] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/LowerBody.FBX");
 	Extents = ppMeshes[2]->GetExtents();
-	ppCubeMeshes[2] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[2]->GetCenter();
+	ppCubeMeshes[2] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	ppMeshes[3] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Left.FBX");
 	Extents = ppMeshes[3]->GetExtents();
-	ppCubeMeshes[3] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[3]->GetCenter();
+	ppCubeMeshes[3] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	ppMeshes[4] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Right.FBX");
 	Extents = ppMeshes[4]->GetExtents();
-	ppCubeMeshes[4] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[4]->GetCenter();
+	ppCubeMeshes[4] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	ppMeshes[5] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Left.FBX");
 	Extents = ppMeshes[5]->GetExtents();
-	ppCubeMeshes[5] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[5]->GetCenter();
+	ppCubeMeshes[5] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	ppMeshes[6] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Right.FBX");
 	Extents = ppMeshes[6]->GetExtents();
-	ppCubeMeshes[6] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	Center = ppMeshes[6]->GetCenter();
+	ppCubeMeshes[6] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
 	//if (*pShader) (*pShader)->SetMesh(ppMesh, 7);
 }

@@ -112,8 +112,7 @@ protected:
 	ID3D12Resource					*m_pd3dcbGameObject = NULL;
 	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObject = NULL;
 
-	BoundingOrientedBox	m_xmOOBB;
-	//BoundingBox	m_xmAABB;
+	BoundingOrientedBox				*m_xmOOBB;
 
 	bool m_Delete = FALSE;
 
@@ -122,6 +121,7 @@ public:
 	virtual ~CGameObject();
 
 	void SetMesh(int nIndex, CMesh *pMesh, CCubeMesh *Mesh);
+	UINT GetNumMeshes() { return m_nMeshes; }
 	void SetMaterial(int nIndex, CMaterial *pMaterial);
 
 	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
@@ -166,8 +166,7 @@ public:
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
-	BoundingOrientedBox GetOOBB() { return m_xmOOBB; }
-	//BoundingBox GetAABB() { return m_xmAABB; }
+	BoundingOrientedBox GetOOBB(UINT nIndex) { return m_xmOOBB[nIndex]; }
 	void DeleteObject() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 };

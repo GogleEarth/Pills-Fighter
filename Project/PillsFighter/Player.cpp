@@ -2,7 +2,7 @@
 #include "Player.h"
 #include "Shader.h"
 
-#define CAMERA_POSITION XMFLOAT3(0.0f, 200.0f, -400.0f)
+#define CAMERA_POSITION XMFLOAT3(0.0f, 300.0f, -400.0f)
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
 {
@@ -24,7 +24,10 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture);
 	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, pShader);
 
-	for(UINT i = 0; i <m_nMeshes; i++) SetMesh(i, ppMesh[i], ppCubeMesh[i]);
+	for (UINT i = 0; i < m_nMeshes; i++)
+	{
+		SetMesh(i, ppMesh[i], ppCubeMesh[i]);
+	}
 
 	for (UINT i = 0; i < m_nMaterials; i++)
 	{
@@ -221,6 +224,10 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 	//플레이어 객체를 렌더링한다. 
 	CGameObject::Render(pd3dCommandList, pCamera);
+
+	//플레이어 충돌박스를 렌더링한다.
+	m_pShader->OnPrepareRenderWire(pd3dCommandList);
+	CGameObject::RenderWire(pd3dCommandList, pCamera);
 }
 
 void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)

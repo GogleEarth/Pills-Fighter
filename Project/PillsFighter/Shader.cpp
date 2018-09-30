@@ -287,6 +287,13 @@ void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	UpdateShaderVariables(pd3dCommandList);
 }
 
+void CShader::OnPrepareRenderWire(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pd3dPipelineStateWire) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateWire);
+
+	UpdateShaderVariables(pd3dCommandList);
+}
+
 void CShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	OnPrepareRender(pd3dCommandList);
@@ -378,13 +385,16 @@ void CObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandL
 
 	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, MeshFileName);
 	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
-	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Extents.x, Extents.y, Extents.z);
+	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
+	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 }
 
 void CObjectsShader::InsertObject(CGameObject* Object)
 {
-	for(UINT i = 0; i < m_nMeshes; i++)
+	for (UINT i = 0; i < m_nMeshes; i++)
+	{
 		Object->SetMesh(i, m_ppMeshes[i], m_ppCubeMeshes[i]);
+	}
 
 	for (UINT i = 0; i < m_nMaterials; i++)
 		Object->SetMaterial(i, m_ppMaterials[i]);
@@ -446,13 +456,10 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	// 충돌박스 렌더
-	if (m_pd3dPipelineStateWire)
+	OnPrepareRenderWire(pd3dCommandList);
+	for (const auto& Object : m_vObjects)
 	{
-		pd3dCommandList->SetPipelineState(m_pd3dPipelineStateWire);
-		for (const auto& Object : m_vObjects)
-		{
-			Object->RenderWire(pd3dCommandList, pCamera);
-		}
+		Object->RenderWire(pd3dCommandList, pCamera);
 	}
 }
 

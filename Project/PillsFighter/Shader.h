@@ -41,6 +41,7 @@ public:
 	virtual void ReleaseUploadBuffers() {}
 
 	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPrepareRenderWire(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandleForHeapStart() { return(m_pd3dSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart()); }
@@ -116,7 +117,7 @@ public:
 
 	void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) {m_ppMaterials = ppMaterials; m_nMaterials = nMaterials;}
 
-	void SetMesh(CMesh** ppMeshes, UINT nMeshes) { m_ppMeshes = ppMeshes; m_nMeshes = nMeshes;}
+	void SetMesh(CMesh** ppMeshes, CCubeMesh** ppCubeMeshes, UINT nMeshes) { m_ppMeshes = ppMeshes; m_ppCubeMeshes = ppCubeMeshes; m_nMeshes = nMeshes; }
 
 protected:
 	UINT		m_nMeshes;

@@ -94,31 +94,33 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	// Enemy Shader
 	CObjectsShader *pObjectShader = new CObjectsShader();
 	pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", "./Resource/GM/Head/Head.FBX", NULL);
+	//pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/bullet.dds", "./Resource/bullet.fbx", NULL);
+	//pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", "./Resource/GM/Head/Head.FBX", NULL);
 
-	//CMesh** ppMeshes;
-	//::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, &pObjectShader);
-	//pObjectShader->SetMesh(ppMeshes, 7);
+	CMesh** ppMeshes;
+	CCubeMesh** ppCubeMeshes;
+	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, ppCubeMeshes);
+	pObjectShader->SetMesh(ppMeshes, ppCubeMeshes, 7);
 
-	//CTexture** ppTextures;
-	//::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures);
+	CTexture** ppTextures;
+	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures);
 
-	//::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, pObjectShader);
+	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, pObjectShader);
 
-	//CMaterial** ppMaterial = new CMaterial*[7];
-	//for (int i = 0; i < 7; i++)
-	//{
-	//	ppMaterial[i] = new CMaterial();
-	//	ppMaterial[i]->SetTexture(ppTextures[i]);
-	//}
-	//pObjectShader->SetMaterial(ppMaterial, 7);
+	CMaterial** ppMaterial = new CMaterial*[7];
+	for (int i = 0; i < 7; i++)
+	{
+		ppMaterial[i] = new CMaterial();
+		ppMaterial[i]->SetTexture(ppTextures[i]);
+	}
+	pObjectShader->SetMaterial(ppMaterial, 7);
 
 	m_ppShaders[0] = pObjectShader;
 
 	RandomMoveObject *pGameObject = NULL;
 
-	//pGameObject = new RandomMoveObject(7, 7);
-	pGameObject = new RandomMoveObject();
+	pGameObject = new RandomMoveObject(7, 7);
+	//pGameObject = new RandomMoveObject();
 	pGameObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pGameObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pGameObject->SetPosition(0.0f, 0.0f, 0.0f);
@@ -173,14 +175,20 @@ bool CScene::ProcessInput(UCHAR *pKeysBuffer)
 // 충돌체크 함수
 void CScene::CheckCollision()
 {
-	for (const auto& Bullet : (m_ppShaders[1])->GetObjects())
+	for (const auto& Object : m_ppShaders[0]->GetObjects())
 	{
-		for (const auto& Object : m_ppShaders[0]->GetObjects())
+		for (const auto& Bullet : m_ppShaders[1]->GetObjects())
 		{
-			if (Object->GetOOBB().Intersects(Bullet->GetOOBB()))
+			for (UINT i = 0; i < Object->GetNumMeshes(); i++)
 			{
-				Bullet->DeleteObject();
-			}			
+				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
+				{
+					if (Object->GetOOBB(i).Intersects(Bullet->GetOOBB(j)))
+					{
+						Bullet->DeleteObject();
+					}
+				}
+			}
 			//if (Object->GetAABB().Intersects(Bullet->GetAABB()))
 			//{
 			//	Bullet->DeleteObject();
