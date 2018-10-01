@@ -24,6 +24,7 @@ void FindXYZ(CTexturedVertex* pVertices, UINT nVertices, XMFLOAT3& Center, XMFLO
 	Center.x /= 2; Center.y /= 2; Center.z /= 2;
 
 	Extents = Vector3::Subtract(MinMaxVertex[1], MinMaxVertex[0]);
+	Extents.x /= 2; Extents.y /= 2; Extents.z /= 2;
 }
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName)
@@ -114,7 +115,7 @@ CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 	m_nSlot = 0;
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-	float fx = fWidth * 0.5f, fy = fHeight * 0.5f, fz = fDepth * 0.5f;
+	float fx = fWidth, fy = fHeight, fz = fDepth;
 
 	CDiffusedVertex pVertices[8];
 

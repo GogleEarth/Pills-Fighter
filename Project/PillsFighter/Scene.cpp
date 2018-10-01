@@ -94,8 +94,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	// Enemy Shader
 	CObjectsShader *pObjectShader = new CObjectsShader();
 	pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	//pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/bullet.dds", "./Resource/bullet.fbx", NULL);
-	//pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", "./Resource/GM/Head/Head.FBX", NULL);
 
 	CMesh** ppMeshes;
 	CCubeMesh** ppCubeMeshes;
@@ -120,7 +118,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	RandomMoveObject *pGameObject = NULL;
 
 	pGameObject = new RandomMoveObject(7, 7);
-	//pGameObject = new RandomMoveObject();
 	pGameObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pGameObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pGameObject->SetPosition(0.0f, 0.0f, 0.0f);
@@ -129,7 +126,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	////// Bullet Shader
 	pObjectShader = new CObjectsShader();
 	pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/bullet.dds", "./Resource/bullet.fbx", NULL);
+	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/Bullet/bullet.dds", "./Resource/Bullet/bullet.fbx", NULL);
 
 	m_ppShaders[1] = pObjectShader;
 }
@@ -189,10 +186,6 @@ void CScene::CheckCollision()
 					}
 				}
 			}
-			//if (Object->GetAABB().Intersects(Bullet->GetAABB()))
-			//{
-			//	Bullet->DeleteObject();
-			//}
 		}
 	}
 }
@@ -239,4 +232,12 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 
 	std::cout << m_HitCount << std::endl;
+}
+
+void CScene::SetStateRenderWire(BOOL State)
+{
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		m_ppShaders[i]->SetStateRenderWire(State);
+	}
 }

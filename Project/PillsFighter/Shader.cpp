@@ -456,10 +456,13 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	// 충돌박스 렌더
-	OnPrepareRenderWire(pd3dCommandList);
-	for (const auto& Object : m_vObjects)
+	if (m_RenderWire)
 	{
-		Object->RenderWire(pd3dCommandList, pCamera);
+		OnPrepareRenderWire(pd3dCommandList);
+		for (const auto& Object : m_vObjects)
+		{
+			Object->RenderWire(pd3dCommandList, pCamera);
+		}
 	}
 }
 

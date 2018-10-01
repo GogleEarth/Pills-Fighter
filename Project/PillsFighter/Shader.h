@@ -50,10 +50,13 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUSrvDescriptorStartHandle() { return(m_d3dSrvCPUDescriptorStartHandle); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUSrvDescriptorStartHandle() { return(m_d3dSrvGPUDescriptorStartHandle); }
 
+	void SetStateRenderWire(BOOL bState) {	m_RenderWire = bState; }
+
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateWire = NULL;
 
+	BOOL							m_RenderWire = FALSE;
 private:
 	ID3D12DescriptorHeap			*m_pd3dSrvDescriptorHeap = NULL;
 

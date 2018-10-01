@@ -419,6 +419,9 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 			}
 			break;
+		case 'b':
+			m_pScene->SetStateRenderWire(m_RenderWire = !m_RenderWire);
+			break;
 		default:
 			break;
 		}

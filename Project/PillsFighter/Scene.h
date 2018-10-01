@@ -49,4 +49,6 @@ public:
 
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer;}
 	CObjectsShader* GetShader(UINT index) { return m_ppShaders[index]; }
+
+	void SetStateRenderWire(BOOL State);
 };

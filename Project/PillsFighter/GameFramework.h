@@ -56,7 +56,8 @@ private:
 
 	POINT						m_ptOldCursorPos;
 
-	bool						m_LButtonDown = FALSE;
+	BOOL						m_LButtonDown = FALSE;
+	BOOL						m_RenderWire = FALSE;
 
 public:
 	CGameFramework();
