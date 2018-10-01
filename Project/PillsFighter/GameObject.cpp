@@ -252,6 +252,7 @@ void CGameObject::Animate(float fTimeElapsed)
 			//XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPitch), XMConvertToRadians(m_fYaw), XMConvertToRadians(m_fRoll));
 			//XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 
+			OnPrepareRender();
 			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB[i], XMLoadFloat4x4(&m_xmf4x4World));
 			XMStoreFloat4(&m_xmOOBB[i].Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB[i].Orientation)));
 		}
@@ -439,7 +440,7 @@ Bullet::Bullet(int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
 {
 	m_ElapsedTime = 0;
 	m_DurationTime = 3.0f;
-	m_MovingSpeed = 500.0f;
+	m_MovingSpeed = 1000.0f;
 	m_RotationSpeed = 1440.0f;
 }
 
@@ -510,8 +511,6 @@ void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *
 	Extents = ppMeshes[6]->GetExtents();
 	Center = ppMeshes[6]->GetCenter();
 	ppCubeMeshes[6] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
-
-	//if (*pShader) (*pShader)->SetMesh(ppMesh, 7);
 }
 
 void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTextures)

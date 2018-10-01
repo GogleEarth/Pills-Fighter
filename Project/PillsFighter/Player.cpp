@@ -2,7 +2,7 @@
 #include "Player.h"
 #include "Shader.h"
 
-#define CAMERA_POSITION XMFLOAT3(0.0f, 300.0f, -400.0f)
+#define CAMERA_POSITION XMFLOAT3(0.0f, 300.0f, -500.0f)
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
 {

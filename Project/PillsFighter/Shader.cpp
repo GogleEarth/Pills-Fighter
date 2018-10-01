@@ -420,14 +420,14 @@ void CObjectsShader::ReleaseObjects()
 		delete[] m_ppMeshes;
 	}
 
-	//if (m_vObjects.size())
-	//{
-	//	for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
-	//	{
-	//		delete *Object;
-	//		Object = m_vObjects.erase(Object);
-	//	}
-	//}
+	if (m_vObjects.size())
+	{
+		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
+		{
+			delete *Object;
+			Object = m_vObjects.erase(Object);
+		}
+	}
 }
 
 void CObjectsShader::AnimateObjects(float fTimeElapsed)
