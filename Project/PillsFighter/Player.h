@@ -75,9 +75,12 @@ private:
 	bool m_Shotable = TRUE;
 	float m_ShotTime;
 
+	BOOL							m_RenderWire = FALSE;
+
 public:
 	void SetBullet(CObjectsShader* Bullet) { m_pBulletShader = Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
 
+	void SetStateRenderWire(BOOL bState) { m_RenderWire = bState; }
 };

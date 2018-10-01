@@ -226,8 +226,11 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	CGameObject::Render(pd3dCommandList, pCamera);
 
 	//플레이어 충돌박스를 렌더링한다.
-	m_pShader->OnPrepareRenderWire(pd3dCommandList);
-	CGameObject::RenderWire(pd3dCommandList, pCamera);
+	if (m_RenderWire)
+	{
+		m_pShader->OnPrepareRenderWire(pd3dCommandList);
+		CGameObject::RenderWire(pd3dCommandList, pCamera);
+	}
 }
 
 void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)

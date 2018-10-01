@@ -419,9 +419,6 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 			}
 			break;
-		case 'b':
-			m_pScene->SetStateRenderWire(m_RenderWire = !m_RenderWire);
-			break;
 		default:
 			break;
 		}
@@ -463,6 +460,12 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 		OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
 		break;
 	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case 'B':
+			SetStateRenderWire();
+			break;
+		}
 	case WM_KEYUP:
 		OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 		break;
@@ -686,4 +689,11 @@ void CGameFramework::MoveToNextFrame()
 		hResult = m_pd3dFence->SetEventOnCompletion(nFenceValue, m_hFenceEvent);
 		::WaitForSingleObject(m_hFenceEvent, INFINITE);
 	}
+}
+
+void CGameFramework::SetStateRenderWire()
+{
+	m_RenderWire = !m_RenderWire;
+	m_pPlayer->SetStateRenderWire(m_RenderWire);
+	m_pScene->SetStateRenderWire(m_RenderWire);
 }
