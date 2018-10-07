@@ -99,7 +99,7 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	m_pCamera->SetTimeLag(0.0f);
 
 	m_pCamera->SetOffset(CAMERA_POSITION);
-	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+	m_pCamera->GenerateProjectionMatrix(1.0f, 5000.0f, ASPECT_RATIO, 60.0f);
 	m_pCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
 	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
@@ -175,9 +175,6 @@ void CPlayer::Rotate(float x, float y, float z)
 		if (m_fRoll < -20.0f) { z -= (m_fRoll + 20.0f); m_fRoll = -20.0f; }
 	}
 
-	//카메라를 x, y, z 만큼 회전한다. 플레이어를 회전하면 카메라가 회전하게 된다. 
-	m_pCamera->Rotate(x, y, z);
-
 	/*플레이어를 회전한다. 1인칭 카메라 또는 3인칭 카메라에서 플레이어의 회전은 로컬 y-축에서만 일어난다.
 	플레이어의 로컬 y-축(Up 벡터)을 기준으로 로컬 z-축(Look 벡터)와 로컬 x-축(Right 벡터)을 회전시킨다.
 	기본적으로 Up 벡터를 기준으로 회전하는 것은 플레이어가 똑바로 서있는 것을 가정한다는 의미이다.*/
@@ -204,13 +201,14 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 
 	//플레이어의 위치가 변경되었으므로 카메라를 갱신한다. 
-	m_pCamera->Update(m_xmf3Position, fTimeElapsed);
+	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 150.0f, 0.0f));
+	m_pCamera->Update(xmf3LookAt, fTimeElapsed);
 
 	//카메라의 위치가 변경될 때 추가로 수행할 작업을 수행한다. 
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
 	//카메라가 변경된 플레이어 위치를 바라보도록 한다. 
-	m_pCamera->SetLookAt(m_xmf3Position);
+	//m_pCamera->SetLookAt(m_xmf3Position);
 
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
