@@ -88,6 +88,8 @@ protected:
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;
 
+	XMFLOAT3 m_xmf3Direction;
+
 	float m_fPitch;
 	float m_fYaw;
 	float m_fRoll;
@@ -144,10 +146,12 @@ public:
 	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
 	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }
 	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
+	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
 	XMFLOAT3 GetPosition() { return m_xmf3Position; }
 	XMFLOAT3 GetLook() { return m_xmf3Look; }
 	XMFLOAT3 GetUp() { return m_xmf3Up; }
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
+	XMFLOAT3 GetDirection() { return m_xmf3Direction; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
 	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
 
@@ -162,6 +166,7 @@ public:
 	void MoveStrafe(float fDistance = 1.0f);
 	void MoveUp(float fDistance = 1.0f);
 	void MoveForward(float fDistance = 1.0f);
+	void Move(XMFLOAT3 xmf3Direction, float fDistance = 1.0f);
 
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);

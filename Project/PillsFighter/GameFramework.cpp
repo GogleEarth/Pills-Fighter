@@ -517,7 +517,8 @@ void CGameFramework::ProcessInput()
 	{
 		if (cxDelta || cyDelta)
 		{
-			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
+			m_pCamera->Rotate(cyDelta, cxDelta, 0.0f);
+			//m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 		
 		/*플레이어를 dwDirection 방향으로 이동한다(실제로는 속도 벡터를 변경한다). 

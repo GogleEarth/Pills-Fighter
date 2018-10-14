@@ -33,20 +33,17 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[0].Descriptor.ShaderRegister = 0; //World
 	pd3dRootParameters[0].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	//pd3dRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	pd3dRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	pd3dRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[1].Descriptor.ShaderRegister = 1; //Camera
 	pd3dRootParameters[1].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	//pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	pd3dRootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
 	pd3dRootParameters[2].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[0];
-	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	//pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC d3dSamplerDesc;
 	::ZeroMemory(&d3dSamplerDesc, sizeof(D3D12_STATIC_SAMPLER_DESC));
@@ -87,11 +84,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	// [0] Enemy, [1] PlayerBullet
-	m_nShaders = 2;
+	// [0] Enemy, [1] PlayerBullet, [2] Building
+	m_nShaders = 3;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 
-	// Enemy Shader
+	///////////////////////////// Enemy Shader
 	CObjectsShader *pObjectShader = new CObjectsShader();
 	pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 
@@ -129,6 +126,21 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/Bullet/bullet.dds", "./Resource/Bullet/bullet.fbx", NULL);
 
 	m_ppShaders[1] = pObjectShader;
+
+	////// Building Shader
+	pObjectShader = new CObjectsShader();
+	pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pObjectShader->Initialize(pd3dDevice, pd3dCommandList, L"./Resource/hangar.dds", "./Resource/hangar.fbx", NULL);
+
+	m_ppShaders[2] = pObjectShader;
+
+	CGameObject *pBuildingObject = NULL;
+
+	pBuildingObject = new CGameObject(1, 1);
+	pBuildingObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pBuildingObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pBuildingObject->SetPosition(0.0f, 0.0f, 1000.0f);
+	m_ppShaders[2]->InsertObject(pBuildingObject);
 }
 
 void CScene::ReleaseObjects()

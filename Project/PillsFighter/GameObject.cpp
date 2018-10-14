@@ -119,6 +119,7 @@ CGameObject::CGameObject(int nMeshes, int nMaterials)
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
@@ -387,6 +388,13 @@ void CGameObject::MoveForward(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
+//게임 객체를 정해진 방향으로 이동한다. 
+void CGameObject::Move(XMFLOAT3 xmf3Direction, float fDistance)
+{
+	XMFLOAT3 xmf3Position = GetPosition();
+	xmf3Position = Vector3::Add(xmf3Position, xmf3Direction, fDistance);
+	CGameObject::SetPosition(xmf3Position);
+}
 ///////////////////////////////////////////////////////////////////////////////////
 
 RandomMoveObject::RandomMoveObject(int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
@@ -429,7 +437,7 @@ void RandomMoveObject::Animate(float ElapsedTime)
 			m_ElapsedTime += ElapsedTime;
 	}
 
-	MoveForward(m_MovingSpeed * ElapsedTime);
+	//MoveForward(m_MovingSpeed * ElapsedTime);
 
 	CGameObject::Animate(ElapsedTime);
 }

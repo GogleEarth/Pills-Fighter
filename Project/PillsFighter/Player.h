@@ -45,10 +45,7 @@ public:
 	//플레이어를 이동하는 함수이다. 
 	void Move(ULONG nDirection, float fDistance);
 	void Move(const XMFLOAT3& xmf3Shift);
-
-	//플레이어를 회전하는 함수이다. 
-	void Rotate(float x, float y, float z);
-
+	
 	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
 	void Update(float fTimeElapsed);
 
