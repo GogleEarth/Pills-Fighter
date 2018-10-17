@@ -8,6 +8,7 @@
 #include <DirectXCollision.h>
 #include <vector>
 #include <queue>
+#include <chrono>
 
 #define SERVERIP	"127.0.0.1"
 #define SERVERPORT	9000
@@ -18,6 +19,7 @@
 void err_quit(char* msg);
 void err_display(char* msg);
 int recvn(SOCKET s, char* buf, int len, int flags);
+DWORD WINAPI receve(LPVOID arg);
 
 struct PLAYER_INFO
 {
@@ -28,6 +30,10 @@ struct PLAYER_INFO
 int main()
 {
 	int retval;
+	PLAYER_INFO pinfo;
+	ZeroMemory(&pinfo.xmf4x4World, sizeof(DirectX::XMFLOAT4X4));
+	std::cout << "아이디 입력:";
+	std::cin >> pinfo.client_id;
 
 	// 윈속 초기화
 	WSADATA wsa;
@@ -50,24 +56,65 @@ int main()
 		err_quit("connect()");
 
 	// 데이터 통신에 사용될 변수
-	PLAYER_INFO pinfo;
-	ZeroMemory(&pinfo.xmf4x4World, sizeof(DirectX::XMFLOAT4X4));
-	pinfo.client_id = 654645;
 	char buf[sizeof(PLAYER_INFO)];
 
+	// 클라이언트 아이디 전송
+	memcpy(&buf, &pinfo.client_id, sizeof(int));
+	retval = send(sock, buf, sizeof(int), 0);
+	if (retval == SOCKET_ERROR)
+		err_display("send");
+	std::cout << retval << "바이트 보냈음\n";
+
+	pinfo.xmf4x4World._11 += 0.01f;
+	memcpy(&buf, &pinfo, sizeof(PLAYER_INFO));
+	retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
+	if (retval == SOCKET_ERROR)
+		err_display("send");
+	std::cout << retval << "바이트 보냈음\n";
+
+	HANDLE hThread = CreateThread(
+		NULL, 0, receve,
+		(LPVOID)sock, 0, NULL);
+	
+	float elapsedtime = 0.0f;
+	unsigned int i = 0;
 	// 서버와 데이터 통신
 	while (true)
 	{
-		memcpy(&buf, &pinfo, sizeof(PLAYER_INFO));
-		retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
-		if (retval == SOCKET_ERROR)
+		//auto start = std::chrono::high_resolution_clock::now();
+		//if (elapsedtime >= 1.0f)
+		//{
+		if (i >= 100000000)
 		{
-			err_display("send");
-			break;
+			pinfo.xmf4x4World._11 += 0.01f;
+			memcpy(&buf, &pinfo, sizeof(PLAYER_INFO));
+			retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
+			if (retval == SOCKET_ERROR)
+			{
+				err_display("send");
+				break;
+			}
+			std::cout << retval << "바이트 보냈음\n";
+			i = 0;
 		}
-		std::cout << retval << "바이트 보냈음\n";
+		i++;
+			//elapsedtime = 0;
+		//}
+		//std::cout << "메롱메롱" << std::endl;
+
+		//auto end = std::chrono::high_resolution_clock::now();
+		//auto du = end - start;
+		//elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count()/1000.0f;
+		//std::cout << elapsedtime << "지남\n";
 	}
 
+	closesocket(sock);
+	CloseHandle(hThread);
+
+	// 윈속 종료
+	WSACleanup();
+
+	return 0;
 }
 
 void err_quit(char* msg)
@@ -113,4 +160,29 @@ int recvn(SOCKET s, char * buf, int len, int flags)
 	}
 
 	return (len - left);
+}
+
+DWORD WINAPI receve(LPVOID arg)
+{
+	int retval;
+	char buf[sizeof(PLAYER_INFO)];
+	SOCKET sock = (SOCKET)arg;
+
+	while (true)
+	{
+		retval = recv(sock, buf, sizeof(PLAYER_INFO), 0);
+		if (retval == SOCKET_ERROR)
+		{
+			err_display("recv()");
+			break;
+		}
+		std::cout << retval << "바이트 보냈음\n";
+
+		// 받은 데이터 출력
+		PLAYER_INFO p_info;
+		memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
+		std::cout << "아이디: " << p_info.client_id << std::endl;
+	}
+
+	return 0;
 }

@@ -8,6 +8,8 @@
 #include <DirectXCollision.h>
 #include <vector>
 #include <queue>
+#include <mutex>
+#include <chrono>
 
 #define SERVERPORT	9000
 #define FLAG		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM
@@ -17,6 +19,7 @@
 void err_quit(char* msg);
 void err_display(char* msg);
 DWORD WINAPI client_thread(LPVOID arg);
+DWORD WINAPI send_msg(LPVOID arg);
 int recvn(SOCKET s, char* buf, int len, int flags);
 
 struct PLAYER_INFO
@@ -25,6 +28,13 @@ struct PLAYER_INFO
 	DirectX::XMFLOAT4X4 xmf4x4World;
 };
 
+struct CLIENT_INFO
+{
+	int client_id;
+	SOCKET client_sock;
+};
+
+std::mutex m;
 std::queue<PLAYER_INFO> msg_queue;
 std::vector<SOCKET> clients;
 HANDLE thread[4];
@@ -63,7 +73,10 @@ int main()
 	SOCKET client_sock;
 	SOCKADDR_IN clientaddr;
 	int addrlen;
-
+	char buf[sizeof(int)];
+	HANDLE sendthread = CreateThread(
+		NULL, 0, send_msg,
+		NULL, 0, NULL);
 	while (true)
 	{
 		if (count < 4)
@@ -78,6 +91,21 @@ int main()
 			}
 			else
 			{
+				retval = recvn(client_sock, buf, sizeof(int), 0);
+				if (retval == SOCKET_ERROR)
+				{
+					err_display("recv()");
+					break;
+				}
+
+				m.lock();
+				//CLIENT_INFO* c_info = new CLIENT_INFO;
+				//memcpy(&c_info->client_id, &buf, sizeof(int));
+				//std::cout << "id : " << c_info->client_id << "\n";
+				//c_info->client_sock = client_sock;
+				clients.emplace_back(client_sock);
+				m.unlock();
+
 				thread[count] = CreateThread(
 					NULL, 0, client_thread,
 					(LPVOID)client_sock, 0, NULL);
@@ -85,6 +113,11 @@ int main()
 			}
 		}
 	}
+
+	// CloseHandle()
+	for (int i = 0; i < count; ++i)
+		CloseHandle(thread[i]);
+	CloseHandle(sendthread);
 
 	// closesocket()
 	closesocket(listen_sock);
@@ -142,11 +175,57 @@ DWORD WINAPI client_thread(LPVOID arg)
 		}
 		
 		// 받은 데이터 출력
-		PLAYER_INFO* p_info = new PLAYER_INFO;
-		memcpy(p_info, buf, sizeof(PLAYER_INFO));
-		std::cout << "플레이어 아이디 : " << p_info->client_id 
-			<< "\n월드변환행렬 11 : " << p_info->xmf4x4World._11 << "\n";
-		delete p_info;
+		PLAYER_INFO p_info;
+		memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
+		m.lock();
+		std::cout << "아이디: " << p_info.client_id << std::endl;
+		msg_queue.push(PLAYER_INFO{p_info.client_id, p_info.xmf4x4World});
+		m.unlock();
+
+	}
+
+	closesocket(client_sock);
+	return 0;
+}
+
+DWORD WINAPI send_msg(LPVOID arg)
+{
+	int retval;
+	char buf(sizeof(PLAYER_INFO));
+	//float elapsedtime = 0.0f;
+	unsigned int i = 0;
+
+	while (true)
+	{
+		//auto start = std::chrono::high_resolution_clock::now();
+		if (i >= 100000000)
+		{
+			m.lock();
+			if (msg_queue.size() != 0)
+			{
+				PLAYER_INFO p_info = msg_queue.front();
+				int id = p_info.client_id;
+				memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
+				for (SOCKET d : clients)
+				{
+					retval = send(d, &buf, sizeof(PLAYER_INFO), 0);
+					if (retval == SOCKET_ERROR)
+					{
+						err_display("send");
+						break;
+					}
+					std::cout << id << "의 정보 " << retval << "바이트 보냈음\n";
+				}
+				msg_queue.pop();
+			}
+			m.unlock();
+			i = 0;
+		}
+		//auto end = std::chrono::high_resolution_clock::now();
+		//auto du = end - start;
+		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f << "지남\n";
+		//elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+		i++;
 	}
 
 	return 0;
