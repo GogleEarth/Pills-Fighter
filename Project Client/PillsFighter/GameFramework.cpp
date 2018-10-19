@@ -29,6 +29,7 @@ CGameFramework::CGameFramework()
 
 	m_pScene = NULL;
 	m_pPlayer = NULL;
+	m_pAnotherPlayer = NULL;
 
 	_tcscpy_s(m_pszFrameRate, _T(GAME_TITLE));
 }
@@ -92,6 +93,10 @@ void CGameFramework::OnDestroy()
 	if (m_pdxgiSwapChain) m_pdxgiSwapChain->Release();
 	if (m_pd3dDevice) m_pd3dDevice->Release();
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
+
+	closesocket(sock);
+	// 윈속 종료
+	WSACleanup();
 
 	//마우스 캡쳐를 해제한다. 
 	::ReleaseCapture();
@@ -322,6 +327,14 @@ void CGameFramework::BuildObjects()
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pPlayer->SetBullet(m_pScene->GetShader(1));
+
+	CPlayer *pAnotherPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL, 7, 7);
+	pAnotherPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	pAnotherPlayer->SetMovingSpeed(100.0f);
+
+	m_pAnotherPlayer = pAnotherPlayer;
+	m_pAnotherPlayer->Client_id = 0;
+	m_pScene->SetAnotherPlayer(pAnotherPlayer);
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
 	m_pd3dCommandList->Close();
@@ -557,13 +570,43 @@ void CGameFramework::WaitForGpuComplete()
 	}
 }
 
-void CGameFramework::FrameAdvance()
+void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 {
 	m_GameTimer.Tick(0.0f);
+	auto start = std::chrono::high_resolution_clock::now();
 
 	ProcessInput();
 
+	if (elapsedtime >= 1.0f)
+	{
+		PLAYER_INFO p_info;
+		char buf[sizeof(PLAYER_INFO)];
+		int retval;
+
+		p_info.client_id = m_pPlayer->Client_id;
+		p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
+		memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
+		std::cout << "보낼 정보 : " << p_info.client_id << std::endl;
+		retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
+		if (retval == SOCKET_ERROR)
+		{
+			err_display("send");
+		}
+		std::cout << retval << "바이트 보냈음\n";
+		elapsedtime = 0;
+	}
+
 	AnimateObjects();
+	std::cout << pinfo.client_id << std::endl;
+	if (pinfo.client_id != 0 && pinfo.client_id!=m_pPlayer->Client_id)
+	{
+		if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
+		{
+			m_pAnotherPlayer->Client_id = pinfo.client_id;
+		}
+		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
+			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
+	}
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
@@ -631,6 +674,16 @@ void CGameFramework::FrameAdvance()
 			m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
 
+	if (m_pAnotherPlayer)
+	{
+		if (m_pAnotherPlayer->Client_id != 0)
+		{
+			m_pAnotherPlayer->Render(m_pd3dCommandList, m_pCamera);
+
+			if (m_bRenderWire)
+				m_pAnotherPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
+		}
+	}
 	//////////////////////////////////////////////////////////////////
 
 
@@ -659,6 +712,11 @@ void CGameFramework::FrameAdvance()
 
 	m_GameTimer.GetFrameRate(m_pszFrameRate + strlen(GAME_TITLE), 37);
 	::SetWindowText(m_hWnd, m_pszFrameRate);
+
+	auto end = std::chrono::high_resolution_clock::now();
+	auto du = end - start;
+	elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+	std::cout << elapsedtime << "지남\n";
 }
 
 void CGameFramework::OnResizeBackBuffers()
@@ -703,4 +761,49 @@ void CGameFramework::MoveToNextFrame()
 		hResult = m_pd3dFence->SetEventOnCompletion(nFenceValue, m_hFenceEvent);
 		::WaitForSingleObject(m_hFenceEvent, INFINITE);
 	}
+}
+
+void CGameFramework::err_quit(char* msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessage(
+		FLAG, NULL,
+		WSAGetLastError(), LANG,
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	MessageBox(
+		NULL, (LPCTSTR)lpMsgBuf,
+		(LPCWSTR)msg, MB_ICONERROR);
+	LocalFree(lpMsgBuf);
+	exit(1);
+}
+
+void CGameFramework::err_display(char* msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessage(
+		FLAG, NULL,
+		WSAGetLastError(), LANG,
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	printf("[%s] %s", msg, (char*)lpMsgBuf);
+	LocalFree(lpMsgBuf);
+}
+
+int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
+{
+	int received;
+	char* ptr = buf;
+	int left = len;
+
+	while (left > 0)
+	{
+		received = recv(s, ptr, left, flags);
+		if (received == SOCKET_ERROR)
+			return SOCKET_ERROR;
+		else if (received == 0)
+			break;
+		left -= received;
+		ptr += received;
+	}
+
+	return (len - left);
 }

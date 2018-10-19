@@ -33,7 +33,7 @@ public:
 
 protected:
 	CPlayer						*m_pPlayer = NULL;
-
+	CPlayer						*m_pAnotherPlayer = NULL;
 	CObjectsShader				**m_ppShaders = NULL;
 	int							m_nShaders = 0;
 
@@ -49,5 +49,6 @@ public:
 	void CheckDeleteObject();
 
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer;}
+	void SetAnotherPlayer(CPlayer* pPlayer) { m_pAnotherPlayer = pPlayer; }
 	CObjectsShader* GetShader(UINT index) { return m_ppShaders[index]; }
 };

@@ -4,6 +4,12 @@
 #include "Scene.h"
 #include "Player.h"
 
+struct PLAYER_INFO
+{
+	int client_id;
+	XMFLOAT4X4 xmf4x4World;
+};
+
 class CGameFramework
 {
 private:
@@ -56,8 +62,12 @@ private:
 	BOOL						m_bRenderWire = FALSE;
 
 	CScene						*m_pScene = NULL;
-	CPlayer						*m_pPlayer = NULL;
+	CPlayer						*m_pAnotherPlayer = NULL;
 	CCamera						*m_pCamera = NULL;
+
+	//통신
+	PLAYER_INFO pinfo;
+	float elapsedtime = 0.0f;
 
 public:
 	CGameFramework();
@@ -84,7 +94,7 @@ public:
 	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
 	void ProcessInput();
 	void AnimateObjects();
-	void FrameAdvance();
+	void FrameAdvance(PLAYER_INFO pinfo);
 
 	//CPU와 GPU를 동기화하는 함수이다. 
 	void WaitForGpuComplete();
@@ -94,5 +104,12 @@ public:
 	void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-};
 
+	SOCKET sock;
+	CPlayer						*m_pPlayer = NULL;
+
+	//통신
+	void err_quit(char* msg);
+	void err_display(char* msg);
+	int recvn(SOCKET s, char* buf, int len, int flags);
+};

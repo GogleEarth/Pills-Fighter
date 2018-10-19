@@ -32,6 +32,8 @@ protected:
 	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 
 public:
+	unsigned int Client_id;
+	
 	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL, int nMeshes = 1, int nMaterials = 1);
 	virtual ~CPlayer();
 
