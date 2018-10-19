@@ -552,7 +552,11 @@ void CGameFramework::ProcessInput()
 void CGameFramework::AnimateObjects()
 {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
-	if (m_pAnotherPlayer) m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
+	if (m_pAnotherPlayer)
+	{// m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
+		XMFLOAT3 position{ m_pAnotherPlayer->m_xmf4x4World._41,m_pAnotherPlayer->m_xmf4x4World._42 ,m_pAnotherPlayer->m_xmf4x4World._43 };
+		m_pAnotherPlayer->SetPosition(position);
+	}
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -608,6 +612,9 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
 			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
 		std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
+		std::cout << "다른 플레이어의 포지션 : " << m_pAnotherPlayer->m_xmf4x4World._41 <<
+			", " << m_pAnotherPlayer->m_xmf4x4World._42
+			<< ", " << m_pAnotherPlayer->m_xmf4x4World._43 << std::endl;
 	}
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
