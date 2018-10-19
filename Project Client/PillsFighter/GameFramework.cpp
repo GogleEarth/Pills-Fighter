@@ -552,6 +552,7 @@ void CGameFramework::ProcessInput()
 void CGameFramework::AnimateObjects()
 {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
+	if (m_pAnotherPlayer) m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -577,7 +578,7 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 	ProcessInput();
 
-	if (elapsedtime >= 1.0f)
+	if (elapsedtime >= 0.5f)
 	{
 		PLAYER_INFO p_info;
 		char buf[sizeof(PLAYER_INFO)];
@@ -597,15 +598,16 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 	}
 
 	AnimateObjects();
-	std::cout << pinfo.client_id << std::endl;
 	if (pinfo.client_id != 0 && pinfo.client_id!=m_pPlayer->Client_id)
 	{
+		std::cout << "받은 데이터의 id : " << pinfo.client_id << std::endl;
 		if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
 		{
 			m_pAnotherPlayer->Client_id = pinfo.client_id;
 		}
 		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
 			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
+		std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
 	}
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
@@ -716,7 +718,7 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 	auto end = std::chrono::high_resolution_clock::now();
 	auto du = end - start;
 	elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
-	std::cout << elapsedtime << "지남\n";
+	//std::cout << elapsedtime << "지남\n";
 }
 
 void CGameFramework::OnResizeBackBuffers()

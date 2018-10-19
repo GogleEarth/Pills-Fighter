@@ -4,12 +4,6 @@
 #include "Scene.h"
 #include "Player.h"
 
-struct PLAYER_INFO
-{
-	int client_id;
-	XMFLOAT4X4 xmf4x4World;
-};
-
 class CGameFramework
 {
 private:
