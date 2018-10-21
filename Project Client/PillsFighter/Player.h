@@ -33,7 +33,13 @@ protected:
 	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 
 public:
+<<<<<<< HEAD
 	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
+=======
+	unsigned int Client_id;
+	
+	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL, int nMeshes = 1, int nMaterials = 1);
+>>>>>>> 697f565584b9a50f9fd662e5b71704e2eed30c0f
 	virtual ~CPlayer();
 
 	CCamera *GetCamera() { return(m_pCamera); }
