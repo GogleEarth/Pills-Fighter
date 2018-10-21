@@ -13,6 +13,7 @@
 #define SHOT_COOLTIME			0.05f
 
 class CShader;
+class CNonFixedObjectsShader;
 
 struct CB_PLAYER_INFO
 {
@@ -32,7 +33,7 @@ protected:
 	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 
 public:
-	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL, int nMeshes = 1, int nMaterials = 1);
+	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
 	virtual ~CPlayer();
 
 	CCamera *GetCamera() { return(m_pCamera); }
@@ -57,6 +58,8 @@ public:
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
+	virtual void ReleaseUploadBuffers();
+
 	virtual CCamera *SetCamera(float fTimeElapsed);
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -65,12 +68,12 @@ public:
 private:
 	CShader *m_pShader = NULL;
 
-	CObjectsShader *m_pBulletShader = NULL;
+	CNonFixedObjectsShader *m_pBulletShader = NULL;
 	bool m_Shotable = TRUE;
 	float m_ShotTime;
 
 public:
-	void SetBullet(CObjectsShader* Bullet) { m_pBulletShader = Bullet; }
+	void SetBullet(CShader *Bullet) { m_pBulletShader = (CNonFixedObjectsShader*)Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
 };

@@ -4,13 +4,20 @@
 
 CShader::CShader()
 {
-	m_d3dSrvCPUDescriptorStartHandle.ptr = NULL;
-	m_d3dSrvGPUDescriptorStartHandle.ptr = NULL;
+	m_d3dSrvCPUDescriptorStartHandle.ptr = m_d3dSrvGPUDescriptorStartHandle.ptr = NULL;
 }
 
 CShader::~CShader()
 {
 	if (m_pd3dPipelineState) m_pd3dPipelineState->Release();
+	if (m_pd3dPipelineStateWire) m_pd3dPipelineStateWire->Release();
+
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+			if (m_ppMaterials[i]) delete m_ppMaterials[i];
+		delete[] m_ppMaterials;
+	}
 }
 
 D3D12_RASTERIZER_DESC CShader::CreateRasterizerState() //래스터라이저 상태를 설정하기 위한 구조체를 반환한다. 
@@ -164,7 +171,6 @@ D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, L
 void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature) //그래픽스 파이프라인 상태 객체를 생성한다. 
 {
 	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
-	ID3DBlob *pd3dVertexShaderBlobWire = NULL, *pd3dPixelShaderBlobWire = NULL;
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineStateDesc;
 	::ZeroMemory(&d3dPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -187,15 +193,13 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 
 	d3dPipelineStateDesc.RasterizerState = CreateRasterizerStateWire();
 	d3dPipelineStateDesc.InputLayout = CreateInputLayoutWire();
-	d3dPipelineStateDesc.VS = CreateVertexShaderWire(&pd3dVertexShaderBlobWire);
-	d3dPipelineStateDesc.PS = CreatePixelShaderWire(&pd3dPixelShaderBlobWire);
+	d3dPipelineStateDesc.VS = CreateVertexShaderWire(&pd3dVertexShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderWire(&pd3dPixelShaderBlob);
+
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateWire);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
-
-	if (pd3dVertexShaderBlobWire) pd3dVertexShaderBlobWire->Release();
-	if (pd3dPixelShaderBlobWire) pd3dPixelShaderBlobWire->Release();
 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
@@ -272,13 +276,44 @@ void CShader::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Graphics
 	}
 }
 
+void CShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+		{
+			if (m_ppMaterials[i]) m_ppMaterials[i]->UpdateShaderVariables(pd3dCommandList);
+		}
+	}
+}
+
+void CShader::ReleaseUploadBuffers()
+{
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+		{
+			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
+		}
+	}
+}
+
 void CShader::ReleaseShaderVariables()
 {
 	if (m_pd3dSrvDescriptorHeap) m_pd3dSrvDescriptorHeap->Release();
+
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+		{
+			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseShaderVariables();
+		}
+	}
 }
 
 void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	// Pipeline Set, Texture Set
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 	pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvDescriptorHeap);
 
@@ -307,22 +342,140 @@ void CShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 CObjectsShader::CObjectsShader()
 {
+
 }
 
 CObjectsShader::~CObjectsShader()
 {
+	if (m_ppMeshes)
+	{
+		for (UINT j = 0; j < m_nMeshes; j++)
+		{
+			if (m_ppMeshes[j]) delete m_ppMeshes[j];
+			if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
+		}
+
+		delete[] m_ppMeshes;
+		delete[] m_ppCubeMeshes;
+	}
 }
 
-void CObjectsShader::ReleaseShaderVariables()
+void CObjectsShader::ReleaseUploadBuffers()
 {
+	if (m_ppMeshes)
+	{
+		for (UINT i = 0; i < m_nMeshes; i++)
+		{
+			if (m_ppMeshes[i]) m_ppMeshes[i]->ReleaseUploadBuffers();
+			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	CShader::ReleaseUploadBuffers();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CFixedObjectsShader::CFixedObjectsShader()
+{
+}
+
+CFixedObjectsShader::~CFixedObjectsShader()
+{
+}
+
+D3D12_SHADER_BYTECODE CFixedObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"Shaders.hlsl", "VSInstancingTextured", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFixedObjectsShader::CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"Shaders.hlsl", "VSInstancingDiffused", "vs_5_1", ppd3dShaderBlob));
+}
+
+void CFixedObjectsShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pd3dcbGameObjects = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(CB_GAMEOBJECT_INFO) * m_nObjects, 
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+	m_pd3dcbGameObjects->Map(0, NULL, (void **)&m_pcbMappedGameObjects);
+}
+
+void CFixedObjectsShader::ReleaseShaderVariables()
+{
+	if (m_pd3dcbGameObjects)
+	{
+		m_pd3dcbGameObjects->Unmap(0, NULL);
+		m_pd3dcbGameObjects->Release();
+	}
+
 	CShader::ReleaseShaderVariables();
 }
 
+void CFixedObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetGraphicsRootShaderResourceView(3, m_pd3dcbGameObjects->GetGPUVirtualAddress());
 
-void CObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, wchar_t* TextureFileName, const char* MeshFileName, void *pContext)
+	for (int j = 0; j < m_nObjects; j++)
+	{
+		m_ppObjects[j]->OnPrepareRender();
+
+		XMStoreFloat4x4(&m_pcbMappedGameObjects[j].m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_ppObjects[j]->m_xmf4x4World)));
+	}
+
+	CShader::UpdateShaderVariables(pd3dCommandList);
+}
+
+void CFixedObjectsShader::AnimateObjects(float fTimeElapsed)
+{
+	for (UINT i = 0; i < m_nObjects; i++)
+	{
+		m_ppObjects[i]->Animate(fTimeElapsed);
+	}
+}
+
+void CFixedObjectsShader::ReleaseObjects()
+{
+	if (m_ppObjects)
+	{
+		for (UINT i = 0; i < m_nObjects; i++)
+		{
+			if (m_ppObjects[i]) delete m_ppObjects[i];
+		}
+		delete[] m_ppObjects;
+	}
+}
+
+void CFixedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::Render(pd3dCommandList, pCamera); // Pipeline Set
+
+	if (m_ppObjects[0]) m_ppObjects[0]->Render(pd3dCommandList, pCamera, m_nObjects);
+}
+
+void CFixedObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::RenderWire(pd3dCommandList, pCamera); // Pipeline Set
+
+	if (m_ppObjects[0]) m_ppObjects[0]->RenderWire(pd3dCommandList, pCamera, m_nObjects);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CBuildingShader::CBuildingShader() 
+{
+}
+
+CBuildingShader::~CBuildingShader() 
+{
+}
+
+void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, TextureFileName, 0);
+	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/hangar.dds", 0);
 
 	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
 	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
@@ -336,43 +489,62 @@ void CObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandL
 	m_ppMeshes = new CMesh*[m_nMeshes];
 	m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
 
-	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, MeshFileName);
+	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
 	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
 	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
+
+	m_nObjects = 2;
+	m_ppObjects = new CGameObject*[m_nObjects];
+
+	m_ppObjects[0] = new CGameObject();
+	//m_ppObjects[0]->CreateShaderVariables(pd3dDevice, pd3dCommandList); 
+	m_ppObjects[0]->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
+	m_ppObjects[0]->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	m_ppObjects[0]->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+
+	m_ppObjects[1] = new CGameObject();
+	//m_ppObjects[1]->CreateShaderVariables(pd3dDevice, pd3dCommandList); 
+	m_ppObjects[1]->SetPosition(XMFLOAT3(0.0f, 0.0f, 200.0f));
+	m_ppObjects[1]->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CObjectsShader::InsertObject(CGameObject* Object)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CNonFixedObjectsShader::CNonFixedObjectsShader()
 {
-	for (UINT i = 0; i < m_nMeshes; i++)
+}
+
+CNonFixedObjectsShader::~CNonFixedObjectsShader()
+{
+}
+
+void CNonFixedObjectsShader::ReleaseShaderVariables()
+{
+	for (const auto& Object : m_vObjects)
 	{
-		Object->SetMesh(i, m_ppMeshes[i], m_ppCubeMeshes[i]);
+		Object->ReleaseShaderVariables();
 	}
 
-	for (UINT i = 0; i < m_nMaterials; i++)
-		Object->SetMaterial(i, m_ppMaterials[i]);
+	CShader::ReleaseShaderVariables();
+}
+
+void CNonFixedObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
+{
+}
+
+void CNonFixedObjectsShader::InsertObject(CGameObject* Object)
+{
+	Object->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
 
 	m_vObjects.emplace_back(Object);
 }
 
-void CObjectsShader::ReleaseObjects()
+void CNonFixedObjectsShader::ReleaseObjects()
 {
-	if (m_ppMaterials)
-	{
-		for (UINT j = 0; j < m_nMaterials; j++) if (m_ppMaterials[j]) delete m_ppMaterials[j];
-		delete[] m_ppMaterials;
-	}
-
-	if (m_ppMeshes)
-	{
-		for (UINT j = 0; j < m_nMeshes; j++)
-		{
-			if (m_ppMeshes[j]) delete m_ppMeshes[j];
-			if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
-		}
-		delete[] m_ppMeshes;
-	}
-
 	if (m_vObjects.size())
 	{
 		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
@@ -383,25 +555,19 @@ void CObjectsShader::ReleaseObjects()
 	}
 }
 
-void CObjectsShader::AnimateObjects(float fTimeElapsed)
+void CNonFixedObjectsShader::AnimateObjects(float fTimeElapsed)
 {
+	CheckDeleteObjects();
+
 	for (const auto& Object : m_vObjects)
 	{
 		Object->Animate(fTimeElapsed);
 	}	
 }
 
-void CObjectsShader::ReleaseUploadBuffers()
+void CNonFixedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	for (const auto& Object : m_vObjects)
-	{
-		Object->ReleaseUploadBuffers();
-	}
-}
-
-void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	CShader::Render(pd3dCommandList, pCamera); // Pipeline Set
+	CShader::Render(pd3dCommandList, pCamera);
 
 	for (const auto& Object : m_vObjects)
 	{
@@ -409,18 +575,17 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 }
 
-void CObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+void CNonFixedObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CShader::RenderWire(pd3dCommandList, pCamera); // Pipeline Set
+	CShader::RenderWire(pd3dCommandList, pCamera);
 
 	for (const auto& Object : m_vObjects)
 	{
 		Object->RenderWire(pd3dCommandList, pCamera);
 	}
-
 }
 
-void CObjectsShader::CheckDeleteObjects()
+void CNonFixedObjectsShader::CheckDeleteObjects()
 {
 	if (m_vObjects.size())
 	{
@@ -437,6 +602,39 @@ void CObjectsShader::CheckDeleteObjects()
 				Object++;
 		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+CBulletShader::CBulletShader()
+{
+}
+
+CBulletShader::~CBulletShader()
+{
+}
+
+void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
+{
+	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Bullet/bullet.dds", 0);
+
+	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
+
+	m_nMaterials = 1;
+	m_ppMaterials = new CMaterial*[m_nMaterials];
+	m_ppMaterials[0] = new CMaterial();
+	m_ppMaterials[0]->SetTexture(pTextures);
+
+	m_nMeshes = 1;
+	m_ppMeshes = new CMesh*[m_nMeshes];
+	m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
+
+	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet.fbx");
+	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
+	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
+	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

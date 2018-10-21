@@ -109,9 +109,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="헤더 파일">
       <UniqueIdentifier>{e83bedfd-1750-421a-a2a0-09f44b8bb173}</UniqueIdentifier>
     </Filter>
@@ -126,5 +123,11 @@
     <ResourceCompile Include="PillsFighter.rc">
       <Filter>리소스 파일</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Project.txt" />
   </ItemGroup>
 </Project>

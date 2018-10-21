@@ -4,7 +4,7 @@
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 0.0f, -50.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext, int nMeshes, int nMaterials) : CGameObject(nMeshes, nMaterials)
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
 {
 	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
 	m_pCamera = SetCamera(0.0f);
@@ -12,32 +12,55 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	// 플레이어 쉐이더 생성
-	CShader *pShader = new CShader();
-	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pShader = new CShader();
+	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 
-	// 플레이어 메쉬 생성 
-	CMesh **ppMesh;
-	CTexture **ppTexture;
-	CCubeMesh **ppCubeMesh;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMesh, ppCubeMesh);
-	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture);
-	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, pShader);
+	m_nMeshes = 1;
+	m_ppMeshes = new CMesh*[m_nMeshes];
+	m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
 
-	for (UINT i = 0; i < m_nMeshes; i++)
-	{
-		SetMesh(i, ppMesh[i], ppCubeMesh[i]);
-	}
+	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
+	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
+	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
+	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	for (UINT i = 0; i < m_nMaterials; i++)
-	{
-		CMaterial* pMaterial = new CMaterial();
+	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/hangar.dds", 0);
 
-		pMaterial->SetTexture(ppTexture[i]);
-		SetMaterial(i, pMaterial);
-	}
+	m_pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
 
-	SetShader(pShader);
+	UINT nMaterials = 1;
+	CMaterial **ppMaterials = new CMaterial*[nMaterials];
+	ppMaterials[0] = new CMaterial();
+	ppMaterials[0]->SetTexture(pTextures);
+
+	m_pShader->SetMaterial(ppMaterials, nMaterials);
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//UINT nTextures;
+	//CTexture **ppTexture;
+
+	//::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, ppCubeMeshes, nMeshes);
+	//::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture, nTextures);
+	//::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, pShader);
+
+	//SetMesh(ppMeshes, ppCubeMeshes, nMeshes);
+	//
+	//CMaterial **ppMaterials = new CMaterial*[nTextures];
+
+	//for (UINT i = 0; i < nTextures; i++)
+	//{
+	//	ppMaterials[i] = new CMaterial();
+	//	ppMaterials[i]->SetTexture(ppTexture[i]);
+	//}
+
+	//pShader->SetMaterial(ppMaterials, nTextures);
+
+	//SetShader(pShader);
 
 	//플레이어의 위치를 설정한다. 
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
@@ -48,6 +71,21 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 CPlayer::~CPlayer()
 {
 	ReleaseShaderVariables();
+
+	if (m_ppMeshes)
+	{
+		for (UINT j = 0; j < m_nMeshes; j++)
+		{
+			if (m_ppMeshes[j]) delete m_ppMeshes[j];
+			if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
+		}
+
+		delete[] m_ppMeshes;
+		delete[] m_ppCubeMeshes;
+	}
+
+	if (m_pShader) delete m_pShader;
+
 	if (m_pCamera) delete m_pCamera;
 }
 
@@ -72,8 +110,12 @@ void CPlayer::ReleaseShaderVariables()
 		m_pd3dcbPlayer->Release();
 	}
 
-	CGameObject::ReleaseShaderVariables();
+	if (m_pShader)
+	{
+		m_pShader->ReleaseShaderVariables();
+	}
 
+	CGameObject::ReleaseShaderVariables();
 }
 
 void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -82,6 +124,13 @@ void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbPlayer->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(0, d3dGpuVirtualAddress);
+}
+
+void CPlayer::ReleaseUploadBuffers()
+{
+	if (m_pShader) m_pShader->ReleaseUploadBuffers();
+
+	CGameObject::ReleaseUploadBuffers();
 }
 
 CCamera *CPlayer::SetCamera(float fTimeElapsed)

@@ -106,25 +106,21 @@ protected:
 	CMesh							**m_ppMeshes = NULL;
 	CCubeMesh						**m_ppCubeMeshes = NULL;
 
-	UINT							m_nMaterials = 0;
-	CMaterial						**m_ppMaterials = NULL;
+	BoundingOrientedBox				*m_xmOOBB = NULL;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
 
 	ID3D12Resource					*m_pd3dcbGameObject = NULL;
 	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObject = NULL;
 
-	BoundingOrientedBox				*m_xmOOBB;
-
 	bool m_Delete = FALSE;
 
 public:
-	CGameObject(int nMeshes = 1, int nMaterials = 1);
+	CGameObject();
 	virtual ~CGameObject();
 
-	void SetMesh(int nIndex, CMesh *pMesh, CCubeMesh *Mesh);
+	void SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMeshes);
 	UINT GetNumMeshes() { return m_nMeshes; }
-	void SetMaterial(int nIndex, CMaterial *pMaterial);
 
 	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
 	void SetCbvGPUDescriptorHandlePtr(UINT64 nCbvGPUDescriptorHandlePtr) { m_d3dCbvGPUDescriptorHandle.ptr = nCbvGPUDescriptorHandlePtr; }
@@ -136,8 +132,8 @@ public:
 
 	virtual void Animate(float fTimeElapsed);
 	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, UINT nInstances = 1);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, UINT nInstances = 1);
 
 	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
 	virtual void ReleaseUploadBuffers();
@@ -181,7 +177,7 @@ public:
 class RandomMoveObject : public CGameObject
 {
 public:
-	RandomMoveObject(int nMeshes = 1, int nMaterials = 1);
+	RandomMoveObject();
 	virtual ~RandomMoveObject();
 
 	void InitRandomRotate();
@@ -203,7 +199,7 @@ private:
 class Bullet : public CGameObject
 {
 public:
-	Bullet(int nMeshes = 1, int nMaterials = 1);
+	Bullet();
 	virtual ~Bullet();
 
 	virtual void Animate(float ElapsedTime);
@@ -239,6 +235,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-extern void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMesh**& ppMesh, CCubeMesh**& ppCubeMeshes);
-extern void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture);
+extern void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMesh**& ppMesh, CCubeMesh**& ppCubeMeshes, UINT& nMeshes);
+extern void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, UINT& nTextures);
 extern void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, CShader* pShader);

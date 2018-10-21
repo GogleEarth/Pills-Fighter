@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shader.h"
+#include "Player.h"
 
 class CScene
 {
@@ -34,7 +35,7 @@ public:
 protected:
 	CPlayer						*m_pPlayer = NULL;
 
-	CObjectsShader				**m_ppShaders = NULL;
+	CShader						**m_ppShaders = NULL;
 	int							m_nShaders = 0;
 
 	CRectTerrain				*m_pTerrain = NULL;
@@ -45,9 +46,6 @@ public:
 	// 충돌 체크를 검사한다.
 	void CheckCollision();
 
-	// 오브젝트가 삭제되어야하는지 검사한다.
-	void CheckDeleteObject();
-
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer;}
-	CObjectsShader* GetShader(UINT index) { return m_ppShaders[index]; }
+	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
 };
