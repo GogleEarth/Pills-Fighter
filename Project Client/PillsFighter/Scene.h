@@ -34,13 +34,8 @@ public:
 
 protected:
 	CPlayer						*m_pPlayer = NULL;
-<<<<<<< HEAD
 
 	CShader						**m_ppShaders = NULL;
-=======
-	CPlayer						*m_pAnotherPlayer = NULL;
-	CObjectsShader				**m_ppShaders = NULL;
->>>>>>> 697f565584b9a50f9fd662e5b71704e2eed30c0f
 	int							m_nShaders = 0;
 
 	CRectTerrain				*m_pTerrain = NULL;
@@ -52,10 +47,5 @@ public:
 	void CheckCollision();
 
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer;}
-<<<<<<< HEAD
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
-=======
-	void SetAnotherPlayer(CPlayer* pPlayer) { m_pAnotherPlayer = pPlayer; }
-	CObjectsShader* GetShader(UINT index) { return m_ppShaders[index]; }
->>>>>>> 697f565584b9a50f9fd662e5b71704e2eed30c0f
 };
