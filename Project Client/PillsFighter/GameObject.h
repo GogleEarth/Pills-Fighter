@@ -108,6 +108,9 @@ protected:
 
 	BoundingOrientedBox				*m_xmOOBB = NULL;
 
+	UINT							m_nMaterials;
+	CMaterial						**m_ppMaterials = NULL;
+
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
 
 	ID3D12Resource					*m_pd3dcbGameObject = NULL;
@@ -121,6 +124,7 @@ public:
 
 	void SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMeshes);
 	UINT GetNumMeshes() { return m_nMeshes; }
+	void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
 
 	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
 	void SetCbvGPUDescriptorHandlePtr(UINT64 nCbvGPUDescriptorHandlePtr) { m_d3dCbvGPUDescriptorHandle.ptr = nCbvGPUDescriptorHandlePtr; }
@@ -215,22 +219,17 @@ private:
 class CRectTerrain : public CGameObject
 {
 public:
-	CRectTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, wchar_t* TextureFileName, 
-		float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f, float fScale = 1.0f);
+	CRectTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual ~CRectTerrain();
 
-	void SetShader(CShader *pShader) { m_pShader = pShader; }
+	virtual void ReleaseShaderVariables();
 
-	//virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	virtual void ReleaseUploadBuffers();
 
-private:
-	CRectMesh					*m_pRectMesh = NULL;
-	CShader						*m_pShader = NULL;
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 
-	float						m_fWidth;
-	float						m_fHeight;
-	float						m_fDepth;
-	float						m_fScale;
+protected:
+	CShader					*m_pShader = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

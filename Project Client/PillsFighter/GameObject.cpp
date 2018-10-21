@@ -212,6 +212,14 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 
 	for (UINT i = 0; i < m_nMeshes; i++)
 	{
+		if (i < m_nMaterials)
+		{
+			if (m_ppMaterials)
+			{
+				if (m_ppMaterials[i]) m_ppMaterials[i]->UpdateShaderVariables(pd3dCommandList);
+			}
+		}
+
 		if (m_ppMeshes)
 		{
 			if (m_ppMeshes[i]) m_ppMeshes[i]->Render(pd3dCommandList, nInstances);
@@ -231,7 +239,7 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 	{
 		if (m_ppCubeMeshes)
 		{
-			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->Render(pd3dCommandList);
+			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->Render(pd3dCommandList, nInstances);
 		}
 	}
 }
@@ -243,7 +251,7 @@ void CGameObject::ReleaseUploadBuffers()
 		for (UINT i = 0; i < m_nMeshes; i++)
 		{
 			if (m_ppMeshes[i]) m_ppMeshes[i]->ReleaseUploadBuffers();
-			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->ReleaseUploadBuffers();
+			if(m_ppCubeMeshes) if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->ReleaseUploadBuffers();
 		}
 	}
 }
@@ -330,7 +338,7 @@ RandomMoveObject::RandomMoveObject() : CGameObject()
 	InitRandomRotate();
 
 	m_Time = 5.0f;
-	m_MovingSpeed = 50.0f;
+	m_MovingSpeed = 10.0f;
 }
 
 RandomMoveObject::~RandomMoveObject()
@@ -365,7 +373,7 @@ void RandomMoveObject::Animate(float ElapsedTime)
 			m_ElapsedTime += ElapsedTime;
 	}
 
-	//MoveForward(m_MovingSpeed * ElapsedTime);
+	MoveForward(m_MovingSpeed * ElapsedTime);
 
 	CGameObject::Animate(ElapsedTime);
 }
@@ -403,44 +411,83 @@ void Bullet::Animate(float ElapsedTime)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-CRectTerrain::CRectTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, wchar_t* TextureFileName,
-	float fWidth, float fHeight, float fDepth, float fScale) : CGameObject()
+CRectTerrain::CRectTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) : CGameObject()
 {
-	m_fWidth = fWidth;
-	m_fHeight = fHeight;
-	m_fDepth = fDepth;
-	m_fScale = fScale;
-
-	m_pRectMesh = new CRectMesh(pd3dDevice, pd3dCommandList, fWidth, fHeight, fDepth, fScale);
-
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CTexture *pTerrainTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
+	m_pShader = new CShader();
+	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 
-	CTerrainShader *pTerrainShader = new CTerrainShader();
-	pTerrainShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pTerrainShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	pTerrainShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, 4, true);
+	int nWidth = 1;
+	int nDepth = 1;
 
-	UINT nTerrainMaterial = 1;
-	CMaterial **ppTerrainMaterial = new CMaterial*[nTerrainMaterial];
-	ppTerrainMaterial[0] = new CMaterial();
-	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
+	int nIndex = 0;
+	m_nMeshes = nWidth * nDepth;
+	m_ppMeshes = new CMesh*[m_nMeshes];
 
-	pTerrainShader->SetMaterial(ppTerrainMaterial, 1);
+	for (int x = 0; x < nWidth; x++)
+	{
+		for (int z = 0; z < nDepth; z++)
+		{
+			m_ppMeshes[nIndex++] = new CRectMesh(pd3dDevice, pd3dCommandList, 10.0f, 0.0f, 10.0f, x * 10, z * 10);
+		}
+	}
 
-	m_pShader = pTerrainShader;
+	CTexture *pTileTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
+
+	m_pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTileTexture, 2, true);
+
+	m_nMaterials = 1;
+	m_ppMaterials = new CMaterial*[m_nMaterials];
+	m_ppMaterials[0] = new CMaterial();
+	m_ppMaterials[0]->SetTexture(pTileTexture);
+
+	m_pShader->SetMaterial(m_ppMaterials, m_nMaterials);
+	SetMaterial(m_ppMaterials, m_nMaterials);
 }
 
 CRectTerrain::~CRectTerrain(void)
 {
+	if (m_pShader) delete m_pShader;
+
+	if (m_ppMeshes)
+	{
+		for (UINT j = 0; j < m_nMeshes; j++)
+		{
+			if (m_ppMeshes[j]) delete m_ppMeshes[j];
+			
+			if(m_ppCubeMeshes) if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
+		}
+
+		delete[] m_ppMeshes;
+		delete[] m_ppCubeMeshes;
+	}
+}
+
+void CRectTerrain::ReleaseShaderVariables()
+{
 	if (m_pShader)
 	{
 		m_pShader->ReleaseShaderVariables();
-		m_pShader->ReleaseObjects();
 	}
-	if (m_pRectMesh) delete m_pRectMesh;
+
+	CGameObject::ReleaseShaderVariables();
+}
+
+void CRectTerrain::ReleaseUploadBuffers()
+{
+	if (m_pShader) m_pShader->ReleaseUploadBuffers();
+
+	CGameObject::ReleaseUploadBuffers();
+}
+
+void CRectTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+{
+	m_pShader->OnPrepareRender(pd3dCommandList);
+
+	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

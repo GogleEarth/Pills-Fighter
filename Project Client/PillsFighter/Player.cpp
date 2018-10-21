@@ -2,7 +2,7 @@
 #include "Player.h"
 #include "Shader.h"
 
-#define CAMERA_POSITION XMFLOAT3(0.0f, 0.0f, -50.0f)
+#define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -50.0f)
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
 {
@@ -14,53 +14,25 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	// 플레이어 쉐이더 생성
 	m_pShader = new CShader();
 	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	
+	UINT nTextures;
+	CTexture **ppTexture;
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture, nTextures);
+	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, m_pShader);
 
-	m_nMeshes = 1;
-	m_ppMeshes = new CMesh*[m_nMeshes];
-	m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
-
-	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
-	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
-	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
-	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
-
-	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/hangar.dds", 0);
-
-	m_pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
-
-	UINT nMaterials = 1;
+	UINT nMaterials = nTextures;
 	CMaterial **ppMaterials = new CMaterial*[nMaterials];
-	ppMaterials[0] = new CMaterial();
-	ppMaterials[0]->SetTexture(pTextures);
+
+	for (UINT i = 0; i < nTextures; i++)
+	{
+		ppMaterials[i] = new CMaterial();
+		ppMaterials[i]->SetTexture(ppTexture[i]);
+	}
 
 	m_pShader->SetMaterial(ppMaterials, nMaterials);
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//UINT nTextures;
-	//CTexture **ppTexture;
-
-	//::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, ppCubeMeshes, nMeshes);
-	//::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture, nTextures);
-	//::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, pShader);
-
-	//SetMesh(ppMeshes, ppCubeMeshes, nMeshes);
-	//
-	//CMaterial **ppMaterials = new CMaterial*[nTextures];
-
-	//for (UINT i = 0; i < nTextures; i++)
-	//{
-	//	ppMaterials[i] = new CMaterial();
-	//	ppMaterials[i]->SetTexture(ppTexture[i]);
-	//}
-
-	//pShader->SetMaterial(ppMaterials, nTextures);
-
-	//SetShader(pShader);
+	SetMaterial(ppMaterials, nMaterials);
 
 	//플레이어의 위치를 설정한다. 
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
@@ -206,14 +178,32 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
 	//카메라가 변경된 플레이어 위치를 바라보도록 한다. 
-	//XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 150.0f, 0.0f));
-	m_pCamera->SetLookAt(m_xmf3Position);
-	//m_pCamera->SetLookAt(xmf3LookAt);
+	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 10.0f, 0.0f));
+	//m_pCamera->SetLookAt(m_xmf3Position);
+	m_pCamera->SetLookAt(xmf3LookAt);
 
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
 
 	CheckElapsedTime(fTimeElapsed);
+}
+
+void CPlayer::Rotate(float x, float y, float z)
+{
+	if (!IsZero(y))
+	{
+		m_fYaw += y;
+		if (m_fYaw > 360.0f) m_fYaw -= 360.0f;
+		if (m_fYaw < 0.0f) m_fYaw += 360.0f;
+
+		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(y));
+		m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
+		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
+	}
+
+	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
+	m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3Look, true);
+	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
 }
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -244,11 +234,14 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 		pBullet->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		XMFLOAT3 xmfPosition = GetPosition();
-		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 100.0f, 0.0f));
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
 		pBullet->SetPosition(xmfPosition);
-		pBullet->SetRight(m_pCamera->GetRightVector());
-		pBullet->SetUp(m_pCamera->GetUpVector());
-		pBullet->SetLook(m_pCamera->GetLookVector());
+		//pBullet->SetRight(m_pCamera->GetRightVector());
+		//pBullet->SetUp(m_pCamera->GetUpVector());
+		//pBullet->SetLook(m_pCamera->GetLookVector());
+		pBullet->SetRight(m_xmf3Right);
+		pBullet->SetUp(m_xmf3Up);
+		pBullet->SetLook(m_xmf3Look);
 
 		m_pBulletShader->InsertObject(pBullet);
 

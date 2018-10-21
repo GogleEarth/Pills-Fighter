@@ -115,6 +115,6 @@ public:
 class CRectMesh : public CMesh
 {
 public:
-	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f, float fScale = 1.0f);
+	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f, float fxPosition = 0.0f, float fzPosition = 0.0f );
 	virtual ~CRectMesh();
 };

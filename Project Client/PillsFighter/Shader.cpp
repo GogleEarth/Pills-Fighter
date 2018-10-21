@@ -278,13 +278,6 @@ void CShader::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Graphics
 
 void CShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_ppMaterials)
-	{
-		for (UINT i = 0; i < m_nMaterials; i++)
-		{
-			if (m_ppMaterials[i]) m_ppMaterials[i]->UpdateShaderVariables(pd3dCommandList);
-		}
-	}
 }
 
 void CShader::ReleaseUploadBuffers()
@@ -424,8 +417,6 @@ void CFixedObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dC
 
 		XMStoreFloat4x4(&m_pcbMappedGameObjects[j].m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_ppObjects[j]->m_xmf4x4World)));
 	}
-
-	CShader::UpdateShaderVariables(pd3dCommandList);
 }
 
 void CFixedObjectsShader::AnimateObjects(float fTimeElapsed)
@@ -494,19 +485,29 @@ void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	m_nObjects = 2;
+	m_nObjects = 3;
 	m_ppObjects = new CGameObject*[m_nObjects];
 
 	m_ppObjects[0] = new CGameObject();
 	//m_ppObjects[0]->CreateShaderVariables(pd3dDevice, pd3dCommandList); 
-	m_ppObjects[0]->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
+	m_ppObjects[0]->SetPosition(XMFLOAT3(-200.0f, 0.0f, 100.0f));
 	m_ppObjects[0]->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 	m_ppObjects[0]->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	m_ppObjects[0]->SetMaterial(m_ppMaterials, m_nMaterials);
 
 	m_ppObjects[1] = new CGameObject();
 	//m_ppObjects[1]->CreateShaderVariables(pd3dDevice, pd3dCommandList); 
-	m_ppObjects[1]->SetPosition(XMFLOAT3(0.0f, 0.0f, 200.0f));
+	m_ppObjects[1]->SetPosition(XMFLOAT3(200.0f, 0.0f, 100.0f));
 	m_ppObjects[1]->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	m_ppObjects[1]->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	m_ppObjects[1]->SetMaterial(m_ppMaterials, m_nMaterials);
+
+	m_ppObjects[2] = new CGameObject();
+	//m_ppObjects[2]->CreateShaderVariables(pd3dDevice, pd3dCommandList); 
+	m_ppObjects[2]->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
+	m_ppObjects[2]->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	m_ppObjects[2]->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	m_ppObjects[2]->SetMaterial(m_ppMaterials, m_nMaterials);
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
@@ -539,6 +540,7 @@ void CNonFixedObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 void CNonFixedObjectsShader::InsertObject(CGameObject* Object)
 {
 	Object->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	Object->SetMaterial(m_ppMaterials, m_nMaterials);
 
 	m_vObjects.emplace_back(Object);
 }
@@ -593,8 +595,8 @@ void CNonFixedObjectsShader::CheckDeleteObjects()
 		{
 			if ((*Object)->IsDelete())
 			{
+				(*Object)->ReleaseShaderVariables();
 				delete *Object;
-				*Object = NULL;
 
 				Object = m_vObjects.erase(Object);
 			}
@@ -635,6 +637,59 @@ void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
 	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+CGundamShader::CGundamShader()
+{
+}
+
+CGundamShader::~CGundamShader()
+{
+}
+
+void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
+{
+	UINT nTextures;
+	CTexture **ppTexture;
+
+	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture, nTextures);
+
+	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 7); // nTexture
+
+	for (int i = 0; i < 7; i++)
+		CreateShaderResourceViews(pd3dDevice, pd3dCommandList, ppTexture[i], 2, false);
+
+	UINT nMaterials = nTextures;
+	CMaterial **ppMaterials = new CMaterial*[nMaterials];
+
+	for (UINT i = 0; i < nTextures; i++)
+	{
+		ppMaterials[i] = new CMaterial();
+		ppMaterials[i]->SetTexture(ppTexture[i]);
+	}
+
+	SetMaterial(ppMaterials, nMaterials);
+
+	RandomMoveObject *pObjects = new RandomMoveObject();
+	pObjects->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pObjects->SetPosition(XMFLOAT3(10.0f, 0.0f, 0.0f));
+	pObjects->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	pObjects->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	pObjects->SetMaterial(m_ppMaterials, m_nMaterials);
+
+	InsertObject(pObjects);
+
+	pObjects = new RandomMoveObject();
+	pObjects->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
+	pObjects->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	pObjects->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	pObjects->SetMaterial(m_ppMaterials, m_nMaterials);
+
+	InsertObject(pObjects);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

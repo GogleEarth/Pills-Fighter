@@ -32,6 +32,8 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayer = NULL;
 	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 
+	//unsigned int Client_id;
+
 public:
 	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
 	virtual ~CPlayer();
@@ -42,6 +44,7 @@ public:
 
 	void Move(ULONG nDirection, float fDistance);
 	void Move(const XMFLOAT3& xmf3Shift);
+	virtual void Rotate(float x, float y, float z);
 	
 	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
 	void Update(float fTimeElapsed);

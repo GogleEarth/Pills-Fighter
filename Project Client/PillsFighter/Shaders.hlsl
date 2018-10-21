@@ -11,7 +11,7 @@ cbuffer cbCameraInfo : register(b1)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-Texture2D gtxtTexture : register(t0);
+Texture2D gtxtTexture : register(t1);
 SamplerState gSamplerState : register(s0);
 
 struct VS_TEXTURED_INPUT
@@ -80,7 +80,7 @@ struct INSTANCEDGAMEOBJECTINFO
 	matrix m_mtxGameObject;
 };
 
-StructuredBuffer<INSTANCEDGAMEOBJECTINFO> gGameObjectInfo : register(t1);
+StructuredBuffer<INSTANCEDGAMEOBJECTINFO> gGameObjectInfo : register(t0);
 
 VS_TEXTURED_OUTPUT VSInstancingTextured(VS_TEXTURED_INPUT input, uint nInstanceID : SV_InstanceID)
 {
@@ -100,22 +100,4 @@ VS_DIFFUSED_OUTPUT VSInstancingDiffused(VS_DIFFUSED_INPUT input, uint nInstanceI
 	output.color = input.color;
 
 	return(output);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-Texture2DArray gtxtTextureArray : register(t2);
-
-cbuffer cbMeshTexture : register(b3)
-{
-	int1		giNumTexture : packoffset(c0);
-};
-
-float4 PSTexturedArray(VS_TEXTURED_OUTPUT input) : SV_TARGET
-{
-	float3 uvw = float3(input.uv, giNumTexture);
-	float4 cColor = gtxtTextureArray.Sample(gSamplerState, uvw);
-
-	return(cColor);
 }

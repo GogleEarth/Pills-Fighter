@@ -23,7 +23,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 
 	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[0].NumDescriptors = 1;
-	pd3dDescriptorRanges[0].BaseShaderRegister = 0; //t0: gtxtTexture
+	pd3dDescriptorRanges[0].BaseShaderRegister = 1; //t1: gtxtTexture
 	pd3dDescriptorRanges[0].RegisterSpace = 0;
 	pd3dDescriptorRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -41,11 +41,11 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 
 	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	pd3dRootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[2].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[0];
+	pd3dRootParameters[2].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[0]; // Texture
 	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-	pd3dRootParameters[3].Descriptor.ShaderRegister = 1; //t1
+	pd3dRootParameters[3].Descriptor.ShaderRegister = 0; //t0
 	pd3dRootParameters[3].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
@@ -88,34 +88,12 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	// [0] Enemy, [1] PlayerBullet, [2] Building
+	// [0] Building, [1] Bullet, [2] Enemy
 	//m_nShaders = 3;
-	m_nShaders = 2;
-	m_ppShaders = new CShader*[m_nShaders];
+	m_nShaders = 3;
+	m_ppShaders = new CObjectsShader*[m_nShaders];
 
 	/////////////////////////////// Enemy Shader
-	//CObjectsShader *pObjectShader = new CObjectsShader();
-	//pObjectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-
-	//CMesh** ppMeshes;
-	//CCubeMesh** ppCubeMeshes;
-	//::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, ppCubeMeshes);
-	//pObjectShader->SetMesh(ppMeshes, ppCubeMeshes, 7);
-
-	//CTexture** ppTextures;
-	//::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures);
-
-	//::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, pObjectShader);
-
-	//CMaterial** ppMaterial = new CMaterial*[7];
-	//for (int i = 0; i < 7; i++)
-	//{
-	//	ppMaterial[i] = new CMaterial();
-	//	ppMaterial[i]->SetTexture(ppTextures[i]);
-	//}
-	//pObjectShader->SetMaterial(ppMaterial, 7);
-
-	//m_ppShaders[0] = pObjectShader;
 
 	////// Building Shader
 	CBuildingShader *pBuildingShader = new CBuildingShader();
@@ -131,8 +109,15 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	m_ppShaders[1] = pBulletShader;
 
+	CGundamShader *pGundamhader = new CGundamShader();
+	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+
+	m_ppShaders[2] = pGundamhader;
+
 	// Terrain
-	//m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, L"./Resource/Tile.dds", 50.0f, 0.0f, 50.0f, 1.0f);
+	m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+	m_pTerrain->SetPosition(0.0f, 0.0f, 0.0f);
 }
 
 void CScene::ReleaseObjects()
@@ -183,22 +168,75 @@ bool CScene::ProcessInput(UCHAR *pKeysBuffer)
 
 void CScene::CheckCollision()
 {
-	//for (const auto& Object : m_ppShaders[0]->GetObjects())
-	//{
-	//	for (const auto& Bullet : m_ppShaders[1]->GetObjects())
-	//	{
-	//		for (UINT i = 0; i < Object->GetNumMeshes(); i++)
-	//		{
-	//			for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-	//			{
-	//				if (Object->GetOOBB(i).Intersects(Bullet->GetOOBB(j)))
-	//				{
-	//					Bullet->DeleteObject();
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+	CGameObject	**ppBuildingObjects;
+	UINT nBuildingObjects;
+
+	std::vector<CGameObject*> vEnemyObjects;
+	std::vector<CGameObject*> vBulletObjects;
+
+	m_ppShaders[0]->GetObjects(NULL, &ppBuildingObjects, &nBuildingObjects);
+	m_ppShaders[1]->GetObjects(&vBulletObjects, NULL, NULL);
+	m_ppShaders[2]->GetObjects(&vEnemyObjects, NULL, NULL);
+
+	for (const auto& Bullet : vBulletObjects)
+	{
+		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
+		{
+			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
+			{
+				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
+				{
+					if (Bullet->GetOOBB(j).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(i)))
+					{
+						Bullet->DeleteObject();
+					}
+				}
+			}
+		}
+
+		for (const auto& Enemy : vEnemyObjects)
+		{
+			for (UINT i = 0; i < Enemy->GetNumMeshes(); i++)
+			{
+				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
+				{
+					if (Bullet->GetOOBB(j).Intersects(Enemy->GetOOBB(i)))
+					{
+						Bullet->DeleteObject();
+					}
+				}
+			}
+		}
+	}
+
+	
+
+	for (const auto& Enemy : vEnemyObjects)
+	{
+		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
+		{
+			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
+			{
+				for (UINT j = 0; j < Enemy->GetNumMeshes(); j++)
+				{
+					BoundingOrientedBox EnemysOOBB = Enemy->GetOOBB(j);
+					BoundingOrientedBox BuildingsOOBB = ppBuildingObjects[nIndexBuilding]->GetOOBB(i);
+
+					if (EnemysOOBB.Intersects(BuildingsOOBB))
+					{
+						XMFLOAT3 BuildingMeshCenter = BuildingsOOBB.Center;
+						XMFLOAT3 BuildingMeshExtents = BuildingsOOBB.Extents;
+
+						XMFLOAT3 EnemyMeshCenter = EnemysOOBB.Center;
+						XMFLOAT3 EnemyMeshExtents = EnemysOOBB.Extents;
+
+						//if(EnemyPosition.x > BuildingMeshExtents.x + BuildingMeshCenter.x)
+						// 충돌처리
+					}
+				}
+			}
+		}
+	}
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)
