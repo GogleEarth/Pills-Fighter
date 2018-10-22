@@ -89,7 +89,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
 	// [0] Building, [1] Bullet, [2] Enemy
-	//m_nShaders = 3;
 	m_nShaders = 3;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 

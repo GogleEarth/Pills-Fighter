@@ -2,7 +2,7 @@
 #include "Player.h"
 #include "Shader.h"
 
-#define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -50.0f)
+#define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
 {
@@ -178,7 +178,7 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
 	//카메라가 변경된 플레이어 위치를 바라보도록 한다. 
-	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 10.0f, 0.0f));
+	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	//m_pCamera->SetLookAt(m_xmf3Position);
 	m_pCamera->SetLookAt(xmf3LookAt);
 

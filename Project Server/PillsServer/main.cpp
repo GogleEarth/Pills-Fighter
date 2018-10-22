@@ -198,7 +198,7 @@ DWORD WINAPI send_msg(LPVOID arg)
 	while (true)
 	{
 		//auto start = std::chrono::high_resolution_clock::now();
-		if (i >= 100000000)
+		if (i >= 1000)
 		{
 			m.lock();
 			if (msg_queue.size() != 0)
