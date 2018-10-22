@@ -1,17 +1,20 @@
-cbuffer cbGameObjectInfo : register(b0)
+struct CB_GAMEOBJECT_INFO
 {
-	matrix		gmtxGameObject : packoffset(c0);
+	matrix		mtxWorld;
 };
 
-cbuffer cbCameraInfo : register(b1)
+struct CB_CAMERA_INFO
 {
-	matrix		gmtxView : packoffset(c0);
-	matrix		gmtxProjection : packoffset(c4);
+	matrix		mtxView;
+	matrix		mtxProjection;
 };
+
+ConstantBuffer<CB_GAMEOBJECT_INFO> gcbGameObjectInfo : register(b0);
+ConstantBuffer<CB_CAMERA_INFO> gcbCameraInfo : register(b1);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-Texture2D gtxtTexture : register(t0);
+Texture2D gtxtTexture : register(t1);
 SamplerState gSamplerState : register(s0);
 
 struct VS_TEXTURED_INPUT
@@ -30,7 +33,7 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 {
 	VS_TEXTURED_OUTPUT output;
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gcbGameObjectInfo.mtxWorld), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
 	output.uv = input.uv;
 
 	return(output);
@@ -61,7 +64,7 @@ VS_DIFFUSED_OUTPUT VSDiffused(VS_DIFFUSED_INPUT input)
 {
 	VS_DIFFUSED_OUTPUT output;
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gcbGameObjectInfo.mtxWorld), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
 	output.color = input.color;
 
 	return(output);
@@ -70,4 +73,34 @@ VS_DIFFUSED_OUTPUT VSDiffused(VS_DIFFUSED_INPUT input)
 float4 PSDiffused(VS_DIFFUSED_OUTPUT input) : SV_TARGET
 {
 	return(input.color);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct INSTANCEDGAMEOBJECTINFO
+{
+	matrix m_mtxGameObject;
+};
+
+StructuredBuffer<INSTANCEDGAMEOBJECTINFO> gGameObjectInfo : register(t0);
+
+VS_TEXTURED_OUTPUT VSInstancingTextured(VS_TEXTURED_INPUT input, uint nInstanceID : SV_InstanceID)
+{
+	VS_TEXTURED_OUTPUT output;
+
+	output.position = mul(mul(mul(float4(input.position, 1.0f),	gGameObjectInfo[nInstanceID].m_mtxGameObject), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
+	output.uv = input.uv;
+
+	return(output);
+}
+
+VS_DIFFUSED_OUTPUT VSInstancingDiffused(VS_DIFFUSED_INPUT input, uint nInstanceID : SV_InstanceID)
+{
+	VS_DIFFUSED_OUTPUT output;
+
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gGameObjectInfo[nInstanceID].m_mtxGameObject), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
+	output.color = input.color;
+
+	return(output);
 }

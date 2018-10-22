@@ -32,8 +32,6 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayer = NULL;
 	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 
-	//unsigned int Client_id;
-
 public:
 	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
 	virtual ~CPlayer();
@@ -67,6 +65,8 @@ public:
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+	unsigned int Client_id;
 
 private:
 	CShader *m_pShader = NULL;

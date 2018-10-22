@@ -55,13 +55,13 @@ private:
 	BOOL							m_LButtonDown = FALSE;
 	BOOL							m_bRenderWire = FALSE;
 
-	CScene							*m_pScene = NULL;
-	CPlayer							*m_pPlayer = NULL;
-	CCamera							*m_pCamera = NULL;
+	//CScene							*m_pScene = NULL;
+	//CPlayer							*m_pPlayer = NULL;
+	//CCamera							*m_pCamera = NULL;
 
-	//CScene						*m_pScene = NULL;
-	//CPlayer						*m_pAnotherPlayer = NULL;
-	//CCamera						*m_pCamera = NULL;
+	CScene						*m_pScene = NULL;
+	CPlayer						*m_pAnotherPlayer = NULL;
+	CCamera						*m_pCamera = NULL;
 
 	//통신
 	PLAYER_INFO pinfo;
@@ -103,8 +103,8 @@ public:
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-	//SOCKET sock;
-	//CPlayer						*m_pPlayer = NULL;
+	SOCKET sock;
+	CPlayer						*m_pPlayer = NULL;
 
 	//통신
 	void err_quit(char* msg);

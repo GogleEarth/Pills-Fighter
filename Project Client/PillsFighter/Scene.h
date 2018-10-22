@@ -38,7 +38,7 @@ protected:
 	int							m_nShaders = 0;
 	CObjectsShader				**m_ppShaders = NULL;
 
-	//CPlayer						*m_pAnotherPlayer = NULL;
+	CPlayer						*m_pAnotherPlayer = NULL;
 
 	CRectTerrain				*m_pTerrain = NULL;
 
@@ -52,6 +52,6 @@ public:
 
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
 
-	//void SetAnotherPlayer(CPlayer* pPlayer) { m_pAnotherPlayer = pPlayer; }
+	void SetAnotherPlayer(CPlayer* pPlayer) { m_pAnotherPlayer = pPlayer; }
 
 };

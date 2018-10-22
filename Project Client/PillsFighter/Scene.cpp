@@ -45,32 +45,32 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-	pd3dRootParameters[3].Descriptor.ShaderRegister = 0; //t0
+	pd3dRootParameters[3].Descriptor.ShaderRegister = 0; //t0: gGameObjectInfo
 	pd3dRootParameters[3].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-	D3D12_STATIC_SAMPLER_DESC d3dSamplerDesc;
-	::ZeroMemory(&d3dSamplerDesc, sizeof(D3D12_STATIC_SAMPLER_DESC));
-	d3dSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	d3dSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	d3dSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	d3dSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	d3dSamplerDesc.MipLODBias = 0;
-	d3dSamplerDesc.MaxAnisotropy = 1;
-	d3dSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	d3dSamplerDesc.MinLOD = 0;
-	d3dSamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-	d3dSamplerDesc.ShaderRegister = 0;
-	d3dSamplerDesc.RegisterSpace = 0;
-	d3dSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[1];
+
+	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	pd3dSamplerDescs[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	pd3dSamplerDescs[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	pd3dSamplerDescs[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	pd3dSamplerDescs[0].MipLODBias = 0;
+	pd3dSamplerDescs[0].MaxAnisotropy = 1;
+	pd3dSamplerDescs[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	pd3dSamplerDescs[0].MinLOD = 0;
+	pd3dSamplerDescs[0].MaxLOD = D3D12_FLOAT32_MAX;
+	pd3dSamplerDescs[0].ShaderRegister = 0;
+	pd3dSamplerDescs[0].RegisterSpace = 0;
+	pd3dSamplerDescs[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
 	::ZeroMemory(&d3dRootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
 	d3dRootSignatureDesc.NumParameters = _countof(pd3dRootParameters);
 	d3dRootSignatureDesc.pParameters = pd3dRootParameters;
-	d3dRootSignatureDesc.NumStaticSamplers = 1;
-	d3dRootSignatureDesc.pStaticSamplers = &d3dSamplerDesc;
+	d3dRootSignatureDesc.NumStaticSamplers = _countof(pd3dSamplerDescs);
+	d3dRootSignatureDesc.pStaticSamplers = pd3dSamplerDescs;
 	d3dRootSignatureDesc.Flags = d3dRootSignatureFlags;
 
 	ID3DBlob *pd3dSignatureBlob = NULL;
@@ -116,8 +116,8 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_ppShaders[2] = pGundamhader;
 
 	// Terrain
-	m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
-	m_pTerrain->SetPosition(0.0f, 0.0f, 0.0f);
+	//m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+	//m_pTerrain->SetPosition(0.0f, 0.0f, 0.0f);
 }
 
 void CScene::ReleaseObjects()

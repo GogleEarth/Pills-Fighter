@@ -147,6 +147,7 @@ public:
 	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }
 	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
 	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
+	void SetWorldTransf(XMFLOAT4X4& xmf4x4World) { m_xmf4x4World = xmf4x4World; }
 	XMFLOAT3 GetPosition() { return m_xmf3Position; }
 	XMFLOAT3 GetLook() { return m_xmf3Look; }
 	XMFLOAT3 GetUp() { return m_xmf3Up; }

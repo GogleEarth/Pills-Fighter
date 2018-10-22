@@ -94,9 +94,9 @@ void CGameFramework::OnDestroy()
 	if (m_pd3dDevice) m_pd3dDevice->Release();
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
 
-	//closesocket(sock);
-	//// 윈속 종료
-	//WSACleanup();
+	closesocket(sock);
+	// 윈속 종료
+	WSACleanup();
 
 	//마우스 캡쳐를 해제한다. 
 	::ReleaseCapture();
@@ -319,13 +319,13 @@ void CGameFramework::BuildObjects()
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(1));
 
-	//CPlayer *pAnotherPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL, 7, 7);
-	//pAnotherPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
-	//pAnotherPlayer->SetMovingSpeed(100.0f);
+	CPlayer *pAnotherPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
+	pAnotherPlayer->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pAnotherPlayer->SetMovingSpeed(100.0f);
 
-	//m_pAnotherPlayer = pAnotherPlayer;
-	//m_pAnotherPlayer->Client_id = 0;
-	//m_pScene->SetAnotherPlayer(pAnotherPlayer);
+	m_pAnotherPlayer = pAnotherPlayer;
+	m_pAnotherPlayer->Client_id = 0;
+	m_pScene->SetAnotherPlayer(pAnotherPlayer);
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
 	m_pd3dCommandList->Close();
@@ -445,14 +445,11 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 		//	m_GameTimer.Start();
 		//break;
 	}
-	/*WM_SIZE 메시지는 윈도우가 생성될 때 한번 호출되거나 윈도우의 크기가 변경될 때 호출된다. 
-	주 윈도우의 크기를 사용자가 변경할 수 없으므로 윈도우의 크기가 변경되는 경우는 윈도우 모드와 전체화면 모드의 전환이 발생할 때이다.*/
 	case WM_SIZE:
 	{
 		m_nWndClientWidth = LOWORD(lParam);
 		m_nWndClientHeight = HIWORD(lParam);
 
-		//윈도우의 크기가 변경되면 후면버퍼의 크기를 변경한다. 
 		OnResizeBackBuffers();
 
 		break;
@@ -483,8 +480,6 @@ void CGameFramework::ProcessInput()
 	static UCHAR pKeyBuffer[256];
 	ULONG dwDirection = 0;
 
-	/*키보드의 상태 정보를 반환한다. 화살표 키(‘→’, ‘←’, ‘↑’, ‘↓’)를 누르면 플레이어를 오른쪽/왼쪽(로컬 x-축), 앞/뒤(로컬 z-축)로 이동한다. 
-	‘Page Up’과 ‘Page Down’ 키를 누르면 플레이어를 위/아래(로컬 y-축)로 이동한다.*/
 	if (::GetKeyboardState(pKeyBuffer))
 	{
 		if (pKeyBuffer['W'] & 0xF0) dwDirection |= DIR_FORWARD;
@@ -497,27 +492,19 @@ void CGameFramework::ProcessInput()
 
 	float cxDelta = 0.0f, cyDelta = 0.0f;
 	POINT ptCursorPos;
-	/*마우스를 캡쳐했으면 마우스가 얼마만큼 이동하였는 가를 계산한다. 
-	마우스 왼쪽 또는 오른쪽 버튼이 눌러질 때의 메시지(WM_LBUTTONDOWN, WM_RBUTTONDOWN)를 처리할 때 마우스를 캡쳐하였다. 
-	그러므로 마우스가 캡쳐된 것은 마우스 버튼이 눌려진 상태를 의미한다. 
-	마우스 버튼이 눌려진 상태에서 마우스를 좌우 또는 상하로 움직이면 플레이어를 x-축 또는 y-축으로 회전한다.*/
+
 	if (::GetCapture() == m_hWnd)
 	{
-		//마우스 커서를 화면에서 없앤다(보이지 않게 한다).
 		::SetCursor(NULL);
 
-		//현재 마우스 커서의 위치를 가져온다. 
 		::GetCursorPos(&ptCursorPos);
 
-		//마우스 버튼이 눌린 상태에서 마우스가 움직인 양을 구한다. 
 		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / MOUSE_SENSITIVITY;
 		cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / MOUSE_SENSITIVITY;
 
-		//마우스 커서의 위치를 마우스가 눌려졌던 위치로 설정한다. 
 		::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 	}
 
-	//마우스 또는 키 입력이 있으면 플레이어를 이동하거나(dwDirection) 회전한다(cxDelta 또는 cyDelta).
 	if ((dwDirection != 0) || (cxDelta != 0.0f) || (cyDelta != 0.0f))
 	{
 		if (cxDelta || cyDelta)
@@ -526,18 +513,15 @@ void CGameFramework::ProcessInput()
 			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 		
-		/*플레이어를 dwDirection 방향으로 이동한다(실제로는 속도 벡터를 변경한다). 
-		이동 거리는 시간에 비례하도록 한다. 플레이어의 이동 속력은 (50/초)로 가정한다.*/
 		if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_GameTimer.GetTimeElapsed());
 	}
 
-	// 현재 발사버튼(왼쪽 마우스)이 눌러진 상태일 경우
+
 	if (m_LButtonDown)
 	{
 		m_pPlayer->Shot(m_pd3dDevice, m_pd3dCommandList);
 	}
 
-	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다. 
 	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
 }
 
@@ -545,11 +529,11 @@ void CGameFramework::AnimateObjects()
 {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
 
-	//if (m_pAnotherPlayer)
-	//{// m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
-	//	XMFLOAT3 position{ m_pAnotherPlayer->m_xmf4x4World._41,m_pAnotherPlayer->m_xmf4x4World._42 ,m_pAnotherPlayer->m_xmf4x4World._43 };
-	//	m_pAnotherPlayer->SetPosition(position);
-	//}
+	if (m_pAnotherPlayer)
+	{// m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
+		XMFLOAT3 position{ m_pAnotherPlayer->m_xmf4x4World._41,m_pAnotherPlayer->m_xmf4x4World._42 ,m_pAnotherPlayer->m_xmf4x4World._43 };
+		m_pAnotherPlayer->SetPosition(position);
+	}
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -575,40 +559,55 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 	ProcessInput();
 
-	//if (elapsedtime >= 0.5f)
-	//{
-	//	PLAYER_INFO p_info;
-	//	char buf[sizeof(PLAYER_INFO)];
-	//	int retval;
+	if (elapsedtime >= 0.5f)
+	{
+		PLAYER_INFO p_info;
+		char buf[sizeof(PLAYER_INFO)];
+		int retval;
 
-	//	p_info.client_id = m_pPlayer->Client_id;
-	//	p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
-	//	memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
-	//	std::cout << "보낼 정보 : " << p_info.client_id << std::endl;
-	//	retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
-	//	if (retval == SOCKET_ERROR)
-	//	{
-	//		err_display("send");
-	//	}
-	//	std::cout << retval << "바이트 보냈음\n";
-	//	elapsedtime = 0;
-	//}
+		p_info.client_id = m_pPlayer->Client_id;
+		p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
+		memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
+		std::cout << "보낼 정보 : " << p_info.client_id << std::endl;
+		retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
+		if (retval == SOCKET_ERROR)
+		{
+			err_display("send");
+		}
+		std::cout << retval << "바이트 보냈음\n";
+		elapsedtime = 0;
+	}
 
 	AnimateObjects();
-	//if (pinfo.client_id != 0 && pinfo.client_id!=m_pPlayer->Client_id)
-	//{
-	//	std::cout << "받은 데이터의 id : " << pinfo.client_id << std::endl;
-	//	if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
-	//	{
-	//		m_pAnotherPlayer->Client_id = pinfo.client_id;
-	//	}
-	//	if (m_pAnotherPlayer->Client_id == pinfo.client_id)
-	//		m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
-	//	std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
-	//	std::cout << "다른 플레이어의 포지션 : " << m_pAnotherPlayer->m_xmf4x4World._41 <<
-	//		", " << m_pAnotherPlayer->m_xmf4x4World._42
-	//		<< ", " << m_pAnotherPlayer->m_xmf4x4World._43 << std::endl;
-	//}
+
+	if (pinfo.client_id != 0 && pinfo.client_id!=m_pPlayer->Client_id)
+	{
+		std::cout << "받은 데이터의 id : " << pinfo.client_id << std::endl;
+		if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
+		{
+			m_pAnotherPlayer->Client_id = pinfo.client_id;
+		}
+		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
+			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
+		std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
+		std::cout << "다른 플레이어의 포지션 : " << m_pAnotherPlayer->m_xmf4x4World._41 <<
+			", " << m_pAnotherPlayer->m_xmf4x4World._42
+			<< ", " << m_pAnotherPlayer->m_xmf4x4World._43 << std::endl;
+
+		
+		m_pAnotherPlayer->SetRight(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._11, m_pAnotherPlayer->m_xmf4x4World._12, m_pAnotherPlayer->m_xmf4x4World._13));
+
+		m_pAnotherPlayer->SetUp(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._21, m_pAnotherPlayer->m_xmf4x4World._22, m_pAnotherPlayer->m_xmf4x4World._23));
+
+		m_pAnotherPlayer->SetLook(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._31, m_pAnotherPlayer->m_xmf4x4World._32, m_pAnotherPlayer->m_xmf4x4World._33));
+
+		m_pAnotherPlayer->SetPosition(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._41, m_pAnotherPlayer->m_xmf4x4World._42, m_pAnotherPlayer->m_xmf4x4World._43));
+
+	}
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
@@ -662,12 +661,6 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 	}
 
-	//3인칭 카메라일 때 플레이어가 항상 보이도록 렌더링한다. 
-#ifdef _WITH_PLAYER_TOP
-	//렌더 타겟은 그대로 두고 깊이 버퍼를 1.0으로 지우고 플레이어를 렌더링하면 플레이어는 무조건 그려질 것이다. 
-	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-#endif
-	//3인칭 카메라일 때 플레이어를 렌더링한다. 
 	if (m_pPlayer)
 	{
 		m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
@@ -676,16 +669,17 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 			m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
 
-	//if (m_pAnotherPlayer)
-	//{
-	//	if (m_pAnotherPlayer->Client_id != 0)
-	//	{
-	//		m_pAnotherPlayer->Render(m_pd3dCommandList, m_pCamera);
+	if (m_pAnotherPlayer)
+	{
+		if (m_pAnotherPlayer->Client_id != 0)
+		{
+			m_pAnotherPlayer->Render(m_pd3dCommandList, m_pCamera);
 
-	//		if (m_bRenderWire)
-	//			m_pAnotherPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
-	//	}
-	//}
+			if (m_bRenderWire)
+				m_pAnotherPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////
 
 
