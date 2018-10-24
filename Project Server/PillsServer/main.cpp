@@ -26,6 +26,7 @@ struct PLAYER_INFO
 {
 	int client_id;
 	DirectX::XMFLOAT4X4 xmf4x4World;
+	unsigned int is_shoot;
 };
 
 struct CLIENT_INFO
@@ -178,8 +179,8 @@ DWORD WINAPI client_thread(LPVOID arg)
 		PLAYER_INFO p_info;
 		memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
 		m.lock();
-		std::cout << "아이디: " << p_info.client_id << std::endl;
-		msg_queue.push(PLAYER_INFO{p_info.client_id, p_info.xmf4x4World});
+		//std::cout << "아이디: " << p_info.client_id << std::endl;
+		msg_queue.push(PLAYER_INFO{p_info.client_id, p_info.xmf4x4World, p_info.is_shoot});
 		m.unlock();
 
 	}
@@ -198,7 +199,7 @@ DWORD WINAPI send_msg(LPVOID arg)
 	while (true)
 	{
 		//auto start = std::chrono::high_resolution_clock::now();
-		if (i >= 1000)
+		if (i >= 5)
 		{
 			m.lock();
 			if (msg_queue.size() != 0)

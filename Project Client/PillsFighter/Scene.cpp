@@ -88,8 +88,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	// [0] Building, [1] Bullet, [2] Enemy
-	m_nShaders = 3;
+	// [0] Building, [1] Bullet, [2] Enemy, [3] EnemyBullet
+	//m_nShaders = 3;
+	m_nShaders = 4;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 
 	/////////////////////////////// Enemy Shader
@@ -114,6 +115,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	m_ppShaders[2] = pGundamhader;
 
+	CBulletShader *pEnemyBulletShader = new CBulletShader();
+	pEnemyBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pEnemyBulletShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+
+	m_ppShaders[3] = pEnemyBulletShader;
 	// Terrain
 	//m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 	//m_pTerrain->SetPosition(0.0f, 0.0f, 0.0f);

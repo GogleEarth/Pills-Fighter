@@ -325,6 +325,7 @@ void CGameFramework::BuildObjects()
 
 	m_pAnotherPlayer = pAnotherPlayer;
 	m_pAnotherPlayer->Client_id = 0;
+	m_pAnotherPlayer->SetBullet(m_pScene->GetBulletShader(3));
 	m_pScene->SetAnotherPlayer(pAnotherPlayer);
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
@@ -559,7 +560,7 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 	ProcessInput();
 
-	if (elapsedtime >= 0.5f)
+	if (elapsedtime >= 0.05f)
 	{
 		PLAYER_INFO p_info;
 		char buf[sizeof(PLAYER_INFO)];
@@ -567,8 +568,12 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 		p_info.client_id = m_pPlayer->Client_id;
 		p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
+		if (m_LButtonDown)
+			p_info.is_shoot = 0xff;
+		else
+			p_info.is_shoot = 0;
 		memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
-		std::cout << "보낼 정보 : " << p_info.client_id << std::endl;
+		//std::cout << "보낼 정보 : " << p_info.is_shoot << std::endl;
 		retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)
 		{
@@ -582,17 +587,20 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 	if (pinfo.client_id != 0 && pinfo.client_id!=m_pPlayer->Client_id)
 	{
-		std::cout << "받은 데이터의 id : " << pinfo.client_id << std::endl;
 		if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
 		{
 			m_pAnotherPlayer->Client_id = pinfo.client_id;
 		}
 		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
+		{
 			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
+			m_pAnotherPlayer->is_shoot = pinfo.is_shoot;
+		}
 		std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
 		std::cout << "다른 플레이어의 포지션 : " << m_pAnotherPlayer->m_xmf4x4World._41 <<
 			", " << m_pAnotherPlayer->m_xmf4x4World._42
 			<< ", " << m_pAnotherPlayer->m_xmf4x4World._43 << std::endl;
+		std::cout << "다른 플레이어가 총을 쏘는가? : " << m_pAnotherPlayer->is_shoot << std::endl;
 
 		
 		m_pAnotherPlayer->SetRight(
@@ -606,6 +614,12 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 		m_pAnotherPlayer->SetPosition(
 			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._41, m_pAnotherPlayer->m_xmf4x4World._42, m_pAnotherPlayer->m_xmf4x4World._43));
+
+		if (m_pAnotherPlayer->is_shoot == 0xff)
+		{
+			m_pAnotherPlayer->EnemyShot(m_pd3dDevice, m_pd3dCommandList);
+			m_pAnotherPlayer->CheckElapsedTime(m_GameTimer.GetTimeElapsed());
+		}
 
 	}
 

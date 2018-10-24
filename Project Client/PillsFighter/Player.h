@@ -76,7 +76,10 @@ private:
 	float m_ShotTime;
 
 public:
+	unsigned int is_shoot = FALSE;
 	void SetBullet(CShader *Bullet) { m_pBulletShader = (CNonFixedObjectsShader*)Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void EnemyShot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
 };

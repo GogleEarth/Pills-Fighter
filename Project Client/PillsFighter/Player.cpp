@@ -249,6 +249,33 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 	}
 }
 
+void CPlayer::EnemyShot(ID3D12Device * pd3dDevice, ID3D12GraphicsCommandList * pd3dCommandList)
+{
+	if (m_Shotable)
+	{
+		Bullet *pBullet = NULL;
+
+		pBullet = new Bullet();
+		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+		pBullet->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+		XMFLOAT3 xmfPosition = GetPosition();
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
+		pBullet->SetPosition(xmfPosition);
+		//pBullet->SetRight(m_pCamera->GetRightVector());
+		//pBullet->SetUp(m_pCamera->GetUpVector());
+		//pBullet->SetLook(m_pCamera->GetLookVector());
+		pBullet->SetRight(m_xmf3Right);
+		pBullet->SetUp(m_xmf3Look);
+		XMFLOAT3 xmlook = Vector3::ScalarProduct(m_xmf3Up, -1, true);
+		pBullet->SetLook(xmlook);
+
+		m_pBulletShader->InsertObject(pBullet);
+
+		m_Shotable = FALSE;
+	}
+}
+
 void CPlayer::CheckElapsedTime(float ElapsedTime)
 {
 	if (!m_Shotable)
