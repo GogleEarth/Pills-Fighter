@@ -614,13 +614,12 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 		m_pAnotherPlayer->SetPosition(
 			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._41, m_pAnotherPlayer->m_xmf4x4World._42, m_pAnotherPlayer->m_xmf4x4World._43));
+	}
 
-		if (m_pAnotherPlayer->is_shoot == 0xff)
-		{
-			m_pAnotherPlayer->EnemyShot(m_pd3dDevice, m_pd3dCommandList);
-			m_pAnotherPlayer->CheckElapsedTime(m_GameTimer.GetTimeElapsed());
-		}
-
+	if (m_pAnotherPlayer->is_shoot == 0xff)
+	{
+		m_pAnotherPlayer->EnemyShot(m_pd3dDevice, m_pd3dCommandList);
+		m_pAnotherPlayer->CheckElapsedTime(m_GameTimer.GetTimeElapsed());
 	}
 
 	//명령 할당자와 명령 리스트를 리셋한다. 

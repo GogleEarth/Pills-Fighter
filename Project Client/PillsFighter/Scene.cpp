@@ -178,10 +178,12 @@ void CScene::CheckCollision()
 
 	std::vector<CGameObject*> vEnemyObjects;
 	std::vector<CGameObject*> vBulletObjects;
+	std::vector<CGameObject*> vEnemyBulletObjects;
 
 	m_ppShaders[0]->GetObjects(NULL, &ppBuildingObjects, &nBuildingObjects);
 	m_ppShaders[1]->GetObjects(&vBulletObjects, NULL, NULL);
 	m_ppShaders[2]->GetObjects(&vEnemyObjects, NULL, NULL);
+	m_ppShaders[3]->GetObjects(&vEnemyBulletObjects, NULL, NULL);
 
 	for (const auto& Bullet : vBulletObjects)
 	{
@@ -214,6 +216,22 @@ void CScene::CheckCollision()
 		}
 	}
 
+	for (const auto& Bullet : vEnemyBulletObjects)
+	{
+		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
+		{
+			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
+			{
+				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
+				{
+					if (Bullet->GetOOBB(j).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(i)))
+					{
+						Bullet->DeleteObject();
+					}
+				}
+			}
+		}
+	}
 	
 
 	for (const auto& Enemy : vEnemyObjects)
