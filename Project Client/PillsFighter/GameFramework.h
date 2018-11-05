@@ -4,14 +4,6 @@
 #include "Scene.h"
 #include "Player.h"
 
-class CGameFramework;
-
-struct FrameworkThread
-{
-	CGameFramework* pGFW;
-	LPVOID			arg;
-};
-
 class CGameFramework
 {
 private:
@@ -63,9 +55,17 @@ private:
 	BOOL							m_LButtonDown = FALSE;
 	BOOL							m_bRenderWire = FALSE;
 
-	CScene							*m_pScene = NULL;
-	CPlayer							*m_pPlayer = NULL;
-	CCamera							*m_pCamera = NULL;
+	//CScene							*m_pScene = NULL;
+	//CPlayer							*m_pPlayer = NULL;
+	//CCamera							*m_pCamera = NULL;
+
+	CScene						*m_pScene = NULL;
+	CPlayer						*m_pAnotherPlayer = NULL;
+	CCamera						*m_pCamera = NULL;
+
+	//통신
+	PLAYER_INFO pinfo;
+	float elapsedtime = 0.0f;
 
 public:
 	CGameFramework();
@@ -92,7 +92,7 @@ public:
 	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
 	void ProcessInput();
 	void AnimateObjects();
-	void FrameAdvance();
+	void FrameAdvance(PLAYER_INFO pinfo);
 
 	//CPU와 GPU를 동기화하는 함수이다. 
 	void WaitForGpuComplete();
@@ -103,24 +103,11 @@ public:
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-public: // for Network
-	HANDLE hThread;
 	SOCKET sock;
-
-	std::mutex gMutex;
-	std::queue<PLAYER_INFO> gqPlayer_Info;
+	CPlayer						*m_pPlayer = NULL;
 
 	//통신
-	PLAYER_INFO pinfo;
-	float elapsedtime = 0.0f;
-
-	void CloseNetwork();
-
 	void err_quit(char* msg);
 	void err_display(char* msg);
-	int recvn(SOCKET s, char * buf, int len, int flags);
-
-	void InitNetwork();
-	static DWORD WINAPI recvThread(LPVOID arg);
-	void ThreadFunc(LPVOID arg);
+	int recvn(SOCKET s, char* buf, int len, int flags);
 };

@@ -1,147 +1,6 @@
 #include "stdafx.h"
 #include "GameFramework.h"
 
-//////////////////////////////////////////////////////////////////////
-
-DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
-{
-	FrameworkThread* pFT = (FrameworkThread*)arg;
-	
-	pFT->pGFW->ThreadFunc(pFT->arg);
-}
-
-void CGameFramework::err_quit(char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(FLAG, NULL, WSAGetLastError(), LANG, (LPTSTR)&lpMsgBuf, 0, NULL);
-	MessageBox(NULL, (LPCTSTR)lpMsgBuf, (LPCWSTR)msg, MB_ICONERROR);
-	LocalFree(lpMsgBuf);
-
-	exit(1);
-}
-
-void CGameFramework::err_display(char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(FLAG, NULL, WSAGetLastError(), LANG, (LPTSTR)&lpMsgBuf, 0, NULL);
-	printf("[%s] %s", msg, (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}
-
-int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
-{
-	int received;
-	char* ptr = buf;
-	int left = len;
-
-	while (left > 0)
-	{
-		received = recv(s, ptr, left, flags);
-		if (received == SOCKET_ERROR)
-			return SOCKET_ERROR;
-		else if (received == 0)
-			break;
-		left -= received;
-		ptr += received;
-	}
-
-	return (len - left);
-}
-
-void CGameFramework::ThreadFunc(LPVOID arg)
-{
-	int retval;
-	char buf[sizeof(PLAYER_INFO)];
-	SOCKET socket = (SOCKET)arg;
-
-	while (true)
-	{
-		retval = recvn(socket, buf, sizeof(PLAYER_INFO), 0);
-		if (retval == SOCKET_ERROR)
-		{
-			err_display("recv()");
-		}
-		std::cout << retval << " 바이트 받음\n";
-		// 받은 데이터 출력
-		if (retval > 0)
-		{
-			PLAYER_INFO p_info;
-			memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
-			gMutex.lock();
-			gqPlayer_Info.push(PLAYER_INFO{ p_info.client_id, p_info.xmf4x4World, p_info.is_shoot });
-			gMutex.unlock();
-			//std::cout << "아이디: " << p_info.client_id << std::endl;
-		}
-	}
-}
-
-void CGameFramework::InitNetwork()
-{
-	int retval;
-	PLAYER_INFO pinfo;
-	ZeroMemory(&pinfo, sizeof(PLAYER_INFO));
-
-	std::cout << "아이디 입력:";
-	std::cin >> pinfo.client_id;
-
-	//// for Networking
-	WSADATA wsa;
-	if (WSAStartup(WS22, &wsa) != 0)
-		return;
-
-	// 데이터 통신에 사용될 변수
-	char buf[sizeof(PLAYER_INFO)];
-
-	// socket()
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock == INVALID_SOCKET)
-		err_quit("socket()");
-
-	// recv Time Out 3 sec
-	int optval = 3000;
-	retval = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
-	if (retval == SOCKET_ERROR)
-		err_quit("setsockopt()");
-
-	// connect()
-	SOCKADDR_IN serveraddr;
-	ZeroMemory(&serveraddr, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
-	serveraddr.sin_port = htons(SERVERPORT);
-	retval = connect(sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
-	if (retval == SOCKET_ERROR)
-		err_quit("connect()");
-
-	m_pPlayer->Client_id = pinfo.client_id;
-
-	// 클라이언트 아이디 전송
-	memcpy(&buf, &pinfo.client_id, sizeof(int));
-	retval = send(sock, buf, sizeof(int), 0);
-	if (retval == SOCKET_ERROR)
-		err_display("send");
-	//std::cout << retval << "바이트 보냈음\n";
-
-	retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
-	if (retval == SOCKET_ERROR)
-		err_display("send");
-
-	FrameworkThread sFT;
-	sFT.pGFW = this;
-	sFT.arg = (LPVOID)sock;
-
-	hThread = CreateThread(NULL, 0, &recvThread, &sFT, 0, NULL);
-}
-
-void CGameFramework::CloseNetwork()
-{
-	closesocket(sock);
-
-	WSACleanup();
-}
-
-////////////////////////////////////////////////////////////////
-
 CGameFramework::CGameFramework()
 {
 	m_pdxgiFactory = NULL;
@@ -170,6 +29,7 @@ CGameFramework::CGameFramework()
 
 	m_pScene = NULL;
 	m_pPlayer = NULL;
+	//m_pAnotherPlayer = NULL;
 
 	_tcscpy_s(m_pszFrameRate, _T(GAME_TITLE));
 }
@@ -191,12 +51,11 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 
 	//렌더링할 객체(게임 월드 객체)를 생성한다. 
 	BuildObjects();
-	//InitNetwork();
 
 	//마우스 커서를 클라이언트 중심에 놓는다.
 	POINT pt;
-	pt.x = FRAME_BUFFER_WIDTH	/ 2;
-	pt.y = FRAME_BUFFER_HEIGHT	/ 2;
+	pt.x = FRAME_BUFFER_WIDTH / 2;
+	pt.y = FRAME_BUFFER_HEIGHT / 2;
 
 	ClientToScreen(hMainWnd, &pt);
 	SetCursorPos(pt.x, pt.y);
@@ -211,8 +70,6 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 void CGameFramework::OnDestroy()
 {
 	ReleaseObjects();
-
-	CloseNetwork();
 
 	::CloseHandle(m_hFenceEvent);
 
@@ -236,7 +93,11 @@ void CGameFramework::OnDestroy()
 	if (m_pdxgiSwapChain) m_pdxgiSwapChain->Release();
 	if (m_pd3dDevice) m_pd3dDevice->Release();
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
-	
+
+	closesocket(sock);
+	// 윈속 종료
+	WSACleanup();
+
 	//마우스 캡쳐를 해제한다. 
 	::ReleaseCapture();
 }
@@ -341,7 +202,7 @@ void CGameFramework::CreateDirect3DDevice()
 
 void CGameFramework::CreateCommandQueueAndList()
 {
-//직접(Direct) 명령 큐를 생성한다. 
+	//직접(Direct) 명령 큐를 생성한다. 
 	D3D12_COMMAND_QUEUE_DESC d3dCommandQueueDesc;
 	::ZeroMemory(&d3dCommandQueueDesc, sizeof(D3D12_COMMAND_QUEUE_DESC));
 	d3dCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -349,16 +210,16 @@ void CGameFramework::CreateCommandQueueAndList()
 	HRESULT hResult = m_pd3dDevice->CreateCommandQueue(&d3dCommandQueueDesc,
 		_uuidof(ID3D12CommandQueue), (void **)&m_pd3dCommandQueue);
 
-//직접(Direct) 명령 할당자를 생성한다. 
+	//직접(Direct) 명령 할당자를 생성한다. 
 	hResult = m_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-	__uuidof(ID3D12CommandAllocator), (void **)&m_pd3dCommandAllocator);
+		__uuidof(ID3D12CommandAllocator), (void **)&m_pd3dCommandAllocator);
 
-//직접(Direct) 명령 리스트를 생성한다. 
+	//직접(Direct) 명령 리스트를 생성한다. 
 	hResult = m_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-	m_pd3dCommandAllocator, NULL, __uuidof(ID3D12GraphicsCommandList), (void
-		**)&m_pd3dCommandList);
+		m_pd3dCommandAllocator, NULL, __uuidof(ID3D12GraphicsCommandList), (void
+			**)&m_pd3dCommandList);
 
-//명령 리스트는 생성되면 열린(Open) 상태이므로 닫힌(Closed) 상태로 만든다. 
+	//명령 리스트는 생성되면 열린(Open) 상태이므로 닫힌(Closed) 상태로 만든다. 
 	hResult = m_pd3dCommandList->Close();
 }
 
@@ -388,7 +249,7 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps()
 void CGameFramework::CreateRenderTargetViews()
 {
 	//스왑체인의 각 후면 버퍼에 대한 렌더 타겟 뷰를 생성한다.
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle =	m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
 	for (UINT i = 0; i < m_nSwapChainBuffers; i++)
 	{
@@ -451,13 +312,21 @@ void CGameFramework::BuildObjects()
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
-	pPlayer->SetHitPoint(100);
 
 	m_pPlayer = pPlayer;
 	m_pScene->SetPlayer(pPlayer);
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(1));
+
+	CPlayer *pAnotherPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
+	pAnotherPlayer->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pAnotherPlayer->SetMovingSpeed(100.0f);
+
+	m_pAnotherPlayer = pAnotherPlayer;
+	m_pAnotherPlayer->Client_id = 0;
+	m_pAnotherPlayer->SetBullet(m_pScene->GetBulletShader(3));
+	m_pScene->SetAnotherPlayer(pAnotherPlayer);
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
 	m_pd3dCommandList->Close();
@@ -525,25 +394,25 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			::PostQuitMessage(0);
 			break;
 		case VK_F8:
-			break; 
-		case VK_F9: //“F9” 키가 눌려지면 윈도우 모드와 전체화면 모드의 전환을 처리한다
-			{
-				BOOL bFullScreenState = FALSE;
-				m_pdxgiSwapChain->GetFullscreenState(&bFullScreenState, NULL);
-				m_pdxgiSwapChain->SetFullscreenState(!bFullScreenState, NULL);
-				DXGI_MODE_DESC dxgiTargetParameters;
-				dxgiTargetParameters.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-				dxgiTargetParameters.Width = m_nWndClientWidth;
-				dxgiTargetParameters.Height = m_nWndClientHeight;
-				dxgiTargetParameters.RefreshRate.Numerator = 60;
-				dxgiTargetParameters.RefreshRate.Denominator = 1;
-				dxgiTargetParameters.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-				dxgiTargetParameters.ScanlineOrdering =
-					DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-				m_pdxgiSwapChain->ResizeTarget(&dxgiTargetParameters);
-				OnResizeBackBuffers();
-			}
 			break;
+		case VK_F9: //“F9” 키가 눌려지면 윈도우 모드와 전체화면 모드의 전환을 처리한다
+		{
+			BOOL bFullScreenState = FALSE;
+			m_pdxgiSwapChain->GetFullscreenState(&bFullScreenState, NULL);
+			m_pdxgiSwapChain->SetFullscreenState(!bFullScreenState, NULL);
+			DXGI_MODE_DESC dxgiTargetParameters;
+			dxgiTargetParameters.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			dxgiTargetParameters.Width = m_nWndClientWidth;
+			dxgiTargetParameters.Height = m_nWndClientHeight;
+			dxgiTargetParameters.RefreshRate.Numerator = 60;
+			dxgiTargetParameters.RefreshRate.Denominator = 1;
+			dxgiTargetParameters.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+			dxgiTargetParameters.ScanlineOrdering =
+				DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+			m_pdxgiSwapChain->ResizeTarget(&dxgiTargetParameters);
+			OnResizeBackBuffers();
+		}
+		break;
 		case VK_RETURN:
 			if (::GetCapture() == m_hWnd)
 			{
@@ -644,7 +513,7 @@ void CGameFramework::ProcessInput()
 			//m_pCamera->Rotate(cyDelta, cxDelta, 0.0f);
 			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
-		
+
 		if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_GameTimer.GetTimeElapsed());
 	}
 
@@ -660,6 +529,12 @@ void CGameFramework::ProcessInput()
 void CGameFramework::AnimateObjects()
 {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
+
+	if (m_pAnotherPlayer)
+	{// m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
+		XMFLOAT3 position{ m_pAnotherPlayer->m_xmf4x4World._41,m_pAnotherPlayer->m_xmf4x4World._42 ,m_pAnotherPlayer->m_xmf4x4World._43 };
+		m_pAnotherPlayer->SetPosition(position);
+	}
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -678,10 +553,9 @@ void CGameFramework::WaitForGpuComplete()
 	}
 }
 
-void CGameFramework::FrameAdvance()
+void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 {
 	m_GameTimer.Tick(0.0f);
-
 	auto start = std::chrono::high_resolution_clock::now();
 
 	ProcessInput();
@@ -711,12 +585,49 @@ void CGameFramework::FrameAdvance()
 
 	AnimateObjects();
 
+	if (pinfo.client_id != 0 && pinfo.client_id != m_pPlayer->Client_id)
+	{
+		if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
+		{
+			m_pAnotherPlayer->Client_id = pinfo.client_id;
+		}
+		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
+		{
+			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
+			m_pAnotherPlayer->is_shoot = pinfo.is_shoot;
+		}
+		std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
+		std::cout << "다른 플레이어의 포지션 : " << m_pAnotherPlayer->m_xmf4x4World._41 <<
+			", " << m_pAnotherPlayer->m_xmf4x4World._42
+			<< ", " << m_pAnotherPlayer->m_xmf4x4World._43 << std::endl;
+		std::cout << "다른 플레이어가 총을 쏘는가? : " << m_pAnotherPlayer->is_shoot << std::endl;
+
+
+		m_pAnotherPlayer->SetRight(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._11, m_pAnotherPlayer->m_xmf4x4World._12, m_pAnotherPlayer->m_xmf4x4World._13));
+
+		m_pAnotherPlayer->SetUp(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._21, m_pAnotherPlayer->m_xmf4x4World._22, m_pAnotherPlayer->m_xmf4x4World._23));
+
+		m_pAnotherPlayer->SetLook(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._31, m_pAnotherPlayer->m_xmf4x4World._32, m_pAnotherPlayer->m_xmf4x4World._33));
+
+		m_pAnotherPlayer->SetPosition(
+			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._41, m_pAnotherPlayer->m_xmf4x4World._42, m_pAnotherPlayer->m_xmf4x4World._43));
+	}
+
+	if (m_pAnotherPlayer->is_shoot == 0xff)
+	{
+		m_pAnotherPlayer->EnemyShot(m_pd3dDevice, m_pd3dCommandList);
+		m_pAnotherPlayer->CheckElapsedTime(m_GameTimer.GetTimeElapsed());
+	}
+
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
-	/*현재 렌더 타겟에 대한 프리젠트가 끝나기를 기다린다. 
-	프리젠트가 끝나면 렌더 타겟 버퍼의 상태는 프리젠트 상태(D3D12_RESOURCE_STATE_PRESENT)에서 
+	/*현재 렌더 타겟에 대한 프리젠트가 끝나기를 기다린다.
+	프리젠트가 끝나면 렌더 타겟 버퍼의 상태는 프리젠트 상태(D3D12_RESOURCE_STATE_PRESENT)에서
 	렌더 타겟 상태(D3D12_RESOURCE_STATE_RENDER_TARGET)로 바뀔 것이다.*/
 	D3D12_RESOURCE_BARRIER d3dResourceBarrier;
 	::ZeroMemory(&d3dResourceBarrier, sizeof(D3D12_RESOURCE_BARRIER));
@@ -731,34 +642,34 @@ void CGameFramework::FrameAdvance()
 
 	//현재의 렌더 타겟에 해당하는 서술자의 CPU 주소(핸들)를 계산한다. 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle =
-	m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex *
 		m_nRtvDescriptorIncrementSize);
 
 	//원하는 색상으로 렌더 타겟(뷰)을 지운다. 
 	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle,
-		pfClearColor/*Colors::Azure*/, 0, NULL);	
+		pfClearColor/*Colors::Azure*/, 0, NULL);
 
 	//깊이-스텐실 서술자의 CPU 주소를 계산한다. 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle =
-	m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
 	//원하는 값으로 깊이-스텐실(뷰)을 지운다. 
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle,
-	D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
 	//렌더 타겟 뷰(서술자)와 깊이-스텐실 뷰(서술자)를 출력-병합 단계(OM)에 연결한다. 
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
-	&d3dDsvCPUDescriptorHandle);
+		&d3dDsvCPUDescriptorHandle);
 
 	/////////////// 렌더링 코드는 여기에 추가될 것이다.  ///////////////
-	
+
 	if (m_pScene)
 	{
 		m_pScene->Render(m_pd3dCommandList, m_pCamera);
 
-		if(m_bRenderWire)
+		if (m_bRenderWire)
 			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
 
 	}
@@ -771,10 +682,21 @@ void CGameFramework::FrameAdvance()
 			m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
 
+	if (m_pAnotherPlayer)
+	{
+		if (m_pAnotherPlayer->Client_id != 0)
+		{
+			m_pAnotherPlayer->Render(m_pd3dCommandList, m_pCamera);
+
+			if (m_bRenderWire)
+				m_pAnotherPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////
 
 
-	/*현재 렌더 타겟에 대한 렌더링이 끝나기를 기다린다. 
+	/*현재 렌더 타겟에 대한 렌더링이 끝나기를 기다린다.
 	GPU가 렌더 타겟(버퍼)을 더 이상 사용하지 않으면 렌더 타겟의 상태는 프리젠트 상태(D3D12_RESOURCE_STATE_PRESENT)로 바뀔 것이다.*/
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
@@ -791,7 +713,7 @@ void CGameFramework::FrameAdvance()
 	//GPU가 모든 명령 리스트를 실행할 때 까지 기다린다. 
 	WaitForGpuComplete();
 
-	/*스왑체인을 프리젠트한다. 
+	/*스왑체인을 프리젠트한다.
 	프리젠트를 하면 현재 렌더 타겟(후면버퍼)의 내용이 전면버퍼로 옮겨지고 렌더 타겟 인덱스가 바뀔 것이다.*/
 	m_pdxgiSwapChain->Present(0, 0);
 
@@ -848,4 +770,49 @@ void CGameFramework::MoveToNextFrame()
 		hResult = m_pd3dFence->SetEventOnCompletion(nFenceValue, m_hFenceEvent);
 		::WaitForSingleObject(m_hFenceEvent, INFINITE);
 	}
+}
+
+void CGameFramework::err_quit(char* msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessage(
+		FLAG, NULL,
+		WSAGetLastError(), LANG,
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	MessageBox(
+		NULL, (LPCTSTR)lpMsgBuf,
+		(LPCWSTR)msg, MB_ICONERROR);
+	LocalFree(lpMsgBuf);
+	exit(1);
+}
+
+void CGameFramework::err_display(char* msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessage(
+		FLAG, NULL,
+		WSAGetLastError(), LANG,
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	printf("[%s] %s", msg, (char*)lpMsgBuf);
+	LocalFree(lpMsgBuf);
+}
+
+int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
+{
+	int received;
+	char* ptr = buf;
+	int left = len;
+
+	while (left > 0)
+	{
+		received = recv(s, ptr, left, flags);
+		if (received == SOCKET_ERROR)
+			return SOCKET_ERROR;
+		else if (received == 0)
+			break;
+		left -= received;
+		ptr += received;
+	}
+
+	return (len - left);
 }
