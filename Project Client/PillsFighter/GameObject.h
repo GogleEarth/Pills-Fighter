@@ -10,11 +10,11 @@
 #define RESOURCE_BUFFER				0x05
 
 class CShader;
-class CObjectsShader;
 
 struct CB_GAMEOBJECT_INFO
 {
 	XMFLOAT4X4						m_xmf4x4World;
+	UINT							m_nMaterial;
 };
 
 struct SRVROOTARGUMENTINFO
@@ -64,6 +64,8 @@ public:
 	XMFLOAT4						m_xmf4Albedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	CTexture						*m_pTexture = NULL;
+	UINT							m_nReflection = 0;
+	CShader							*m_pShader = NULL;
 
 	void SetAlbedo(XMFLOAT4 xmf4Albedo) { m_xmf4Albedo = xmf4Albedo; }
 	void SetTexture(CTexture *pTexture);
@@ -155,6 +157,7 @@ public:
 	XMFLOAT3 GetDirection() { return m_xmf3Direction; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
 	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
+	CMaterial* GetMaterial(UINT nIndex) { return m_ppMaterials[nIndex]; }
 
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
@@ -175,6 +178,13 @@ public:
 	BoundingOrientedBox GetOOBB(UINT nIndex) { return m_xmOOBB[nIndex]; }
 	void DeleteObject() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
+
+protected:
+	int		m_iHitPoint;
+
+public:
+	int *GetHitPoint() { return &m_iHitPoint; }
+	void SetHitPoint(int iHitPoint) { m_iHitPoint = iHitPoint; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,24 +223,6 @@ private:
 	float m_RotationSpeed;
 	float m_DurationTime; // 발사 후 생존?시간
 	float m_ElapsedTime; // 행동한 시간
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CRectTerrain : public CGameObject
-{
-public:
-	CRectTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
-	virtual ~CRectTerrain();
-
-	virtual void ReleaseShaderVariables();
-
-	virtual void ReleaseUploadBuffers();
-
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
-
-protected:
-	CShader					*m_pShader = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

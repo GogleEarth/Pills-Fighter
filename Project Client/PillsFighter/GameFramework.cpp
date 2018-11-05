@@ -312,6 +312,7 @@ void CGameFramework::BuildObjects()
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
+	pPlayer->SetHitPoint(100);
 
 	m_pPlayer = pPlayer;
 	m_pScene->SetPlayer(pPlayer);
@@ -664,7 +665,7 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 	&d3dDsvCPUDescriptorHandle);
 
 	/////////////// 렌더링 코드는 여기에 추가될 것이다.  ///////////////
-
+	
 	if (m_pScene)
 	{
 		m_pScene->Render(m_pd3dCommandList, m_pCamera);

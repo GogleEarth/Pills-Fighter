@@ -13,52 +13,131 @@ public:
 	XMFLOAT3 GetPosition() { return m_xmf3Position; }
 };
 
+//////////////////////////////////////////////////////////////////////////////
+
+class CIlluminatedVertex : public CVertex
+{
+protected:
+	XMFLOAT3 m_xmf3Normal;
+
+public:
+	CIlluminatedVertex() 
+	{
+		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); 
+		m_xmf3Normal =	XMFLOAT3(0.0f, 0.0f, 0.0f); 
+	}
+
+	CIlluminatedVertex(float x, float y, float z, XMFLOAT3 xmf3Normal) 
+	{
+		m_xmf3Position = XMFLOAT3(x, y, z); 
+		m_xmf3Normal = xmf3Normal;
+	}
+
+	CIlluminatedVertex(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Normal) 
+	{
+		m_xmf3Position = xmf3Position; 
+		m_xmf3Normal = xmf3Normal;
+	}
+
+	~CIlluminatedVertex() { }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
 class CDiffusedVertex : public CVertex
 {
 protected:
 	XMFLOAT4 m_xmf4Diffuse;
+
 public:
-	CDiffusedVertex() {
+	CDiffusedVertex()
+	{
 		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 
-	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse) {
+	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse)
+	{
 		m_xmf3Position = XMFLOAT3(x, y, z);
 		m_xmf4Diffuse = xmf4Diffuse;
 	}
 
-	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse) {
+	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse)
+	{
 		m_xmf3Position = xmf3Position;
 		m_xmf4Diffuse = xmf4Diffuse;
 	}
+
 	~CDiffusedVertex() {}
 };
 
-class CTexturedVertex : public CVertex
+class CTexturedVertex : public CIlluminatedVertex
 {
 public:
 	XMFLOAT2	m_xmf2TexCoord;
 
 public:
-	CTexturedVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); m_xmf2TexCoord = XMFLOAT2(0.0f, 0.0f); }
-	CTexturedVertex(float x, float y, float z, XMFLOAT2 xmf2TexCoord) { m_xmf3Position = XMFLOAT3(x, y, z); m_xmf2TexCoord = xmf2TexCoord; }
-	CTexturedVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2TexCoord = XMFLOAT2(0.0f, 0.0f)) { m_xmf3Position = xmf3Position; m_xmf2TexCoord = xmf2TexCoord; }
+	CTexturedVertex() 
+	{ 
+		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		m_xmf3Normal = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		m_xmf2TexCoord = XMFLOAT2(0.0f, 0.0f); 
+	}
+
+	CTexturedVertex(float x, float y, float z, XMFLOAT3 xmf3Normal, XMFLOAT2 xmf2TexCoord)
+	{
+		m_xmf3Position = XMFLOAT3(x, y, z);
+		m_xmf3Normal = xmf3Normal;
+		m_xmf2TexCoord = xmf2TexCoord;
+	}
+
+	CTexturedVertex(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Normal, XMFLOAT2 xmf2TexCoord)
+	{ 
+		m_xmf3Position = xmf3Position;
+		m_xmf3Normal = xmf3Normal;
+		m_xmf2TexCoord = xmf2TexCoord; 
+	}
+
 	~CTexturedVertex() { }
 };
 
+//////////////////////////////////////////////////////////////////////////////
 
-class CDiffusedTexturedVertex : public CDiffusedVertex
+class CDiffusedTexturedVertex : public CTexturedVertex
 {
 public:
-	XMFLOAT2	m_xmf2TexCoord;
+	XMFLOAT4 m_xmf4Diffuse;
 
 public:
-	CDiffusedTexturedVertex() { m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f); m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f); m_xmf2TexCoord = XMFLOAT2(0.0f, 0.0f); }
-	CDiffusedTexturedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse, XMFLOAT2 xmf2TexCoord) { m_xmf3Position = XMFLOAT3(x, y, z); m_xmf4Diffuse = xmf4Diffuse; m_xmf2TexCoord = xmf2TexCoord; }
-	CDiffusedTexturedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f), XMFLOAT2 xmf2TexCoord = XMFLOAT2(0.0f, 0.0f)) { m_xmf3Position = xmf3Position; m_xmf4Diffuse = xmf4Diffuse; m_xmf2TexCoord = xmf2TexCoord; }
+	CDiffusedTexturedVertex() 
+	{ 
+		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		m_xmf3Normal = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		m_xmf2TexCoord = XMFLOAT2(0.0f, 0.0f);
+		m_xmf4Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+
+	CDiffusedTexturedVertex(float x, float y, float z, XMFLOAT3 xmf3Normal, XMFLOAT4 xmf4Diffuse, XMFLOAT2 xmf2TexCoord)
+	{ 
+		m_xmf3Position = XMFLOAT3(x, y, z);
+		m_xmf3Normal = xmf3Normal;
+		m_xmf4Diffuse = xmf4Diffuse; 
+		m_xmf2TexCoord = xmf2TexCoord;
+	}
+
+	CDiffusedTexturedVertex(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Normal, XMFLOAT4 xmf4Diffuse, XMFLOAT2 xmf2TexCoord)
+	{ 
+		m_xmf3Position = xmf3Position;
+		m_xmf3Normal = xmf3Normal;
+		m_xmf4Diffuse = xmf4Diffuse; 
+		m_xmf2TexCoord = xmf2TexCoord; 
+	}
+
 	~CDiffusedTexturedVertex() { }
 };
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 class CMesh
 {
@@ -108,13 +187,4 @@ class CCubeMesh : public CMesh
 public:
 	CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f);
 	virtual ~CCubeMesh();
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CRectMesh : public CMesh
-{
-public:
-	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f, float fxPosition = 0.0f, float fzPosition = 0.0f );
-	virtual ~CRectMesh();
 };

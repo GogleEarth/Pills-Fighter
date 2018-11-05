@@ -3,6 +3,43 @@
 #include "Shader.h"
 #include "Player.h"
 
+struct LIGHT
+{
+	XMFLOAT4 m_xmf4Ambient;
+	XMFLOAT4 m_xmf4Diffuse;
+	XMFLOAT4 m_xmf4Specular;
+	XMFLOAT3 m_xmf3Position;
+	float m_fFalloff;
+	XMFLOAT3 m_xmf3Direction;
+	float m_fTheta; //cos(m_fTheta)
+	XMFLOAT3 m_xmf3Attenuation;
+	float m_fPhi; //cos(m_fPhi)
+	bool m_bEnable;
+	int m_nType;
+	float m_fRange;
+	float padding;
+};
+
+struct LIGHTS
+{
+	LIGHT m_pLights[MAX_LIGHTS];
+	XMFLOAT4 m_xmf4GlobalAmbient;
+};
+
+struct MATERIAL
+{
+	XMFLOAT4 m_xmf4Ambient;
+	XMFLOAT4 m_xmf4Diffuse;
+	XMFLOAT4 m_xmf4Specular; //(r,g,b,a=power)
+	XMFLOAT4 m_xmf4Emissive;
+};
+
+struct MATERIALS
+{
+	MATERIAL m_pReflections[MAX_MATERIALS];
+};
+
+
 class CScene
 {
 public:
@@ -21,10 +58,6 @@ public:
 	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 	void SetGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList) { pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature); }
 
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {};
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
-	virtual void ReleaseShaderVariables() {};
-
 	bool ProcessInput(UCHAR *pKeysBuffer);
 	void AnimateObjects(float fTimeElapsed);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -40,7 +73,7 @@ protected:
 
 	CPlayer						*m_pAnotherPlayer = NULL;
 
-	CRectTerrain				*m_pTerrain = NULL;
+	CGameObject					*m_pTerrain = NULL;
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
 
@@ -48,10 +81,28 @@ public:
 	// 충돌 체크를 검사한다.
 	void CheckCollision();
 
-	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer;}
+	void SetPlayer(CPlayer* pPlayer);
 
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
 
 	void SetAnotherPlayer(CPlayer* pPlayer) { m_pAnotherPlayer = pPlayer; }
 
+public: //For Lights
+	void BuildLightsAndMaterials();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+protected:
+	//씬의 조명
+	LIGHTS			*m_pLights = NULL;
+
+	ID3D12Resource	*m_pd3dcbLights = NULL;
+	LIGHTS			*m_pcbMappedLights = NULL;
+
+	MATERIALS		*m_pMaterials = NULL;
+
+	ID3D12Resource	*m_pd3dcbMaterials = NULL;
+	MATERIAL		*m_pcbMappedMaterials = NULL;
 };

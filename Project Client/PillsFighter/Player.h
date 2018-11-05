@@ -13,11 +13,13 @@
 #define SHOT_COOLTIME			0.05f
 
 class CShader;
+class CUserInterface;
 class CNonFixedObjectsShader;
 
 struct CB_PLAYER_INFO
 {
 	XMFLOAT4X4					m_xmf4x4World;
+	UINT						m_nMaterial;
 };
 
 class CPlayer : public CGameObject
@@ -82,4 +84,7 @@ public:
 	void EnemyShot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
+
+protected:
+	CShader				*m_pUserInterface = NULL;
 };

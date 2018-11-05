@@ -16,11 +16,11 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	
 	UINT nTextures;
-	CTexture **ppTexture;
+	CTexture **ppTextures;
 
 	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
-	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTexture, nTextures);
-	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTexture, m_pShader);
+	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures, nTextures);
+	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, m_pShader);
 
 	UINT nMaterials = nTextures;
 	CMaterial **ppMaterials = new CMaterial*[nMaterials];
@@ -28,7 +28,8 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	for (UINT i = 0; i < nTextures; i++)
 	{
 		ppMaterials[i] = new CMaterial();
-		ppMaterials[i]->SetTexture(ppTexture[i]);
+		ppMaterials[i]->SetTexture(ppTextures[i]);
+		ppMaterials[i]->m_nReflection = 0;
 	}
 
 	m_pShader->SetMaterial(ppMaterials, nMaterials);
@@ -38,6 +39,12 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
 
 	m_ShotTime = 0;
+
+	CUserInterface *pUserInterface = new CUserInterface();
+	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
+
+	m_pUserInterface = pUserInterface;
 }
 
 CPlayer::~CPlayer()
@@ -54,6 +61,12 @@ CPlayer::~CPlayer()
 
 		delete[] m_ppMeshes;
 		delete[] m_ppCubeMeshes;
+	}
+
+	if (m_pUserInterface)
+	{
+		m_pUserInterface->ReleaseShaderVariables();
+		delete m_pUserInterface;
 	}
 
 	if (m_pShader) delete m_pShader;
@@ -93,6 +106,7 @@ void CPlayer::ReleaseShaderVariables()
 void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	XMStoreFloat4x4(&m_pcbMappedPlayer->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
+	m_pcbMappedPlayer->m_nMaterial = m_ppMaterials[0]->m_nReflection;
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbPlayer->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(0, d3dGpuVirtualAddress);
@@ -101,6 +115,8 @@ void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 void CPlayer::ReleaseUploadBuffers()
 {
 	if (m_pShader) m_pShader->ReleaseUploadBuffers();
+
+	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
 
 	CGameObject::ReleaseUploadBuffers();
 }
@@ -181,7 +197,7 @@ void CPlayer::Update(float fTimeElapsed)
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	//m_pCamera->SetLookAt(m_xmf3Position);
 	m_pCamera->SetLookAt(xmf3LookAt);
-
+	m_iHitPoint--;
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
 
@@ -208,8 +224,9 @@ void CPlayer::Rotate(float x, float y, float z)
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	//플레이어 객체를 렌더링한다. 
+	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
 
+	//플레이어 객체를 렌더링한다. 
 	m_pShader->OnPrepareRender(pd3dCommandList);
 
 	CGameObject::Render(pd3dCommandList, pCamera);

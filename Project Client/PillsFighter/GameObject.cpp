@@ -154,6 +154,7 @@ void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphics
 void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	XMStoreFloat4x4(&m_pcbMappedGameObject->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
+	m_pcbMappedGameObject->m_nMaterial = m_ppMaterials[0]->m_nReflection;
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbGameObject->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(0, d3dGpuVirtualAddress);
@@ -409,87 +410,6 @@ void Bullet::Animate(float ElapsedTime)
 	CGameObject::Animate(ElapsedTime);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-CRectTerrain::CRectTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) : CGameObject()
-{
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	m_pShader = new CShader();
-	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-
-	int nWidth = 1;
-	int nDepth = 1;
-
-	int nIndex = 0;
-	m_nMeshes = nWidth * nDepth;
-	m_ppMeshes = new CMesh*[m_nMeshes];
-
-	for (int x = 0; x < nWidth; x++)
-	{
-		for (int z = 0; z < nDepth; z++)
-		{
-			m_ppMeshes[nIndex++] = new CRectMesh(pd3dDevice, pd3dCommandList, 10.0f, 0.0f, 10.0f, x * 10, z * 10);
-		}
-	}
-
-	CTexture *pTileTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
-
-	m_pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTileTexture, 2, true);
-
-	m_nMaterials = 1;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial();
-	m_ppMaterials[0]->SetTexture(pTileTexture);
-
-	m_pShader->SetMaterial(m_ppMaterials, m_nMaterials);
-	SetMaterial(m_ppMaterials, m_nMaterials);
-}
-
-CRectTerrain::~CRectTerrain(void)
-{
-	if (m_pShader) delete m_pShader;
-
-	if (m_ppMeshes)
-	{
-		for (UINT j = 0; j < m_nMeshes; j++)
-		{
-			if (m_ppMeshes[j]) delete m_ppMeshes[j];
-			
-			if(m_ppCubeMeshes) if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
-		}
-
-		delete[] m_ppMeshes;
-		delete[] m_ppCubeMeshes;
-	}
-}
-
-void CRectTerrain::ReleaseShaderVariables()
-{
-	if (m_pShader)
-	{
-		m_pShader->ReleaseShaderVariables();
-	}
-
-	CGameObject::ReleaseShaderVariables();
-}
-
-void CRectTerrain::ReleaseUploadBuffers()
-{
-	if (m_pShader) m_pShader->ReleaseUploadBuffers();
-
-	CGameObject::ReleaseUploadBuffers();
-}
-
-void CRectTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
-{
-	m_pShader->OnPrepareRender(pd3dCommandList);
-
-	CGameObject::Render(pd3dCommandList, pCamera);
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMesh**& ppMeshes, CCubeMesh**& ppCubeMeshes, UINT& nMeshes)
@@ -497,7 +417,7 @@ void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *
 	ppMeshes = new CMesh*[7];
 	::ZeroMemory(ppMeshes, sizeof(CMesh*) * 7);
 	ppCubeMeshes = new CCubeMesh*[7];
-	::ZeroMemory(ppCubeMeshes, sizeof(CCubeMesh*) * 7);
+	::ZeroMemory(ppCubeMeshes, sizeof(CCubeMesh*) * 7);	
 
 	XMFLOAT3 Extents;
 	XMFLOAT3 Center;

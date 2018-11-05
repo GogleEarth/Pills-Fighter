@@ -60,6 +60,7 @@ private:
 	//CCamera							*m_pCamera = NULL;
 
 	CScene						*m_pScene = NULL;
+	CPlayer						*m_pPlayer = NULL;
 	CPlayer						*m_pAnotherPlayer = NULL;
 	CCamera						*m_pCamera = NULL;
 
@@ -103,8 +104,7 @@ public:
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-	SOCKET sock;
-	CPlayer						*m_pPlayer = NULL;
+	SOCKET						sock;
 
 	//Ελ½Ε
 	void err_quit(char* msg);
