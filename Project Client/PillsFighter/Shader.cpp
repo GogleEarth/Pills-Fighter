@@ -546,8 +546,9 @@ void CNonFixedObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 {
 }
 
-void CNonFixedObjectsShader::InsertObject(CGameObject* Object)
+void CNonFixedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object)
 {
+	Object->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	Object->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
 	Object->SetMaterial(m_ppMaterials, m_nMaterials);
 
@@ -649,6 +650,13 @@ void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 }
 
+void CBulletShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object)
+{
+	Object->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+
+	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, Object);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 CGundamShader::CGundamShader()
@@ -680,23 +688,22 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 	SetMaterial(ppMaterials, nMaterials);
 
-	RandomMoveObject *pObjects = new RandomMoveObject();
-	pObjects->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pObjects->SetPosition(XMFLOAT3(10.0f, 0.0f, 0.0f));
-	pObjects->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
-	pObjects->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
-	pObjects->SetMaterial(m_ppMaterials, m_nMaterials);
+	//RandomMoveObject *pObjects = new RandomMoveObject();
+	//pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
 
-	InsertObject(pObjects);
+	//InsertObject(pObjects);
 
-	pObjects = new RandomMoveObject();
-	pObjects->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
-	pObjects->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
-	pObjects->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
-	pObjects->SetMaterial(m_ppMaterials, m_nMaterials);
+	//pObjects = new RandomMoveObject();
+	//pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
 
-	InsertObject(pObjects);
+	//InsertObject(pObjects);
+}
+
+void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object)
+{
+	Object->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+
+	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, Object);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

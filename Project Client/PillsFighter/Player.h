@@ -68,20 +68,18 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
-	unsigned int Client_id;
-
 private:
 	CShader *m_pShader = NULL;
 
 	CNonFixedObjectsShader *m_pBulletShader = NULL;
 	bool m_Shotable = TRUE;
 	float m_ShotTime;
+	BOOL m_bIsShooting = FALSE;
 
 public:
-	unsigned int is_shoot = FALSE;
+	BOOL IsShoothin(void) { return m_bIsShooting; }
 	void SetBullet(CShader *Bullet) { m_pBulletShader = (CNonFixedObjectsShader*)Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	void EnemyShot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수
 

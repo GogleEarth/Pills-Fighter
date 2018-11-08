@@ -159,7 +159,7 @@ protected:
 	std::vector<CGameObject*>	m_vObjects;
 
 public:
-	virtual void InsertObject(CGameObject* Object);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object);
 	virtual void GetObjects(std::vector<CGameObject*> *vObjects, CGameObject ***ppObjects, UINT *nObjects) { *vObjects = m_vObjects; }
 
 	void CheckDeleteObjects();
@@ -174,6 +174,7 @@ public:
 	virtual ~CBulletShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,6 +186,7 @@ public:
 	virtual ~CGundamShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

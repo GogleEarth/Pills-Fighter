@@ -71,8 +71,6 @@ protected:
 	int							m_nShaders = 0;
 	CObjectsShader				**m_ppShaders = NULL;
 
-	CPlayer						*m_pAnotherPlayer = NULL;
-
 	CGameObject					*m_pTerrain = NULL;
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
@@ -84,8 +82,6 @@ public:
 	void SetPlayer(CPlayer* pPlayer);
 
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
-
-	void SetAnotherPlayer(CPlayer* pPlayer) { m_pAnotherPlayer = pPlayer; }
 
 public: //For Lights
 	void BuildLightsAndMaterials();
@@ -105,4 +101,10 @@ protected:
 
 	ID3D12Resource	*m_pd3dcbMaterials = NULL;
 	MATERIAL		*m_pcbMappedMaterials = NULL;
+
+public: // For Network
+	CGameObject* m_pObjects[MAX_NUM_OBJECT];
+
+	void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);
+	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
 };

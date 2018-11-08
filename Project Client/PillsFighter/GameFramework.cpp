@@ -1,6 +1,169 @@
 #include "stdafx.h"
 #include "GameFramework.h"
 
+//////////////////////////////////////////////////////////////////////
+
+DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
+{
+	FrameworkThread* pFT = (FrameworkThread*)arg;
+
+	pFT->pGFW->ThreadFunc(pFT->arg);
+}
+
+void CGameFramework::err_quit(char* msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessage(FLAG, NULL, WSAGetLastError(), LANG, (LPTSTR)&lpMsgBuf, 0, NULL);
+	MessageBox(NULL, (LPCTSTR)lpMsgBuf, (LPCWSTR)msg, MB_ICONERROR);
+	LocalFree(lpMsgBuf);
+
+	exit(1);
+}
+
+void CGameFramework::err_display(char* msg)
+{
+	LPVOID lpMsgBuf;
+	FormatMessage(FLAG, NULL, WSAGetLastError(), LANG, (LPTSTR)&lpMsgBuf, 0, NULL);
+	printf("[%s] %s", msg, (char*)lpMsgBuf);
+	LocalFree(lpMsgBuf);
+}
+
+int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
+{
+	int received;
+	char* ptr = buf;
+	int left = len;
+
+	while (left > 0)
+	{
+		received = recv(s, ptr, left, flags);
+		if (received == SOCKET_ERROR)
+			return SOCKET_ERROR;
+		else if (received == 0)
+			break;
+		left -= received;
+		ptr += received;
+	}
+
+	return (len - left);
+}
+
+void CGameFramework::ThreadFunc(LPVOID arg)
+{
+	int retval;
+	char buf[sizeof(PKT_PLAYER_INFO)];
+	SOCKET socket = (SOCKET)arg;
+
+	while (true)
+	{
+		retval = recvn(socket, buf, sizeof(PKT_PLAYER_INFO), 0);
+
+		if (retval == SOCKET_ERROR)	err_display("recv()");
+
+		// 받은 데이터 출력
+		if (retval > 0)
+		{
+			PKT_PLAYER_INFO Player_Info;
+			memcpy(&Player_Info, &buf, sizeof(PKT_PLAYER_INFO));
+
+			m_Mutex.lock();
+			m_qPlayer_Info.push(PKT_PLAYER_INFO{ Player_Info.ID, Player_Info.WorldMatrix, Player_Info.IsShooting });
+			m_Mutex.unlock();
+		}
+	}
+}
+
+void CGameFramework::InitNetwork()
+{
+	//// for Networking
+	WSADATA wsa;
+	if (WSAStartup(WS22, &wsa) != 0)
+		return;
+
+	char ServerIP[20];
+	::memset(&ServerIP, 0, sizeof(char[20]));
+
+	std::cout << "서버 IP 입력 : ";
+	std::cin >> ServerIP;
+
+	// socket()
+	m_sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (m_sock == INVALID_SOCKET)
+		err_quit("socket()");
+
+	int retval;
+
+	// recv Time Out 3 sec
+	int optval = 3000;
+	retval = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
+	if (retval == SOCKET_ERROR)
+		err_quit("setsockopt()");
+
+	// connect()
+	SOCKADDR_IN serveraddr;
+	ZeroMemory(&serveraddr, sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_addr.s_addr = inet_addr(ServerIP);
+	serveraddr.sin_port = htons(SERVERPORT);
+	retval = connect(m_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
+	if (retval == SOCKET_ERROR)
+		err_quit("connect()");
+
+	// 데이터 통신에 사용될 변수들
+	ZeroMemory(&m_Client_Info, sizeof(PKT_CLIENT_INFO));
+	char CIbuf[sizeof(PKT_CLIENT_INFO)];
+
+	std::cout << "아이디 입력 : " << std::endl;
+	std::cin >> m_Client_Info.iID;
+
+	::memcpy(&CIbuf, &m_Client_Info, sizeof(PKT_CLIENT_INFO));
+
+	// 클라이언트 아이디 전송
+	retval = send(m_sock, CIbuf, sizeof(PKT_CLIENT_INFO), 0);
+	if (retval == SOCKET_ERROR)
+		err_display("send");
+
+	// 씬 정보 받기
+	char SIbuf[sizeof(PKT_SCENE_INFO)];
+
+	retval = recvn(m_sock, SIbuf, sizeof(PKT_SCENE_INFO), 0);
+	if (retval == SOCKET_ERROR)	err_display("recv()");
+	PKT_SCENE_INFO pktSceneInfo;
+	::memcpy(&pktSceneInfo, &SIbuf, sizeof(PKT_SCENE_INFO));
+
+	CreateScene(pktSceneInfo);
+
+	FrameworkThread sFT;
+	sFT.pGFW = this;
+	sFT.arg = (LPVOID)m_sock;
+
+	m_hThread = CreateThread(NULL, 0, &recvThread, &sFT, 0, NULL);
+}
+
+void CGameFramework::CreateScene(PKT_SCENE_INFO SN)
+{
+	switch (SN.SceneName)
+	{
+	case SCENE_NAME_COLONY:
+		m_pScene = new CScene();
+		break;
+	}
+}
+
+void CGameFramework::CloseNetwork()
+{
+	closesocket(m_sock);
+
+	WSACleanup();
+}
+
+void CGameFramework::CreateObject(PKT_CREATE_OBJECT CreateObjectInfo)
+{
+	m_pScene->InsertObject(m_pd3dDevice, m_pd3dCommandList, CreateObjectInfo);
+}
+
+////////////////////////////////////////////////////////////////
+
 CGameFramework::CGameFramework()
 {
 	m_pdxgiFactory = NULL;
@@ -29,7 +192,6 @@ CGameFramework::CGameFramework()
 
 	m_pScene = NULL;
 	m_pPlayer = NULL;
-	//m_pAnotherPlayer = NULL;
 
 	_tcscpy_s(m_pszFrameRate, _T(GAME_TITLE));
 }
@@ -51,6 +213,7 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 
 	//렌더링할 객체(게임 월드 객체)를 생성한다. 
 	BuildObjects();
+	//InitNetwork();
 
 	//마우스 커서를 클라이언트 중심에 놓는다.
 	POINT pt;
@@ -70,6 +233,8 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 void CGameFramework::OnDestroy()
 {
 	ReleaseObjects();
+
+	CloseNetwork();
 
 	::CloseHandle(m_hFenceEvent);
 
@@ -93,10 +258,6 @@ void CGameFramework::OnDestroy()
 	if (m_pdxgiSwapChain) m_pdxgiSwapChain->Release();
 	if (m_pd3dDevice) m_pd3dDevice->Release();
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
-
-	closesocket(sock);
-	// 윈속 종료
-	WSACleanup();
 
 	//마우스 캡쳐를 해제한다. 
 	::ReleaseCapture();
@@ -312,21 +473,13 @@ void CGameFramework::BuildObjects()
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
+	pPlayer->SetHitPoint(100);
 
 	m_pPlayer = pPlayer;
 	m_pScene->SetPlayer(pPlayer);
 	m_pCamera = m_pPlayer->GetCamera();
 
-	m_pPlayer->SetBullet(m_pScene->GetBulletShader(1));
-
-	CPlayer *pAnotherPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
-	pAnotherPlayer->SetPrepareRotate(0.0f, 0.0f, 0.0f);
-	pAnotherPlayer->SetMovingSpeed(100.0f);
-
-	m_pAnotherPlayer = pAnotherPlayer;
-	m_pAnotherPlayer->Client_id = 0;
-	m_pAnotherPlayer->SetBullet(m_pScene->GetBulletShader(3));
-	m_pScene->SetAnotherPlayer(pAnotherPlayer);
+	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
 	m_pd3dCommandList->Close();
@@ -529,12 +682,6 @@ void CGameFramework::ProcessInput()
 void CGameFramework::AnimateObjects()
 {
 	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
-
-	if (m_pAnotherPlayer)
-	{// m_pAnotherPlayer->Animate(m_GameTimer.GetTimeElapsed());
-		XMFLOAT3 position{ m_pAnotherPlayer->m_xmf4x4World._41,m_pAnotherPlayer->m_xmf4x4World._42 ,m_pAnotherPlayer->m_xmf4x4World._43 };
-		m_pAnotherPlayer->SetPosition(position);
-	}
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -553,74 +700,38 @@ void CGameFramework::WaitForGpuComplete()
 	}
 }
 
-void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
+void CGameFramework::FrameAdvance()
 {
 	m_GameTimer.Tick(0.0f);
+
 	auto start = std::chrono::high_resolution_clock::now();
 
 	ProcessInput();
 
-	if (elapsedtime >= 0.05f)
-	{
-		PLAYER_INFO p_info;
-		char buf[sizeof(PLAYER_INFO)];
-		int retval;
+	//if (elapsedtime >= 0.05f)
+	//{
+	//	PLAYER_INFO p_info;
+	//	char buf[sizeof(PLAYER_INFO)];
+	//	int retval;
 
-		p_info.client_id = m_pPlayer->Client_id;
-		p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
-		if (m_LButtonDown)
-			p_info.is_shoot = 0xff;
-		else
-			p_info.is_shoot = 0;
-		memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
-		//std::cout << "보낼 정보 : " << p_info.is_shoot << std::endl;
-		retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
-		if (retval == SOCKET_ERROR)
-		{
-			err_display("send");
-		}
-		std::cout << retval << "바이트 보냈음\n";
-		elapsedtime = 0;
-	}
+	//	p_info.client_id = m_pPlayer->Client_id;
+	//	p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
+	//	if (m_LButtonDown)
+	//		p_info.is_shoot = 0xff;
+	//	else
+	//		p_info.is_shoot = 0;
+	//	memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
+	//	//std::cout << "보낼 정보 : " << p_info.is_shoot << std::endl;
+	//	retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
+	//	if (retval == SOCKET_ERROR)
+	//	{
+	//		err_display("send");
+	//	}
+	//	std::cout << retval << "바이트 보냈음\n";
+	//	elapsedtime = 0;
+	//}
 
 	AnimateObjects();
-
-	if (pinfo.client_id != 0 && pinfo.client_id != m_pPlayer->Client_id)
-	{
-		if (m_pAnotherPlayer->Client_id == 0 && pinfo.client_id != m_pPlayer->Client_id)
-		{
-			m_pAnotherPlayer->Client_id = pinfo.client_id;
-		}
-		if (m_pAnotherPlayer->Client_id == pinfo.client_id)
-		{
-			m_pAnotherPlayer->m_xmf4x4World = pinfo.xmf4x4World;
-			m_pAnotherPlayer->is_shoot = pinfo.is_shoot;
-		}
-		std::cout << "다른 플레이어의 아이디 : " << m_pAnotherPlayer->Client_id << std::endl;
-		std::cout << "다른 플레이어의 포지션 : " << m_pAnotherPlayer->m_xmf4x4World._41 <<
-			", " << m_pAnotherPlayer->m_xmf4x4World._42
-			<< ", " << m_pAnotherPlayer->m_xmf4x4World._43 << std::endl;
-		std::cout << "다른 플레이어가 총을 쏘는가? : " << m_pAnotherPlayer->is_shoot << std::endl;
-
-
-		m_pAnotherPlayer->SetRight(
-			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._11, m_pAnotherPlayer->m_xmf4x4World._12, m_pAnotherPlayer->m_xmf4x4World._13));
-
-		m_pAnotherPlayer->SetUp(
-			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._21, m_pAnotherPlayer->m_xmf4x4World._22, m_pAnotherPlayer->m_xmf4x4World._23));
-
-		m_pAnotherPlayer->SetLook(
-			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._31, m_pAnotherPlayer->m_xmf4x4World._32, m_pAnotherPlayer->m_xmf4x4World._33));
-
-		m_pAnotherPlayer->SetPosition(
-			XMFLOAT3(m_pAnotherPlayer->m_xmf4x4World._41, m_pAnotherPlayer->m_xmf4x4World._42, m_pAnotherPlayer->m_xmf4x4World._43));
-	}
-
-	if (m_pAnotherPlayer->is_shoot == 0xff)
-	{
-		m_pAnotherPlayer->EnemyShot(m_pd3dDevice, m_pd3dCommandList);
-		m_pAnotherPlayer->CheckElapsedTime(m_GameTimer.GetTimeElapsed());
-	}
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
@@ -682,17 +793,6 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 			m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
 
-	if (m_pAnotherPlayer)
-	{
-		if (m_pAnotherPlayer->Client_id != 0)
-		{
-			m_pAnotherPlayer->Render(m_pd3dCommandList, m_pCamera);
-
-			if (m_bRenderWire)
-				m_pAnotherPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
-		}
-	}
-
 	//////////////////////////////////////////////////////////////////
 
 
@@ -724,7 +824,7 @@ void CGameFramework::FrameAdvance(PLAYER_INFO pinfo)
 
 	auto end = std::chrono::high_resolution_clock::now();
 	auto du = end - start;
-	elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+	//elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
 	//std::cout << elapsedtime << "지남\n";
 }
 
@@ -770,49 +870,4 @@ void CGameFramework::MoveToNextFrame()
 		hResult = m_pd3dFence->SetEventOnCompletion(nFenceValue, m_hFenceEvent);
 		::WaitForSingleObject(m_hFenceEvent, INFINITE);
 	}
-}
-
-void CGameFramework::err_quit(char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(
-		FLAG, NULL,
-		WSAGetLastError(), LANG,
-		(LPTSTR)&lpMsgBuf, 0, NULL);
-	MessageBox(
-		NULL, (LPCTSTR)lpMsgBuf,
-		(LPCWSTR)msg, MB_ICONERROR);
-	LocalFree(lpMsgBuf);
-	exit(1);
-}
-
-void CGameFramework::err_display(char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(
-		FLAG, NULL,
-		WSAGetLastError(), LANG,
-		(LPTSTR)&lpMsgBuf, 0, NULL);
-	printf("[%s] %s", msg, (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}
-
-int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
-{
-	int received;
-	char* ptr = buf;
-	int left = len;
-
-	while (left > 0)
-	{
-		received = recv(s, ptr, left, flags);
-		if (received == SOCKET_ERROR)
-			return SOCKET_ERROR;
-		else if (received == 0)
-			break;
-		left -= received;
-		ptr += received;
-	}
-
-	return (len - left);
 }

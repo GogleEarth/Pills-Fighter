@@ -7,6 +7,9 @@ CScene::CScene()
 	C.bVisible = 0;
 	C.dwSize = 1;
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &C);
+
+	for (int i = 0; i < MAX_NUM_OBJECT; i++)
+		m_pObjects[i] = NULL;
 }
 
 
@@ -118,9 +121,8 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	// [0] Building, [1] Bullet, [2] Enemy, [3] EnemyBullet
-	//m_nShaders = 3;
-	m_nShaders = 4;
+	// [0] Building, [1] Bullet, [2] Enemy
+	m_nShaders = 3;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 
 	/////////////////////////////// Enemy Shader
@@ -130,26 +132,20 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pBuildingShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pBuildingShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 
-	m_ppShaders[0] = pBuildingShader;
+	m_ppShaders[INDEX_SHADER_OBSTACLE] = pBuildingShader;
+
+	CGundamShader *pGundamhader = new CGundamShader();
+	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+
+	m_ppShaders[INDEX_SHADER_PLAYER] = pGundamhader;
 
 	////// Bullet Shader
 	CBulletShader *pBulletShader = new CBulletShader();
 	pBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 
-	m_ppShaders[1] = pBulletShader;
-
-	CGundamShader *pGundamhader = new CGundamShader();
-	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-
-	m_ppShaders[2] = pGundamhader;
-
-	CBulletShader *pEnemyBulletShader = new CBulletShader();
-	pEnemyBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pEnemyBulletShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-
-	m_ppShaders[3] = pEnemyBulletShader;
+	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
 
 	// Terrain
 	//m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
@@ -436,3 +432,33 @@ void CScene::ReleaseShaderVariables()
 	}
 }
 
+void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo)
+{
+	CGameObject* pGameObject = new CGameObject();
+	pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+	if (m_pObjects[CreateObjectInfo.Object_Index])
+	{
+		m_pObjects[CreateObjectInfo.Object_Index]->DeleteObject();
+	}
+
+	m_pObjects[CreateObjectInfo.Object_Index] = pGameObject;
+
+	switch (CreateObjectInfo.Object_Type)
+	{
+	case OBJECT_TYPE_PLAYER:
+		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_PLAYER])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
+	case OBJECT_TYPE_BULLET:
+		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
+	case OBJECT_TYPE_OBSTACLE:
+		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
+	}
+}
+
+void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
+{
+	m_pObjects[DeleteObjectInfo.Object_Index]->DeleteObject();
+	m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
+}
