@@ -15,25 +15,62 @@
 #define FLAG		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM
 #define LANG		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
 #define WS22		MAKEWORD(2,2)
+#define BUFSIZE		76
 
 void err_quit(char* msg);
 void err_display(char* msg);
 int recvn(SOCKET s, char* buf, int len, int flags);
 DWORD WINAPI receve(LPVOID arg);
 
-struct PLAYER_INFO
+
+enum PKT_ID
 {
-	int client_id;
-	DirectX::XMFLOAT4X4 xmf4x4World;
+	PKT_ID_PLAYER_INFO = 1, // 플레이어 정보
+	PKT_ID_PLAYER_LIFE = 2, // 플레이어 hp
+	PKT_ID_CREATE_OBJECT = 3, // 오브젝트 생성
+	PKT_ID_DELETE_OBJECT = 4 // 오브젝트 삭제
+};
+
+enum OBJECT_TYPE
+{
+	OBJECT_TYPE_BULLET, // 총알
+	OBJECT_TYPE_OBSTACLE // 장애물
+};
+
+// 이하 패킷 구조체
+struct PKT_PLAYER_INFO
+{
+	int Id;
+	DirectX::XMFLOAT4X4 worldmatrix;
+	int shooting;
+};
+
+struct PKT_PLAYER_LIFE
+{
+	int id;
+	DWORD player_hp;
+};
+
+struct PKT_CREATE_OBJECT
+{
+	OBJECT_TYPE Object_Type;
+	DirectX::XMFLOAT4X4 worldmatrix;
+	BYTE Object_Index;
+};
+
+struct PKT_DELETE_OBJECT
+{
+	BYTE Object_Index;
 };
 
 int main()
 {
 	int retval;
-	PLAYER_INFO pinfo;
-	ZeroMemory(&pinfo.xmf4x4World, sizeof(DirectX::XMFLOAT4X4));
+	PKT_PLAYER_INFO pinfo;
+	ZeroMemory(&pinfo.worldmatrix, sizeof(DirectX::XMFLOAT4X4));
 	std::cout << "아이디 입력:";
-	std::cin >> pinfo.client_id;
+	std::cin >> pinfo.Id;
+	pinfo.shooting = 0;
 
 	// 윈속 초기화
 	WSADATA wsa;
@@ -55,26 +92,10 @@ int main()
 	if (retval == SOCKET_ERROR)
 		err_quit("connect()");
 
-	// 데이터 통신에 사용될 변수
-	char buf[sizeof(PLAYER_INFO)];
 
-	// 클라이언트 아이디 전송
-	memcpy(&buf, &pinfo.client_id, sizeof(int));
-	retval = send(sock, buf, sizeof(int), 0);
-	if (retval == SOCKET_ERROR)
-		err_display("send");
-	std::cout << retval << "바이트 보냈음\n";
-
-	pinfo.xmf4x4World._11 += 0.01f;
-	memcpy(&buf, &pinfo, sizeof(PLAYER_INFO));
-	retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
-	if (retval == SOCKET_ERROR)
-		err_display("send");
-	std::cout << retval << "바이트 보냈음\n";
-
-	HANDLE hThread = CreateThread(
-		NULL, 0, receve,
-		(LPVOID)sock, 0, NULL);
+	//HANDLE hThread = CreateThread(
+	//	NULL, 0, receve,
+	//	(LPVOID)sock, 0, NULL);
 	
 	float elapsedtime = 0.0f;
 	unsigned int i = 0;
@@ -84,17 +105,25 @@ int main()
 		//auto start = std::chrono::high_resolution_clock::now();
 		//if (elapsedtime >= 1.0f)
 		//{
-		if (i >= 100000000)
+		if (i >= 10000000)
 		{
-			pinfo.xmf4x4World._11 += 0.01f;
-			memcpy(&buf, &pinfo, sizeof(PLAYER_INFO));
-			retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
+			PKT_ID pid = PKT_ID_PLAYER_INFO;
+			char pid_buf[sizeof(PKT_ID)];
+			memcpy(&pid_buf, &pid, sizeof(PKT_ID));
+			retval = send(sock, pid_buf, sizeof(PKT_ID), 0);
 			if (retval == SOCKET_ERROR)
-			{
 				err_display("send");
-				break;
-			}
 			std::cout << retval << "바이트 보냈음\n";
+
+			pinfo.worldmatrix._11 += 0.01f;
+
+			char pinfo_buf[sizeof(PKT_PLAYER_INFO)];
+			memcpy(&pinfo_buf, &pinfo, sizeof(PKT_PLAYER_INFO));
+			retval = send(sock, pinfo_buf, sizeof(PKT_PLAYER_INFO), 0);
+			if (retval == SOCKET_ERROR)
+				err_display("send");
+			std::cout << retval << "바이트 보냈음\n";
+
 			i = 0;
 		}
 		i++;
@@ -109,7 +138,7 @@ int main()
 	}
 
 	closesocket(sock);
-	CloseHandle(hThread);
+	// CloseHandle(hThread);
 
 	// 윈속 종료
 	WSACleanup();
@@ -165,12 +194,12 @@ int recvn(SOCKET s, char * buf, int len, int flags)
 DWORD WINAPI receve(LPVOID arg)
 {
 	int retval;
-	char buf[sizeof(PLAYER_INFO)];
+	char buf[BUFSIZE];
 	SOCKET sock = (SOCKET)arg;
 
 	while (true)
 	{
-		retval = recv(sock, buf, sizeof(PLAYER_INFO), 0);
+		retval = recv(sock, buf, BUFSIZE, 0);
 		if (retval == SOCKET_ERROR)
 		{
 			err_display("recv()");
@@ -178,10 +207,10 @@ DWORD WINAPI receve(LPVOID arg)
 		}
 		std::cout << retval << "바이트 보냈음\n";
 
-		// 받은 데이터 출력
-		PLAYER_INFO p_info;
-		memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
-		std::cout << "아이디: " << p_info.client_id << std::endl;
+		//// 받은 데이터 출력
+		//PLAYER_INFO p_info;
+		//memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
+		//std::cout << "아이디: " << p_info.client_id << std::endl;
 	}
 
 	return 0;
