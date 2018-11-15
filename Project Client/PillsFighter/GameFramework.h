@@ -108,10 +108,13 @@ public: // for Network
 	SOCKET m_sock;
 
 	std::mutex m_Mutex;
-	std::queue<PKT_PLAYER_INFO> m_qPlayer_Info;
+	std::vector<PKT_PLAYER_INFO*> m_vMsgPlayerInfo;
+	std::vector<PKT_PLAYER_LIFE*> m_vMsgPlayerLife;
+	std::vector<PKT_CREATE_OBJECT*> m_vMsgCreateObject;
+	std::vector<PKT_DELETE_OBJECT*> m_vMsgDeleteObject;
 
 	//Ελ½Ε
-	PKT_CLIENT_INFO m_Client_Info;
+	CLIENTID m_Client_Info;
 	PKT_PLAYER_INFO m_Client_Player_Info;
 	float m_elapsedtime = 0.0f;
 
@@ -126,5 +129,5 @@ public: // for Network
 	void ThreadFunc(LPVOID arg);
 
 	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
-	void CreateScene(PKT_SCENE_INFO SN);
+	void CreateScene(SCENEINFO SN);
 };

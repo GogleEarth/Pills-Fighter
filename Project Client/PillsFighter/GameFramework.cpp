@@ -50,26 +50,47 @@ int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
 
 void CGameFramework::ThreadFunc(LPVOID arg)
 {
-	int retval;
-	char buf[sizeof(PKT_PLAYER_INFO)];
 	SOCKET socket = (SOCKET)arg;
+
+	int retval;
+
+	UINT iPktID;
+	int nPktSize;
+
+	char* buf;
 
 	while (true)
 	{
-		retval = recvn(socket, buf, sizeof(PKT_PLAYER_INFO), 0);
-
+		// 데이터 받기 # 패킷 식별 ID
+		retval = recvn(socket, (char*)&iPktID, sizeof(UINT), 0);
 		if (retval == SOCKET_ERROR)	err_display("recv()");
 
-		// 받은 데이터 출력
-		if (retval > 0)
-		{
-			PKT_PLAYER_INFO Player_Info;
-			memcpy(&Player_Info, &buf, sizeof(PKT_PLAYER_INFO));
+		// 데이터 받기 # 패킷 구조체 - SIZE 결정
+		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
+		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
+		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
+		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
+		
+		// 데이터 받기 # 패킷 구조체 -  결정
+		buf = new char[nPktSize];
+		retval = recvn(socket, buf, nPktSize, 0);
+		if (retval == SOCKET_ERROR)	err_display("recv()");
 
-			m_Mutex.lock();
-			m_qPlayer_Info.push(PKT_PLAYER_INFO{ Player_Info.ID, Player_Info.WorldMatrix, Player_Info.IsShooting });
-			m_Mutex.unlock();
-		}
+		if (iPktID == PKT_ID_PLAYER_INFO) m_vMsgPlayerInfo.emplace_back((PKT_PLAYER_INFO*)buf); // 플레이어 정보 [ 행렬, 상태 ]
+		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
+		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
+		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
+
+		//// 받은 데이터 출력
+		//if (retval > 0)
+		//{
+		//	PKT_PLAYER_INFO Player_Info;
+		//	memcpy(&Player_Info, &buf, sizeof(PKT_PLAYER_INFO));
+
+		//	m_Mutex.lock();
+		//	m_qPlayer_Info.push(PKT_PLAYER_INFO{ Player_Info.ID, Player_Info.WorldMatrix, Player_Info.IsShooting });
+		//	m_Mutex.unlock();
+		//}
 	}
 }
 
@@ -109,29 +130,40 @@ void CGameFramework::InitNetwork()
 	if (retval == SOCKET_ERROR)
 		err_quit("connect()");
 
-	// 데이터 통신에 사용될 변수들
-	ZeroMemory(&m_Client_Info, sizeof(PKT_CLIENT_INFO));
-	char CIbuf[sizeof(PKT_CLIENT_INFO)];
-
-	std::cout << "아이디 입력 : " << std::endl;
-	std::cin >> m_Client_Info.iID;
-
-	::memcpy(&CIbuf, &m_Client_Info, sizeof(PKT_CLIENT_INFO));
-
-	// 클라이언트 아이디 전송
-	retval = send(m_sock, CIbuf, sizeof(PKT_CLIENT_INFO), 0);
+	// 클라이언트 아이디 받기
+	retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
 	if (retval == SOCKET_ERROR)
 		err_display("send");
 
 	// 씬 정보 받기
-	char SIbuf[sizeof(PKT_SCENE_INFO)];
+	SCENEINFO SceneInfo;
 
-	retval = recvn(m_sock, SIbuf, sizeof(PKT_SCENE_INFO), 0);
+	retval = recvn(m_sock, (char*)&SceneInfo, sizeof(SCENEINFO), 0);
 	if (retval == SOCKET_ERROR)	err_display("recv()");
-	PKT_SCENE_INFO pktSceneInfo;
-	::memcpy(&pktSceneInfo, &SIbuf, sizeof(PKT_SCENE_INFO));
 
-	CreateScene(pktSceneInfo);
+	CreateScene(SceneInfo);
+
+	// 씬에서의 오브젝트 초기정보(위치, .. 등등) 받기 [ 다른 플레이어의 초기 위치 ]
+	// 자신의 씬에서의 위치
+	PKT_PLAYER_INFO pktPlayerInfo;
+	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
+
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
+	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
+	pPlayer->SetMovingSpeed(100.0f);
+	pPlayer->SetHitPoint(100);
+
+	m_pPlayer = pPlayer;
+	m_pScene->SetPlayer(pPlayer);
+	m_pCamera = m_pPlayer->GetCamera();
+
+	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
+
+	// 다른 클라이언트 플레이어 정보
+	PKT_CREATE_OBJECT pktCreateObject;
+	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
+	
+	CreateObject(pktCreateObject);
 
 	FrameworkThread sFT;
 	sFT.pGFW = this;
@@ -140,12 +172,13 @@ void CGameFramework::InitNetwork()
 	m_hThread = CreateThread(NULL, 0, &recvThread, &sFT, 0, NULL);
 }
 
-void CGameFramework::CreateScene(PKT_SCENE_INFO SN)
+void CGameFramework::CreateScene(SCENEINFO SN)
 {
-	switch (SN.SceneName)
+	switch (SN)
 	{
 	case SCENE_NAME_COLONY:
 		m_pScene = new CScene();
+		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
 		break;
 	}
 }
@@ -466,7 +499,10 @@ void CGameFramework::BuildObjects()
 	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
 	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
-
+	
+#ifdef ON_NETWORK
+	InitNetwork();
+#else
 	m_pScene = new CScene();
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
 
@@ -480,6 +516,7 @@ void CGameFramework::BuildObjects()
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
+#endif
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
 	m_pd3dCommandList->Close();
