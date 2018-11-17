@@ -1,5 +1,13 @@
 #pragma once
 #include "pch.h"
+#include "Mesh.h"
+#include "Scene.h"
+
+struct Client_INFO
+{
+	int id;
+	SOCKET socket;
+};
 
 class Framework
 {
@@ -11,8 +19,10 @@ class Framework
 	HANDLE Event;
 	std::mutex m;
 	std::queue<PKT_PLAYER_INFO> msg_queue;
-	std::vector<SOCKET> clients;
+	std::vector<Client_INFO> clients;
 	int count = 0;
+
+	CScene* m_pScene;
 
 public:
 	Framework();
@@ -26,7 +36,7 @@ public:
 	int recvn(SOCKET s, char* buf, int len, int flags);
 	int Send(char* buf, int len, int flags);
 	static DWORD WINAPI Update(LPVOID arg);
-	DWORD Update();
+	DWORD Update(CScene* pScene);
 	static DWORD WINAPI client_thread(LPVOID arg);
 	DWORD client_process(LPVOID arg);
 };
@@ -35,4 +45,10 @@ struct Arg
 {
 	Framework* pthis;
 	SOCKET client_socket;
+};
+
+struct Update_Arg
+{
+	Framework* pthis;
+	CScene* pScene;
 };

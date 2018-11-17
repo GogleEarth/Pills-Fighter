@@ -126,7 +126,7 @@ public: // for Network
 
 	void InitNetwork();
 	static DWORD WINAPI recvThread(LPVOID arg);
-	void ThreadFunc(LPVOID arg);
+	DWORD ThreadFunc(LPVOID arg);
 
 	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void CreateScene(SCENEINFO SN);

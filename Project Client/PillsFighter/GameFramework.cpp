@@ -7,7 +7,7 @@ DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
 {
 	FrameworkThread* pFT = (FrameworkThread*)arg;
 
-	pFT->pGFW->ThreadFunc(pFT->arg);
+	return pFT->pGFW->ThreadFunc(pFT->arg);
 }
 
 void CGameFramework::err_quit(char* msg)
@@ -48,7 +48,7 @@ int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
 	return (len - left);
 }
 
-void CGameFramework::ThreadFunc(LPVOID arg)
+DWORD CGameFramework::ThreadFunc(LPVOID arg)
 {
 	SOCKET socket = (SOCKET)arg;
 
@@ -61,25 +61,25 @@ void CGameFramework::ThreadFunc(LPVOID arg)
 
 	while (true)
 	{
-		// 데이터 받기 # 패킷 식별 ID
-		retval = recvn(socket, (char*)&iPktID, sizeof(UINT), 0);
-		if (retval == SOCKET_ERROR)	err_display("recv()");
+		//// 데이터 받기 # 패킷 식별 ID
+		//retval = recvn(socket, (char*)&iPktID, sizeof(UINT), 0);
+		//if (retval == SOCKET_ERROR)	err_display("recv()");
 
-		// 데이터 받기 # 패킷 구조체 - SIZE 결정
-		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
-		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
-		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
-		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
-		
-		// 데이터 받기 # 패킷 구조체 -  결정
-		buf = new char[nPktSize];
-		retval = recvn(socket, buf, nPktSize, 0);
-		if (retval == SOCKET_ERROR)	err_display("recv()");
+		//// 데이터 받기 # 패킷 구조체 - SIZE 결정
+		//if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
+		//else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
+		//else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
+		//else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
+		//
+		//// 데이터 받기 # 패킷 구조체 -  결정
+		//buf = new char[nPktSize];
+		//retval = recvn(socket, buf, nPktSize, 0);
+		//if (retval == SOCKET_ERROR)	err_display("recv()");
 
-		if (iPktID == PKT_ID_PLAYER_INFO) m_vMsgPlayerInfo.emplace_back((PKT_PLAYER_INFO*)buf); // 플레이어 정보 [ 행렬, 상태 ]
-		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
-		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
-		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
+		//if (iPktID == PKT_ID_PLAYER_INFO) m_vMsgPlayerInfo.emplace_back((PKT_PLAYER_INFO*)buf); // 플레이어 정보 [ 행렬, 상태 ]
+		//else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
+		//else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
+		//else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
 
 		//// 받은 데이터 출력
 		//if (retval > 0)
@@ -114,12 +114,6 @@ void CGameFramework::InitNetwork()
 
 	int retval;
 
-	// recv Time Out 3 sec
-	int optval = 3000;
-	retval = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
-	if (retval == SOCKET_ERROR)
-		err_quit("setsockopt()");
-
 	// connect()
 	SOCKADDR_IN serveraddr;
 	ZeroMemory(&serveraddr, sizeof(serveraddr));
@@ -133,13 +127,17 @@ void CGameFramework::InitNetwork()
 	// 클라이언트 아이디 받기
 	retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
 	if (retval == SOCKET_ERROR)
-		err_display("send");
+		err_display("recv()");
+
+	std::cout << "id : " << m_Client_Info << std::endl;
 
 	// 씬 정보 받기
 	SCENEINFO SceneInfo;
 
 	retval = recvn(m_sock, (char*)&SceneInfo, sizeof(SCENEINFO), 0);
 	if (retval == SOCKET_ERROR)	err_display("recv()");
+
+	std::cout << "SceneInfo : " << SceneInfo << std::endl;
 
 	CreateScene(SceneInfo);
 
@@ -159,15 +157,24 @@ void CGameFramework::InitNetwork()
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
 
+	std::cout << "PlayerInfo : " << std::endl;
+
 	// 다른 클라이언트 플레이어 정보
 	PKT_CREATE_OBJECT pktCreateObject;
 	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
 	
 	CreateObject(pktCreateObject);
+	std::cout << "AnotherPlayerInfo : " << std::endl;
 
 	FrameworkThread sFT;
 	sFT.pGFW = this;
 	sFT.arg = (LPVOID)m_sock;
+
+	//// recv Time Out 3 sec
+	//int optval = 3000;
+	//retval = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
+	//if (retval == SOCKET_ERROR)
+	//	err_quit("setsockopt()");
 
 	m_hThread = CreateThread(NULL, 0, &recvThread, &sFT, 0, NULL);
 }
