@@ -751,7 +751,11 @@ CUserInterface::CUserInterface()
 
 CUserInterface::~CUserInterface()
 {
-
+	for (int i = 0; i < m_nUIRect; i++)
+	{
+		if (m_pUIRect[i])
+			delete m_pUIRect[i];
+	}
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -759,27 +763,71 @@ D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderB
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VS_UI", "vs_5_1", ppd3dShaderBlob));
 }
 
+D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderHP(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI_HP", "gs_5_1", ppd3dShaderBlob));
+}
+
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
 }
 
+D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
+{
+	UINT nInputElementDescs = 2;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_RASTERIZER_DESC CUserInterface::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
+	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
+	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
+	d3dRasterizerDesc.DepthBias = 0;
+	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
+	d3dRasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	d3dRasterizerDesc.DepthClipEnable = TRUE;
+	d3dRasterizerDesc.MultisampleEnable = FALSE;
+	d3dRasterizerDesc.AntialiasedLineEnable = FALSE;
+	d3dRasterizerDesc.ForcedSampleCount = 0;
+	d3dRasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	return(d3dRasterizerDesc);
+}
+
 void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
-	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
+	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dGeometryShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineStateDesc;
 	::ZeroMemory(&d3dPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	d3dPipelineStateDesc.pRootSignature = pd3dGraphicsRootSignature;
 	d3dPipelineStateDesc.VS = CreateVertexShader(&pd3dVertexShaderBlob);
+	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
 	d3dPipelineStateDesc.RasterizerState = CreateRasterizerState();
 	d3dPipelineStateDesc.BlendState = CreateBlendState();
 	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
-	d3dPipelineStateDesc.InputLayout.pInputElementDescs = NULL;
-	d3dPipelineStateDesc.InputLayout.NumElements = 0;
+	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
-	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
 	d3dPipelineStateDesc.NumRenderTargets = 1;
 	d3dPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -788,34 +836,125 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
 
+	d3dPipelineStateDesc.GS = CreateGeometryShaderHP(&pd3dGeometryShaderBlob);
+
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateHP);
+
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
+	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
 	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
+void CUserInterface::ReleaseUploadBuffers()
+{
+	if (m_pUIRect)
+	{
+		for (UINT i = 0; i < m_nUIRect; i++)
+		{
+			if (m_pUIRect[i]) m_pUIRect[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	CShader::ReleaseUploadBuffers();
+}
+
+void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_PLAYER_HP) + 255) & ~255); //256ÀÇ ¹è¼ö
+
+	m_pd3dcbPlayerHP = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+	m_pd3dcbPlayerHP->Map(0, NULL, (void **)&m_pcbMappedPlayerHP);
+}
+
+void CUserInterface::ReleaseShaderVariables()
+{
+	if (m_pd3dcbPlayerHP)
+	{
+		m_pd3dcbPlayerHP->Unmap(0, NULL);
+		m_pd3dcbPlayerHP->Release();
+	}
+
+	CShader::ReleaseShaderVariables();
+}
+
+void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	std::cout << *m_pPlayerMaxHP << std::endl;
+
+	m_pcbMappedPlayerHP->MaxHP = *m_pPlayerMaxHP;
+	m_pcbMappedPlayerHP->HP = *m_pPlayerHP;
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbPlayerHP->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(7, d3dGpuVirtualAddress);
+
+}
+
+XMFLOAT2 CalculateCenter(float left, float right, float top, float bottom)
+{
+	return XMFLOAT2((left + right) * 0.5f, bottom);
+}
+
+XMFLOAT2 CalculateSize(float left, float right, float top, float bottom)
+{
+	return XMFLOAT2((left - right) * 0.5f, (top - bottom));
+}
+
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_nMaterials = 2;
+	m_ppMaterials = new CMaterial*[m_nMaterials];
+
+	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 2);
+
 	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HUD.dds", 0);
 
-	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
-
-	m_nMaterials = 1;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
 	m_ppMaterials[0] = new CMaterial();
 	m_ppMaterials[0]->SetTexture(pTextures);
-	m_ppMaterials[0]->m_nReflection = 0;
+
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
+
+	pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HP.dds", 0);
+
+	m_ppMaterials[1] = new CMaterial();
+	m_ppMaterials[1]->SetTexture(pTextures);
+
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
+
+	m_nUIRect = 2;
+	m_pUIRect = new CUIRect*[m_nUIRect];
+
+	// Base UI
+	XMFLOAT2 xmf2Center = CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
+	XMFLOAT2 xmf2Size = CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
+	m_pUIRect[0] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = CalculateCenter(-0.375000, -0.332812, 0.257778, -0.257778);
+	xmf2Size = CalculateSize(-0.375000, -0.332812, 0.257778, -0.257778);
+	m_pUIRect[1] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CShader::Render(pd3dCommandList, pCamera); // Pipeline Set
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateHP);
+	pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvDescriptorHeap);
 
-	if (m_ppMaterials[0]) m_ppMaterials[0]->UpdateShaderVariables(pd3dCommandList);
+	UpdateShaderVariables(pd3dCommandList);
 
-	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Draw HP BAR
+	if (m_ppMaterials[1]) m_ppMaterials[1]->UpdateShaderVariables(pd3dCommandList); // Base UI
+	m_pUIRect[1]->Render(pd3dCommandList);
 
-	pd3dCommandList->DrawInstanced(6, 1, 0, 0);
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+
+	// Draw Base UI
+	if (m_ppMaterials[0]) m_ppMaterials[0]->UpdateShaderVariables(pd3dCommandList); // Base UI
+	m_pUIRect[0]->Render(pd3dCommandList);
 }

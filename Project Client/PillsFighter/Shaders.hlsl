@@ -165,58 +165,107 @@ VS_DIFFUSED_OUTPUT VSInstancingDiffused(VS_DIFFUSED_INPUT input, uint nInstanceI
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-cbuffer cbUIInfo : register(b4)
-{
-	uint		giPlayerHP : packoffset(c0.x);
-};
 
-Texture2D gtxtHPTexture : register(t2);
+struct VS_UI_INPUT
+{
+	float2 center : POSITION;
+	float2 size : SIZE;
+};
 
 struct VS_UI_OUTPUT
 {
-	float4 position : SV_POSITION;
-	float2 uv : TEXCOORD;
+	float2 center : POSITION;
+	float2 size : SIZE;
 };
 
-VS_UI_OUTPUT VS_UI(uint nVertexID : SV_VertexID)
+VS_UI_OUTPUT VS_UI(VS_UI_INPUT input)
 {
 	VS_UI_OUTPUT output;
 
-	if (nVertexID == 0)
-	{
-		output.position = float4(1.0, 1.0, 0.0, 1.0);
-		output.uv = float2(1.0, 0.0);
-	}
-	else if (nVertexID == 1)
-	{
-		output.position = float4(1.0, -1.0, 0.0, 1.0);
-		output.uv = float2(1.0, 1.0);
-	}
-	else if (nVertexID == 2)
-	{
-		output.position = float4(-1.0, -1.0, 0.0, 1.0);
-		output.uv = float2(0.0, 1.0);
-	}
-	else if (nVertexID == 3)
-	{
-		output.position = float4(-1.0, -1.0, 0.0, 1.0);
-		output.uv = float2(0.0, 1.0);
-	}
-	else if (nVertexID == 4)
-	{
-		output.position = float4(-1.0, 1.0, 0.0, 1.0);
-		output.uv = float2(0.0, 0.0);
-	}
-	else if (nVertexID == 5)
-	{
-		output.position = float4(1.0, 1.0, 0.0, 1.0);
-		output.uv = float2(1.0, 0.0);
-	}
+	output.center = input.center;
+	output.size = input.size;	
+	//output.center = float3(0.0f, 0.0f, 0.0f);
+	//output.size = float2(1.0f, 1.0f);
 
 	return(output);
 }
 
-float4 PS_UI(VS_UI_OUTPUT input) : SV_TARGET
+struct GS_OUT
+{
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD;
+};
+
+[maxvertexcount(4)]
+void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+cbuffer cbUIInfo : register(b4)
+{
+	int		giPlayerMaxHP;// : packoffset(c0.x);
+	int		giPlayerHP; //: packoffset(c0.y);
+};
+
+[maxvertexcount(4)]
+void GS_UI_HP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
+{
+	float yPos = float(giPlayerHP) / float(giPlayerMaxHP);
+	float2 vUp = float2(0.0f, yPos);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+float4 PS_UI(GS_OUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
 	if (cColor.a < 0.3) discard;

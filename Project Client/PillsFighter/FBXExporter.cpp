@@ -901,7 +901,7 @@ void FBXExporter::CleanupFbxManager()
 	mMaterialLookUp.clear();
 }
 
-void FBXExporter::WriteMeshToStream(CTexturedVertex* pVertices, UINT* pnIndices)
+void FBXExporter::WriteMeshToStream(CIlluminatedTexturedVertex* pVertices, UINT* pnIndices)
 {
 	if (mHasAnimation)
 	{
@@ -930,7 +930,7 @@ void FBXExporter::WriteMeshToStream(CTexturedVertex* pVertices, UINT* pnIndices)
 	{
 		//std::cout << "\t\t<vtx>" << std::endl;
 		//std::cout << "\t\t\t<pos>" << mVertices[i].mPosition.x << "," << mVertices[i].mPosition.y << "," << -mVertices[i].mPosition.z << "</pos>" << std::endl;
-		pVertices[i] = CTexturedVertex(
+		pVertices[i] = CIlluminatedTexturedVertex(
 			XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z),
 			XMFLOAT3(mVertices[i].mNormal.x, mVertices[i].mNormal.y, mVertices[i].mNormal.z),
 			XMFLOAT2(mVertices[i].mUV.x, 1.0f - mVertices[i].mUV.y)

@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "FBXExporter.h"
 
-void FindXYZ(CTexturedVertex* pVertices, UINT nVertices, XMFLOAT3& Center, XMFLOAT3& Extents)
+void FindXYZ(CIlluminatedTexturedVertex* pVertices, UINT nVertices, XMFLOAT3& Center, XMFLOAT3& Extents)
 {
 	XMFLOAT3 MinMaxVertex[2]; // [0] Min, [1] Max
 	MinMaxVertex[0] = MinMaxVertex[1] = pVertices[0].GetPosition();
@@ -37,11 +37,11 @@ CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandLis
 	myExporter->LoadScene(pstrFileName);
 	myExporter->ExportFBX(&m_nVertices, &m_nIndices); // 정점 및 인덱스 갯수 불러오기
 
-	m_pVertices = new CTexturedVertex[m_nVertices];
+	m_pVertices = new CIlluminatedTexturedVertex[m_nVertices];
 	m_pnIndices = new UINT[m_nIndices];
 	myExporter->WriteMeshToStream(m_pVertices, m_pnIndices);
 
-	m_nStride = sizeof(CTexturedVertex);
+	m_nStride = sizeof(CIlluminatedTexturedVertex);
 	m_nOffset = 0;
 	m_nSlot = 0;
 
@@ -164,6 +164,44 @@ CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 
 CCubeMesh::~CCubeMesh()
 {
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+CUIRect::CUIRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size)
+{
+	m_nStride = sizeof(CUIVertex);
+	m_nOffset = 0;
+	m_nSlot = 0;
+	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+
+	m_pVertices = new CUIVertex(xmf2Center, xmf2Size);
+
+	m_pd3dVertexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pVertices, m_nStride, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
+
+	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
+	m_d3dVertexBufferView.StrideInBytes = m_nStride;
+	m_d3dVertexBufferView.SizeInBytes = m_nStride;
+}
+
+CUIRect::~CUIRect()
+{
+	if (m_pd3dVertexBuffer) m_pd3dVertexBuffer->Release();
+	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
+}
+
+void CUIRect::ReleaseUploadBuffers()
+{
+	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
+	m_pd3dVertexUploadBuffer = NULL;
+}
+
+void CUIRect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dVertexBufferView);
+
+	pd3dCommandList->DrawInstanced(1, 1, m_nOffset, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

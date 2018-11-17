@@ -180,11 +180,13 @@ public:
 	bool IsDelete() { return m_Delete; }
 
 protected:
-	int		m_iHitPoint;
+	int		m_nHitPoint;
+	int		m_nMaxHitPoint;
 
 public:
-	int *GetHitPoint() { return &m_iHitPoint; }
-	void SetHitPoint(int iHitPoint) { m_iHitPoint = iHitPoint; }
+	int *GetHitPoint() { return &m_nHitPoint; }
+	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
+	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

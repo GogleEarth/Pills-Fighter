@@ -488,7 +488,7 @@ void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLis
 
 void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTextures, CShader* pShader)
 {
-	pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 7); // nTexture
+	pShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 7);
 
 	for (int i = 0; i < 7; i++)
 		pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, ppTextures[i], 2, false);

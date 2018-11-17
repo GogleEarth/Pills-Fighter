@@ -56,10 +56,11 @@ private:
 #endif
 
 	CGameTimer						m_GameTimer;
-	_TCHAR							m_pszFrameRate[50];
+	_TCHAR							m_pszCaption[70];
 
 	POINT							m_ptOldCursorPos;
-
+	RECT							m_wndRect;
+	POINT ptCursorPos;
 	BOOL							m_LButtonDown = FALSE;
 	BOOL							m_bRenderWire = FALSE;
 
@@ -126,7 +127,7 @@ public: // for Network
 
 	void InitNetwork();
 	static DWORD WINAPI recvThread(LPVOID arg);
-	DWORD ThreadFunc(LPVOID arg);
+	void ThreadFunc(LPVOID arg);
 
 	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void CreateScene(SCENEINFO SN);

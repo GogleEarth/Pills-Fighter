@@ -6,6 +6,8 @@
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
 {
+	m_nHitPoint = m_nMaxHitPoint = 100;
+
 	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
 	m_pCamera = SetCamera(0.0f);
 
@@ -43,6 +45,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	pUserInterface->SetPlayerHP(&m_nMaxHitPoint, &m_nHitPoint);
 
 	m_pUserInterface = pUserInterface;
 }
@@ -143,7 +146,6 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	//플레이어를 시간의 경과에 따라 갱신(위치와 방향을 변경: 속도, 마찰력, 중력 등을 처리)한다. 
 	Update(fTimeElapsed);
 
-
 	return(m_pCamera);
 }
 /*플레이어의 위치를 변경하는 함수이다. 플레이어의 위치는 기본적으로 사용자가 플레이어를 이동하기 위한 키보드를
@@ -197,9 +199,12 @@ void CPlayer::Update(float fTimeElapsed)
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	//m_pCamera->SetLookAt(m_xmf3Position);
 	m_pCamera->SetLookAt(xmf3LookAt);
-	m_iHitPoint--;
+
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
+
+	if (m_nHitPoint < 0)
+		m_nHitPoint = 0;
 
 	CheckElapsedTime(fTimeElapsed);
 }
