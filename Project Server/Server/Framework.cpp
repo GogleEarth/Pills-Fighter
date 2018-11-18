@@ -118,27 +118,26 @@ void Framework::main_loop()
 					pktdata.IsShooting = false;
 					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
 
-					PKT_CREATE_OBJECT pktdata;
-					pktdata.Object_Type = Objects[1]->m_Object_Type;
-					pktdata.Object_Index = 1;
-					pktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
-					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_CREATE_OBJECT), 0);
+					PKT_CREATE_OBJECT anotherpktdata;
+					anotherpktdata.Object_Type = Objects[1]->m_Object_Type;
+					anotherpktdata.Object_Index = 1;
+					anotherpktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
+					retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+					std::cout << "count0 send\n";
 				}
-				else
+				else if(count == 1)
 				{
 					pktdata.ID = clients[1].id;
 					pktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
 					pktdata.IsShooting = false;
-					char* databuf;
-					memcpy(&databuf, &pktdata, sizeof(PKT_PLAYER_INFO));
-					retval = send(client_sock, databuf, sizeof(PKT_PLAYER_INFO), 0);
+					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
 
-					PKT_CREATE_OBJECT pktdata;
-					pktdata.Object_Type = Objects[0]->m_Object_Type;
-					pktdata.Object_Index = 0;
-					pktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
-					memcpy(&databuf, &pktdata, sizeof(PKT_CREATE_OBJECT));
-					retval = send(client_sock, databuf, sizeof(PKT_CREATE_OBJECT), 0);
+					PKT_CREATE_OBJECT anotherpktdata;
+					anotherpktdata.Object_Type = Objects[0]->m_Object_Type;
+					anotherpktdata.Object_Index = 0;
+					anotherpktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
+					retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+					std::cout << "count1 send\n";
 				}
 
 				Arg arg{ this,client_sock };
@@ -231,28 +230,38 @@ DWORD Framework::Update(CScene* pScene)
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
-	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
-	{
-		if(Objects[i]!=NULL)
-		{
-			PKT_ID pktid = PKT_ID_CREATE_OBJECT;
-			char* idbuf;
-			memcpy(&idbuf, &pktid, sizeof(PKT_ID));
-			PKT_CREATE_OBJECT pktdata;
-			pktdata.Object_Type = Objects[i]->m_Object_Type;
-			pktdata.Object_Index = i;
-			pktdata.WorldMatrix = Objects[i]->m_xmf4x4World;
-			char* databuf;
-			memcpy(&databuf, &pktdata, sizeof(PKT_CREATE_OBJECT));
-			Send(idbuf, sizeof(PKT_ID), 0);
-			Send(databuf, sizeof(PKT_CREATE_OBJECT), 0);
-		}
-	}
+	//for (int i = 0; i < MAX_NUM_OBJECT; ++i)
+	//{
+	//	if(Objects[i]!=NULL)
+	//	{
+	//		PKT_ID pktid = PKT_ID_CREATE_OBJECT;
+	//		char* idbuf;
+	//		memcpy(&idbuf, &pktid, sizeof(PKT_ID));
+	//		PKT_CREATE_OBJECT pktdata;
+	//		pktdata.Object_Type = Objects[i]->m_Object_Type;
+	//		pktdata.Object_Index = i;
+	//		pktdata.WorldMatrix = Objects[i]->m_xmf4x4World;
+	//		char* databuf;
+	//		memcpy(&databuf, &pktdata, sizeof(PKT_CREATE_OBJECT));
+	//		Send(idbuf, sizeof(PKT_ID), 0);
+	//		Send(databuf, sizeof(PKT_CREATE_OBJECT), 0);
+	//	}
+	//}
 
 	while (true)
 	{
 		ResetEvent(Event);
 		pScene->AnimateObjects(FIXED_FRAME);
+		while (!msg_queue.empty())
+		{
+			auto pkt = msg_queue.front();
+			msg_queue.pop();
+			PKT_ID pid = PKT_ID_PLAYER_INFO;
+			Send((char*)&pid, sizeof(PKT_ID), 0);
+			std::cout << "send pktid\n";
+			Send((char*)&pkt, sizeof(pkt), 0);
+			std::cout << "send pkt\n";
+		}
 		SetEvent(Event);
 	}
 }
@@ -278,39 +287,22 @@ DWORD Framework::client_process(LPVOID arg)
 
 	while (1)
 	{
-		retval = recvn(client_sock, id_buf, sizeof(PKT_ID), 0);
+		char data_buf[sizeof(PKT_PLAYER_INFO)];
+		retval = recvn(client_sock, data_buf, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)
 		{
 			std::cout << "thread ERROR : ";
 			err_display("recv()");
-			//break;
+			break;
 		}
-		else
-		{
-			PKT_ID pid;
-			memcpy(&pid, &id_buf, sizeof(PKT_ID));
-			m.lock();
-			std::cout << "패킷 아이디 : " << pid << std::endl;
-			m.unlock();
-			if (pid == PKT_ID_PLAYER_INFO)
-			{
-				char data_buf[sizeof(PKT_PLAYER_INFO)];
-				retval = recvn(client_sock, data_buf, sizeof(PKT_PLAYER_INFO), 0);
-				if (retval == SOCKET_ERROR)
-				{
-					std::cout << "thread ERROR : ";
-					err_display("recv()");
-					break;
-				}
-				//std::cout << retval << "바이트 받음\n";
-				PKT_PLAYER_INFO p_info;
-				memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
-				// 받은 데이터 출력
-				m.lock();
-				msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });
-				m.unlock();
-			}
-		}
+		//std::cout << retval << "바이트 받음\n";
+		PKT_PLAYER_INFO p_info;
+		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
+		// 받은 데이터 출력
+		m.lock();
+		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });
+		m.unlock();
+
 
 		WaitForSingleObject(Event, INFINITE);
 	}

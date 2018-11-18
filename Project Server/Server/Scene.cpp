@@ -125,7 +125,8 @@ void CScene::AnimateObjects(float fTimeElapsed)
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
-		//m_pObjects[i]->Animate(fTimeElapsed);
+		if(m_pObjects[i] != NULL)
+			m_pObjects[i]->Animate(fTimeElapsed);
 	}
 	//CheckCollision();
 }
