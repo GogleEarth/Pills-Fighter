@@ -20,9 +20,15 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	UINT nTextures;
 	CTexture **ppTextures;
 
-	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	CMesh **ppMeshes;
+	CCubeMesh **ppCubeMeshes;
+	UINT nMeshes;
+
+	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, ppCubeMeshes, nMeshes);
 	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures, nTextures);
 	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, m_pShader);
+
+	SetMesh(ppMeshes, ppCubeMeshes, nMeshes);
 
 	UINT nMaterials = nTextures;
 	CMaterial **ppMaterials = new CMaterial*[nMaterials];
@@ -34,7 +40,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 		ppMaterials[i]->m_nReflection = 0;
 	}
 
-	m_pShader->SetMaterial(ppMaterials, nMaterials);
+	//m_pShader->SetMaterial(ppMaterials, nMaterials);
 	SetMaterial(ppMaterials, nMaterials);
 
 	//플레이어의 위치를 설정한다. 
@@ -176,6 +182,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 {
 	//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다. 
+	m_xmf3PrevPosition = m_xmf3Position;
 	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
 
 	//플레이어의 위치가 변경되었으므로 카메라의 위치도 xmf3Shift 벡터만큼 이동한다. 
@@ -205,6 +212,8 @@ void CPlayer::Update(float fTimeElapsed)
 
 	if (m_nHitPoint < 0)
 		m_nHitPoint = 0;
+
+	Animate(fTimeElapsed);
 
 	CheckElapsedTime(fTimeElapsed);
 }

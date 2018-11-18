@@ -7,7 +7,7 @@ DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
 {
 	FrameworkThread* pFT = (FrameworkThread*)arg;
 
-	pFT->pGFW->ThreadFunc(pFT->arg);
+	return pFT->pGFW->ThreadFunc(pFT->arg);
 
 	return 0;
 }
@@ -50,7 +50,7 @@ int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
 	return (len - left);
 }
 
-void CGameFramework::ThreadFunc(LPVOID arg)
+DWORD CGameFramework::ThreadFunc(LPVOID arg)
 {
 	SOCKET socket = (SOCKET)arg;
 
@@ -134,8 +134,7 @@ void CGameFramework::InitNetwork()
 
 	// 클라이언트 아이디 받기
 	retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
-	if (retval == SOCKET_ERROR)
-		err_display("send");
+	if (retval == SOCKET_ERROR) err_display("recvn");
 
 	// 씬 정보 받기
 	SCENEINFO SceneInfo;

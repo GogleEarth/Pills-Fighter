@@ -86,6 +86,7 @@ public:
 protected:
 
 	XMFLOAT3 m_xmf3Position;
+	XMFLOAT3 m_xmf3PrevPosition;
 	XMFLOAT3 m_xmf3Right;
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;
@@ -178,6 +179,7 @@ public:
 	BoundingOrientedBox GetOOBB(UINT nIndex) { return m_xmOOBB[nIndex]; }
 	void DeleteObject() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
+	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
 
 protected:
 	int		m_nHitPoint;

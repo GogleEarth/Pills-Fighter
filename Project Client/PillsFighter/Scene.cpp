@@ -138,7 +138,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 
-	m_ppShaders[INDEX_SHADER_PLAYER] = pGundamhader;
+	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
 
 	////// Bullet Shader
 	CBulletShader *pBulletShader = new CBulletShader();
@@ -208,13 +208,25 @@ void CScene::CheckCollision()
 
 	std::vector<CGameObject*> vEnemyObjects;
 	std::vector<CGameObject*> vBulletObjects;
-	std::vector<CGameObject*> vEnemyBulletObjects;
 
-	m_ppShaders[0]->GetObjects(NULL, &ppBuildingObjects, &nBuildingObjects);
-	m_ppShaders[1]->GetObjects(&vBulletObjects, NULL, NULL);
-	m_ppShaders[2]->GetObjects(&vEnemyObjects, NULL, NULL);
-	m_ppShaders[3]->GetObjects(&vEnemyBulletObjects, NULL, NULL);
+	m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects(NULL, &ppBuildingObjects, &nBuildingObjects);
+	m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects(&vEnemyObjects, NULL, NULL);
+	m_ppShaders[INDEX_SHADER_BULLET]->GetObjects(&vBulletObjects, NULL, NULL);
 
+	for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
+	{
+		for (UINT j = 0; j < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); j++)
+		{
+			for (UINT i = 0; i < m_pPlayer->GetNumMeshes(); i++)
+			{
+				if (m_pPlayer->GetOOBB(i).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(j)))
+				{
+					m_pPlayer->CallBackPosition();
+				}
+			}
+		}
+	}
+	
 	for (const auto& Bullet : vBulletObjects)
 	{
 		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
@@ -245,51 +257,6 @@ void CScene::CheckCollision()
 			}
 		}
 	}
-
-	for (const auto& Bullet : vEnemyBulletObjects)
-	{
-		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-		{
-			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-				{
-					if (Bullet->GetOOBB(j).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(i)))
-					{
-						Bullet->DeleteObject();
-					}
-				}
-			}
-		}
-	}
-	
-
-	for (const auto& Enemy : vEnemyObjects)
-	{
-		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-		{
-			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Enemy->GetNumMeshes(); j++)
-				{
-					BoundingOrientedBox EnemysOOBB = Enemy->GetOOBB(j);
-					BoundingOrientedBox BuildingsOOBB = ppBuildingObjects[nIndexBuilding]->GetOOBB(i);
-
-					if (EnemysOOBB.Intersects(BuildingsOOBB))
-					{
-						XMFLOAT3 BuildingMeshCenter = BuildingsOOBB.Center;
-						XMFLOAT3 BuildingMeshExtents = BuildingsOOBB.Extents;
-
-						XMFLOAT3 EnemyMeshCenter = EnemysOOBB.Center;
-						XMFLOAT3 EnemyMeshExtents = EnemysOOBB.Extents;
-
-						//if(EnemyPosition.x > BuildingMeshExtents.x + BuildingMeshCenter.x)
-						// 충돌처리
-					}
-				}
-			}
-		}
-	}
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)
@@ -305,7 +272,7 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		m_pLights->m_pLights[0].m_xmf3Direction = m_pPlayer->GetLook();
 	}
 
-	//CheckCollision();
+	CheckCollision();
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -446,7 +413,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	switch (CreateObjectInfo.Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
-		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_PLAYER])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	case OBJECT_TYPE_BULLET:
 		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);

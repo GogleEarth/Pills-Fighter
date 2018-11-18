@@ -117,6 +117,7 @@ CGameObject::CGameObject()
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_xmf3PrevPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
@@ -147,7 +148,12 @@ void CGameObject::SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMesh
 	m_nMeshes = nMeshes;
 
 	if (m_xmOOBB) delete[] m_xmOOBB;
+
 	m_xmOOBB = new BoundingOrientedBox[m_nMeshes];
+	for (int i = 0; i < m_nMeshes; i++)
+	{
+		m_xmOOBB[i] = ppMeshes[i]->m_xmOOBB;
+	}
 }
 
 void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -206,6 +212,7 @@ void CGameObject::Animate(float fTimeElapsed)
 			//XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 
 			OnPrepareRender();
+
 			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB[i], XMLoadFloat4x4(&m_xmf4x4World));
 			XMStoreFloat4(&m_xmOOBB[i].Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB[i].Orientation)));
 		}
@@ -296,6 +303,10 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 
 void CGameObject::SetPosition(float x, float y, float z)
 {
+	m_xmf3PrevPosition.x = m_xmf3Position.x;
+	m_xmf3PrevPosition.y = m_xmf3Position.y;
+	m_xmf3PrevPosition.z = m_xmf3Position.z;
+
 	m_xmf3Position.x = x;
 	m_xmf3Position.y = y;
 	m_xmf3Position.z = z;

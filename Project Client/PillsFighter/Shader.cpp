@@ -688,10 +688,10 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 	SetMaterial(ppMaterials, nMaterials);
 
-	//RandomMoveObject *pObjects = new RandomMoveObject();
-	//pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
+	RandomMoveObject *pObjects = new RandomMoveObject();
+	pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
 
-	//InsertObject(pObjects);
+	InsertObject(pd3dDevice, pd3dCommandList, pObjects);
 
 	//pObjects = new RandomMoveObject();
 	//pObjects->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
