@@ -74,7 +74,7 @@ void Framework::main_loop()
 
 	while (true)
 	{
-		if (count < MAX_CLIENT)
+		if (count < MAX_CLIENT && count != -1)
 		{
 			SOCKET client_sock;
 			SOCKADDR_IN clientaddr;
@@ -145,13 +145,14 @@ void Framework::main_loop()
 				arg->pthis = this;
 				arg->client_socket = client_sock;
 
+				client_Event[count] = CreateEvent(NULL, FALSE, FALSE, NULL);
 				thread[count] = CreateThread(
 					NULL, 0, client_thread,
 					(LPVOID)arg, 0, NULL);
 				count++;
 			}
 		}
-		else
+		else if(count == 2)
 		{
 			Update_Arg* arg = new Update_Arg;
 			arg->pthis = this;
@@ -160,7 +161,7 @@ void Framework::main_loop()
 			update_thread = CreateThread(
 				NULL, 0, Update,
 				(LPVOID)arg, 0, NULL);
-			count = 0;
+			count = -1;
 		}
 	}
 }
@@ -237,6 +238,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 	while (true)
 	{
+		WaitForMultipleObjects(2, client_Event, TRUE, INFINITE);
 		ResetEvent(Event);
 		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
@@ -321,6 +323,7 @@ DWORD Framework::client_process(SOCKET arg)
 		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });	
 		m.unlock();
 
+		SetEvent(client_Event[p_info.ID]);
 		WaitForSingleObject(Event, INFINITE);
 	}
 	return 0;
