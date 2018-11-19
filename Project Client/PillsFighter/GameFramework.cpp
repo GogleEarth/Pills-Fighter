@@ -799,7 +799,7 @@ void CGameFramework::FrameAdvance()
 		pktPlayerInfo->IsShooting = PlayerInfo->IsShooting;
 		pktPlayerInfo->WorldMatrix = PlayerInfo->WorldMatrix;
 
-		//std::cout << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << std::endl;
+		std::cout << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << std::endl;
 		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)pktPlayerInfo);
 	}
 	m_vMsgPlayerInfo.clear();

@@ -146,7 +146,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
-
 	// Terrain
 	//m_pTerrain = new CRectTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 	//m_pTerrain->SetPosition(0.0f, 0.0f, 0.0f);
@@ -434,6 +433,8 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 
 void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 {
+	if (((PKT_PLAYER_INFO*)pktData)->ID == 0)
+		return;
 	std::cout << ((PKT_PLAYER_INFO*)pktData)->ID <<  std::endl;
 
 	switch (pktID)
