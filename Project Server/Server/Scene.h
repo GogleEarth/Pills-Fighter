@@ -29,6 +29,7 @@ public: // For Network
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
 	int GetIndex();
 	void AddObject(CGameObject objcet);
+	void releaseObject(int index);
 	CGameObject** GetObjects(OBJECT_TYPE type) 
 	{
 		//if (type == OBJECT_TYPE_OBSTACLE) return m_pObjects; 
