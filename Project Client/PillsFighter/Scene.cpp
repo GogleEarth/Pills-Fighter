@@ -434,6 +434,8 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 
 void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 {
+	std::cout << ((PKT_PLAYER_INFO*)pktData)->ID <<  std::endl;
+
 	switch (pktID)
 	{
 	case PKT_ID_PLAYER_INFO:

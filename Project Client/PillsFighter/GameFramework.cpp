@@ -6,8 +6,13 @@
 DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
 {
 	FrameworkThread* pFT = (FrameworkThread*)arg;
+	std::cout << ((FrameworkThread*)arg)->pGFW << std::endl;
 
-	return pFT->pGFW->ThreadFunc(pFT->arg);
+	DWORD retval = pFT->pGFW->ThreadFunc((LPVOID)pFT->sock);
+
+	delete pFT;
+
+	return retval;
 }
 
 void CGameFramework::err_quit(char* msg)
@@ -169,12 +174,22 @@ void CGameFramework::InitNetwork()
 	
 	CreateObject(pktCreateObject);
 
-	FrameworkThread *sFT;
-	sFT = new FrameworkThread;
+	FrameworkThread *sFT = new FrameworkThread;
 	sFT->pGFW = this;
-	sFT->arg = (LPVOID)m_sock;
+	sFT->sock = m_sock;
+	std::cout << sFT->pGFW << std::endl;
 
 	m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
+
+	//delete sFT;
+	//PKT_PLAYER_INFO* s = new PKT_PLAYER_INFO;
+	//s->ID = 1;
+	//s->IsShooting = false;
+	//s->WorldMatrix = m_pPlayer->GetWorldTransf();
+
+	//m_Mutex.lock();
+	//m_vMsgPlayerInfo.emplace_back(s);
+	//m_Mutex.unlock();
 }
 
 void CGameFramework::CreateScene(SCENEINFO SN)
@@ -779,13 +794,19 @@ void CGameFramework::FrameAdvance()
 
 	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
 	{
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, PlayerInfo);
+		PKT_PLAYER_INFO* pktPlayerInfo = new PKT_PLAYER_INFO;
+		pktPlayerInfo->ID = PlayerInfo->ID;
+		pktPlayerInfo->IsShooting = PlayerInfo->IsShooting;
+		pktPlayerInfo->WorldMatrix = PlayerInfo->WorldMatrix;
+
+		//std::cout << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << std::endl;
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)pktPlayerInfo);
 	}
 	m_vMsgPlayerInfo.clear();
 
 	for (const auto& PlayerLife : m_vMsgPlayerLife)
 	{
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, PlayerLife);
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
 	}
 	m_vMsgPlayerLife.clear();
 
@@ -797,7 +818,7 @@ void CGameFramework::FrameAdvance()
 
 	for (const auto& DelteInfo : m_vMsgDeleteObject)
 	{
-		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, DelteInfo);
+		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
 	}
 	m_vMsgDeleteObject.clear();
 

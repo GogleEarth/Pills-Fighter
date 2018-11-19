@@ -9,7 +9,7 @@ class CGameFramework;
 struct FrameworkThread
 {
 	CGameFramework* pGFW;
-	LPVOID			arg;
+	SOCKET			sock;
 };
 
 class CGameFramework
