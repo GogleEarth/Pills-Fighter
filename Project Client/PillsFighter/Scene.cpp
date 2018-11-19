@@ -399,6 +399,8 @@ void CScene::ReleaseShaderVariables()
 	}
 }
 
+//////////////////////////////// for Networking
+
 void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo)
 {
 	CGameObject* pGameObject = new CGameObject();
@@ -428,4 +430,22 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 {
 	m_pObjects[DeleteObjectInfo.Object_Index]->DeleteObject();
 	m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
+}
+
+void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
+{
+	switch (pktID)
+	{
+	case PKT_ID_PLAYER_INFO:
+		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
+		break;
+	case PKT_ID_PLAYER_LIFE:
+		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
+		break;
+	case PKT_ID_CREATE_OBJECT:
+		break;
+	case PKT_ID_DELETE_OBJECT:
+		DeleteObject(*((PKT_DELETE_OBJECT*)pktData));
+		break;
+	}
 }

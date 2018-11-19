@@ -107,4 +107,5 @@ public: // For Network
 
 	void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
+	void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 };

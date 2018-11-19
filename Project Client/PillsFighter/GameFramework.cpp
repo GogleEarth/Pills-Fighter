@@ -8,8 +8,6 @@ DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
 	FrameworkThread* pFT = (FrameworkThread*)arg;
 
 	return pFT->pGFW->ThreadFunc(pFT->arg);
-
-	return 0;
 }
 
 void CGameFramework::err_quit(char* msg)
@@ -56,7 +54,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 
 	int retval;
 
-	UINT iPktID;
+	PKT_ID iPktID;
 	int nPktSize;
 
 	char* buf;
@@ -64,24 +62,26 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 	while (true)
 	{
 		// 데이터 받기 # 패킷 식별 ID
-		retval = recvn(socket, (char*)&iPktID, sizeof(UINT), 0);
-		if (retval == SOCKET_ERROR)	err_display("recv()");
+		retval = recvn(socket, (char*)&iPktID, sizeof(PKT_ID), 0);
+		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
 
 		// 데이터 받기 # 패킷 구조체 - SIZE 결정
+		//m_Mutex.lock();
 		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
 		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
 		
-		// 데이터 받기 # 패킷 구조체 -  결정
+		// 데이터 받기 # 패킷 구조체 - 결정
 		buf = new char[nPktSize];
 		retval = recvn(socket, buf, nPktSize, 0);
-		if (retval == SOCKET_ERROR)	err_display("recv()");
+		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 
 		if (iPktID == PKT_ID_PLAYER_INFO) m_vMsgPlayerInfo.emplace_back((PKT_PLAYER_INFO*)buf); // 플레이어 정보 [ 행렬, 상태 ]
 		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
+		//m_Mutex.unlock();
 
 		//// 받은 데이터 출력
 		//if (retval > 0)
@@ -117,10 +117,10 @@ void CGameFramework::InitNetwork()
 	int retval;
 
 	// recv Time Out 3 sec
-	int optval = 3000;
-	retval = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
-	if (retval == SOCKET_ERROR)
-		err_quit("setsockopt()");
+	//int optval = 3000;
+	//retval = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
+	//if (retval == SOCKET_ERROR)
+	//	err_quit("setsockopt()");
 
 	// connect()
 	SOCKADDR_IN serveraddr;
@@ -150,6 +150,7 @@ void CGameFramework::InitNetwork()
 	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
+	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
@@ -162,15 +163,17 @@ void CGameFramework::InitNetwork()
 
 	// 다른 클라이언트 플레이어 정보
 	PKT_CREATE_OBJECT pktCreateObject;
+	//pktCreateObject.Object_Index = 5; pktCreateObject.Object_Type = OBJECT_TYPE_PLAYER; pktCreateObject.WorldMatrix = pPlayer->GetWorldTransf();
 	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
 	
 	CreateObject(pktCreateObject);
 
-	FrameworkThread sFT;
-	sFT.pGFW = this;
-	sFT.arg = (LPVOID)m_sock;
+	FrameworkThread *sFT;
+	sFT = new FrameworkThread;
+	sFT->pGFW = this;
+	sFT->arg = (LPVOID)m_sock;
 
-	m_hThread = CreateThread(NULL, 0, &recvThread, &sFT, 0, NULL);
+	m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
 }
 
 void CGameFramework::CreateScene(SCENEINFO SN)
@@ -501,7 +504,7 @@ void CGameFramework::BuildObjects()
 
 	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
 	
-#ifdef ON_NETWORK
+#ifdef ON_NETWORKING
 	InitNetwork();
 #else
 	m_pScene = new CScene();
@@ -744,32 +747,62 @@ void CGameFramework::FrameAdvance()
 {
 	m_GameTimer.Tick(0.0f);
 
-	auto start = std::chrono::high_resolution_clock::now();
-
 	ProcessInput();
 
-	//if (elapsedtime >= 0.05f)
-	//{
-	//	PLAYER_INFO p_info;
-	//	char buf[sizeof(PLAYER_INFO)];
-	//	int retval;
+#ifdef ON_NETWORKING
+	auto start = std::chrono::high_resolution_clock::now();
 
-	//	p_info.client_id = m_pPlayer->Client_id;
-	//	p_info.xmf4x4World = m_pPlayer->m_xmf4x4World;
-	//	if (m_LButtonDown)
-	//		p_info.is_shoot = 0xff;
-	//	else
-	//		p_info.is_shoot = 0;
-	//	memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
-	//	//std::cout << "보낼 정보 : " << p_info.is_shoot << std::endl;
-	//	retval = send(sock, buf, sizeof(PLAYER_INFO), 0);
-	//	if (retval == SOCKET_ERROR)
-	//	{
-	//		err_display("send");
-	//	}
-	//	std::cout << retval << "바이트 보냈음\n";
-	//	elapsedtime = 0;
-	//}
+	if (m_elapsedtime >= 0.05f)
+	{
+		PKT_PLAYER_INFO pktPlayerInfo;
+		char buf[sizeof(PKT_PLAYER_INFO)];
+		int retval;
+
+		pktPlayerInfo.ID = m_Client_Info;
+		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
+		if (m_LButtonDown)
+			pktPlayerInfo.IsShooting = 1;
+		else
+			pktPlayerInfo.IsShooting = 0;
+		//memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
+		//std::cout << "보낼 정보 : " << p_info.is_shoot << std::endl;
+
+		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
+		if (retval == SOCKET_ERROR)	err_display("send");
+
+		std::cout << retval << "바이트 보냈음\n";
+		m_elapsedtime = 0;
+	}
+
+	m_Mutex.lock();
+
+	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
+	{
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, PlayerInfo);
+	}
+	m_vMsgPlayerInfo.clear();
+
+	for (const auto& PlayerLife : m_vMsgPlayerLife)
+	{
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, PlayerLife);
+	}
+	m_vMsgPlayerLife.clear();
+
+	for (const auto& CreateInfo : m_vMsgCreateObject)
+	{
+		CreateObject(*CreateInfo);
+	}
+	m_vMsgCreateObject.clear();
+
+	for (const auto& DelteInfo : m_vMsgDeleteObject)
+	{
+		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, DelteInfo);
+	}
+	m_vMsgDeleteObject.clear();
+
+	m_Mutex.unlock();
+#endif
+
 
 	AnimateObjects();
 
@@ -870,9 +903,11 @@ void CGameFramework::FrameAdvance()
 
 	::SetWindowText(m_hWnd, m_pszCaption);
 
+#ifdef ON_NETWORKING
 	auto end = std::chrono::high_resolution_clock::now();
 	auto du = end - start;
-	//elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+	m_elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+#endif
 	//std::cout << elapsedtime << "지남\n";
 }
 
