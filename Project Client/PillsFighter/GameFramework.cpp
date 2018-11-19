@@ -169,9 +169,9 @@ void CGameFramework::InitNetwork()
 
 	// 다른 클라이언트 플레이어 정보
 	PKT_CREATE_OBJECT pktCreateObject;
-	//pktCreateObject.Object_Index = 5; pktCreateObject.Object_Type = OBJECT_TYPE_PLAYER; pktCreateObject.WorldMatrix = pPlayer->GetWorldTransf();
+	//pktCreateObject.Object_Index = 1; pktCreateObject.Object_Type = OBJECT_TYPE_PLAYER; pktCreateObject.WorldMatrix = pPlayer->GetWorldTransf();
 	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
-	
+
 	CreateObject(pktCreateObject);
 
 	FrameworkThread *sFT = new FrameworkThread;
@@ -794,12 +794,14 @@ void CGameFramework::FrameAdvance()
 
 	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
 	{
+		if (PlayerInfo->ID == m_Client_Info)
+			continue;
+
 		PKT_PLAYER_INFO* pktPlayerInfo = new PKT_PLAYER_INFO;
 		pktPlayerInfo->ID = PlayerInfo->ID;
 		pktPlayerInfo->IsShooting = PlayerInfo->IsShooting;
 		pktPlayerInfo->WorldMatrix = PlayerInfo->WorldMatrix;
 
-		std::cout << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << "," << pktPlayerInfo->WorldMatrix._41 << std::endl;
 		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)pktPlayerInfo);
 	}
 	m_vMsgPlayerInfo.clear();
