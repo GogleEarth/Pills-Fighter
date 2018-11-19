@@ -66,7 +66,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
 
 		// 데이터 받기 # 패킷 구조체 - SIZE 결정
-		//m_Mutex.lock();
+		m_Mutex.lock();
 		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
 		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
@@ -81,7 +81,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
-		//m_Mutex.unlock();
+		m_Mutex.unlock();
 
 		//// 받은 데이터 출력
 		//if (retval > 0)
@@ -151,6 +151,7 @@ void CGameFramework::InitNetwork()
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	std::cout << pktPlayerInfo.WorldMatrix._41 << ", " << pktPlayerInfo.WorldMatrix._42 << ", " << pktPlayerInfo.WorldMatrix._43 << std::endl;
 	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
@@ -755,7 +756,7 @@ void CGameFramework::FrameAdvance()
 	if (m_elapsedtime >= 0.05f)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
-		char buf[sizeof(PKT_PLAYER_INFO)];
+		//char buf[sizeof(PKT_PLAYER_INFO)];
 		int retval;
 
 		pktPlayerInfo.ID = m_Client_Info;
