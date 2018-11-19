@@ -36,9 +36,9 @@ public:
 	int recvn(SOCKET s, char* buf, int len, int flags);
 	int Send_msg(char* buf, int len, int flags);
 	static DWORD WINAPI Update(LPVOID arg);
-	DWORD Update_Process(LPVOID arg);
+	DWORD Update_Process(CScene* pScene);
 	static DWORD WINAPI client_thread(LPVOID arg);
-	DWORD client_process(LPVOID arg);
+	DWORD client_process(SOCKET arg);
 };
 
 struct Arg

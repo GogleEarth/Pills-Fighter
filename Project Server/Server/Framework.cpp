@@ -102,7 +102,7 @@ void Framework::main_loop()
 				info.id = count;
 				info.socket = client_sock;
 				m.lock();
-				clients.emplace_back(Client_INFO{count, client_sock});
+				clients.emplace_back(Client_INFO{ count, client_sock });
 				m.unlock();
 
 				SCENEINFO sinfo = SCENE_NAME_COLONY;
@@ -126,7 +126,7 @@ void Framework::main_loop()
 					retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
 					std::cout << "count0 send\n";
 				}
-				else if(count == 1)
+				else if (count == 1)
 				{
 					pktdata.ID = clients[1].id;
 					pktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
@@ -140,21 +140,25 @@ void Framework::main_loop()
 					std::cout << "count1 send\n";
 				}
 
-				Arg* arg = new Arg{ this,client_sock };
+				Arg* arg = new Arg;
+				arg->pthis = this;
+				arg->client_socket = client_sock;
 
 				thread[count] = CreateThread(
 					NULL, 0, client_thread,
-					(LPVOID)&arg, 0, NULL);
+					(LPVOID)arg, 0, NULL);
 				count++;
 			}
 		}
 		else
 		{
-			
-			Update_Arg* arg = new Update_Arg{ this,m_pScene };
+			Update_Arg* arg = new Update_Arg;
+			arg->pthis = this;
+			arg->pScene = m_pScene;
+		
 			update_thread = CreateThread(
 				NULL, 0, Update,
-				(LPVOID)&arg, 0, NULL);
+				(LPVOID)arg, 0, NULL);
 			count = 0;
 		}
 	}
@@ -222,14 +226,13 @@ int Framework::Send_msg(char * buf, int len, int flags)
 DWORD __stdcall Framework::Update(LPVOID arg)
 {
 	Update_Arg* t_arg = (Update_Arg*)arg;
-	return t_arg->pthis->Update_Process(arg);
+	return t_arg->pthis->Update_Process(t_arg->pScene);
 }
 
-DWORD Framework::Update_Process(LPVOID arg)
+DWORD Framework::Update_Process(CScene* pScene)
 {
 	int retval;
-	Update_Arg* t_arg = (Update_Arg*)arg;
-	CGameObject** Objects = t_arg->pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
+	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 	//PKT_PLAYER_INFO pktdata;
 	//SOCKET p1 = clients[0].socket;
 	//SOCKET p2 = clients[1].socket;
@@ -279,20 +282,19 @@ DWORD Framework::Update_Process(LPVOID arg)
 	while (true)
 	{
 		ResetEvent(Event);
-		t_arg->pthis->m_pScene->AnimateObjects(FIXED_FRAME);
+		pScene->AnimateObjects(FIXED_FRAME);
 		while (true)
 		{
 			PKT_PLAYER_INFO pkt;
-			t_arg->pthis->m.lock();
+			//m.lock();
 			if (msg_queue.empty())
 				break;
 			else
 			{
-
 				pkt = msg_queue.front();
 				msg_queue.pop();
 			}
-			t_arg->pthis->m.unlock();
+			//m.unlock();
 
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
 			Send_msg((char*)&pid, sizeof(PKT_ID), 0);
@@ -308,13 +310,13 @@ DWORD Framework::Update_Process(LPVOID arg)
 DWORD __stdcall Framework::client_thread(LPVOID arg)
 {
 	Arg* t_arg = (Arg*)arg;
-
-	return t_arg->pthis->client_process(arg);
+	std::cout << ((Arg*)arg)->pthis << std::endl;
+	return t_arg->pthis->client_process(t_arg->client_socket);
 }
 
-DWORD Framework::client_process(LPVOID arg)
+DWORD Framework::client_process(SOCKET arg)
 {
-	Arg* client_arg = (Arg*)arg;
+	SOCKET client_socket = arg;
 	int retval;
 	SOCKADDR_IN clientaddr;
 	int addrlen;
@@ -322,12 +324,12 @@ DWORD Framework::client_process(LPVOID arg)
 
 	// 클라이언트 정보 얻기
 	addrlen = sizeof(clientaddr);
-	getpeername(client_arg->client_socket, (SOCKADDR*)&clientaddr, &addrlen);
+	getpeername(client_socket, (SOCKADDR*)&clientaddr, &addrlen);
 
 	while (1)
 	{
 		char data_buf[sizeof(PKT_PLAYER_INFO)];
-		retval = recvn(client_arg->client_socket, data_buf, sizeof(PKT_PLAYER_INFO), 0);
+		retval = recvn(client_socket, data_buf, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)
 		{
 			std::cout << "thread ERROR : ";
@@ -339,10 +341,9 @@ DWORD Framework::client_process(LPVOID arg)
 		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
 		std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
 		// 받은 데이터 출력
-		client_arg->pthis->m.lock();
+		m.lock();
 		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });	
-		client_arg->pthis->m.unlock();
-
+		m.unlock();
 
 		WaitForSingleObject(Event, INFINITE);
 	}
