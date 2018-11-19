@@ -548,7 +548,6 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			xStart = x * (nBlockWidth - 1);
 			zStart = z * (nBlockLength - 1);
 			pHeightMapGridMesh = new CHeightMapGridMesh(pd3dDevice, pd3dCommandList, xStart, zStart, nBlockWidth, nBlockLength, xmf3Scale, xmf4Color, m_pHeightMapImage);
-			//SetMesh(x + (z*cxBlocks), pHeightMapGridMesh);
 			m_ppMeshes[x + (z*cxBlocks)] = pHeightMapGridMesh;
 		}
 	}
@@ -557,8 +556,6 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	CTexture *pTerrainTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
-
-	UINT ncbElementBytes = ((sizeof(CB_GAMEOBJECT_INFO) + 255) & ~255); //256의 배수
 
 	m_pTerrainShader = new CTerrainShader();
 	m_pTerrainShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -572,7 +569,36 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	SetMaterial(ppTerrainMaterial, 1);
 }
 
-CHeightMapTerrain::~CHeightMapTerrain(void)
+CHeightMapTerrain::~CHeightMapTerrain()
 {
+	ReleaseShaderVariables();
+
+	if (m_ppMeshes)
+	{
+		for (UINT j = 0; j < m_nMeshes; j++)
+		{
+			if (m_ppMeshes[j]) delete m_ppMeshes[j];
+		}
+
+		delete[] m_ppMeshes;
+	}
+
+	if (m_pTerrainShader) delete m_pTerrainShader;
+
 	if (m_pHeightMapImage) delete m_pHeightMapImage;
+}
+
+void CHeightMapTerrain::ReleaseUploadBuffers()
+{
+	if (m_pTerrainShader) m_pTerrainShader->ReleaseUploadBuffers();
+
+	CGameObject::ReleaseUploadBuffers();
+}
+
+void CHeightMapTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances)
+{
+	//플레이어 객체를 렌더링한다. 
+	m_pTerrainShader->OnPrepareRender(pd3dCommandList);
+
+	CGameObject::Render(pd3dCommandList, pCamera);
 }

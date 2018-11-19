@@ -742,10 +742,6 @@ D3D12_SHADER_BYTECODE CTerrainShader::CreatePixelShader(ID3DBlob **ppd3dShaderBl
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSTerrain", "ps_5_1", ppd3dShaderBlob));
 }
 
-void CTerrainShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	OnPrepareRender(pd3dCommandList);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 CUserInterface::CUserInterface()

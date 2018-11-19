@@ -40,7 +40,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 		ppMaterials[i]->m_nReflection = 0;
 	}
 
-	//m_pShader->SetMaterial(ppMaterials, nMaterials);
+	m_pShader->SetMaterial(ppMaterials, nMaterials);
 	SetMaterial(ppMaterials, nMaterials);
 
 	//플레이어의 위치를 설정한다. 
@@ -258,21 +258,21 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 {
 	if (m_Shotable)
 	{
-		Bullet *pBullet = NULL;
+		//Bullet *pBullet = NULL;
 
-		pBullet = new Bullet();
+		//pBullet = new Bullet();
 
-		XMFLOAT3 xmfPosition = GetPosition();
-		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
-		pBullet->SetPosition(xmfPosition);
-		//pBullet->SetRight(m_pCamera->GetRightVector());
-		//pBullet->SetUp(m_pCamera->GetUpVector());
-		//pBullet->SetLook(m_pCamera->GetLookVector());
-		pBullet->SetRight(m_xmf3Right);
-		pBullet->SetUp(m_xmf3Up);
-		pBullet->SetLook(m_xmf3Look);
+		//XMFLOAT3 xmfPosition = GetPosition();
+		//xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
+		//pBullet->SetPosition(xmfPosition);
+		////pBullet->SetRight(m_pCamera->GetRightVector());
+		////pBullet->SetUp(m_pCamera->GetUpVector());
+		////pBullet->SetLook(m_pCamera->GetLookVector());
+		//pBullet->SetRight(m_xmf3Right);
+		//pBullet->SetUp(m_xmf3Up);
+		//pBullet->SetLook(m_xmf3Look);
 
-		m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
+		//m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
 
 		m_Shotable = FALSE;
 	}

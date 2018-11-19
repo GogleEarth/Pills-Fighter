@@ -186,7 +186,6 @@ void CScene::ReleaseObjects()
 
 	if (m_pTerrain)
 	{
-		m_pTerrain->ReleaseShaderVariables();
 		delete m_pTerrain;
 	}
 
@@ -417,27 +416,34 @@ void CScene::ReleaseShaderVariables()
 
 void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo)
 {
-	CGameObject* pGameObject = new CGameObject();
-	pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+	CGameObject* pGameObject = NULL;
+	//pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
 	if (m_pObjects[CreateObjectInfo.Object_Index])
 	{
 		m_pObjects[CreateObjectInfo.Object_Index]->DeleteObject();
 	}
 
-	m_pObjects[CreateObjectInfo.Object_Index] = pGameObject;
-
 	switch (CreateObjectInfo.Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
+		pGameObject = new CGameObject();
+		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
 		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	case OBJECT_TYPE_BULLET:
+		pGameObject = new Bullet();
+		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
 		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	case OBJECT_TYPE_OBSTACLE:
 		((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	}
+
+	m_pObjects[CreateObjectInfo.Object_Index] = pGameObject;
 }
 
 void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
