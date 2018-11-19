@@ -272,3 +272,52 @@ float4 PS_UI(GS_OUT input) : SV_TARGET
 
 	return(cColor);
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+Texture2D gtxtTerrainBaseTexture : register(t3);
+
+struct VS_TERRAIN_INPUT
+{
+	float3 position : POSITION;
+	float4 color : COLOR;
+	float2 uv0 : TEXCOORD0;
+	//float2 uv1 : TEXCOORD1;
+	//uint heightCount : HEIGHTCOUNT;
+};
+
+struct VS_TERRAIN_OUTPUT
+{
+	float4 position : POSITION;
+	float4 color : COLOR;
+	float2 uv0 : TEXCOORD0;
+	//float2 uv1 : TEXCOORD1;
+	//uint heightCount : HEIGHTCOUNT;
+};
+
+VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
+{
+	VS_TERRAIN_OUTPUT output;
+
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.color = input.color;
+	output.uv0 = input.uv0;
+	//output.uv1 = input.uv1;
+	//output.heightCount = input.heightCount;
+
+	return(output);
+}
+
+float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
+{
+	float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gSamplerState, input.uv0);
+
+	float4 cColor = input.color * saturate(cBaseTexColor * 0.5f);
+
+	return(cColor);
+}

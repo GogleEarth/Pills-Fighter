@@ -749,6 +749,11 @@ void CTerrainShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature
 	//m_ppd3dPipelineStates = new ID3D12PipelineState*[m_nPipelineStates];
 	CShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 }
+
+void CTerrainShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	OnPrepareRender(pd3dCommandList);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 CUserInterface::CUserInterface()

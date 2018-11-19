@@ -247,6 +247,7 @@ public:
 	virtual ~CHeightMapTerrain();
 
 private:
+	CShader						*pTerrainShader = NULL;
 	CHeightMapImage				*m_pHeightMapImage;
 
 	int							m_nWidth;
