@@ -157,7 +157,7 @@ public:
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
 	XMFLOAT3 GetDirection() { return m_xmf3Direction; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
-	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
+	XMFLOAT4X4 GetWorldTransf();
 	CMaterial* GetMaterial(UINT nIndex) { return m_ppMaterials[nIndex]; }
 
 	//게임 객체의 위치를 설정한다.
@@ -247,7 +247,7 @@ public:
 	virtual ~CHeightMapTerrain();
 
 private:
-	CShader						*pTerrainShader = NULL;
+	CShader						*m_pTerrainShader = NULL;
 	CHeightMapImage				*m_pHeightMapImage;
 
 	int							m_nWidth;

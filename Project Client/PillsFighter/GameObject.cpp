@@ -141,6 +141,19 @@ void CGameObject::SetWorldTransf(XMFLOAT4X4& xmf4x4World)
 	m_xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
 }
 
+XMFLOAT4X4 CGameObject::GetWorldTransf()
+{
+	XMFLOAT4X4 xmf4x4World;
+	xmf4x4World = XMFLOAT4X4{
+		m_xmf3Right.x,		m_xmf3Right.y,		m_xmf3Right.z, 0.0f,
+		m_xmf3Up.x,			m_xmf3Up.y,			m_xmf3Up.z, 0.0f,
+		m_xmf3Look.x,		m_xmf3Look.y,		m_xmf3Look.z, 0.0f,
+		m_xmf3Position.x,	m_xmf3Position.y,	m_xmf3Position.z, 0.0f,
+	};
+
+	return xmf4x4World;
+}
+
 void CGameObject::SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMeshes)
 {
 	m_ppMeshes = ppMeshes;
@@ -543,27 +556,20 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	CTexture *pTerrainTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"Resource/Tile.dds", 0);
+	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
 
 	UINT ncbElementBytes = ((sizeof(CB_GAMEOBJECT_INFO) + 255) & ~255); //256ÀÇ ¹è¼ö
 
-	pTerrainShader = new CTerrainShader();
-	pTerrainShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pTerrainShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pTerrainShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	//pTerrainShader->CreateConstantBufferViews(pd3dDevice, pd3dCommandList, 1, m_pd3dcbGameObject, ncbElementBytes);
-	pTerrainShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, 8, true);
-
-
+	m_pTerrainShader = new CTerrainShader();
+	m_pTerrainShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pTerrainShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	m_pTerrainShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, 8, false);
+	
 	CMaterial **ppTerrainMaterial = new CMaterial*[1];
 	ppTerrainMaterial[0] = new CMaterial();
 	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
 
 	SetMaterial(ppTerrainMaterial, 1);
-
-	//SetCbvGPUDescriptorHandle(pTerrainShader->GetGPUCbvDescriptorStartHandle());
-
-	//SetShader(pTerrainShader);
 }
 
 CHeightMapTerrain::~CHeightMapTerrain(void)

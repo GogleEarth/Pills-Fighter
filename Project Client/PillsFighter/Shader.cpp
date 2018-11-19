@@ -742,14 +742,6 @@ D3D12_SHADER_BYTECODE CTerrainShader::CreatePixelShader(ID3DBlob **ppd3dShaderBl
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSTerrain", "ps_5_1", ppd3dShaderBlob));
 }
 
-void CTerrainShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature
-	*pd3dGraphicsRootSignature)
-{
-	//m_nPipelineStates = 1;
-	//m_ppd3dPipelineStates = new ID3D12PipelineState*[m_nPipelineStates];
-	CShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-}
-
 void CTerrainShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	OnPrepareRender(pd3dCommandList);

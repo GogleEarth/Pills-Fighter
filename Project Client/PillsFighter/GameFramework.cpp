@@ -145,7 +145,6 @@ void CGameFramework::InitNetwork()
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
-	std::cout << pktPlayerInfo.WorldMatrix._41 << ", " << pktPlayerInfo.WorldMatrix._42 << ", " << pktPlayerInfo.WorldMatrix._43 << std::endl;
 	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
