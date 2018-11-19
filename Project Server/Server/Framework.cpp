@@ -110,18 +110,19 @@ void Framework::main_loop()
 
 				CGameObject** Objects = m_pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 				PKT_PLAYER_INFO pktdata;
+				PKT_CREATE_OBJECT anotherpktdata;
 				std::cout << count << std::endl;
 				if (count == 0)
 				{
 					pktdata.ID = clients[0].id;
-					pktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
+					pktdata.WorldMatrix = m_pScene->m_pObjects[0]->m_xmf4x4World;
+					std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
 					pktdata.IsShooting = false;
 					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
 
-					PKT_CREATE_OBJECT anotherpktdata;
-					anotherpktdata.Object_Type = Objects[1]->m_Object_Type;
+					anotherpktdata.Object_Type = m_pScene->m_pObjects[1]->m_Object_Type;
 					anotherpktdata.Object_Index = 1;
-					anotherpktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
+					anotherpktdata.WorldMatrix = m_pScene->m_pObjects[1]->m_xmf4x4World;
 					retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
 					std::cout << "count0 send\n";
 				}
@@ -132,7 +133,6 @@ void Framework::main_loop()
 					pktdata.IsShooting = false;
 					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
 
-					PKT_CREATE_OBJECT anotherpktdata;
 					anotherpktdata.Object_Type = Objects[0]->m_Object_Type;
 					anotherpktdata.Object_Index = 0;
 					anotherpktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
@@ -140,7 +140,7 @@ void Framework::main_loop()
 					std::cout << "count1 send\n";
 				}
 
-				Arg arg{ this,client_sock };
+				Arg* arg = new Arg{ this,client_sock };
 
 				thread[count] = CreateThread(
 					NULL, 0, client_thread,
@@ -151,7 +151,7 @@ void Framework::main_loop()
 		else
 		{
 			
-			Update_Arg arg{ this,m_pScene };
+			Update_Arg* arg = new Update_Arg{ this,m_pScene };
 			update_thread = CreateThread(
 				NULL, 0, Update,
 				(LPVOID)&arg, 0, NULL);
@@ -208,7 +208,7 @@ int Framework::recvn(SOCKET s, char * buf, int len, int flags)
 	return (len - left);
 }
 
-int Framework::Send(char * buf, int len, int flags)
+int Framework::Send_msg(char * buf, int len, int flags)
 {
 	m.lock();
 	for (auto d : clients)
@@ -222,13 +222,41 @@ int Framework::Send(char * buf, int len, int flags)
 DWORD __stdcall Framework::Update(LPVOID arg)
 {
 	Update_Arg* t_arg = (Update_Arg*)arg;
-	return t_arg->pthis->Update(t_arg->pScene);
+	return t_arg->pthis->Update_Process(arg);
 }
 
-DWORD Framework::Update(CScene* pScene)
+DWORD Framework::Update_Process(LPVOID arg)
 {
 	int retval;
-	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
+	Update_Arg* t_arg = (Update_Arg*)arg;
+	CGameObject** Objects = t_arg->pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
+	//PKT_PLAYER_INFO pktdata;
+	//SOCKET p1 = clients[0].socket;
+	//SOCKET p2 = clients[1].socket;
+
+	//pktdata.ID = clients[0].id;
+	//pktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
+	//pktdata.IsShooting = false;
+	//retval = send(p1, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
+
+	//PKT_CREATE_OBJECT anotherpktdata;
+	//anotherpktdata.Object_Type = Objects[1]->m_Object_Type;
+	//anotherpktdata.Object_Index = 1;
+	//anotherpktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
+	//retval = send(p1, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+	//std::cout << "p1 send\n";
+
+
+	//pktdata.ID = clients[1].id;
+	//pktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
+	//pktdata.IsShooting = false;
+	//retval = send(p2, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
+
+	//anotherpktdata.Object_Type = Objects[0]->m_Object_Type;
+	//anotherpktdata.Object_Index = 0;
+	//anotherpktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
+	//retval = send(p2, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+	//std::cout << "p2 send\n";
 
 	//for (int i = 0; i < MAX_NUM_OBJECT; ++i)
 	//{
@@ -251,15 +279,26 @@ DWORD Framework::Update(CScene* pScene)
 	while (true)
 	{
 		ResetEvent(Event);
-		pScene->AnimateObjects(FIXED_FRAME);
-		while (!msg_queue.empty())
+		t_arg->pthis->m_pScene->AnimateObjects(FIXED_FRAME);
+		while (true)
 		{
-			auto pkt = msg_queue.front();
-			msg_queue.pop();
+			PKT_PLAYER_INFO pkt;
+			t_arg->pthis->m.lock();
+			if (msg_queue.empty())
+				break;
+			else
+			{
+
+				pkt = msg_queue.front();
+				msg_queue.pop();
+			}
+			t_arg->pthis->m.unlock();
+
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
-			Send((char*)&pid, sizeof(PKT_ID), 0);
+			Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 			std::cout << "send pktid\n";
-			Send((char*)&pkt, sizeof(pkt), 0);
+			
+			Send_msg((char*)&pkt, sizeof(pkt), 0);
 			std::cout << "send pkt\n";
 		}
 		SetEvent(Event);
@@ -270,12 +309,12 @@ DWORD __stdcall Framework::client_thread(LPVOID arg)
 {
 	Arg* t_arg = (Arg*)arg;
 
-	return t_arg->pthis->client_process((LPVOID)t_arg->client_socket);
+	return t_arg->pthis->client_process(arg);
 }
 
 DWORD Framework::client_process(LPVOID arg)
 {
-	SOCKET client_sock = (SOCKET)arg;
+	Arg* client_arg = (Arg*)arg;
 	int retval;
 	SOCKADDR_IN clientaddr;
 	int addrlen;
@@ -283,25 +322,26 @@ DWORD Framework::client_process(LPVOID arg)
 
 	// 클라이언트 정보 얻기
 	addrlen = sizeof(clientaddr);
-	getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
+	getpeername(client_arg->client_socket, (SOCKADDR*)&clientaddr, &addrlen);
 
 	while (1)
 	{
 		char data_buf[sizeof(PKT_PLAYER_INFO)];
-		retval = recvn(client_sock, data_buf, sizeof(PKT_PLAYER_INFO), 0);
+		retval = recvn(client_arg->client_socket, data_buf, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)
 		{
 			std::cout << "thread ERROR : ";
 			err_display("recv()");
 			break;
 		}
-		//std::cout << retval << "바이트 받음\n";
+		std::cout << retval << "바이트 받음\n";
 		PKT_PLAYER_INFO p_info;
 		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
+		std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
 		// 받은 데이터 출력
-		m.lock();
-		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });
-		m.unlock();
+		client_arg->pthis->m.lock();
+		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });	
+		client_arg->pthis->m.unlock();
 
 
 		WaitForSingleObject(Event, INFINITE);

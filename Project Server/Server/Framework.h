@@ -22,9 +22,9 @@ class Framework
 	std::vector<Client_INFO> clients;
 	int count = 0;
 
-	CScene* m_pScene;
 
 public:
+	CScene* m_pScene;
 	Framework();
 	~Framework();
 	int Build();
@@ -34,9 +34,9 @@ public:
 	void err_quit(char* msg);
 	void err_display(char* msg);
 	int recvn(SOCKET s, char* buf, int len, int flags);
-	int Send(char* buf, int len, int flags);
+	int Send_msg(char* buf, int len, int flags);
 	static DWORD WINAPI Update(LPVOID arg);
-	DWORD Update(CScene* pScene);
+	DWORD Update_Process(LPVOID arg);
 	static DWORD WINAPI client_thread(LPVOID arg);
 	DWORD client_process(LPVOID arg);
 };

@@ -19,17 +19,11 @@ CScene::~CScene()
 void CScene::BuildObjects()
 {
 	m_pObjects[0] = new CGameObject();
-	m_pObjects[0]->SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
-	m_pObjects[0]->SetLook(XMFLOAT3(0.0f, 0.0f, 1.0f));
-	m_pObjects[0]->SetUp(XMFLOAT3(0.0, 1.0f, 0.0f));
-	m_pObjects[0]->SetRight(Vector3::CrossProduct(m_pObjects[0]->GetLook(), m_pObjects[0]->GetUp()));
+	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
 	m_pObjects[0]->m_Object_Type = OBJECT_TYPE_PLAYER;
 
 	m_pObjects[1] = new CGameObject();
-	m_pObjects[1]->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
-	m_pObjects[1]->SetLook(XMFLOAT3(0.0f, 0.0f, -1.0f));
-	m_pObjects[1]->SetUp(XMFLOAT3(0.0, 1.0f, 0.0f));
-	m_pObjects[1]->SetRight(Vector3::CrossProduct(m_pObjects[1]->GetLook(), m_pObjects[1]->GetUp()));
+	m_pObjects[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f };
 	m_pObjects[1]->m_Object_Type = OBJECT_TYPE_PLAYER;
 }
 
