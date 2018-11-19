@@ -616,6 +616,7 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			break;
 		case '1':
 			m_pPlayer->SetHitPoint(*m_pPlayer->GetHitPoint() - 5);
+			break;
 		default:
 			break;
 		}
