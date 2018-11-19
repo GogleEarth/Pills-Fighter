@@ -890,7 +890,7 @@ void CUserInterface::ReleaseShaderVariables()
 
 void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	std::cout << *m_pPlayerMaxHP << std::endl;
+	//std::cout << *m_pPlayerMaxHP << std::endl;
 
 	m_pcbMappedPlayerHP->MaxHP = *m_pPlayerMaxHP;
 	m_pcbMappedPlayerHP->HP = *m_pPlayerHP;

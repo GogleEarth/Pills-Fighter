@@ -87,17 +87,6 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
 		m_Mutex.unlock();
-
-		//// 받은 데이터 출력
-		//if (retval > 0)
-		//{
-		//	PKT_PLAYER_INFO Player_Info;
-		//	memcpy(&Player_Info, &buf, sizeof(PKT_PLAYER_INFO));
-
-		//	m_Mutex.lock();
-		//	m_qPlayer_Info.push(PKT_PLAYER_INFO{ Player_Info.ID, Player_Info.WorldMatrix, Player_Info.IsShooting });
-		//	m_Mutex.unlock();
-		//}
 	}
 }
 
@@ -169,7 +158,6 @@ void CGameFramework::InitNetwork()
 
 	// 다른 클라이언트 플레이어 정보
 	PKT_CREATE_OBJECT pktCreateObject;
-	//pktCreateObject.Object_Index = 1; pktCreateObject.Object_Type = OBJECT_TYPE_PLAYER; pktCreateObject.WorldMatrix = pPlayer->GetWorldTransf();
 	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
 
 	CreateObject(pktCreateObject);
@@ -180,16 +168,6 @@ void CGameFramework::InitNetwork()
 	std::cout << sFT->pGFW << std::endl;
 
 	m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
-
-	//delete sFT;
-	//PKT_PLAYER_INFO* s = new PKT_PLAYER_INFO;
-	//s->ID = 1;
-	//s->IsShooting = false;
-	//s->WorldMatrix = m_pPlayer->GetWorldTransf();
-
-	//m_Mutex.lock();
-	//m_vMsgPlayerInfo.emplace_back(s);
-	//m_Mutex.unlock();
 }
 
 void CGameFramework::CreateScene(SCENEINFO SN)
@@ -637,6 +615,8 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 			}
 			break;
+		case '1':
+			m_pPlayer->SetHitPoint(*m_pPlayer->GetHitPoint() - 5);
 		default:
 			break;
 		}
@@ -771,17 +751,12 @@ void CGameFramework::FrameAdvance()
 	if (m_elapsedtime >= 0.05f)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
-		//char buf[sizeof(PKT_PLAYER_INFO)];
 		int retval;
 
 		pktPlayerInfo.ID = m_Client_Info;
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
-		if (m_LButtonDown)
-			pktPlayerInfo.IsShooting = 1;
-		else
-			pktPlayerInfo.IsShooting = 0;
-		//memcpy(&buf, &p_info, sizeof(PLAYER_INFO));
-		//std::cout << "보낼 정보 : " << p_info.is_shoot << std::endl;
+		if (m_LButtonDown) pktPlayerInfo.IsShooting = 1;
+		else pktPlayerInfo.IsShooting = 0;
 
 		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)	err_display("send");
@@ -797,12 +772,7 @@ void CGameFramework::FrameAdvance()
 		if (PlayerInfo->ID == m_Client_Info)
 			continue;
 
-		PKT_PLAYER_INFO* pktPlayerInfo = new PKT_PLAYER_INFO;
-		pktPlayerInfo->ID = PlayerInfo->ID;
-		pktPlayerInfo->IsShooting = PlayerInfo->IsShooting;
-		pktPlayerInfo->WorldMatrix = PlayerInfo->WorldMatrix;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)pktPlayerInfo);
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
 	}
 	m_vMsgPlayerInfo.clear();
 
@@ -826,7 +796,6 @@ void CGameFramework::FrameAdvance()
 
 	m_Mutex.unlock();
 #endif
-
 
 	AnimateObjects();
 
@@ -932,7 +901,6 @@ void CGameFramework::FrameAdvance()
 	auto du = end - start;
 	m_elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
 #endif
-	//std::cout << elapsedtime << "지남\n";
 }
 
 void CGameFramework::OnResizeBackBuffers()

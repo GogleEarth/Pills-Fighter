@@ -131,4 +131,6 @@ public: // for Network
 
 	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void CreateScene(SCENEINFO SN);
+
+	char *buf;
 };

@@ -404,7 +404,6 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 {
 	CGameObject* pGameObject = new CGameObject();
 	pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
-	pGameObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	if (m_pObjects[CreateObjectInfo.Object_Index])
 	{
 		m_pObjects[CreateObjectInfo.Object_Index]->DeleteObject();
