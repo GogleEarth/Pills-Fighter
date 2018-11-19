@@ -274,7 +274,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 				Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 				Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
 				std::cout << "index : " << bulletpkt.Object_Index << std::endl;
-				Bullet bullet;
+				CGameObject bullet;
+				bullet.m_Object_Type = OBJECT_TYPE_BULLET;
 				bullet.SetWorldTransf(pScene->m_pObjects[pkt.ID]->GetWorldTransf());
 				bullet.SetMovingSpeed(1000.0f);
 				pScene->AddObject(bullet);

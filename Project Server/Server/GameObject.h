@@ -39,6 +39,11 @@ protected:
 
 	bool m_Delete = FALSE;
 
+private:
+	float m_RotationSpeed;
+	float m_DurationTime; // 발사 후 생존?시간
+	float m_ElapsedTime; // 행동한 시간
+
 public:
 	CGameObject();
 	virtual ~CGameObject();
@@ -133,11 +138,6 @@ public:
 	virtual ~Bullet();
 
 	virtual void Animate(float ElapsedTime);
-
-private:
-	float m_RotationSpeed;
-	float m_DurationTime; // 발사 후 생존?시간
-	float m_ElapsedTime; // 행동한 시간
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

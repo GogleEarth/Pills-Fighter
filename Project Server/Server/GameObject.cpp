@@ -16,6 +16,11 @@ CGameObject::CGameObject()
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
+
+	m_ElapsedTime = 0;
+	m_DurationTime = 3.0f;
+	m_MovingSpeed = 1000.0f;
+	m_RotationSpeed = 1440.0f;
 }
 
 CGameObject::~CGameObject()
@@ -63,6 +68,20 @@ void CGameObject::OnPrepareRender()
 
 void CGameObject::Animate(float fTimeElapsed)
 {
+	if (m_Object_Type == OBJECT_TYPE_BULLET)
+	{
+		if (m_ElapsedTime >= m_DurationTime)
+		{
+			DeleteObject();
+		}
+		else
+		{
+			//CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * fTimeElapsed);
+			MoveForward(m_MovingSpeed * fTimeElapsed);
+
+			m_ElapsedTime += fTimeElapsed;
+		}
+	}
 	for (UINT i = 0; i < m_nMeshes; i++)
 	{
 		if (m_ppMeshes[i])
@@ -203,10 +222,10 @@ void RandomMoveObject::Animate(float ElapsedTime)
 
 Bullet::Bullet() : CGameObject()
 {
-	m_ElapsedTime = 0;
-	m_DurationTime = 3.0f;
-	m_MovingSpeed = 1000.0f;
-	m_RotationSpeed = 1440.0f;
+	//m_ElapsedTime = 0;
+	//m_DurationTime = 3.0f;
+	//m_MovingSpeed = 1000.0f;
+	//m_RotationSpeed = 1440.0f;
 }
 
 Bullet::~Bullet()
@@ -215,7 +234,7 @@ Bullet::~Bullet()
 
 void Bullet::Animate(float ElapsedTime)
 {
-	if (m_ElapsedTime >= m_DurationTime)
+	/*if (m_ElapsedTime >= m_DurationTime)
 	{
 		DeleteObject();
 	}
@@ -225,7 +244,7 @@ void Bullet::Animate(float ElapsedTime)
 		MoveForward(m_MovingSpeed * ElapsedTime);
 
 		m_ElapsedTime += ElapsedTime;
-	}
+	}*/
 
 	CGameObject::Animate(ElapsedTime);
 }

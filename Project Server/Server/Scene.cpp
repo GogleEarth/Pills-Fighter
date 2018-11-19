@@ -121,6 +121,9 @@ void CScene::AnimateObjects(float fTimeElapsed)
 	{
 		if(m_pObjects[i] != NULL)
 			m_pObjects[i]->Animate(fTimeElapsed);
+		if (m_pObjects[i] != NULL)
+			if (m_pObjects[i]->IsDelete())
+				releaseObject(i);
 	}
 	//CheckCollision();
 }
@@ -155,4 +158,10 @@ void CScene::AddObject(CGameObject objcet)
 {
 	int index = GetIndex();
 	m_pObjects[index] = new CGameObject(objcet);
+}
+
+void CScene::releaseObject(int index)
+{
+	delete m_pObjects[index];
+	m_pObjects[index] = NULL;
 }
