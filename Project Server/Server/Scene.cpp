@@ -142,3 +142,17 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 	m_pObjects[DeleteObjectInfo.Object_Index]->DeleteObject();
 	m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
 }
+
+int CScene::GetIndex()
+{
+	for (int i = 2; i < MAX_NUM_OBJECT; ++i)
+		if (m_pObjects[i] == NULL)
+			return i;
+	return -1;
+}
+
+void CScene::AddObject(CGameObject objcet)
+{
+	int index = GetIndex();
+	m_pObjects[index] = new CGameObject(objcet);
+}

@@ -80,6 +80,7 @@ void Framework::main_loop()
 			SOCKADDR_IN clientaddr;
 			// accept()
 			addrlen = sizeof(clientaddr);
+			std::cout << count << std::endl;
 			client_sock = accept(listen_sock, (SOCKADDR*)&clientaddr, &addrlen);
 			if (client_sock == INVALID_SOCKET)
 			{
@@ -233,56 +234,11 @@ DWORD Framework::Update_Process(CScene* pScene)
 {
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
-	//PKT_PLAYER_INFO pktdata;
-	//SOCKET p1 = clients[0].socket;
-	//SOCKET p2 = clients[1].socket;
-
-	//pktdata.ID = clients[0].id;
-	//pktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
-	//pktdata.IsShooting = false;
-	//retval = send(p1, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
-
-	//PKT_CREATE_OBJECT anotherpktdata;
-	//anotherpktdata.Object_Type = Objects[1]->m_Object_Type;
-	//anotherpktdata.Object_Index = 1;
-	//anotherpktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
-	//retval = send(p1, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
-	//std::cout << "p1 send\n";
-
-
-	//pktdata.ID = clients[1].id;
-	//pktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
-	//pktdata.IsShooting = false;
-	//retval = send(p2, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
-
-	//anotherpktdata.Object_Type = Objects[0]->m_Object_Type;
-	//anotherpktdata.Object_Index = 0;
-	//anotherpktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
-	//retval = send(p2, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
-	//std::cout << "p2 send\n";
-
-	//for (int i = 0; i < MAX_NUM_OBJECT; ++i)
-	//{
-	//	if(Objects[i]!=NULL)
-	//	{
-	//		PKT_ID pktid = PKT_ID_CREATE_OBJECT;
-	//		char* idbuf;
-	//		memcpy(&idbuf, &pktid, sizeof(PKT_ID));
-	//		PKT_CREATE_OBJECT pktdata;
-	//		pktdata.Object_Type = Objects[i]->m_Object_Type;
-	//		pktdata.Object_Index = i;
-	//		pktdata.WorldMatrix = Objects[i]->m_xmf4x4World;
-	//		char* databuf;
-	//		memcpy(&databuf, &pktdata, sizeof(PKT_CREATE_OBJECT));
-	//		Send(idbuf, sizeof(PKT_ID), 0);
-	//		Send(databuf, sizeof(PKT_CREATE_OBJECT), 0);
-	//	}
-	//}
 
 	while (true)
 	{
 		ResetEvent(Event);
-		pScene->AnimateObjects(FIXED_FRAME);
+		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
 		{
 			PKT_PLAYER_INFO pkt;
@@ -296,13 +252,33 @@ DWORD Framework::Update_Process(CScene* pScene)
 			}
 			//m.unlock();
 
+			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
+
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
 			Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-			std::cout << "send pktid\n";
+			//std::cout << "send pktid\n";
 			
 			Send_msg((char*)&pkt, sizeof(pkt), 0);
-			std::cout << "send pkt\n";
+			//std::cout << "send pkt\n";
+			
+
+			if (pkt.IsShooting == true)
+			{
+				pid = PKT_ID_CREATE_OBJECT;
+				PKT_CREATE_OBJECT bulletpkt;
+				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
+				bulletpkt.WorldMatrix = pScene->m_pObjects[pkt.ID]->GetWorldTransf();
+				bulletpkt.Object_Index = pScene->GetIndex();
+				Send_msg((char*)&pid, sizeof(PKT_ID), 0);
+				Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+				std::cout << "index : " << bulletpkt.Object_Index << std::endl;
+				Bullet bullet;
+				bullet.SetWorldTransf(pScene->m_pObjects[pkt.ID]->GetWorldTransf());
+				bullet.SetMovingSpeed(1000.0f);
+				pScene->AddObject(bullet);
+			}
 		}
+		pScene->AnimateObjects(FIXED_FRAME);
 		SetEvent(Event);
 	}
 }
@@ -336,10 +312,10 @@ DWORD Framework::client_process(SOCKET arg)
 			err_display("recv()");
 			break;
 		}
-		std::cout << retval << "바이트 받음\n";
+		//std::cout << retval << "바이트 받음\n";
 		PKT_PLAYER_INFO p_info;
 		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
-		std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
+		//std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
 		// 받은 데이터 출력
 		m.lock();
 		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });	

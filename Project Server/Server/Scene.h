@@ -27,6 +27,8 @@ public: // For Network
 	//CGameObject* m_pBulletObjects[MAX_NUM_OBJECT];
 	void InsertObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
+	int GetIndex();
+	void AddObject(CGameObject objcet);
 	CGameObject** GetObjects(OBJECT_TYPE type) 
 	{
 		//if (type == OBJECT_TYPE_OBSTACLE) return m_pObjects; 

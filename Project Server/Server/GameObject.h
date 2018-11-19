@@ -60,7 +60,18 @@ public:
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
 	XMFLOAT3 GetDirection() { return m_xmf3Direction; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
-	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
+	XMFLOAT4X4 CGameObject::GetWorldTransf()
+	{
+		XMFLOAT4X4 xmf4x4World;
+		xmf4x4World = XMFLOAT4X4{
+		   m_xmf3Right.x,      m_xmf3Right.y,      m_xmf3Right.z, 0.0f,
+		   m_xmf3Up.x,         m_xmf3Up.y,         m_xmf3Up.z, 0.0f,
+		   m_xmf3Look.x,      m_xmf3Look.y,      m_xmf3Look.z, 0.0f,
+		   m_xmf3Position.x,   m_xmf3Position.y,   m_xmf3Position.z, 0.0f,
+		};
+
+		return xmf4x4World;
+	}
 
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
