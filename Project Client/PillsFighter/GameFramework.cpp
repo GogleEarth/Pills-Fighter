@@ -161,12 +161,19 @@ void CGameFramework::InitNetwork()
 
 	CreateObject(pktCreateObject);
 
-	FrameworkThread *sFT = new FrameworkThread;
-	sFT->pGFW = this;
-	sFT->sock = m_sock;
-	std::cout << sFT->pGFW << std::endl;
+	PKT_GAME_STATE pktGameState;
+	retval = recvn(m_sock, (char*)&pktGameState, sizeof(PKT_GAME_STATE), 0);
 
-	m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
+	if (pktGameState == PKT_GAME_STATE_START)
+	{
+		FrameworkThread *sFT = new FrameworkThread;
+		sFT->pGFW = this;
+		sFT->sock = m_sock;
+		std::cout << sFT->pGFW << std::endl;
+		m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
+	}
+	else
+		exit(0);
 }
 
 void CGameFramework::CreateScene(SCENEINFO SN)
