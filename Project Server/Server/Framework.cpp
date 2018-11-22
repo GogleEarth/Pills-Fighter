@@ -236,6 +236,9 @@ DWORD Framework::Update_Process(CScene* pScene)
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
+	PKT_GAME_STATE pstate = PKT_GAME_STATE_GAME_START;
+	Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
+
 	while (true)
 	{
 		WaitForMultipleObjects(2, client_Event, TRUE, INFINITE);

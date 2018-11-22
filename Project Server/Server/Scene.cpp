@@ -6,8 +6,7 @@ CScene::CScene()
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
 		m_pObjects[i] = NULL;
-		//m_pPlayers[i] = NULL;
-		//m_pBulletObjects[i] = NULL;
+		m_pObstacles[i] = NULL;
 	}
 }
 
@@ -25,6 +24,15 @@ void CScene::BuildObjects()
 	m_pObjects[1] = new CGameObject();
 	m_pObjects[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f };
 	m_pObjects[1]->m_Object_Type = OBJECT_TYPE_PLAYER;
+
+	m_pObstacles[0] = new CGameObject();
+	m_pObstacles[0]->SetPosition(XMFLOAT3(-200.0f, 0.0f, 100.0f));
+
+	m_pObstacles[1] = new CGameObject();
+	m_pObstacles[1]->SetPosition(XMFLOAT3(200.0f, 0.0f, 100.0f));
+
+	m_pObstacles[2] = new CGameObject();
+	m_pObstacles[2]->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
 }
 
 void CScene::CheckCollision()

@@ -23,7 +23,7 @@ public:
 
 public: // For Network
 	CGameObject* m_pObjects[MAX_NUM_OBJECT];
-	//CGameObject* m_pPlayers[MAX_NUM_OBJECT];
+	CGameObject* m_pObstacles[MAX_NUM_OBJECT];
 	//CGameObject* m_pBulletObjects[MAX_NUM_OBJECT];
 	void InsertObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
