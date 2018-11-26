@@ -159,11 +159,10 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
 
 
-	XMFLOAT3 xmf3Scale(8.0f, 2.0f, 8.0f);
-	XMFLOAT4 xmf4Color(0.f, 1.f, 1.f, 0.0f);
+	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
+	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 0.0f);
 
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList,	m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257,	257, xmf3Scale, xmf4Color);
-	m_pTerrain->SetPosition(-500, -300, -500);
 }
 
 void CScene::ReleaseObjects()
@@ -184,10 +183,7 @@ void CScene::ReleaseObjects()
 		delete[] m_ppShaders;
 	}
 
-	if (m_pTerrain)
-	{
-		delete m_pTerrain;
-	}
+	if (m_pTerrain) delete m_pTerrain;
 
 	ReleaseShaderVariables();
 }
@@ -306,12 +302,13 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(5, d3dcbLightsGpuVirtualAddress);
 
+	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
+
 	for (int i = 0; i < m_nShaders; i++)
 	{
 		m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
 
-	if(m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
 }
 
 void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

@@ -523,6 +523,8 @@ void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 //
 CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color) : CGameObject()
 {
+	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
 	m_nWidth = nWidth;
 	m_nLength = nLength;
 
@@ -565,7 +567,9 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	CMaterial **ppTerrainMaterial = new CMaterial*[1];
 	ppTerrainMaterial[0] = new CMaterial();
 	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
+	ppTerrainMaterial[0]->m_nReflection = 0;
 
+	m_pTerrainShader->SetMaterial(ppTerrainMaterial, 1);
 	SetMaterial(ppTerrainMaterial, 1);
 }
 
