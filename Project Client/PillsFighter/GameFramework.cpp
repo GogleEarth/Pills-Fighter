@@ -6,7 +6,6 @@
 DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
 {
 	FrameworkThread* pFT = (FrameworkThread*)arg;
-	std::cout << ((FrameworkThread*)arg)->pGFW << std::endl;
 
 	DWORD retval = pFT->pGFW->ThreadFunc((LPVOID)pFT->sock);
 
@@ -143,7 +142,7 @@ void CGameFramework::InitNetwork()
 	PKT_PLAYER_INFO pktPlayerInfo;
 	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain());
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	pPlayer->SetMovingSpeed(100.0f);
@@ -169,7 +168,6 @@ void CGameFramework::InitNetwork()
 		FrameworkThread *sFT = new FrameworkThread;
 		sFT->pGFW = this;
 		sFT->sock = m_sock;
-		std::cout << sFT->pGFW << std::endl;
 		m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
 	}
 	else
@@ -510,7 +508,7 @@ void CGameFramework::BuildObjects()
 	m_pScene = new CScene();
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), NULL);
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain());
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
@@ -768,7 +766,6 @@ void CGameFramework::FrameAdvance()
 		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)	err_display("send");
 
-		std::cout << retval << "바이트 보냈음\n";
 		m_elapsedtime = 0;
 	}
 
@@ -785,6 +782,9 @@ void CGameFramework::FrameAdvance()
 
 	for (const auto& PlayerLife : m_vMsgPlayerLife)
 	{
+		if (PlayerLife->ID == m_Client_Info)
+			continue;
+
 		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
 	}
 	m_vMsgPlayerLife.clear();

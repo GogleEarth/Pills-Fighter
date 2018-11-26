@@ -518,12 +518,11 @@ void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 		pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, ppTextures[i], 2, false);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color) : CGameObject()
 {
-	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_xmf3Position = XMFLOAT3(-(nWidth *xmf3Scale.x/2), 0.0f, -(nLength *xmf3Scale.z / 2));
 
 	m_nWidth = nWidth;
 	m_nLength = nLength;
@@ -569,8 +568,9 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
 	ppTerrainMaterial[0]->m_nReflection = 0;
 
-	m_pTerrainShader->SetMaterial(ppTerrainMaterial, 1);
 	SetMaterial(ppTerrainMaterial, 1);
+	
+	std::cout << m_xmf3Position.x << ", " << m_xmf3Position.y << ", " << m_xmf3Position.z << std::endl;
 }
 
 CHeightMapTerrain::~CHeightMapTerrain()

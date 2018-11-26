@@ -26,13 +26,9 @@ class CPlayer : public CGameObject
 {
 protected:
 	LPVOID m_pPlayerUpdatedContext = NULL;
-
 	LPVOID m_pCameraUpdatedContext = NULL;
 
 	CCamera *m_pCamera = NULL;
-
-	ID3D12Resource					*m_pd3dcbPlayer = NULL;
-	CB_PLAYER_INFO					*m_pcbMappedPlayer = NULL;
 
 public:
 	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
@@ -50,11 +46,11 @@ public:
 	void Update(float fTimeElapsed);
 
 	//플레이어의 위치가 바뀔 때마다 호출되는 함수와 그 함수에서 사용하는 정보를 설정하는 함수이다.
-	virtual void OnPlayerUpdateCallback(float fTimeElapsed) { }
+	virtual void OnPlayerUpdateCallback(float fTimeElapsed);
 	void SetPlayerUpdatedContext(LPVOID pContext) { m_pPlayerUpdatedContext = pContext; }
 
 	//카메라의 위치가 바뀔 때마다 호출되는 함수와 그 함수에서 사용하는 정보를 설정하는 함수이다. 
-	virtual void OnCameraUpdateCallback(float fTimeElapsed) { }
+	virtual void OnCameraUpdateCallback(float fTimeElapsed);
 	void SetCameraUpdatedContext(LPVOID pContext) { m_pCameraUpdatedContext = pContext; }
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);

@@ -65,13 +65,15 @@ public:
 
 	void ReleaseUploadBuffers();
 
+	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
+
 protected:
 	CPlayer						*m_pPlayer = NULL;
 
 	int							m_nShaders = 0;
 	CObjectsShader				**m_ppShaders = NULL;
 
-	CGameObject					*m_pTerrain = NULL;
+	CHeightMapTerrain			*m_pTerrain = NULL;
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
 

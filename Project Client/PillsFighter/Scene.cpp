@@ -158,9 +158,8 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
 
-
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
-	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 0.0f);
+	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
 
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList,	m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257,	257, xmf3Scale, xmf4Color);
 }
@@ -451,8 +450,6 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 
 void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 {
-	std::cout << ((PKT_PLAYER_INFO*)pktData)->ID <<  std::endl;
-
 	switch (pktID)
 	{
 	case PKT_ID_PLAYER_INFO:
