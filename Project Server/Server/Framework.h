@@ -20,9 +20,13 @@ class Framework
 	HANDLE client_Event[MAX_CLIENT];
 	std::mutex m;
 	std::queue<PKT_PLAYER_INFO> msg_queue;
+	std::queue<PKT_PLAYER_LIFE> life_msg_queue;
+	std::queue<PKT_DELETE_OBJECT> delete_msg_queue;
 	std::vector<Client_INFO> clients;
 	int count = 0;
-
+	CMesh PlayerMesh;
+	CMesh BulletMesh;
+	CMesh HangarMesh;
 
 public:
 	CScene* m_pScene;
@@ -40,6 +44,8 @@ public:
 	DWORD Update_Process(CScene* pScene);
 	static DWORD WINAPI client_thread(LPVOID arg);
 	DWORD client_process(SOCKET arg);
+	// 충돌 체크를 검사한다.
+	void CheckCollision(CScene* pScene);
 };
 
 struct Arg

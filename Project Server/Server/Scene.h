@@ -14,11 +14,10 @@ public:
 protected:
 
 	CGameObject					*m_pTerrain = NULL;
-
+	CMesh**						m_ppBulletMesh = NULL;
+	CCubeMesh**					m_ppBulletCubeMesh = NULL;
 
 public:
-	// 충돌 체크를 검사한다.
-	void CheckCollision();
 
 
 public: // For Network

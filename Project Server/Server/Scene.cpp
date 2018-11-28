@@ -17,13 +17,27 @@ CScene::~CScene()
 
 void CScene::BuildObjects()
 {
+	CMesh** ppMesh;
+	CCubeMesh** ppCubeMesh;
+	UINT nMeshes;
+	CreateRobotObjectMesh(ppMesh, ppCubeMesh, nMeshes);
+	m_ppBulletMesh = new CMesh*[1];
+	m_ppBulletCubeMesh = new CCubeMesh*[1];
+	m_ppBulletMesh[0] = new CMesh("./Resource/Bullet/Bullet.FBX");
+	XMFLOAT3 extend = m_ppBulletMesh[0]->GetExtents();
+	m_ppBulletCubeMesh[0] = new CCubeMesh(m_ppBulletMesh[0]->GetCenter(), extend.x, extend.y, extend.z);
+
 	m_pObjects[0] = new CGameObject();
 	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
 	m_pObjects[0]->m_Object_Type = OBJECT_TYPE_PLAYER;
+	m_pObjects[0]->m_iId = 0;
+	m_pObjects[0]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
 
 	m_pObjects[1] = new CGameObject();
 	m_pObjects[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f };
 	m_pObjects[1]->m_Object_Type = OBJECT_TYPE_PLAYER;
+	m_pObjects[1]->m_iId = 1;
+	m_pObjects[1]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
 
 	m_pObstacles[0] = new CGameObject();
 	m_pObstacles[0]->SetPosition(XMFLOAT3(-200.0f, 0.0f, 100.0f));
@@ -35,105 +49,17 @@ void CScene::BuildObjects()
 	m_pObstacles[2]->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
 }
 
-void CScene::CheckCollision()
-{
-	CGameObject	**ppBuildingObjects;
-	UINT nBuildingObjects;
-
-	std::vector<CGameObject*> vEnemyObjects;
-	std::vector<CGameObject*> vBulletObjects;
-	std::vector<CGameObject*> vEnemyBulletObjects;
-
-
-
-	for (const auto& Bullet : vBulletObjects)
-	{
-		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-		{
-			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-				{
-					if (Bullet->GetOOBB(j).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(i)))
-					{
-						Bullet->DeleteObject();
-					}
-				}
-			}
-		}
-
-		for (const auto& Enemy : vEnemyObjects)
-		{
-			for (UINT i = 0; i < Enemy->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-				{
-					if (Bullet->GetOOBB(j).Intersects(Enemy->GetOOBB(i)))
-					{
-						Bullet->DeleteObject();
-					}
-				}
-			}
-		}
-	}
-
-	for (const auto& Bullet : vEnemyBulletObjects)
-	{
-		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-		{
-			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-				{
-					if (Bullet->GetOOBB(j).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(i)))
-					{
-						Bullet->DeleteObject();
-					}
-				}
-			}
-		}
-	}
-	
-
-	for (const auto& Enemy : vEnemyObjects)
-	{
-		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-		{
-			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Enemy->GetNumMeshes(); j++)
-				{
-					BoundingOrientedBox EnemysOOBB = Enemy->GetOOBB(j);
-					BoundingOrientedBox BuildingsOOBB = ppBuildingObjects[nIndexBuilding]->GetOOBB(i);
-
-					if (EnemysOOBB.Intersects(BuildingsOOBB))
-					{
-						XMFLOAT3 BuildingMeshCenter = BuildingsOOBB.Center;
-						XMFLOAT3 BuildingMeshExtents = BuildingsOOBB.Extents;
-
-						XMFLOAT3 EnemyMeshCenter = EnemysOOBB.Center;
-						XMFLOAT3 EnemyMeshExtents = EnemysOOBB.Extents;
-
-						//if(EnemyPosition.x > BuildingMeshExtents.x + BuildingMeshCenter.x)
-						// 충돌처리
-					}
-				}
-			}
-		}
-	}
-}
-
 void CScene::AnimateObjects(float fTimeElapsed)
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
 		if(m_pObjects[i] != NULL)
-			m_pObjects[i]->Animate(fTimeElapsed);
+			if(!m_pObjects[i]->IsDelete())
+				m_pObjects[i]->Animate(fTimeElapsed);
 		if (m_pObjects[i] != NULL)
 			if (m_pObjects[i]->IsDelete())
 				releaseObject(i);
 	}
-	//CheckCollision();
 }
 
 void CScene::InsertObject(PKT_CREATE_OBJECT CreateObjectInfo)
@@ -166,6 +92,11 @@ void CScene::AddObject(CGameObject objcet)
 {
 	int index = GetIndex();
 	m_pObjects[index] = new CGameObject(objcet);
+	m_pObjects[index]->index = index;
+	if (objcet.m_Object_Type == OBJECT_TYPE_BULLET)
+	{
+		m_pObjects[index]->SetMesh(m_ppBulletMesh, m_ppBulletCubeMesh, 1);
+	}
 }
 
 void CScene::releaseObject(int index)

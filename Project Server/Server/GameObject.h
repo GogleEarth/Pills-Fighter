@@ -7,8 +7,10 @@
 class CGameObject
 {
 public:
-	XMFLOAT4X4 m_xmf4x4World;
+	XMFLOAT4X4						m_xmf4x4World;
 	OBJECT_TYPE						m_Object_Type;
+	int								m_iId;
+	int								index;
 protected:
 
 	XMFLOAT3 m_xmf3Position;
