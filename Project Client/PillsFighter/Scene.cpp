@@ -444,7 +444,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 {
-	if (m_pObjects[DeleteObjectInfo.Object_Index] != NULL)
+	if (m_pObjects[DeleteObjectInfo.Object_Index])
 	{
 		m_pObjects[DeleteObjectInfo.Object_Index]->DeleteObject();
 		m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
@@ -459,7 +459,6 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
 		break;
 	case PKT_ID_PLAYER_LIFE:
-		std::cout << ((PKT_PLAYER_LIFE*)pktData)->ID << " : " << ((PKT_PLAYER_LIFE*)pktData)->HP << std::endl;
 		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
 		break;
 	case PKT_ID_CREATE_OBJECT:

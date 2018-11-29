@@ -769,25 +769,21 @@ void CGameFramework::FrameAdvance()
 		m_elapsedtime = 0;
 	}
 
-	std::cout << *m_pPlayer->GetHitPoint() << std::endl;
-	
 	m_Mutex.lock();
 
 	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
 	{
-		if (PlayerInfo->ID == m_Client_Info)
-			continue;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
+		if (PlayerInfo->ID != m_Client_Info)
+			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
 	}
 	m_vMsgPlayerInfo.clear();
 
 	for (const auto& PlayerLife : m_vMsgPlayerLife)
 	{
 		if (PlayerLife->ID == m_Client_Info)
-			continue;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
+			m_pPlayer->SetHitPoint( *(m_pPlayer->GetHitPoint()) - PlayerLife->HP);
+		else
+			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
 	}
 	m_vMsgPlayerLife.clear();
 
