@@ -769,6 +769,8 @@ void CGameFramework::FrameAdvance()
 		m_elapsedtime = 0;
 	}
 
+	std::cout << *m_pPlayer->GetHitPoint() << std::endl;
+	
 	m_Mutex.lock();
 
 	for (const auto& PlayerInfo : m_vMsgPlayerInfo)

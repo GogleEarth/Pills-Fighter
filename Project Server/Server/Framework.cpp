@@ -258,13 +258,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
-			std::cout << pkt.ID << " 번 플레이어 : " << p_position.x << ", " << p_position.y << ", " << p_position.z << std::endl;
+			//std::cout << pkt.ID << " 번 플레이어 : " << p_position.x << ", " << p_position.y << ", " << p_position.z << std::endl;
 
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
 			Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 			
 			Send_msg((char*)&pkt, sizeof(pkt), 0);
-			std::cout << "플레이어 패킷 전송\n";
+			//std::cout << "플레이어 패킷 전송\n";
 
 			if (pkt.IsShooting == true)
 			{
@@ -276,8 +276,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 				bulletpkt.Object_Index = pScene->GetIndex();
 				Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 				Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
-				std::cout << "오브젝트 생성 패킷 전송\n";
-				std::cout << "index : " << bulletpkt.Object_Index << std::endl;
+				//std::cout << "오브젝트 생성 패킷 전송\n";
+				//std::cout << "index : " << bulletpkt.Object_Index << std::endl;
 				CGameObject bullet;
 				bullet.m_Object_Type = OBJECT_TYPE_BULLET;
 				bullet.m_iId = pkt.ID;
@@ -291,7 +291,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 		while (true)
 		{
 			PKT_DELETE_OBJECT pkt_d;
-			PKT_DELETE_OBJECT data;
 
 			if (delete_msg_queue.empty())
 				break;
@@ -302,8 +301,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 			PKT_ID pid_d = PKT_ID_DELETE_OBJECT;
 			Send_msg((char*)&pid_d, sizeof(PKT_ID), 0);
 
-			Send_msg((char*)&pkt_d, sizeof(pkt_d), 0);
-			std::cout << "오브젝트 삭제 패킷 전송\n";
+			Send_msg((char*)&pkt_d, sizeof(PKT_DELETE_OBJECT), 0);
+			//std::cout << "오브젝트 삭제 패킷 전송\n";
 		}
 
 		// 플레이어 체력 변경 패킷 보내기
@@ -321,7 +320,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			PKT_ID pid_l = PKT_ID_PLAYER_LIFE;
 			Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
 
-			Send_msg((char*)&pkt_l, sizeof(pkt_l), 0);
+			Send_msg((char*)&pkt_l, sizeof(PKT_PLAYER_LIFE), 0);
 			std::cout << "플레이어 체력 패킷 전송\n";
 		}
 
