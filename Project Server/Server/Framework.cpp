@@ -22,6 +22,7 @@ int Framework::Build()
 	
 	m_pScene = new CScene();
 	m_pScene->BuildObjects();
+	m_GameTimer = new CGameTimer();
 
 	// 윈속 초기화
 	if (WSAStartup(WS22, &wsa) != 0)
@@ -233,6 +234,7 @@ DWORD __stdcall Framework::Update(LPVOID arg)
 
 DWORD Framework::Update_Process(CScene* pScene)
 {
+	m_GameTimer->Tick(0.0f);
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
@@ -244,8 +246,19 @@ DWORD Framework::Update_Process(CScene* pScene)
 		WaitForMultipleObjects(2, client_Event, TRUE, INFINITE);
 		ResetEvent(Event);
 		
+		// 서버의 시간을 모든 플레이어에게 보내줌
+		PKT_ID id_time = PKT_ID_TIME_INFO;
+		PKT_TIME_INFO server_time;
+		server_time.elapsedtime = FIXED_FRAME;
+		Send_msg((char*)id_time, sizeof(PKT_ID), 0);
+		Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
+
+		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(FIXED_FRAME);
+
+		// 충돌 처리
 		CheckCollision(pScene);
+
 		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
 		{
@@ -260,12 +273,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
 			//std::cout << pkt.ID << " 번 플레이어 : " << p_position.x << ", " << p_position.y << ", " << p_position.z << std::endl;
 
+			// 플레이어의 정보 전송
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
 			Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-			
 			Send_msg((char*)&pkt, sizeof(pkt), 0);
 			//std::cout << "플레이어 패킷 전송\n";
 
+			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
 			if (pkt.IsShooting == true)
 			{
 				pid = PKT_ID_CREATE_OBJECT;

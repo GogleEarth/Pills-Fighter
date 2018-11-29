@@ -167,6 +167,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="Utilities.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
@@ -184,6 +185,7 @@
     </ClCompile>
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

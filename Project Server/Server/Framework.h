@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Mesh.h"
 #include "Scene.h"
+#include "Timer.h"
 
 struct Client_INFO
 {
@@ -27,6 +28,7 @@ class Framework
 	CMesh PlayerMesh;
 	CMesh BulletMesh;
 	CMesh HangarMesh;
+	CGameTimer *m_GameTimer;
 
 public:
 	CScene* m_pScene;
