@@ -466,5 +466,7 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_DELETE_OBJECT:
 		DeleteObject(*((PKT_DELETE_OBJECT*)pktData));
 		break;
+	case PKT_ID_TIME_INFO:
+		break;
 	}
 }

@@ -59,7 +59,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 	int retval;
 
 	PKT_ID iPktID;
-	int nPktSize;
+	int nPktSize = 0;
 
 	char* buf;
 
@@ -75,6 +75,8 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
+		else if (iPktID == PKT_ID_TIME_INFO) nPktSize = sizeof(PKT_TIME_INFO); // 서버 시간 정보 
+		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
 		
 		// 데이터 받기 # 패킷 구조체 - 결정
 		buf = new char[nPktSize];
@@ -85,6 +87,15 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
+		else if (iPktID == PKT_ID_TIME_INFO) {
+			m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf); // 
+			for (const auto& TimeInfo : m_vMsgTimeInfo)
+			{
+				m_serverTime = TimeInfo->elapsedtime;
+				serverTimeSet = true;
+			}
+			m_vMsgTimeInfo.clear();
+		}
 		m_Mutex.unlock();
 	}
 }
@@ -227,6 +238,7 @@ CGameFramework::CGameFramework()
 
 	m_pScene = NULL;
 	m_pPlayer = NULL;
+
 
 	_tcscpy_s(m_pszCaption, _T(GAME_TITLE));
 }
@@ -753,7 +765,7 @@ void CGameFramework::FrameAdvance()
 #ifdef ON_NETWORKING
 	auto start = std::chrono::high_resolution_clock::now();
 
-	if (m_elapsedtime >= 0.05f)
+	if (m_elapsedtime >= 0.05f || serverTimeSet == false)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
 		int retval;
@@ -767,6 +779,7 @@ void CGameFramework::FrameAdvance()
 		if (retval == SOCKET_ERROR)	err_display("send");
 
 		m_elapsedtime = 0;
+		serverTimeSet == true;
 	}
 
 	m_Mutex.lock();
@@ -798,6 +811,12 @@ void CGameFramework::FrameAdvance()
 		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
 	}
 	m_vMsgDeleteObject.clear();
+
+	//for (const auto& TimeInfo : m_vMsgTimeInfo)
+	//{
+	//	m_serverTime = TimeInfo->elapsedtime;
+	//}
+	//m_vMsgTimeInfo.clear();
 
 	m_Mutex.unlock();
 #endif
@@ -904,7 +923,9 @@ void CGameFramework::FrameAdvance()
 #ifdef ON_NETWORKING
 	auto end = std::chrono::high_resolution_clock::now();
 	auto du = end - start;
-	m_elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+	//m_elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
+	m_elapsedtime += m_serverTime;
+
 #endif
 }
 

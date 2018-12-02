@@ -113,11 +113,14 @@ public: // for Network
 	std::vector<PKT_PLAYER_LIFE*> m_vMsgPlayerLife;
 	std::vector<PKT_CREATE_OBJECT*> m_vMsgCreateObject;
 	std::vector<PKT_DELETE_OBJECT*> m_vMsgDeleteObject;
+	std::vector<PKT_TIME_INFO*> m_vMsgTimeInfo;
 
 	//Ελ½Ε
 	CLIENTID m_Client_Info;
 	PKT_PLAYER_INFO m_Client_Player_Info;
+	float m_serverTime = 0.0f;
 	float m_elapsedtime = 0.0f;
+	bool serverTimeSet = false;
 
 	void CloseNetwork();
 

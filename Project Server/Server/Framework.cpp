@@ -246,11 +246,11 @@ DWORD Framework::Update_Process(CScene* pScene)
 		WaitForMultipleObjects(2, client_Event, TRUE, INFINITE);
 		ResetEvent(Event);
 		
-		// 서버의 시간을 모든 플레이어에게 보내줌
+		//서버의 시간을 모든 플레이어에게 보내줌
 		PKT_ID id_time = PKT_ID_TIME_INFO;
 		PKT_TIME_INFO server_time;
 		server_time.elapsedtime = FIXED_FRAME;
-		Send_msg((char*)id_time, sizeof(PKT_ID), 0);
+		Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
 		Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
 
 		// 씬의 오브젝트 애니메이트
