@@ -120,7 +120,8 @@ public: // for Network
 	PKT_PLAYER_INFO m_Client_Player_Info;
 	float m_pktElapsedTime = 0.0f;
 	float m_fElapsedTime = 0.0f;
-
+	HANDLE hEvent;
+	bool SendComplete = false;
 	void CloseNetwork();
 
 	void err_quit(char* msg);

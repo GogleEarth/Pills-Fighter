@@ -76,6 +76,14 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
 		else if (iPktID == PKT_ID_TIME_INFO) nPktSize = sizeof(PKT_TIME_INFO); // 서버 시간 정보 
+		else if (iPktID == PKT_ID_SEND_COMPLETE)
+		{
+			std::cout << "mm" << std::endl;
+			SetEvent(hEvent);
+			//SendComplete = true;
+			m_Mutex.unlock();
+			continue;
+		}
 		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
 
 		// 데이터 받기 # 패킷 구조체 - 결정
@@ -87,13 +95,15 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
-		else if (iPktID == PKT_ID_TIME_INFO) m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf);
+		else if (iPktID == PKT_ID_TIME_INFO) m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf); // 서버 시간 정보 
 		m_Mutex.unlock();
 	}
 }
 
 void CGameFramework::InitNetwork()
 {
+	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
 	//// for Networking
 	WSADATA wsa;
 	if (WSAStartup(WS22, &wsa) != 0)
@@ -191,6 +201,7 @@ void CGameFramework::CreateScene(SCENEINFO SN)
 void CGameFramework::CloseNetwork()
 {
 	closesocket(m_sock);
+	CloseHandle(hEvent);
 
 	WSACleanup();
 }
@@ -751,19 +762,9 @@ void CGameFramework::WaitForGpuComplete()
 void CGameFramework::FrameAdvance()
 {
 	m_fElapsedTime = 0.0f;
-
-#ifdef ON_NETWORKING
-	m_Mutex.lock();
-	for (const auto& TimeInfo : m_vMsgTimeInfo)
-	{
-		m_fElapsedTime += TimeInfo->ElapsedTime;
-	}
-	m_vMsgTimeInfo.clear();
-	m_Mutex.unlock();
-
 	auto start = std::chrono::high_resolution_clock::now();
-
-	if (m_pktElapsedTime >= 0.05f)
+#ifdef ON_NETWORKING
+	if (TRUE)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
 		int retval;
@@ -779,37 +780,51 @@ void CGameFramework::FrameAdvance()
 		m_pktElapsedTime = 0.0f;
 	}
 
-	m_Mutex.lock();
+	WaitForSingleObject(hEvent, INFINITE);
+	//if (SendComplete)
+	//{
+		m_Mutex.lock();
+		for (const auto& TimeInfo : m_vMsgTimeInfo)
+		{
+			m_fElapsedTime += TimeInfo->ElapsedTime;
+		}
+		m_vMsgTimeInfo.clear();
+		m_Mutex.unlock();
 
-	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
-	{
-		if (PlayerInfo->ID != m_Client_Info)
-			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
-	}
-	m_vMsgPlayerInfo.clear();
+		m_Mutex.lock();
 
-	for (const auto& PlayerLife : m_vMsgPlayerLife)
-	{
-		if (PlayerLife->ID == m_Client_Info)
-			m_pPlayer->SetHitPoint(*(m_pPlayer->GetHitPoint()) - PlayerLife->HP);
-		else
-			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
-	}
-	m_vMsgPlayerLife.clear();
+		for (const auto& PlayerInfo : m_vMsgPlayerInfo)
+		{
+			if (PlayerInfo->ID != m_Client_Info)
+				m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
+		}
+		m_vMsgPlayerInfo.clear();
 
-	for (const auto& CreateInfo : m_vMsgCreateObject)
-	{
-		CreateObject(*CreateInfo);
-	}
-	m_vMsgCreateObject.clear();
+		for (const auto& PlayerLife : m_vMsgPlayerLife)
+		{
+			if (PlayerLife->ID == m_Client_Info)
+				m_pPlayer->SetHitPoint(*(m_pPlayer->GetHitPoint()) - PlayerLife->HP);
+			else
+				m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
+		}
+		m_vMsgPlayerLife.clear();
 
-	for (const auto& DelteInfo : m_vMsgDeleteObject)
-	{
-		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
-	}
-	m_vMsgDeleteObject.clear();
+		for (const auto& CreateInfo : m_vMsgCreateObject)
+		{
+			CreateObject(*CreateInfo);
+		}
+		m_vMsgCreateObject.clear();
 
-	m_Mutex.unlock();
+		for (const auto& DelteInfo : m_vMsgDeleteObject)
+		{
+			m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
+		}
+		m_vMsgDeleteObject.clear();
+
+		m_Mutex.unlock();
+		SendComplete = false;
+	//}
+	ResetEvent(hEvent);
 #else
 	m_GameTimer.Tick(0.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();

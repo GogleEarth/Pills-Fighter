@@ -1,19 +1,3 @@
-//struct CB_GAMEOBJECT_INFO
-//{
-//	matrix		mtxWorld;
-//	uint		nMaterial;
-//};
-//
-//struct CB_CAMERA_INFO
-//{
-//	matrix		mtxView;
-//	matrix		mtxProjection;
-//	float3		vCameraPosition;
-//};
-//
-//ConstantBuffer<CB_GAMEOBJECT_INFO> gcbGameObjectInfo : register(b0);
-//ConstantBuffer<CB_CAMERA_INFO> gcbCameraInfo : register(b1);
-
 cbuffer cbGameObjectInfo : register(b0)
 {
 	matrix		gmtxGameObject : packoffset(c0);
@@ -32,7 +16,7 @@ cbuffer cbCameraInfo : register(b1)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 Texture2D gtxtTexture : register(t1);
-SamplerState gSamplerState : register(s0);
+SamplerState gssWrap : register(s0);
 
 struct VS_TEXTURED_INPUT
 {
@@ -52,10 +36,7 @@ struct VS_TEXTURED_OUTPUT
 VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 {
 	VS_TEXTURED_OUTPUT output;
-
-	//output.normalW = mul(input.normal, (float3x3)gcbGameObjectInfo.mtxWorld);
-	//output.positionW = (float3)mul(float4(input.position, 1.0f), gcbGameObjectInfo.mtxWorld);
-	//output.position = mul(mul(float4(output.positionW, 1.0f), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);	
+	
 	output.normalW = mul(input.normal, (float3x3)gmtxGameObject);
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gmtxGameObject);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
@@ -66,43 +47,38 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 
 float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
+	float4 cColor = gtxtTexture.Sample(gssWrap, input.uv);
 
 	input.normalW = normalize(input.normalW);
 	float4 cIllumination = Lighting(input.positionW, input.normalW, gnMaterial);
 
 	return(cColor * cIllumination);
-	//return(cColor);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-struct VS_DIFFUSED_INPUT
+struct VS_WIRE_INPUT
 {
 	float3 position : POSITION;
-	float4 color : COLOR;
 };
 
-struct VS_DIFFUSED_OUTPUT
+struct VS_WIRE_OUTPUT
 {
 	float4 position : SV_POSITION;
-	float4 color : COLOR;
 };
 
-VS_DIFFUSED_OUTPUT VSDiffused(VS_DIFFUSED_INPUT input)
+VS_WIRE_OUTPUT VSWire(VS_WIRE_INPUT input)
 {
-	VS_DIFFUSED_OUTPUT output;
+	VS_WIRE_OUTPUT output;
 
-	//output.position = mul(mul(mul(float4(input.position, 1.0f), gcbGameObjectInfo.mtxWorld), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
 	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
-	output.color = input.color;
 
 	return(output);
 }
 
-float4 PSDiffused(VS_DIFFUSED_OUTPUT input) : SV_TARGET
+float4 PSWire(VS_WIRE_OUTPUT input) : SV_TARGET
 {
-	return(input.color);
+	return(float4(1.0f, 0.0f, 0.0f, 1.0f));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +107,6 @@ VS_INSTANCED_TEXTURED_OUTPUT VSInstancingTextured(VS_TEXTURED_INPUT input, uint 
 
 	output.normalW = mul(input.normal, (float3x3)gGameObjectInfo[nInstanceID].mtxGameObject);
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gGameObjectInfo[nInstanceID].mtxGameObject);
-	//output.position = mul(mul(float4(output.positionW, 1.0f), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
 	output.instance = nInstanceID;
@@ -141,24 +116,21 @@ VS_INSTANCED_TEXTURED_OUTPUT VSInstancingTextured(VS_TEXTURED_INPUT input, uint 
 
 float4 PSInstancingTextured(VS_INSTANCED_TEXTURED_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
+	float4 cColor = gtxtTexture.Sample(gssWrap, input.uv);
 
 	input.normalW = normalize(input.normalW);
 	float4 cIllumination = Lighting(input.positionW, input.normalW, gGameObjectInfo[input.instance].nMaterial);
 
 	return(cColor* cIllumination);
-	//return(cColor);
 }
 
 ////////////
 
-VS_DIFFUSED_OUTPUT VSInstancingDiffused(VS_DIFFUSED_INPUT input, uint nInstanceID : SV_InstanceID)
+VS_WIRE_OUTPUT VSInstancingDiffused(VS_WIRE_INPUT input, uint nInstanceID : SV_InstanceID)
 {
-	VS_DIFFUSED_OUTPUT output;
+	VS_WIRE_OUTPUT output;
 
-	//output.position = mul(mul(mul(float4(input.position, 1.0f), gGameObjectInfo[nInstanceID].mtxGameObject), gcbCameraInfo.mtxView), gcbCameraInfo.mtxProjection);
 	output.position = mul(mul(mul(float4(input.position, 1.0f), gGameObjectInfo[nInstanceID].mtxGameObject), gmtxView), gmtxProjection);
-	output.color = input.color;
 
 	return(output);
 }
@@ -184,8 +156,6 @@ VS_UI_OUTPUT VS_UI(VS_UI_INPUT input)
 
 	output.center = input.center;
 	output.size = input.size;	
-	//output.center = float3(0.0f, 0.0f, 0.0f);
-	//output.size = float2(1.0f, 1.0f);
 
 	return(output);
 }
@@ -267,8 +237,54 @@ void GS_UI_HP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout T
 
 float4 PS_UI(GS_OUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.Sample(gSamplerState, input.uv);
+	float4 cColor = gtxtTexture.Sample(gssWrap, input.uv);
 	if (cColor.a < 0.3) discard;
 
 	return(cColor);
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+Texture2D gtxtTerrainBaseTexture : register(t2);
+
+struct VS_TERRAIN_INPUT
+{
+	float3 position : POSITION;
+	float4 color : COLOR;
+	//float3 normal : NORMAL;
+	float2 uv0 : TEXCOORD0;
+	float2 uv1 : TEXCOORD1;
+};
+
+struct VS_TERRAIN_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+	//float3 normal : NORMAL;
+	float2 uv0 : TEXCOORD0;
+	float2 uv1 : TEXCOORD1;
+};
+
+VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
+{
+	VS_TERRAIN_OUTPUT output;
+
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.color = input.color;
+	output.uv0 = input.uv0;
+	output.uv1 = input.uv1;
+
+	return(output);
+}
+
+float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
+{
+	float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gssWrap, input.uv0);
+
+	float4 cColor = input.color * saturate(cBaseTexColor * 0.5f);
+
+	return(cColor);
+}
+
