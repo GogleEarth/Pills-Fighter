@@ -23,6 +23,7 @@ int Framework::Build()
 	m_pScene = new CScene();
 	m_pScene->BuildObjects();
 	m_GameTimer = new CGameTimer();
+	m_GameTimer->Tick(0.0f);
 
 	// 윈속 초기화
 	if (WSAStartup(WS22, &wsa) != 0)
@@ -234,12 +235,11 @@ DWORD __stdcall Framework::Update(LPVOID arg)
 
 DWORD Framework::Update_Process(CScene* pScene)
 {
-	m_GameTimer->Tick(0.0f);
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
 	PKT_GAME_STATE pstate = PKT_GAME_STATE_GAME_START;
-	Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
+	retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
 
 	while (true)
 	{
@@ -250,11 +250,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 		PKT_ID id_time = PKT_ID_TIME_INFO;
 		PKT_TIME_INFO server_time;
 		server_time.elapsedtime = FIXED_FRAME;
-		Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
-		Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
+		retval = Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
+		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
+
+		std::cout << server_time.elapsedtime << std::endl;
 
 		// 씬의 오브젝트 애니메이트
-		pScene->AnimateObjects(FIXED_FRAME);
+		pScene->AnimateObjects(server_time.elapsedtime);
 
 		// 충돌 처리
 		CheckCollision(pScene);
@@ -262,17 +264,16 @@ DWORD Framework::Update_Process(CScene* pScene)
 		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
 		{
-			m.lock();
+
 			PKT_PLAYER_INFO pkt;
 			if (msg_queue.empty())
 			{
-				m.unlock();
 				break;
 			}
 
 			pkt = msg_queue.front();
 			msg_queue.pop();
-			m.unlock();
+
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
@@ -280,8 +281,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			// 플레이어의 정보 전송
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
-			Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-			Send_msg((char*)&pkt, sizeof(pkt), 0);
+			retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
+			retval = Send_msg((char*)&pkt, sizeof(pkt), 0);
 			//std::cout << "플레이어 패킷 전송\n";
 
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
@@ -293,8 +294,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 				bulletpkt.WorldMatrix = pScene->m_pObjects[pkt.ID]->GetWorldTransf();
 				bulletpkt.WorldMatrix._42 += 10.0f;
 				bulletpkt.Object_Index = pScene->GetIndex();
-				Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-				Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
+				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
 				//std::cout << "오브젝트 생성 패킷 전송\n";
 				//std::cout << "index : " << bulletpkt.Object_Index << std::endl;
 				CGameObject bullet;
@@ -318,9 +319,9 @@ DWORD Framework::Update_Process(CScene* pScene)
 			delete_msg_queue.pop();
 
 			PKT_ID pid_d = PKT_ID_DELETE_OBJECT;
-			Send_msg((char*)&pid_d, sizeof(PKT_ID), 0);
+			retval = Send_msg((char*)&pid_d, sizeof(PKT_ID), 0);
 
-			Send_msg((char*)&pkt_d, sizeof(PKT_DELETE_OBJECT), 0);
+			retval = Send_msg((char*)&pkt_d, sizeof(PKT_DELETE_OBJECT), 0);
 			//std::cout << "오브젝트 삭제 패킷 전송\n";
 		}
 
@@ -337,11 +338,14 @@ DWORD Framework::Update_Process(CScene* pScene)
 			std::cout << pkt_l.ID << " : " << pkt_l.HP << std::endl;
 
 			PKT_ID pid_l = PKT_ID_PLAYER_LIFE;
-			Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
+			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
 
-			Send_msg((char*)&pkt_l, sizeof(PKT_PLAYER_LIFE), 0);
-			std::cout << "플레이어 체력 패킷 전송\n";
+			retval = Send_msg((char*)&pkt_l, sizeof(PKT_PLAYER_LIFE), 0);
 		}
+
+		PKT_ID pid_cpl = PKT_ID_SEND_COMPLETE;
+		retval = Send_msg((char*)&pid_cpl, sizeof(PKT_ID), 0);
+		std::cout << "패킷 전송 완료\n";
 
 		SetEvent(Event);
 	}
@@ -360,7 +364,6 @@ DWORD Framework::client_process(SOCKET arg)
 	int retval;
 	SOCKADDR_IN clientaddr;
 	int addrlen;
-	char id_buf[sizeof(PKT_ID)];
 
 	// 클라이언트 정보 얻기
 	addrlen = sizeof(clientaddr);
@@ -369,6 +372,7 @@ DWORD Framework::client_process(SOCKET arg)
 	while (1)
 	{
 		char data_buf[sizeof(PKT_PLAYER_INFO)];
+		std::cout << "리시브 시작\n";
 		retval = recvn(client_socket, data_buf, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)
 		{
@@ -376,14 +380,13 @@ DWORD Framework::client_process(SOCKET arg)
 			err_display("recv()");
 			break;
 		}
-		//std::cout << retval << "바이트 받음\n";
+		std::cout << retval << "바이트 받음\n";
 		PKT_PLAYER_INFO p_info;
 		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
 		//std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
 		// 받은 데이터 출력
-		m.lock();
+
 		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });	
-		m.unlock();
 
 		SetEvent(client_Event[p_info.ID]);
 		WaitForSingleObject(Event, INFINITE);
@@ -413,6 +416,7 @@ void Framework::CheckCollision(CScene* pScene)
 		if (pScene->m_pObstacles[i] != NULL)
 		{
 			vObstacles.emplace_back(pScene->m_pObstacles[i]);
+			//std::cout << pScene->m_pObstacles[i]->m_xmf4x4World._41 << ", " << pScene->m_pObstacles[i]->m_xmf4x4World._42 << ", " << pScene->m_pObstacles[i]->m_xmf4x4World._43 << std::endl;
 		}
 	}
 
@@ -432,7 +436,7 @@ void Framework::CheckCollision(CScene* pScene)
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						pktLF.ID = pScene->m_pObjects[0]->m_iId;
-						pktLF.HP = 5;
+						pktLF.HP = 1;
 						life_msg_queue.push(pktLF);
 						Bullet->DeleteObject();
 					}
@@ -457,7 +461,7 @@ void Framework::CheckCollision(CScene* pScene)
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						pktLF.ID = pScene->m_pObjects[1]->m_iId;
-						pktLF.HP = 5;
+						pktLF.HP = 1;
 						life_msg_queue.push(pktLF);
 						Bullet->DeleteObject();
 					}
