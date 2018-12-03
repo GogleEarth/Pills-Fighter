@@ -91,31 +91,16 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CUIVertex
-{
-public:
-	XMFLOAT2						m_xmfPosition;
-	XMFLOAT2						m_xmf2Size;
-
-public:
-	CUIVertex() { m_xmfPosition = XMFLOAT2(0.0f, 0.0f); m_xmf2Size = XMFLOAT2(0.0f, 0.0f); }
-	CUIVertex(XMFLOAT2 xmf3Position, XMFLOAT2 xmf2Size) { m_xmfPosition = xmf3Position; m_xmf2Size = xmf2Size; }
-	~CUIVertex() { }
-};
-
-class CUIRect
+class CUIRect : public CMesh
 {
 protected:
-	CUIVertex						*m_pVertices;
+	XMFLOAT2						*m_pxmf2Positions = NULL;
 
-	D3D12_PRIMITIVE_TOPOLOGY		m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-	UINT							m_nSlot = 0;
-	UINT							m_nStride = 0;
-	UINT							m_nOffset = 0;
+	XMFLOAT2						*m_pxmf2Sizes = NULL;
 
-	ID3D12Resource					*m_pd3dVertexBuffer = NULL;
-	ID3D12Resource					*m_pd3dVertexUploadBuffer = NULL;
-	D3D12_VERTEX_BUFFER_VIEW		m_d3dVertexBufferView;
+	ID3D12Resource					*m_pd3dSizeBuffer = NULL;
+	ID3D12Resource					*m_pd3dSizeUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dSizeBufferView;
 
 public:
 	CUIRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size);

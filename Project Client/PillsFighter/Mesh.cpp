@@ -228,40 +228,53 @@ void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nIns
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-CUIRect::CUIRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size)
+CUIRect::CUIRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size) : CMesh(pd3dDevice, pd3dCommandList)
 {
-	m_nStride = sizeof(CUIVertex);
 	m_nOffset = 0;
 	m_nSlot = 0;
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
 
-	m_pVertices = new CUIVertex(xmf2Center, xmf2Size);
+	m_nVertices = 1;
+	m_pxmf2Positions = new XMFLOAT2[m_nVertices];
+	m_pxmf2Sizes = new XMFLOAT2[m_nVertices];
 
-	m_pd3dVertexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pVertices, m_nStride, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
+	m_pxmf2Positions[0] = xmf2Center;
+	m_pxmf2Sizes[0] = xmf2Size;
 
-	m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
-	m_d3dVertexBufferView.StrideInBytes = m_nStride;
-	m_d3dVertexBufferView.SizeInBytes = m_nStride;
+	m_pd3dPositionBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2Positions, sizeof(XMFLOAT2), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dPositionUploadBuffer);
+
+	m_d3dPositionBufferView.BufferLocation = m_pd3dPositionBuffer->GetGPUVirtualAddress();
+	m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT2);
+	m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT2);
+
+	m_pd3dSizeBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2Sizes, sizeof(XMFLOAT2), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dSizeUploadBuffer);
+
+	m_d3dSizeBufferView.BufferLocation = m_pd3dSizeBuffer->GetGPUVirtualAddress();
+	m_d3dSizeBufferView.StrideInBytes = sizeof(XMFLOAT2);
+	m_d3dSizeBufferView.SizeInBytes = sizeof(XMFLOAT2);
 }
 
 CUIRect::~CUIRect()
 {
-	if (m_pd3dVertexBuffer) m_pd3dVertexBuffer->Release();
-	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
+	if (m_pd3dSizeBuffer) m_pd3dSizeBuffer->Release();
+
+	if (m_pxmf2Sizes) delete[] m_pxmf2Sizes;
 }
 
 void CUIRect::ReleaseUploadBuffers()
 {
-	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
-	m_pd3dVertexUploadBuffer = NULL;
+	if (m_pd3dSizeUploadBuffer) m_pd3dSizeUploadBuffer->Release();
+	m_pd3dSizeUploadBuffer = NULL;
 }
 
 void CUIRect::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dVertexBufferView);
 
-	pd3dCommandList->DrawInstanced(1, nInstances, m_nOffset, 0);
+	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[2] = { m_d3dPositionBufferView, m_d3dSizeBufferView };
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 2, pVertexBufferViews);
+
+	CMesh::Render(pd3dCommandList, nInstances);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

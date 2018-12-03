@@ -11,12 +11,6 @@ cbuffer cbCameraInfo : register(b1)
 	float3		gvCameraPosition : packoffset(c8);
 };
 
-cbuffer cbUIInfo : register(b4)
-{
-	int		giPlayerMaxHP;// : packoffset(c0.x);
-	int		giPlayerHP; //: packoffset(c0.y);
-};
-
 #include "Light.hlsl"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,6 +196,12 @@ void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tria
 		outStream.Append(output);
 	}
 }
+
+cbuffer cbUIInfo : register(b4)
+{
+	int		giPlayerMaxHP;// : packoffset(c0.x);
+	int		giPlayerHP; //: packoffset(c0.y);
+};
 
 [maxvertexcount(4)]
 void GS_UI_HP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
