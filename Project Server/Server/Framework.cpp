@@ -262,12 +262,17 @@ DWORD Framework::Update_Process(CScene* pScene)
 		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
 		{
+			m.lock();
 			PKT_PLAYER_INFO pkt;
 			if (msg_queue.empty())
+			{
+				m.unlock();
 				break;
+			}
 
 			pkt = msg_queue.front();
 			msg_queue.pop();
+			m.unlock();
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
@@ -390,7 +395,9 @@ void Framework::CheckCollision(CScene* pScene)
 {
 	std::vector<CGameObject*> vPlayer1BulletObjects;
 	std::vector<CGameObject*> vPlayer2BulletObjects;
-
+	std::vector<CGameObject*> vObstacles;
+	PKT_DELETE_OBJECT pktDO;
+	PKT_PLAYER_LIFE pktLF;
 	for (int i = 2; i < MAX_NUM_OBJECT; ++i)
 	{
 		if (pScene->m_pObjects[i] != NULL)
@@ -399,6 +406,13 @@ void Framework::CheckCollision(CScene* pScene)
 				vPlayer1BulletObjects.emplace_back(pScene->m_pObjects[i]);
 			else if (pScene->m_pObjects[i]->m_iId == 1)
 				vPlayer2BulletObjects.emplace_back(pScene->m_pObjects[i]);
+		}
+	}
+	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
+	{
+		if (pScene->m_pObstacles[i] != NULL)
+		{
+			vObstacles.emplace_back(pScene->m_pObstacles[i]);
 		}
 	}
 
@@ -414,13 +428,12 @@ void Framework::CheckCollision(CScene* pScene)
 					if (Bullet->GetOOBB(i).Intersects(pScene->m_pObjects[0]->GetOOBB(j)))
 					{
 						std::cout << "플1 : 플2총알 충돌" << std::endl;
-						PKT_DELETE_OBJECT pktdo2;
-						pktdo2.Object_Index = Bullet->index;
-						delete_msg_queue.push(pktdo2);
-						PKT_PLAYER_LIFE pktlf1;
-						pktlf1.ID = pScene->m_pObjects[0]->m_iId;
-						pktlf1.HP = 5;
-						life_msg_queue.push(pktlf1);
+						std::cout << "0 : " << i << std::endl;
+						pktDO.Object_Index = Bullet->index;
+						delete_msg_queue.push(pktDO);
+						pktLF.ID = pScene->m_pObjects[0]->m_iId;
+						pktLF.HP = 5;
+						life_msg_queue.push(pktLF);
 						Bullet->DeleteObject();
 					}
 				}
@@ -440,14 +453,63 @@ void Framework::CheckCollision(CScene* pScene)
 					if (Bullet->GetOOBB(i).Intersects(pScene->m_pObjects[1]->GetOOBB(j)))
 					{
 						std::cout << "플2 : 플1 총알 충돌" << std::endl;
-						PKT_DELETE_OBJECT pktdo1;
-						pktdo1.Object_Index = Bullet->index;
-						delete_msg_queue.push(pktdo1);
-						PKT_PLAYER_LIFE pktlf2;
-						pktlf2.ID = pScene->m_pObjects[1]->m_iId;
-						pktlf2.HP = 5;
-						life_msg_queue.push(pktlf2);
+						std::cout << "1 : " << i << std::endl;
+						pktDO.Object_Index = Bullet->index;
+						delete_msg_queue.push(pktDO);
+						pktLF.ID = pScene->m_pObjects[1]->m_iId;
+						pktLF.HP = 5;
+						life_msg_queue.push(pktLF);
 						Bullet->DeleteObject();
+					}
+				}
+			}
+		}
+	}
+
+	// 플레이어 1의 총알과 장애물의 충돌처리
+	for (const auto& Bullet : vPlayer1BulletObjects)
+	{
+		for (const auto& Obstacle : vObstacles)
+		{
+			for (UINT i = 0; i < Bullet->GetNumMeshes(); i++)
+			{
+				for (UINT j = 0; j < Obstacle->GetNumMeshes(); j++)
+				{
+					if (!Bullet->IsDelete())
+					{
+						if (Bullet->GetOOBB(i).Intersects(Obstacle->GetOOBB(j)))
+						{
+							std::cout << "장애물 : 플1 총알 충돌" << std::endl;
+							std::cout << Obstacle->index << " : " << Bullet->index << std::endl;
+							pktDO.Object_Index = Bullet->index;
+							delete_msg_queue.push(pktDO);
+							Bullet->DeleteObject();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 플레이어 2의 총알과 장애물의 충돌처리
+	for (const auto& Bullet : vPlayer2BulletObjects)
+	{
+		for (const auto& Obstacle : vObstacles)
+		{
+			for (UINT i = 0; i < Bullet->GetNumMeshes(); i++)
+			{
+				for (UINT j = 0; j < Obstacle->GetNumMeshes(); j++)
+				{
+					if (!Bullet->IsDelete())
+					{
+						if (Bullet->GetOOBB(i).Intersects(Obstacle->GetOOBB(j)))
+						{
+							std::cout << "장애물 : 플2 총알 충돌" << std::endl;
+							std::cout << Obstacle->index << " : " << Bullet->index << std::endl;
+							pktDO.Object_Index = Bullet->index;
+							delete_msg_queue.push(pktDO);
+							Bullet->DeleteObject();
+						}
 					}
 				}
 			}

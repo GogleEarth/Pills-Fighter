@@ -15,7 +15,9 @@ protected:
 
 	CGameObject					*m_pTerrain = NULL;
 	CMesh**						m_ppBulletMesh = NULL;
+	CMesh**						m_ppObstacleMesh = NULL;
 	CCubeMesh**					m_ppBulletCubeMesh = NULL;
+	CCubeMesh**					m_ppObstacleCubeMesh = NULL;
 
 public:
 

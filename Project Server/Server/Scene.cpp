@@ -27,6 +27,12 @@ void CScene::BuildObjects()
 	XMFLOAT3 extend = m_ppBulletMesh[0]->GetExtents();
 	m_ppBulletCubeMesh[0] = new CCubeMesh(m_ppBulletMesh[0]->GetCenter(), extend.x, extend.y, extend.z);
 
+	m_ppObstacleMesh = new CMesh*[1];
+	m_ppObstacleCubeMesh = new CCubeMesh*[1];
+	m_ppObstacleMesh[0] = new CMesh("./Resource/hangar.FBX");
+	extend = m_ppObstacleMesh[0]->GetExtents();
+	m_ppObstacleCubeMesh[0] = new CCubeMesh(m_ppObstacleMesh[0]->GetCenter(), extend.x, extend.y, extend.z);
+
 	m_pObjects[0] = new CGameObject();
 	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
 	m_pObjects[0]->m_Object_Type = OBJECT_TYPE_PLAYER;
@@ -40,13 +46,19 @@ void CScene::BuildObjects()
 	m_pObjects[1]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
 
 	m_pObstacles[0] = new CGameObject();
-	m_pObstacles[0]->SetPosition(XMFLOAT3(-200.0f, 0.0f, 100.0f));
+	m_pObstacles[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -200.0f, 0.0f, 100.0f, 1.0f };
+	m_pObstacles[0]->index = 0;
+	m_pObstacles[0]->SetMesh(m_ppObstacleMesh, m_ppObstacleCubeMesh, 1);
 
 	m_pObstacles[1] = new CGameObject();
-	m_pObstacles[1]->SetPosition(XMFLOAT3(200.0f, 0.0f, 100.0f));
+	m_pObstacles[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 200.0f, 0.0f, 100.0f, 1.0f };
+	m_pObstacles[1]->index = 1;
+	m_pObstacles[1]->SetMesh(m_ppObstacleMesh, m_ppObstacleCubeMesh, 1);
 
 	m_pObstacles[2] = new CGameObject();
-	m_pObstacles[2]->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
+	m_pObstacles[2]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 100.0f, 1.0f };
+	m_pObstacles[2]->index = 2;
+	m_pObstacles[2]->SetMesh(m_ppObstacleMesh, m_ppObstacleCubeMesh, 1);
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)
