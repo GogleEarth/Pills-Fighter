@@ -76,10 +76,7 @@ void CGameObject::Animate(float fTimeElapsed)
 		}
 		else
 		{
-			//CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * fTimeElapsed);
 			MoveForward(m_MovingSpeed * fTimeElapsed);
-			//std::cout << index << " : " << m_xmf3Position.x << ", " << m_xmf3Position.y << ", " << m_xmf3Position.z << std::endl;
-
 			m_ElapsedTime += fTimeElapsed;
 		}
 	}
