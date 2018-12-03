@@ -92,7 +92,7 @@ public:
 
 	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
 	void ProcessInput();
-	void AnimateObjects();
+	void AnimateObjects(float fElapsedTime);
 	void FrameAdvance();
 
 	//CPU와 GPU를 동기화하는 함수이다. 
@@ -118,9 +118,8 @@ public: // for Network
 	//통신
 	CLIENTID m_Client_Info;
 	PKT_PLAYER_INFO m_Client_Player_Info;
-	float m_serverTime = 0.0f;
-	float m_elapsedtime = 0.0f;
-	bool serverTimeSet = false;
+	float m_pktElapsedTime = 0.0f;
+	float m_fElapsedTime = 0.0f;
 
 	void CloseNetwork();
 

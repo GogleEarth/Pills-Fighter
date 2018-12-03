@@ -87,15 +87,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
-		else if (iPktID == PKT_ID_TIME_INFO) {
-			m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf); // 
-			for (const auto& TimeInfo : m_vMsgTimeInfo)
-			{
-				m_serverTime = TimeInfo->elapsedtime;
-				serverTimeSet = true;
-			}
-			m_vMsgTimeInfo.clear();
-		}
+		else if (iPktID == PKT_ID_TIME_INFO) m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf);
 		m_Mutex.unlock();
 	}
 }
@@ -723,7 +715,7 @@ void CGameFramework::ProcessInput()
 			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 
-		if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_GameTimer.GetTimeElapsed());
+		if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
 	}
 
 
@@ -732,12 +724,12 @@ void CGameFramework::ProcessInput()
 		m_pPlayer->Shot(m_pd3dDevice, m_pd3dCommandList);
 	}
 
-	m_pPlayer->Update(m_GameTimer.GetTimeElapsed());
+	m_pPlayer->Update(m_fElapsedTime);
 }
 
-void CGameFramework::AnimateObjects()
+void CGameFramework::AnimateObjects(float fElapsedTime)
 {
-	if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
+	if (m_pScene) m_pScene->AnimateObjects(fElapsedTime);
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -758,14 +750,20 @@ void CGameFramework::WaitForGpuComplete()
 
 void CGameFramework::FrameAdvance()
 {
-	m_GameTimer.Tick(0.0f);
-
-	ProcessInput();
+	m_fElapsedTime = 0.0f;
 
 #ifdef ON_NETWORKING
+	m_Mutex.lock();
+	for (const auto& TimeInfo : m_vMsgTimeInfo)
+	{
+		m_fElapsedTime += TimeInfo->ElapsedTime;
+	}
+	m_vMsgTimeInfo.clear();
+	m_Mutex.unlock();
+
 	auto start = std::chrono::high_resolution_clock::now();
 
-	if (m_elapsedtime >= 0.05f || serverTimeSet == false)
+	if (m_pktElapsedTime >= 0.05f)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
 		int retval;
@@ -778,8 +776,7 @@ void CGameFramework::FrameAdvance()
 		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)	err_display("send");
 
-		m_elapsedtime = 0;
-		serverTimeSet == true;
+		m_pktElapsedTime = 0.0f;
 	}
 
 	m_Mutex.lock();
@@ -812,16 +809,15 @@ void CGameFramework::FrameAdvance()
 	}
 	m_vMsgDeleteObject.clear();
 
-	//for (const auto& TimeInfo : m_vMsgTimeInfo)
-	//{
-	//	m_serverTime = TimeInfo->elapsedtime;
-	//}
-	//m_vMsgTimeInfo.clear();
-
 	m_Mutex.unlock();
+#else
+	m_GameTimer.Tick(0.0f);
+	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
-
-	AnimateObjects();
+	
+	ProcessInput();
+	
+	AnimateObjects(m_fElapsedTime);
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
@@ -923,9 +919,7 @@ void CGameFramework::FrameAdvance()
 #ifdef ON_NETWORKING
 	auto end = std::chrono::high_resolution_clock::now();
 	auto du = end - start;
-	//m_elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
-	m_elapsedtime += m_serverTime;
-
+	m_pktElapsedTime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
 #endif
 }
 

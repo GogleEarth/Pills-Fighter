@@ -269,7 +269,7 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		m_pLights->m_pLights[0].m_xmf3Direction = m_pPlayer->GetLook();
 	}
 
-	CheckCollision();
+	//CheckCollision();
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
