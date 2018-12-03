@@ -22,7 +22,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 {
 	ID3D12RootSignature *pd3dGraphicsRootSignature = NULL;
 
-	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[3];
+	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[2];
 
 	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[0].NumDescriptors = 1;
@@ -32,17 +32,11 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 
 	pd3dDescriptorRanges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[1].NumDescriptors = 1;
-	pd3dDescriptorRanges[1].BaseShaderRegister = 2; //t2: gtxtHPTexture
+	pd3dDescriptorRanges[1].BaseShaderRegister = 2; //t2: Terrain
 	pd3dDescriptorRanges[1].RegisterSpace = 0;
 	pd3dDescriptorRanges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	pd3dDescriptorRanges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	pd3dDescriptorRanges[2].NumDescriptors = 1;
-	pd3dDescriptorRanges[2].BaseShaderRegister = 3; //t3: Terrain
-	pd3dDescriptorRanges[2].RegisterSpace = 0;
-	pd3dDescriptorRanges[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	D3D12_ROOT_PARAMETER pd3dRootParameters[9];
+	D3D12_ROOT_PARAMETER pd3dRootParameters[8];
 
 	pd3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[0].Descriptor.ShaderRegister = 0; //Object
@@ -56,7 +50,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 
 	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	pd3dRootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[2].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[0]; // Texture
+	pd3dRootParameters[2].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[0]; // t1: gtxtTexture
 	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	pd3dRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
@@ -74,20 +68,15 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[5].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	pd3dRootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	pd3dRootParameters[6].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[6].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[1]; // Texture
-	pd3dRootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	pd3dRootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[6].Descriptor.ShaderRegister = 4; //HP
+	pd3dRootParameters[6].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
-	pd3dRootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[7].Descriptor.ShaderRegister = 4; // HP
-	pd3dRootParameters[7].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	pd3dRootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	pd3dRootParameters[8].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[8].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[2]; // Terrain
-	pd3dRootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	pd3dRootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[7].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[7].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[1]; // t2: Terrain
+	pd3dRootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[1];
 
@@ -161,7 +150,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
 
-	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList,	m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257,	257, xmf3Scale, xmf4Color);
+	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 }
 
 void CScene::ReleaseObjects()
@@ -234,7 +223,7 @@ void CScene::CheckCollision()
 			}
 		}
 	}
-	
+
 	for (const auto& Bullet : vBulletObjects)
 	{
 		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
@@ -280,13 +269,13 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		m_pLights->m_pLights[0].m_xmf3Direction = m_pPlayer->GetLook();
 	}
 
-	//CheckCollision();
+	CheckCollision();
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	SetGraphicsRootSignature(pd3dCommandList);
-	
+
 	if (pCamera)
 	{
 		pCamera->SetViewportsAndScissorRects(pd3dCommandList);
@@ -377,13 +366,13 @@ void CScene::BuildLightsAndMaterials()
 void CScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	UINT ncbElementBytes = ((sizeof(LIGHTS) + 255) & ~255);
-	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, 
-		D3D12_HEAP_TYPE_UPLOAD,	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);	
+	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 	m_pd3dcbLights->Map(0, NULL, (void **)&m_pcbMappedLights);
 
 	UINT ncbMaterialBytes = ((sizeof(MATERIALS) + 255) & ~255);
-	m_pd3dcbMaterials = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbMaterialBytes, 
-		D3D12_HEAP_TYPE_UPLOAD,	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+	m_pd3dcbMaterials = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbMaterialBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 	m_pd3dcbMaterials->Map(0, NULL, (void **)&m_pcbMappedMaterials);
 }
 

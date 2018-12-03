@@ -235,9 +235,6 @@ extern void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 extern void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, UINT& nTextures);
 extern void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, CShader* pShader);
 
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 class CHeightMapTerrain : public CGameObject

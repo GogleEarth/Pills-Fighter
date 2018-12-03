@@ -106,8 +106,8 @@ D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() //ÀÔ·Â Á¶¸³±â¿¡°Ô Á¤Á¡ ¹öÆÛ
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[1] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -118,11 +118,10 @@ D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() //ÀÔ·Â Á¶¸³±â¿¡°Ô Á¤Á¡ ¹öÆÛ
 
 D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayoutWire() //ÀÔ·Â Á¶¸³±â¿¡°Ô Á¤Á¡ ¹öÆÛÀÇ ±¸Á¶¸¦ ¾Ë·ÁÁÖ±â À§ÇÑ ±¸Á¶Ã¼¸¦ ¹ÝÈ¯ÇÑ´Ù. 
 {
-	UINT nInputElementDescs = 2;
+	UINT nInputElementDescs = 1;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[1] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -138,7 +137,7 @@ D3D12_SHADER_BYTECODE CShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) //
 
 D3D12_SHADER_BYTECODE CShader::CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob) //Á¤Á¡ ¼ÎÀÌ´õ ¹ÙÀÌÆ® ÄÚµå¸¦ »ý¼º(ÄÄÆÄÀÏ)ÇÑ´Ù. 
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "VSDiffused", "vs_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"Shaders.hlsl", "VSWire", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob) //ÇÈ¼¿ ¼ÎÀÌ´õ ¹ÙÀÌÆ® ÄÚµå¸¦ »ý¼º(ÄÄÆÄÀÏ)ÇÑ´Ù. 
@@ -148,7 +147,7 @@ D3D12_SHADER_BYTECODE CShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob) //Ç
 
 D3D12_SHADER_BYTECODE CShader::CreatePixelShaderWire(ID3DBlob **ppd3dShaderBlob) //ÇÈ¼¿ ¼ÎÀÌ´õ ¹ÙÀÌÆ® ÄÚµå¸¦ »ý¼º(ÄÄÆÄÀÏ)ÇÑ´Ù. 
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "PSDiffused", "ps_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"Shaders.hlsl", "PSWire", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob) 
@@ -489,7 +488,7 @@ void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_ppMeshes = new CMesh*[m_nMeshes];
 	m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
 
-	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
+	m_ppMeshes[0] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
 	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
 	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
@@ -644,7 +643,7 @@ void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppMeshes = new CMesh*[m_nMeshes];
 	m_ppCubeMeshes = new CCubeMesh*[m_nMeshes];
 
-	m_ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet.fbx");
+	m_ppMeshes[0] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet.fbx");
 	XMFLOAT3 Extents = m_ppMeshes[0]->GetExtents();
 	XMFLOAT3 Center = m_ppMeshes[0]->GetCenter();
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
@@ -722,9 +721,9 @@ D3D12_INPUT_LAYOUT_DESC CTerrainShader::CreateInputLayout()
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[1] = { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[3] = { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -785,7 +784,7 @@ D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -888,7 +887,7 @@ void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dComman
 	m_pcbMappedPlayerHP->HP = *m_pPlayerHP;
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbPlayerHP->GetGPUVirtualAddress();
-	pd3dCommandList->SetGraphicsRootConstantBufferView(7, d3dGpuVirtualAddress);
+	pd3dCommandList->SetGraphicsRootConstantBufferView(6, d3dGpuVirtualAddress);
 
 }
 

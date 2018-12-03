@@ -901,7 +901,7 @@ void FBXExporter::CleanupFbxManager()
 	mMaterialLookUp.clear();
 }
 
-void FBXExporter::WriteMeshToStream(CIlluminatedTexturedVertex* pVertices, UINT* pnIndices)
+void FBXExporter::WriteMeshToStream(XMFLOAT3* pPositions, XMFLOAT3* pNormals, XMFLOAT2* pTextureCoords0, UINT* pnIndices)
 {
 	if (mHasAnimation)
 	{
@@ -930,11 +930,11 @@ void FBXExporter::WriteMeshToStream(CIlluminatedTexturedVertex* pVertices, UINT*
 	{
 		//std::cout << "\t\t<vtx>" << std::endl;
 		//std::cout << "\t\t\t<pos>" << mVertices[i].mPosition.x << "," << mVertices[i].mPosition.y << "," << -mVertices[i].mPosition.z << "</pos>" << std::endl;
-		pVertices[i] = CIlluminatedTexturedVertex(
-			XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z),
-			XMFLOAT3(mVertices[i].mNormal.x, mVertices[i].mNormal.y, mVertices[i].mNormal.z),
-			XMFLOAT2(mVertices[i].mUV.x, 1.0f - mVertices[i].mUV.y)
-			);
+		
+		pPositions[i] = XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z);
+		pNormals[i] = XMFLOAT3(mVertices[i].mNormal.x, mVertices[i].mNormal.y, mVertices[i].mNormal.z);
+		pTextureCoords0[i] = XMFLOAT2(mVertices[i].mUV.x, 1.0f - mVertices[i].mUV.y);
+
 		//std::cout << "\t\t\t<norm>" << mVertices[i].mNormal.x << "," << mVertices[i].mNormal.y << "," << -mVertices[i].mNormal.z << "</norm>" << std::endl;
 		//if (mHasAnimation)
 		//{

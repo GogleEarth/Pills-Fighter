@@ -77,7 +77,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
 		else if (iPktID == PKT_ID_TIME_INFO) nPktSize = sizeof(PKT_TIME_INFO); // 서버 시간 정보 
 		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
-		
+
 		// 데이터 받기 # 패킷 구조체 - 결정
 		buf = new char[nPktSize];
 		retval = recvn(socket, buf, nPktSize, 0);
@@ -513,7 +513,7 @@ void CGameFramework::BuildObjects()
 	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
 	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
-	
+
 #ifdef ON_NETWORKING
 	InitNetwork();
 #else
@@ -794,7 +794,7 @@ void CGameFramework::FrameAdvance()
 	for (const auto& PlayerLife : m_vMsgPlayerLife)
 	{
 		if (PlayerLife->ID == m_Client_Info)
-			m_pPlayer->SetHitPoint( *(m_pPlayer->GetHitPoint()) - PlayerLife->HP);
+			m_pPlayer->SetHitPoint(*(m_pPlayer->GetHitPoint()) - PlayerLife->HP);
 		else
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
 	}
@@ -908,11 +908,11 @@ void CGameFramework::FrameAdvance()
 	m_pdxgiSwapChain->Present(0, 0);
 
 	MoveToNextFrame();
-	
+
 	::GetWindowRect(m_hWnd, &m_wndRect);
 
-	float Screenx = ( (2.0f  * ptCursorPos.x) / m_nWndClientWidth) - 1;
-	float Screeny = -( (2.0f * ptCursorPos.y) / m_nWndClientHeight) + 1;
+	float Screenx = ((2.0f  * ptCursorPos.x) / m_nWndClientWidth) - 1;
+	float Screeny = -((2.0f * ptCursorPos.y) / m_nWndClientHeight) + 1;
 
 	m_GameTimer.GetFrameRate(m_pszCaption + strlen(GAME_TITLE), 37);
 	size_t nLength = _tcslen(m_pszCaption);
