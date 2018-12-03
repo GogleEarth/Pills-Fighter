@@ -126,6 +126,10 @@ CGameObject::CGameObject()
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
+
+	m_PPitch = 0.0f;
+	m_PRoll = 0.0f;
+	m_PYaw = 0.0f;
 }
 
 CGameObject::~CGameObject()
@@ -268,7 +272,7 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 	{
 		if (m_ppCubeMeshes)
 		{
-			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->Render(pd3dCommandList, nInstances);
+			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->Render(pd3dCommandList);
 		}
 	}
 }
@@ -454,37 +458,37 @@ void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *
 	XMFLOAT3 Extents;
 	XMFLOAT3 Center;
 
-	ppMeshes[0] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.FBX");
+	ppMeshes[0] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.FBX");
 	Extents = ppMeshes[0]->GetExtents();
 	Center = ppMeshes[0]->GetCenter();
 	ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	ppMeshes[1] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/UpperBody.FBX");
+	ppMeshes[1] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/UpperBody.FBX");
 	Extents = ppMeshes[1]->GetExtents();
 	Center = ppMeshes[1]->GetCenter();
 	ppCubeMeshes[1] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	ppMeshes[2] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/LowerBody.FBX");
+	ppMeshes[2] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Body/LowerBody.FBX");
 	Extents = ppMeshes[2]->GetExtents();
 	Center = ppMeshes[2]->GetCenter();
 	ppCubeMeshes[2] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	ppMeshes[3] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Left.FBX");
+	ppMeshes[3] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Left.FBX");
 	Extents = ppMeshes[3]->GetExtents();
 	Center = ppMeshes[3]->GetCenter();
 	ppCubeMeshes[3] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	ppMeshes[4] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Right.FBX");
+	ppMeshes[4] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Arm/Arm-Right.FBX");
 	Extents = ppMeshes[4]->GetExtents();
 	Center = ppMeshes[4]->GetCenter();
 	ppCubeMeshes[4] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	ppMeshes[5] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Left.FBX");
+	ppMeshes[5] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Left.FBX");
 	Extents = ppMeshes[5]->GetExtents();
 	Center = ppMeshes[5]->GetCenter();
 	ppCubeMeshes[5] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 
-	ppMeshes[6] = new CMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Right.FBX");
+	ppMeshes[6] = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Leg/Leg-Right.FBX");
 	Extents = ppMeshes[6]->GetExtents();
 	Center = ppMeshes[6]->GetCenter();
 	ppCubeMeshes[6] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
@@ -522,6 +526,7 @@ void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 //
 CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color) : CGameObject()
 {
+	//m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Position = XMFLOAT3(-(nWidth *xmf3Scale.x/2), 0.0f, -(nLength *xmf3Scale.z / 2));
 
 	m_nWidth = nWidth;
@@ -561,7 +566,7 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	m_pTerrainShader = new CTerrainShader();
 	m_pTerrainShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	m_pTerrainShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	m_pTerrainShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, 8, false);
+	m_pTerrainShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, 7, false);
 	
 	CMaterial **ppTerrainMaterial = new CMaterial*[1];
 	ppTerrainMaterial[0] = new CMaterial();

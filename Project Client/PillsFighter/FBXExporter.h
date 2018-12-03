@@ -13,7 +13,7 @@ public:
 	bool LoadScene(const char *pstrFileName);
 
 	void ExportFBX(UINT* nVertices, UINT* nIndices);
-	void WriteMeshToStream(CIlluminatedTexturedVertex* pVertices, UINT* pnIndices);
+	void WriteMeshToStream(XMFLOAT3* pPositions, XMFLOAT3* pNormals, XMFLOAT2* pTextureCoords0, UINT* pnIndices);
 
 	void CleanupFbxManager();
 
