@@ -611,3 +611,50 @@ void CHeightMapTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCame
 
 	CGameObject::Render(pd3dCommandList, pCamera);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) : CGameObject()
+{
+	m_nMeshes = 1;
+	m_ppMeshes = new CMesh*[m_nMeshes];
+	CSkyBoxMesh *pSkyBoxMesh = new CSkyBoxMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 2.0f);
+	m_ppMeshes[0] = pSkyBoxMesh;
+
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0);
+	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_0.dds", 0);
+	//	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
+
+	m_pSkyboxShader = new CSkyBoxShader();
+	m_pSkyboxShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pSkyboxShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_pSkyboxShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	m_pSkyboxShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pSkyBoxTexture, 8, false);
+
+	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
+	ppSkyBoxMaterial[0] = new CMaterial();
+	ppSkyBoxMaterial[0]->SetTexture(pSkyBoxTexture);
+
+	SetMaterial(ppSkyBoxMaterial, 1);
+}
+
+CSkyBox::~CSkyBox()
+{
+}
+
+void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	m_pSkyboxShader->OnPrepareRender(pd3dCommandList);
+
+	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
+	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
+
+	CGameObject::Render(pd3dCommandList, pCamera);
+}
+
+
+

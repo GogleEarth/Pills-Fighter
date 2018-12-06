@@ -74,6 +74,7 @@ protected:
 	CObjectsShader				**m_ppShaders = NULL;
 
 	CHeightMapTerrain			*m_pTerrain = NULL;
+	CSkyBox						*m_pSkyBox = NULL;
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
 
