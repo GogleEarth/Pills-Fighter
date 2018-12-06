@@ -398,9 +398,9 @@ void Framework::CheckCollision(CScene* pScene)
 {
 	std::vector<CGameObject*> vPlayer1BulletObjects;
 	std::vector<CGameObject*> vPlayer2BulletObjects;
-	std::vector<CGameObject*> vObstacles;
 	PKT_DELETE_OBJECT pktDO;
 	PKT_PLAYER_LIFE pktLF;
+
 	for (int i = 2; i < MAX_NUM_OBJECT; ++i)
 	{
 		if (pScene->m_pObjects[i] != NULL)
@@ -409,14 +409,6 @@ void Framework::CheckCollision(CScene* pScene)
 				vPlayer1BulletObjects.emplace_back(pScene->m_pObjects[i]);
 			else if (pScene->m_pObjects[i]->m_iId == 1)
 				vPlayer2BulletObjects.emplace_back(pScene->m_pObjects[i]);
-		}
-	}
-	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
-	{
-		if (pScene->m_pObstacles[i] != NULL)
-		{
-			vObstacles.emplace_back(pScene->m_pObstacles[i]);
-			//std::cout << pScene->m_pObstacles[i]->m_xmf4x4World._41 << ", " << pScene->m_pObstacles[i]->m_xmf4x4World._42 << ", " << pScene->m_pObstacles[i]->m_xmf4x4World._43 << std::endl;
 		}
 	}
 
@@ -473,21 +465,24 @@ void Framework::CheckCollision(CScene* pScene)
 	// 플레이어 1의 총알과 장애물의 충돌처리
 	for (const auto& Bullet : vPlayer1BulletObjects)
 	{
-		for (const auto& Obstacle : vObstacles)
+		for (int k = 0; k < MAX_NUM_OBJECT; ++k)
 		{
-			for (UINT i = 0; i < Bullet->GetNumMeshes(); i++)
+			if (pScene->m_pObstacles[k] != NULL)
 			{
-				for (UINT j = 0; j < Obstacle->GetNumMeshes(); j++)
+				for (UINT i = 0; i < Bullet->GetNumMeshes(); i++)
 				{
-					if (!Bullet->IsDelete())
+					for (UINT j = 0; j < pScene->m_pObstacles[k]->GetNumMeshes(); j++)
 					{
-						if (Bullet->GetOOBB(i).Intersects(Obstacle->GetOOBB(j)))
+						if (!Bullet->IsDelete())
 						{
-							std::cout << "장애물 : 플1 총알 충돌" << std::endl;
-							std::cout << Obstacle->index << " : " << Bullet->index << std::endl;
-							pktDO.Object_Index = Bullet->index;
-							delete_msg_queue.push(pktDO);
-							Bullet->DeleteObject();
+							if (Bullet->GetOOBB(i).Intersects(pScene->m_pObstacles[k]->GetOOBB(j)))
+							{
+								std::cout << "장애물 : 플1 총알 충돌" << std::endl;
+								std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
+								pktDO.Object_Index = Bullet->index;
+								delete_msg_queue.push(pktDO);
+								Bullet->DeleteObject();
+							}
 						}
 					}
 				}
@@ -498,21 +493,24 @@ void Framework::CheckCollision(CScene* pScene)
 	// 플레이어 2의 총알과 장애물의 충돌처리
 	for (const auto& Bullet : vPlayer2BulletObjects)
 	{
-		for (const auto& Obstacle : vObstacles)
+		for (int k = 0; k < MAX_NUM_OBJECT; ++k)
 		{
-			for (UINT i = 0; i < Bullet->GetNumMeshes(); i++)
+			if (pScene->m_pObstacles[k] != NULL)
 			{
-				for (UINT j = 0; j < Obstacle->GetNumMeshes(); j++)
+				for (UINT i = 0; i < Bullet->GetNumMeshes(); i++)
 				{
-					if (!Bullet->IsDelete())
+					for (UINT j = 0; j < pScene->m_pObstacles[k]->GetNumMeshes(); j++)
 					{
-						if (Bullet->GetOOBB(i).Intersects(Obstacle->GetOOBB(j)))
+						if (!Bullet->IsDelete())
 						{
-							std::cout << "장애물 : 플2 총알 충돌" << std::endl;
-							std::cout << Obstacle->index << " : " << Bullet->index << std::endl;
-							pktDO.Object_Index = Bullet->index;
-							delete_msg_queue.push(pktDO);
-							Bullet->DeleteObject();
+							if (Bullet->GetOOBB(i).Intersects(pScene->m_pObstacles[k]->GetOOBB(j)))
+							{
+								std::cout << "장애물 : 플2 총알 충돌" << std::endl;
+								std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
+								pktDO.Object_Index = Bullet->index;
+								delete_msg_queue.push(pktDO);
+								Bullet->DeleteObject();
+							}
 						}
 					}
 				}

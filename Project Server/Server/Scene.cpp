@@ -21,17 +21,18 @@ void CScene::BuildObjects()
 	CCubeMesh** ppCubeMesh;
 	UINT nMeshes;
 	CreateRobotObjectMesh(ppMesh, ppCubeMesh, nMeshes);
+
 	m_ppBulletMesh = new CMesh*[1];
-	m_ppBulletCubeMesh = new CCubeMesh*[1];
 	m_ppBulletMesh[0] = new CMesh("./Resource/Bullet/Bullet.FBX");
 	XMFLOAT3 extend = m_ppBulletMesh[0]->GetExtents();
-	m_ppBulletCubeMesh[0] = new CCubeMesh(m_ppBulletMesh[0]->GetCenter(), extend.x, extend.y, extend.z);
+	std::cout << m_ppBulletMesh[0]->GetCenter().x << ", " << m_ppBulletMesh[0]->GetCenter().y << ", " << m_ppBulletMesh[0]->GetCenter().z << std::endl;
+	std::cout << extend.x << ", " << extend.y << ", " << extend.z << std::endl;
 
 	m_ppObstacleMesh = new CMesh*[1];
-	m_ppObstacleCubeMesh = new CCubeMesh*[1];
 	m_ppObstacleMesh[0] = new CMesh("./Resource/hangar.FBX");
-	extend = m_ppObstacleMesh[0]->GetExtents();
-	m_ppObstacleCubeMesh[0] = new CCubeMesh(m_ppObstacleMesh[0]->GetCenter(), extend.x, extend.y, extend.z);
+	XMFLOAT3 obstacleextend = m_ppObstacleMesh[0]->GetExtents();
+	std::cout << m_ppObstacleMesh[0]->GetCenter().x << ", " << m_ppObstacleMesh[0]->GetCenter().y << ", " << m_ppObstacleMesh[0]->GetCenter().z << std::endl;
+	std::cout << obstacleextend.x << ", " << obstacleextend.y << ", " << obstacleextend.z << std::endl;
 
 	m_pObjects[0] = new CGameObject();
 	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
@@ -46,31 +47,37 @@ void CScene::BuildObjects()
 	m_pObjects[1]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
 
 	m_pObstacles[0] = new CGameObject();
-	m_pObstacles[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -200.0f, 0.0f, 100.0f, 1.0f };
+	m_pObstacles[0]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -200.0f, 0.0f, 100.0f, 1.0f });
+	m_pObstacles[0]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
 	m_pObstacles[0]->index = 0;
-	m_pObstacles[0]->SetMesh(m_ppObstacleMesh, m_ppObstacleCubeMesh, 1);
+	m_pObstacles[0]->SetMesh(m_ppObstacleMesh, NULL, 1);
 
 	m_pObstacles[1] = new CGameObject();
-	m_pObstacles[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 200.0f, 0.0f, 100.0f, 1.0f };
-	m_pObstacles[1]->index = 1;
-	m_pObstacles[1]->SetMesh(m_ppObstacleMesh, m_ppObstacleCubeMesh, 1);
+	m_pObstacles[1]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 200.0f, 0.0f, 100.0f, 1.0f });
+	m_pObstacles[1]->index = 1;	
+	m_pObstacles[1]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
+	m_pObstacles[1]->SetMesh(m_ppObstacleMesh, NULL, 1);
 
 	m_pObstacles[2] = new CGameObject();
-	m_pObstacles[2]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 100.0f, 1.0f };
-	m_pObstacles[2]->index = 2;
-	m_pObstacles[2]->SetMesh(m_ppObstacleMesh, m_ppObstacleCubeMesh, 1);
+	m_pObstacles[2]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 100.0f, 1.0f });
+	m_pObstacles[2]->index = 2;	
+	m_pObstacles[2]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
+	m_pObstacles[2]->SetMesh(m_ppObstacleMesh, NULL, 1);
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
-		if(m_pObjects[i] != NULL)
-			if(!m_pObjects[i]->IsDelete())
+		if (m_pObjects[i] != NULL)
+			if (!m_pObjects[i]->IsDelete())
 				m_pObjects[i]->Animate(fTimeElapsed);
 		if (m_pObjects[i] != NULL)
 			if (m_pObjects[i]->IsDelete())
 				releaseObject(i);
+
+		if (m_pObstacles[i] != NULL)
+			m_pObstacles[i]->Animate(fTimeElapsed);
 	}
 }
 
@@ -103,11 +110,14 @@ int CScene::GetIndex()
 void CScene::AddObject(CGameObject objcet)
 {
 	int index = GetIndex();
-	m_pObjects[index] = new CGameObject(objcet);
-	m_pObjects[index]->index = index;
-	if (objcet.m_Object_Type == OBJECT_TYPE_BULLET)
+	if (index != -1)
 	{
-		m_pObjects[index]->SetMesh(m_ppBulletMesh, m_ppBulletCubeMesh, 1);
+		m_pObjects[index] = new CGameObject(objcet);
+		m_pObjects[index]->index = index;
+		if (objcet.m_Object_Type == OBJECT_TYPE_BULLET)
+		{
+			m_pObjects[index]->SetMesh(m_ppBulletMesh, NULL, 1);
+		}
 	}
 }
 

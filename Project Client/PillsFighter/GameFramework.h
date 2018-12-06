@@ -122,6 +122,7 @@ public: // for Network
 	float m_fElapsedTime = 0.0f;
 	HANDLE hEvent;
 	bool SendComplete = false;
+	bool initsend = false;
 	void CloseNetwork();
 
 	void err_quit(char* msg);

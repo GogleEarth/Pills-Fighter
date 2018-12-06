@@ -421,7 +421,7 @@ Bullet::Bullet() : CGameObject()
 {
 	m_ElapsedTime = 0;
 	m_DurationTime = 3.0f;
-	m_MovingSpeed = 1000.0f;
+	m_MovingSpeed = 500.0f;
 	m_RotationSpeed = 1440.0f;
 }
 
