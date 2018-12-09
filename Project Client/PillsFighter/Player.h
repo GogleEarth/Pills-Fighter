@@ -71,7 +71,6 @@ private:
 	bool m_Shotable = TRUE;
 	float m_ShotTime;
 	BOOL m_bIsShooting = FALSE;
-
 public:
 	BOOL IsShoothin(void) { return m_bIsShooting; }
 	void SetBullet(CShader *Bullet) { m_pBulletShader = (CNonFixedObjectsShader*)Bullet; }

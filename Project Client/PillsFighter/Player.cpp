@@ -7,7 +7,6 @@
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
-
 	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
 	m_pCamera = SetCamera(0.0f);
 
@@ -203,7 +202,7 @@ void CPlayer::Update(float fTimeElapsed)
 
 	if (m_nHitPoint < 0) {
 		m_nHitPoint = 100;
-		SetPosition(0, 0, 0);
+		SetPosition(serverPosition);
 	}
 	Animate(fTimeElapsed);
 

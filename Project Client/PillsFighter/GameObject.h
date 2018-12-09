@@ -184,6 +184,7 @@ public:
 protected:
 	int		m_nHitPoint;
 	int		m_nMaxHitPoint;
+	XMFLOAT3 serverPosition;
 
 public:
 	int *GetHitPoint() { return &m_nHitPoint; }
