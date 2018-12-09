@@ -601,3 +601,12 @@ CSkyBoxMesh::CSkyBoxMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd
 CSkyBoxMesh::~CSkyBoxMesh()
 {
 }
+
+void CSkyBoxMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+{
+	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
+
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
+
+	CMesh::Render(pd3dCommandList, nInstances);
+}
