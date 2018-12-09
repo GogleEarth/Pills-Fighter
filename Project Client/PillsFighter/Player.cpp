@@ -201,9 +201,10 @@ void CPlayer::Update(float fTimeElapsed)
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
 
-	if (m_nHitPoint < 0)
-		m_nHitPoint = 0;
-
+	if (m_nHitPoint < 0) {
+		m_nHitPoint = 100;
+		SetPosition(0, 0, 0);
+	}
 	Animate(fTimeElapsed);
 
 	CheckElapsedTime(fTimeElapsed);
