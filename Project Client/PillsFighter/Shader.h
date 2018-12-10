@@ -32,7 +32,7 @@ public:
 	virtual void ReleaseShaderVariables();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) { }
-	virtual void AnimateObjects(float fTimeElapsed) { }
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera) { }
 	virtual void ReleaseObjects() { }
 
 	virtual void ReleaseUploadBuffers();
@@ -108,7 +108,7 @@ public:
 	virtual void ReleaseShaderVariables();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
-	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -147,7 +147,7 @@ public:
 	virtual ~CNonFixedObjectsShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL );
-	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();
 
 	virtual void ReleaseShaderVariables();
@@ -159,7 +159,7 @@ protected:
 	std::vector<CGameObject*>	m_vObjects;
 
 public:
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
 	virtual void GetObjects(std::vector<CGameObject*> *vObjects, CGameObject ***ppObjects, UINT *nObjects) { *vObjects = m_vObjects; }
 
 	void CheckDeleteObjects();
@@ -174,7 +174,7 @@ public:
 	virtual ~CBulletShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +186,27 @@ public:
 	virtual ~CGundamShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CEffectShader : public CNonFixedObjectsShader
+{
+public:
+	CEffectShader();
+	virtual ~CEffectShader();
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual D3D12_BLEND_DESC CreateBlendState();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

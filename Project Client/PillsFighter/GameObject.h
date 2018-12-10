@@ -137,7 +137,7 @@ public:
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Animate(float fTimeElapsed);
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, UINT nInstances = 1);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, UINT nInstances = 1);
@@ -177,7 +177,7 @@ public:
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
 	BoundingOrientedBox GetOOBB(UINT nIndex) { return m_xmOOBB[nIndex]; }
-	void DeleteObject() { m_Delete = TRUE; }
+	void Delete() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
 
@@ -201,7 +201,7 @@ public:
 	virtual ~RandomMoveObject();
 
 	void InitRandomRotate();
-	virtual void Animate(float ElapsedTime);
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 
 private:
 	// °íÁ¤°ª
@@ -282,4 +282,35 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL, UINT nInstances = 1);
 private:
 	CShader						*m_pSkyboxShader = NULL;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CEffect : public CGameObject
+{
+public:
+	CEffect();
+	virtual ~CEffect();
+
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	void SetLookAt(XMFLOAT3& xmf3Target, XMFLOAT3& xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f));
+	void SpriteAnimate();
+
+	void SetMaxSprite(int x, int y, int Max) { m_nMaxSpriteX = x; m_nMaxSpriteY = y; m_nMaxSprite = Max; m_xmf4Sprite.x = (float)1 / x; m_xmf4Sprite.y = (float)1 / y; }
+	void SetSpritePos(int x, int y) { m_xmf4Sprite.z = (float)x; m_xmf4Sprite.w = (float)y; }
+
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+	EFFECT_TYPE m_efType;
+
+private:
+	XMFLOAT4	m_xmf4Sprite;
+
+	int			m_nSpritePosX;
+	int			m_nSpritePosY;
+
+	int			m_nMaxSpriteX;
+	int			m_nMaxSpriteY;
+	int			m_nMaxSprite;
 };

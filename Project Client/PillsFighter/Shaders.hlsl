@@ -288,8 +288,6 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	return(cColor);
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 struct VS_SKYBOX_CUBEMAP_INPUT
@@ -319,6 +317,46 @@ SamplerState gssClamp : register(s1);
 float4 PSSkyBox(VS_SKYBOX_CUBEMAP_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtSkyCubeTexture.Sample(gssClamp, input.positionL);
+
+	return(cColor);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct VS_SPRITE_INPUT
+{
+	float3 position : POSITION;
+	float2 uv : TEXCOORD;
+};
+
+struct VS_SPRITE_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
+};
+
+cbuffer cbTextureSprite : register(b5)
+{
+	float4	gfTextureSpriteInfo : packoffset(c0);
+};
+
+VS_SPRITE_OUTPUT VSSprite(VS_SPRITE_INPUT input)
+{
+	VS_SPRITE_OUTPUT output;
+
+	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+
+	float3x3 f3x3Sprite = float3x3(gfTextureSpriteInfo.x, 0.0f, 0.0f, 0.0f, gfTextureSpriteInfo.y, 0.0f, input.uv.x * gfTextureSpriteInfo.x, input.uv.y * gfTextureSpriteInfo.y, 1.0f);
+	float3 f3Sprite = float3(gfTextureSpriteInfo.zw, 1.0f);
+	output.uv = (float2)mul(f3Sprite, f3x3Sprite);
+
+	return(output);
+}
+
+float4 PSSprite(VS_SPRITE_OUTPUT input, uint primitiveID : SV_PrimitiveID) : SV_TARGET
+{
+	float4 cColor = gtxtTexture.SampleLevel(gssWrap, input.uv, 0);
 
 	return(cColor);
 }

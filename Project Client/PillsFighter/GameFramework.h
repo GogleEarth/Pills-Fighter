@@ -115,6 +115,7 @@ public: // for Network
 	std::vector<PKT_DELETE_OBJECT*> m_vMsgDeleteObject;
 	std::vector<PKT_TIME_INFO*> m_vMsgTimeInfo;
 	std::vector<PKT_UPDATE_OBJECT*> m_vMsgUpdateInfo;
+	std::vector<PKT_CREATE_EFFECT*> m_vMsgCreateEffect;
 
 	//Ελ½Ε
 	CLIENTID m_Client_Info;
@@ -135,6 +136,7 @@ public: // for Network
 	DWORD ThreadFunc(LPVOID arg);
 
 	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
+	void CreateEffect(PKT_CREATE_EFFECT CreateEffectInfo);
 	void CreateScene(SCENEINFO SN);
 
 	char *buf;

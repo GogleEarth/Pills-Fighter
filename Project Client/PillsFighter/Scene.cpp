@@ -42,7 +42,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dDescriptorRanges[2].RegisterSpace = 0;
 	pd3dDescriptorRanges[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER pd3dRootParameters[9];
+	D3D12_ROOT_PARAMETER pd3dRootParameters[10];
 
 	pd3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[0].Descriptor.ShaderRegister = 0; //Object
@@ -88,6 +88,12 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[8].DescriptorTable.NumDescriptorRanges = 1;
 	pd3dRootParameters[8].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[2]); // SkyBox
 	pd3dRootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	pd3dRootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[9].Constants.Num32BitValues = 4;
+	pd3dRootParameters[9].Constants.ShaderRegister = 5; //TextureSprite
+	pd3dRootParameters[9].Constants.RegisterSpace = 0;
+	pd3dRootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
@@ -145,8 +151,8 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	// [0] Building, [1] Bullet, [2] Enemy
-	m_nShaders = 3;
+	// [0] Building, [1] Bullet, [2] Enemy, [3] Effect
+	m_nShaders = 4;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 
 	/////////////////////////////// Enemy Shader
@@ -170,6 +176,13 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
+
+	////// Bullet Shader
+	CEffectShader *pEffectShader = new CEffectShader();
+	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+
+	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
 
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
@@ -246,11 +259,11 @@ void CScene::CheckCollision()
 	}
 }
 
-void CScene::AnimateObjects(float fTimeElapsed)
+void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
 	for (int i = 0; i < m_nShaders; i++)
 	{
-		m_ppShaders[i]->AnimateObjects(fTimeElapsed);
+		m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
 	}
 
 	if (m_pLights)
@@ -396,7 +409,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	if (m_pObjects[CreateObjectInfo.Object_Index])
 	{
-		m_pObjects[CreateObjectInfo.Object_Index]->DeleteObject();
+		m_pObjects[CreateObjectInfo.Object_Index]->Delete();
 	}
 
 	switch (CreateObjectInfo.Object_Type)
@@ -425,9 +438,18 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 {
 	if (m_pObjects[DeleteObjectInfo.Object_Index])
 	{
-		m_pObjects[DeleteObjectInfo.Object_Index]->DeleteObject();
+		m_pObjects[DeleteObjectInfo.Object_Index]->Delete();
 		m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
 	}
+}
+
+void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
+{
+	CEffect *pEffect = new CEffect();
+	pEffect->SetPosition(CreateEffectInfo.xmf3Position);
+	EFFECT_TYPE efType = CreateEffectInfo.efType;
+
+	((CNonFixedObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pEffect, &efType);
 }
 
 void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
@@ -451,6 +473,8 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
 		position.y += 10;
 		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
+		break;
+	case PKT_ID_CREATE_EFFECT:
 		break;
 	}
 }

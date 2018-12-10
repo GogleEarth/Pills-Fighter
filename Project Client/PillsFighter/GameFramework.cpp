@@ -76,15 +76,14 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
 		else if (iPktID == PKT_ID_TIME_INFO) nPktSize = sizeof(PKT_TIME_INFO); // 서버 시간 정보 
-		else if (iPktID == PKT_ID_UPDATE_OBJECT) nPktSize = sizeof(PKT_UPDATE_OBJECT); // 오브젝트 업데이트 정보
+		else if (iPktID == PKT_ID_UPDATE_OBJECT) nPktSize = sizeof(PKT_UPDATE_OBJECT); // 이펙트  정보 [ 생성 ]
 		else if (iPktID == PKT_ID_SEND_COMPLETE)
 		{
-			//std::cout << "mm" << std::endl;
 			SetEvent(hEvent);
-			//SendComplete = true;
 			m_Mutex.unlock();
 			continue;
 		}
+		else if(iPktID == PKT_ID_CREATE_EFFECT)  nPktSize = sizeof(PKT_CREATE_EFFECT); // 오브젝트 업데이트 정보
 		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
 
 		// 데이터 받기 # 패킷 구조체 - 결정
@@ -98,6 +97,7 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
 		else if (iPktID == PKT_ID_TIME_INFO) m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf); // 서버 시간 정보 
 		else if (iPktID == PKT_ID_UPDATE_OBJECT) m_vMsgUpdateInfo.emplace_back((PKT_UPDATE_OBJECT*)buf); // 오브젝트 업데이트 정보
+		else if (iPktID == PKT_ID_CREATE_EFFECT)  m_vMsgCreateEffect.emplace_back((PKT_CREATE_EFFECT*)buf); // 이펙트  정보 [ 생성 ]
 		m_Mutex.unlock();
 	}
 }
@@ -211,6 +211,11 @@ void CGameFramework::CloseNetwork()
 void CGameFramework::CreateObject(PKT_CREATE_OBJECT CreateObjectInfo)
 {
 	m_pScene->InsertObject(m_pd3dDevice, m_pd3dCommandList, CreateObjectInfo);
+}
+
+void CGameFramework::CreateEffect(PKT_CREATE_EFFECT CreateEffectInfo)
+{
+	m_pScene->CreateEffect(m_pd3dDevice, m_pd3dCommandList, CreateEffectInfo);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -741,7 +746,7 @@ void CGameFramework::ProcessInput()
 
 void CGameFramework::AnimateObjects(float fElapsedTime)
 {
-	if (m_pScene) m_pScene->AnimateObjects(fElapsedTime);
+	if (m_pScene) m_pScene->AnimateObjects(fElapsedTime, m_pCamera);
 }
 
 void CGameFramework::WaitForGpuComplete()
@@ -827,6 +832,12 @@ void CGameFramework::FrameAdvance()
 			m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
 		}
 		m_vMsgDeleteObject.clear();
+
+		for (const auto& CreateInfo : m_vMsgCreateEffect)
+		{
+			CreateEffect(*CreateInfo);
+		}
+		m_vMsgCreateEffect.clear();
 
 		m_Mutex.unlock();
 		SendComplete = false;

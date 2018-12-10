@@ -174,3 +174,15 @@ public:
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CRectMesh : public CMesh
+{
+public:
+	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight);
+	virtual ~CRectMesh();
+
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances);
+};

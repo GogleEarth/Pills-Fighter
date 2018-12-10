@@ -345,7 +345,8 @@ CObjectsShader::~CObjectsShader()
 		for (UINT j = 0; j < m_nMeshes; j++)
 		{
 			if (m_ppMeshes[j]) delete m_ppMeshes[j];
-			if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
+
+			if (m_ppCubeMeshes) if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
 		}
 
 		delete[] m_ppMeshes;
@@ -360,7 +361,9 @@ void CObjectsShader::ReleaseUploadBuffers()
 		for (UINT i = 0; i < m_nMeshes; i++)
 		{
 			if (m_ppMeshes[i]) m_ppMeshes[i]->ReleaseUploadBuffers();
-			if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->ReleaseUploadBuffers();
+
+			if(m_ppCubeMeshes) if (m_ppCubeMeshes[i]) m_ppCubeMeshes[i]->ReleaseUploadBuffers();
+
 		}
 	}
 
@@ -426,11 +429,11 @@ void CFixedObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dC
 	}
 }
 
-void CFixedObjectsShader::AnimateObjects(float fTimeElapsed)
+void CFixedObjectsShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
 	for (UINT i = 0; i < m_nObjects; i++)
 	{
-		m_ppObjects[i]->Animate(fTimeElapsed);
+		m_ppObjects[i]->Animate(fTimeElapsed, pCamera);
 	}
 }
 
@@ -545,13 +548,13 @@ void CNonFixedObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 {
 }
 
-void CNonFixedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object)
+void CNonFixedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
 {
-	Object->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	Object->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
-	Object->SetMaterial(m_ppMaterials, m_nMaterials);
+	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pObject->SetMesh(m_ppMeshes, m_ppCubeMeshes, m_nMeshes);
+	pObject->SetMaterial(m_ppMaterials, m_nMaterials);
 
-	m_vObjects.emplace_back(Object);
+	m_vObjects.emplace_back(pObject);
 }
 
 void CNonFixedObjectsShader::ReleaseObjects()
@@ -566,13 +569,13 @@ void CNonFixedObjectsShader::ReleaseObjects()
 	}
 }
 
-void CNonFixedObjectsShader::AnimateObjects(float fTimeElapsed)
+void CNonFixedObjectsShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
 	CheckDeleteObjects();
 
 	for (const auto& Object : m_vObjects)
 	{
-		Object->Animate(fTimeElapsed);
+		Object->Animate(fTimeElapsed, pCamera);
 	}	
 }
 
@@ -649,11 +652,11 @@ void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppCubeMeshes[0] = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
 }
 
-void CBulletShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object)
+void CBulletShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
 {
-	Object->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
-	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, Object);
+	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -698,11 +701,126 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	//InsertObject(pObjects);
 }
 
-void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* Object)
+void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
 {
-	Object->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 
-	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, Object);
+	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject);
+}
+
+////////////////////////////////////////////////////////////
+
+CEffectShader::CEffectShader()
+{
+}
+
+CEffectShader::~CEffectShader()
+{
+}
+
+D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
+{
+	UINT nInputElementDescs = 2;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_SHADER_BYTECODE CEffectShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSprite", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSSprite", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_RASTERIZER_DESC CEffectShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
+	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
+	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
+	d3dRasterizerDesc.DepthBias = 0;
+	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
+	d3dRasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	d3dRasterizerDesc.DepthClipEnable = TRUE;
+	d3dRasterizerDesc.MultisampleEnable = FALSE;
+	d3dRasterizerDesc.AntialiasedLineEnable = FALSE;
+	d3dRasterizerDesc.ForcedSampleCount = 0;
+	d3dRasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	return(d3dRasterizerDesc);
+}
+
+D3D12_BLEND_DESC CEffectShader::CreateBlendState()
+{
+	D3D12_BLEND_DESC d3dBlendDesc;
+	::ZeroMemory(&d3dBlendDesc, sizeof(D3D12_BLEND_DESC));
+	d3dBlendDesc.AlphaToCoverageEnable = TRUE;
+	d3dBlendDesc.IndependentBlendEnable = FALSE;
+	d3dBlendDesc.RenderTarget[0].BlendEnable = FALSE;
+	d3dBlendDesc.RenderTarget[0].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	return(d3dBlendDesc);
+}
+
+void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Fire.dds", 0);
+
+	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
+
+	m_nMaterials = 1;
+	m_ppMaterials = new CMaterial*[m_nMaterials];
+	m_ppMaterials[0] = new CMaterial();
+	m_ppMaterials[0]->SetTexture(pTextures);
+	m_ppMaterials[0]->m_nReflection = 0;
+
+	m_nMeshes = 1;
+	m_ppMeshes = new CMesh*[m_nMeshes];
+
+	m_ppMeshes[0] = new CRectMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f);
+
+	CEffect *pEffect = new CEffect();
+	pEffect->SetPosition(0.0f, 20.0f, 0.0f);
+	EFFECT_TYPE efType = EFFECT_TYPE_ONE;
+
+	InsertObject(pd3dDevice, pd3dCommandList, pEffect, &efType);
+}
+
+void CEffectShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+{
+	CEffect *pEfObject = (CEffect*)pObject;
+	pEfObject->m_efType = *((EFFECT_TYPE*)pContext);
+
+	switch (pEfObject->m_efType)
+	{
+	case EFFECT_TYPE_ONE:
+		pEfObject->SetMaxSprite(5, 3, 12);
+		break;
+	}
+
+	CNonFixedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

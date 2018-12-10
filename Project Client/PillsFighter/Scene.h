@@ -59,7 +59,7 @@ public:
 	void SetGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList) { pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature); }
 
 	bool ProcessInput(UCHAR *pKeysBuffer);
-	void AnimateObjects(float fTimeElapsed);
+	void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
@@ -110,5 +110,6 @@ public: // For Network
 
 	void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
+	void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
 	void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 };
