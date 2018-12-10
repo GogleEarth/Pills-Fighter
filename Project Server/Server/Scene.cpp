@@ -70,12 +70,12 @@ void CScene::AnimateObjects(float fTimeElapsed)
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
 		if (m_pObjects[i] != NULL)
+		{
 			if (!m_pObjects[i]->IsDelete())
 				m_pObjects[i]->Animate(fTimeElapsed);
-		if (m_pObjects[i] != NULL)
-			if (m_pObjects[i]->IsDelete())
+			else if (m_pObjects[i]->IsDelete())
 				releaseObject(i);
-
+		}
 		if (m_pObstacles[i] != NULL)
 			m_pObstacles[i]->Animate(fTimeElapsed);
 	}

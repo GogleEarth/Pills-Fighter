@@ -114,6 +114,7 @@ public: // for Network
 	std::vector<PKT_CREATE_OBJECT*> m_vMsgCreateObject;
 	std::vector<PKT_DELETE_OBJECT*> m_vMsgDeleteObject;
 	std::vector<PKT_TIME_INFO*> m_vMsgTimeInfo;
+	std::vector<PKT_UPDATE_OBJECT*> m_vMsgUpdateInfo;
 
 	//Ελ½Ε
 	CLIENTID m_Client_Info;

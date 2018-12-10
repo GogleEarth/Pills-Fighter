@@ -70,18 +70,19 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
 
 		// 데이터 받기 # 패킷 구조체 - SIZE 결정
-		m_Mutex.lock();
+		//m_Mutex.lock();
 		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
 		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
 		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
 		else if (iPktID == PKT_ID_TIME_INFO) nPktSize = sizeof(PKT_TIME_INFO); // 서버 시간 정보 
+		else if (iPktID == PKT_ID_UPDATE_OBJECT) nPktSize = sizeof(PKT_UPDATE_OBJECT); // 오브젝트 업데이트 정보
 		else if (iPktID == PKT_ID_SEND_COMPLETE)
 		{
-			std::cout << "mm" << std::endl;
+			//std::cout << "mm" << std::endl;
 			SetEvent(hEvent);
 			//SendComplete = true;
-			m_Mutex.unlock();
+			//m_Mutex.unlock();
 			continue;
 		}
 		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
@@ -96,7 +97,8 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
 		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
 		else if (iPktID == PKT_ID_TIME_INFO) m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf); // 서버 시간 정보 
-		m_Mutex.unlock();
+		else if (iPktID == PKT_ID_UPDATE_OBJECT) m_vMsgUpdateInfo.emplace_back((PKT_UPDATE_OBJECT*)buf); // 오브젝트 업데이트 정보
+		//m_Mutex.unlock();
 	}
 }
 
@@ -814,6 +816,12 @@ void CGameFramework::FrameAdvance()
 			CreateObject(*CreateInfo);
 		}
 		m_vMsgCreateObject.clear();
+
+		for (const auto& UpdateInfo : m_vMsgUpdateInfo)
+		{
+			m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)UpdateInfo);
+		}
+		m_vMsgUpdateInfo.clear();
 
 		for (const auto& DelteInfo : m_vMsgDeleteObject)
 		{

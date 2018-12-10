@@ -484,5 +484,10 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		break;
 	case PKT_ID_TIME_INFO:
 		break;
+	case PKT_ID_UPDATE_OBJECT:
+		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
+		position.y += 10;
+		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
+		break;
 	}
 }

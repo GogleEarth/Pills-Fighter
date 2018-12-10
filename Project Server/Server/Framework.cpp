@@ -257,7 +257,16 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
-
+		for (int i = 2; i < MAX_NUM_OBJECT; ++i)
+		{
+			if (pScene->m_pObjects[i] != NULL)
+			{
+				PKT_UPDATE_OBJECT updateobj;
+				updateobj.Object_Index = i;
+				updateobj.Object_Position = pScene->m_pObjects[i]->GetPosition();
+				update_msg_queue.push(updateobj);
+			}
+		}
 		// 충돌 처리
 		CheckCollision(pScene);
 
@@ -305,6 +314,24 @@ DWORD Framework::Update_Process(CScene* pScene)
 				bullet.SetMovingSpeed(1000.0f);
 				pScene->AddObject(bullet);
 			}
+		}
+
+		// 오브제트 업데이트 패킷 보내기
+		while (true)
+		{
+			PKT_UPDATE_OBJECT pkt_u;
+
+			if (update_msg_queue.empty())
+				break;
+
+			pkt_u = update_msg_queue.front();
+			update_msg_queue.pop();
+
+			PKT_ID pid_u = PKT_ID_UPDATE_OBJECT;
+			retval = Send_msg((char*)&pid_u, sizeof(PKT_ID), 0);
+
+			retval = Send_msg((char*)&pkt_u, sizeof(PKT_UPDATE_OBJECT), 0);
+			//std::cout << "오브젝트 삭제 패킷 전송\n";
 		}
 
 		// 오브젝트 삭제 패킷 보내기

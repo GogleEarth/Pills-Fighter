@@ -23,6 +23,7 @@ class Framework
 	std::queue<PKT_PLAYER_INFO> msg_queue;
 	std::queue<PKT_PLAYER_LIFE> life_msg_queue;
 	std::queue<PKT_DELETE_OBJECT> delete_msg_queue;
+	std::queue<PKT_UPDATE_OBJECT> update_msg_queue;
 	std::vector<Client_INFO> clients;
 	int count = 0;
 	CMesh PlayerMesh;

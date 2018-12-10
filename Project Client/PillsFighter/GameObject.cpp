@@ -441,7 +441,7 @@ void Bullet::Animate(float ElapsedTime)
 	else
 	{
 		CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * ElapsedTime);
-		MoveForward(m_MovingSpeed * ElapsedTime);
+		//MoveForward(m_MovingSpeed * ElapsedTime);
 
 		m_ElapsedTime += ElapsedTime;
 	}
