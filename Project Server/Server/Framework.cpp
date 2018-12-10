@@ -376,6 +376,24 @@ DWORD Framework::Update_Process(CScene* pScene)
 			retval = Send_msg((char*)&pkt_l, sizeof(PKT_PLAYER_LIFE), 0);
 		}
 
+		// 이펙트 생성 패킷 보내기
+		while (true)
+		{
+			PKT_CREATE_EFFECT pkt_ce;
+
+			if (effect_msg_queue.empty())
+				break;
+
+			pkt_ce = effect_msg_queue.front();
+			effect_msg_queue.pop();
+			//std::cout << pkt_l.ID << " : " << pkt_l.HP << std::endl;
+
+			PKT_ID pid_l = PKT_ID_CREATE_EFFECT;
+			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
+
+			retval = Send_msg((char*)&pkt_ce, sizeof(PKT_CREATE_EFFECT), 0);
+		}
+
 		PKT_ID pid_cpl = PKT_ID_SEND_COMPLETE;
 		retval = Send_msg((char*)&pid_cpl, sizeof(PKT_ID), 0);
 		//std::cout << "패킷 전송 완료\n";
@@ -435,6 +453,7 @@ void Framework::CheckCollision(CScene* pScene)
 	std::vector<CGameObject*> vPlayer2BulletObjects;
 	PKT_DELETE_OBJECT pktDO;
 	PKT_PLAYER_LIFE pktLF;
+	PKT_CREATE_EFFECT pktCE;
 
 	for (int i = 2; i < MAX_NUM_OBJECT; ++i)
 	{
@@ -460,6 +479,11 @@ void Framework::CheckCollision(CScene* pScene)
 					{
 						//std::cout << "플1 : 플2총알 충돌" << std::endl;
 						//std::cout << "0 : " << i << std::endl;
+						XMFLOAT3 position = Bullet->GetPosition();
+						position.y += 10.0f;
+						pktCE.efType = EFFECT_TYPE_ONE;
+						pktCE.xmf3Position = position;
+						effect_msg_queue.push(pktCE);
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						pktLF.ID = pScene->m_pObjects[0]->m_iId;
@@ -485,6 +509,11 @@ void Framework::CheckCollision(CScene* pScene)
 					{
 						//std::cout << "플2 : 플1 총알 충돌" << std::endl;
 						//std::cout << "1 : " << i << std::endl;
+						XMFLOAT3 position = Bullet->GetPosition();
+						position.y += 10.0f;
+						pktCE.efType = EFFECT_TYPE_ONE;
+						pktCE.xmf3Position = position;
+						effect_msg_queue.push(pktCE);
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						pktLF.ID = pScene->m_pObjects[1]->m_iId;
@@ -514,6 +543,11 @@ void Framework::CheckCollision(CScene* pScene)
 							{
 								//std::cout << "장애물 : 플1 총알 충돌" << std::endl;
 								//std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
+								XMFLOAT3 position = Bullet->GetPosition();
+								position.y += 10.0f;
+								pktCE.efType = EFFECT_TYPE_ONE;
+								pktCE.xmf3Position = position;
+								effect_msg_queue.push(pktCE);
 								pktDO.Object_Index = Bullet->index;
 								delete_msg_queue.push(pktDO);
 								Bullet->DeleteObject();
@@ -542,6 +576,11 @@ void Framework::CheckCollision(CScene* pScene)
 							{
 								//std::cout << "장애물 : 플2 총알 충돌" << std::endl;
 								//std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
+								XMFLOAT3 position = Bullet->GetPosition();
+								position.y += 10.0f;
+								pktCE.efType = EFFECT_TYPE_ONE;
+								pktCE.xmf3Position = position;
+								effect_msg_queue.push(pktCE);
 								pktDO.Object_Index = Bullet->index;
 								delete_msg_queue.push(pktDO);
 								Bullet->DeleteObject();
