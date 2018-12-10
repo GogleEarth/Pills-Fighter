@@ -185,6 +185,7 @@ void CScene::ReleaseObjects()
 	if (m_pLights) delete m_pLights;
 	if (m_pMaterials) delete m_pMaterials;
 	if (m_pSkyBox) delete m_pSkyBox;
+	if (m_pTerrain) delete m_pTerrain;
 
 	if (m_ppShaders)
 	{
@@ -197,17 +198,15 @@ void CScene::ReleaseObjects()
 		delete[] m_ppShaders;
 	}
 
-	if (m_pTerrain) delete m_pTerrain;
-
 	ReleaseShaderVariables();
 }
 
 void CScene::ReleaseUploadBuffers()
 {
 	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
-	for (int i = 0; i < m_nShaders; i++) m_ppShaders[i]->ReleaseUploadBuffers();
-
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
+
+	for (int i = 0; i < m_nShaders; i++) m_ppShaders[i]->ReleaseUploadBuffers();
 }
 
 bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -230,12 +229,7 @@ void CScene::CheckCollision()
 	CGameObject	**ppBuildingObjects;
 	UINT nBuildingObjects;
 
-	std::vector<CGameObject*> vEnemyObjects;
-	std::vector<CGameObject*> vBulletObjects;
-
 	m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects(NULL, &ppBuildingObjects, &nBuildingObjects);
-	m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects(&vEnemyObjects, NULL, NULL);
-	m_ppShaders[INDEX_SHADER_BULLET]->GetObjects(&vBulletObjects, NULL, NULL);
 
 	for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
 	{
@@ -246,37 +240,6 @@ void CScene::CheckCollision()
 				if (m_pPlayer->GetOOBB(i).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(j)))
 				{
 					m_pPlayer->CallBackPosition();
-				}
-			}
-		}
-	}
-
-	for (const auto& Bullet : vBulletObjects)
-	{
-		for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-		{
-			for (UINT i = 0; i < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-				{
-					if (Bullet->GetOOBB(j).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(i)))
-					{
-						Bullet->DeleteObject();
-					}
-				}
-			}
-		}
-
-		for (const auto& Enemy : vEnemyObjects)
-		{
-			for (UINT i = 0; i < Enemy->GetNumMeshes(); i++)
-			{
-				for (UINT j = 0; j < Bullet->GetNumMeshes(); j++)
-				{
-					if (Bullet->GetOOBB(j).Intersects(Enemy->GetOOBB(i)))
-					{
-						Bullet->DeleteObject();
-					}
 				}
 			}
 		}
@@ -296,7 +259,7 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		m_pLights->m_pLights[0].m_xmf3Direction = m_pPlayer->GetLook();
 	}
 
-	//CheckCollision();
+	CheckCollision();
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

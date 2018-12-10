@@ -441,7 +441,7 @@ void Bullet::Animate(float ElapsedTime)
 	else
 	{
 		CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * ElapsedTime);
-		//MoveForward(m_MovingSpeed * ElapsedTime);
+		MoveForward(m_MovingSpeed * ElapsedTime);
 
 		m_ElapsedTime += ElapsedTime;
 	}
@@ -583,7 +583,8 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 CHeightMapTerrain::~CHeightMapTerrain()
 {
-	ReleaseShaderVariables();
+	ReleaseShaderVariables(); 
+	if(m_pTerrainShader) m_pTerrainShader->ReleaseShaderVariables();
 
 	if (m_ppMeshes)
 	{
@@ -595,14 +596,28 @@ CHeightMapTerrain::~CHeightMapTerrain()
 		delete[] m_ppMeshes;
 	}
 
-	if (m_pTerrainShader) delete m_pTerrainShader;
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+			if (m_ppMaterials[i]) delete m_ppMaterials[i];
+		delete[] m_ppMaterials;
+	}
 
+	if (m_pTerrainShader) delete m_pTerrainShader;
 	if (m_pHeightMapImage) delete m_pHeightMapImage;
 }
 
 void CHeightMapTerrain::ReleaseUploadBuffers()
 {
 	if (m_pTerrainShader) m_pTerrainShader->ReleaseUploadBuffers();
+
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+		{
+			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
+		}
+	}
 
 	CGameObject::ReleaseUploadBuffers();
 }
@@ -621,19 +636,18 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 {
 	m_nMeshes = 1;
 	m_ppMeshes = new CMesh*[m_nMeshes];
+
 	CSkyBoxMesh *pSkyBoxMesh = new CSkyBoxMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 2.0f);
 	m_ppMeshes[0] = pSkyBoxMesh;
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0);
-	//pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_0.dds", 0);
 	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
 
 	m_pSkyboxShader = new CSkyBoxShader();
 	m_pSkyboxShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	m_pSkyboxShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
 	m_pSkyboxShader->CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
 	m_pSkyboxShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pSkyBoxTexture, 8, false);
 
@@ -646,6 +660,38 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 CSkyBox::~CSkyBox()
 {
+	ReleaseShaderVariables();
+	if (m_pSkyboxShader) m_pSkyboxShader->ReleaseShaderVariables();
+
+	if (m_ppMeshes)
+	{
+		for (UINT j = 0; j < m_nMeshes; j++)
+			if (m_ppMeshes[j]) delete m_ppMeshes[j];
+
+		delete[] m_ppMeshes;
+	}
+
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+			if (m_ppMaterials[i]) delete m_ppMaterials[i];
+		delete[] m_ppMaterials;
+	}
+
+	if (m_pSkyboxShader) delete m_pSkyboxShader;
+}
+
+void CSkyBox::ReleaseUploadBuffers()
+{
+	if (m_pSkyboxShader) m_pSkyboxShader->ReleaseUploadBuffers();
+
+	if (m_ppMaterials)
+	{
+		for (UINT i = 0; i < m_nMaterials; i++)
+			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
+	}
+
+	CGameObject::ReleaseUploadBuffers();
 }
 
 void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances)

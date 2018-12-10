@@ -277,6 +277,8 @@ public:
 	CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual ~CSkyBox();
 
+	virtual void ReleaseUploadBuffers();
+
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL, UINT nInstances = 1);
 private:
 	CShader						*m_pSkyboxShader = NULL;

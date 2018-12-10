@@ -509,8 +509,7 @@ void CGameFramework::CreateDepthStencilView()
 	d3dDepthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	d3dDepthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, NULL, d3dDsvCPUDescriptorHandle);
-	//	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, &d3dDepthStencilViewDesc, d3dDsvCPUDescriptorHandle);
+	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, &d3dDepthStencilViewDesc/*NULL*/, d3dDsvCPUDescriptorHandle);
 }
 
 void CGameFramework::BuildObjects()

@@ -76,11 +76,7 @@ CPlayer::~CPlayer()
 		delete[] m_ppCubeMeshes;
 	}
 
-	if (m_pUserInterface)
-	{
-		m_pUserInterface->ReleaseShaderVariables();
-		delete m_pUserInterface;
-	}
+	if (m_pUserInterface) delete m_pUserInterface;
 
 	if (m_pShader) delete m_pShader;
 
@@ -97,6 +93,8 @@ void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 void CPlayer::ReleaseShaderVariables()
 {
 	if (m_pCamera) m_pCamera->ReleaseShaderVariables();
+
+	if (m_pUserInterface) m_pUserInterface->ReleaseShaderVariables();
 
 	if (m_pShader)
 	{

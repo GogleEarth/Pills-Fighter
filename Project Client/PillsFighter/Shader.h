@@ -244,9 +244,12 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayerHP = NULL;
 	CB_PLAYER_HP					*m_pcbMappedPlayerHP = NULL;
 
-	UINT		m_nUIRect = 0;
-	CUIRect		**m_pUIRect = NULL;
-	
+	UINT							m_nUIRect = 0;
+	CUIRect							**m_ppUIRects = NULL;
+
+	int								m_nTextures;
+	CTexture						**m_ppTextures = NULL;
+
 public:
 	void SetPlayerHP(int *pPlayerMaxHP, int *pPlayerHP) { m_pPlayerMaxHP = pPlayerMaxHP; m_pPlayerHP = pPlayerHP;}
 	int GetPlayerHP() { return *m_pPlayerHP; }

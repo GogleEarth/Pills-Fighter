@@ -753,9 +753,17 @@ CUserInterface::~CUserInterface()
 {
 	for (int i = 0; i < m_nUIRect; i++)
 	{
-		if (m_pUIRect[i])
-			delete m_pUIRect[i];
+		if (m_ppUIRects[i])
+			delete m_ppUIRects[i];
 	}
+
+	for (int i = 0; i < m_nTextures; i++)
+	{
+		if (m_ppTextures[i])
+			delete m_ppTextures[i];
+	}
+
+	if (m_pd3dPipelineStateHP) m_pd3dPipelineStateHP->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -849,11 +857,19 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 void CUserInterface::ReleaseUploadBuffers()
 {
-	if (m_pUIRect)
+	if (m_ppUIRects)
 	{
 		for (UINT i = 0; i < m_nUIRect; i++)
 		{
-			if (m_pUIRect[i]) m_pUIRect[i]->ReleaseUploadBuffers();
+			if (m_ppUIRects[i]) m_ppUIRects[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	if (m_ppTextures)
+	{
+		for (UINT i = 0; i < m_nTextures; i++)
+		{
+			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
 		}
 	}
 
@@ -905,38 +921,32 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nMaterials = 2;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
+	m_nTextures = 2;
+	m_ppTextures = new CTexture*[m_nTextures];
 
 	CreateSrvDescriptorHeaps(pd3dDevice, pd3dCommandList, 2);
 
-	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HUD.dds", 0);
+	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HUD.dds", 0);
 
-	m_ppMaterials[0] = new CMaterial();
-	m_ppMaterials[0]->SetTexture(pTextures);
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[0], 2, false);
 
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
+	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HP.dds", 0);
 
-	pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HP.dds", 0);
-
-	m_ppMaterials[1] = new CMaterial();
-	m_ppMaterials[1]->SetTexture(pTextures);
-
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, 2, false);
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[1], 2, false);
 
 	m_nUIRect = 2;
-	m_pUIRect = new CUIRect*[m_nUIRect];
+	m_ppUIRects = new CUIRect*[m_nUIRect];
 
 	// Base UI
 	XMFLOAT2 xmf2Center = CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
 	XMFLOAT2 xmf2Size = CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
-	m_pUIRect[0] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[0] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = CalculateCenter(-0.375000, -0.332812, 0.257778, -0.257778);
 	xmf2Size = CalculateSize(-0.375000, -0.332812, 0.257778, -0.257778);
-	m_pUIRect[1] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[1] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -947,14 +957,14 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	UpdateShaderVariables(pd3dCommandList);
 
 	// Draw HP BAR
-	if (m_ppMaterials[1]) m_ppMaterials[1]->UpdateShaderVariables(pd3dCommandList); // Base UI
-	m_pUIRect[1]->Render(pd3dCommandList);
+	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList); // Base UI
+	m_ppUIRects[1]->Render(pd3dCommandList);
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Base UI
-	if (m_ppMaterials[0]) m_ppMaterials[0]->UpdateShaderVariables(pd3dCommandList); // Base UI
-	m_pUIRect[0]->Render(pd3dCommandList);
+	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList); // Base UI
+	m_ppUIRects[0]->Render(pd3dCommandList);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
