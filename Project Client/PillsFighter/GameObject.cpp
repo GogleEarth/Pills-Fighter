@@ -436,12 +436,12 @@ void Bullet::Animate(float ElapsedTime)
 {
 	if (m_ElapsedTime >= m_DurationTime)
 	{
-		DeleteObject();
+		//DeleteObject();
 	}
 	else
 	{
 		CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * ElapsedTime);
-		MoveForward(m_MovingSpeed * ElapsedTime);
+		//MoveForward(m_MovingSpeed * ElapsedTime);
 
 		m_ElapsedTime += ElapsedTime;
 	}

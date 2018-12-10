@@ -253,7 +253,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		retval = Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
 		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
 
-		std::cout << server_time.elapsedtime << std::endl;
+		//std::cout << server_time.elapsedtime << std::endl;
 
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
@@ -265,6 +265,12 @@ DWORD Framework::Update_Process(CScene* pScene)
 				updateobj.Object_Index = i;
 				updateobj.Object_Position = pScene->m_pObjects[i]->GetPosition();
 				update_msg_queue.push(updateobj);
+				if (pScene->m_pObjects[i]->IsDelete())
+				{
+					PKT_DELETE_OBJECT pkt_d;
+					pkt_d.Object_Index = i;
+					delete_msg_queue.push(pkt_d);
+				}
 			}
 		}
 		// 충돌 처리
@@ -362,7 +368,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			pkt_l = life_msg_queue.front();
 			life_msg_queue.pop();
-			std::cout << pkt_l.ID << " : " << pkt_l.HP << std::endl;
+			//std::cout << pkt_l.ID << " : " << pkt_l.HP << std::endl;
 
 			PKT_ID pid_l = PKT_ID_PLAYER_LIFE;
 			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
@@ -372,7 +378,9 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 		PKT_ID pid_cpl = PKT_ID_SEND_COMPLETE;
 		retval = Send_msg((char*)&pid_cpl, sizeof(PKT_ID), 0);
-		std::cout << "패킷 전송 완료\n";
+		//std::cout << "패킷 전송 완료\n";
+
+		std::cout << m_GameTimer->GetTimeElapsed() << std::endl;
 
 		SetEvent(Event);
 	}
@@ -399,7 +407,7 @@ DWORD Framework::client_process(SOCKET arg)
 	while (1)
 	{
 		char data_buf[sizeof(PKT_PLAYER_INFO)];
-		std::cout << "리시브 시작\n";
+		//std::cout << "리시브 시작\n";
 		retval = recvn(client_socket, data_buf, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)
 		{
@@ -407,7 +415,7 @@ DWORD Framework::client_process(SOCKET arg)
 			err_display("recv()");
 			break;
 		}
-		std::cout << retval << "바이트 받음\n";
+		//std::cout << retval << "바이트 받음\n";
 		PKT_PLAYER_INFO p_info;
 		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
 		//std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
@@ -450,8 +458,8 @@ void Framework::CheckCollision(CScene* pScene)
 				{
 					if (Bullet->GetOOBB(i).Intersects(pScene->m_pObjects[0]->GetOOBB(j)))
 					{
-						std::cout << "플1 : 플2총알 충돌" << std::endl;
-						std::cout << "0 : " << i << std::endl;
+						//std::cout << "플1 : 플2총알 충돌" << std::endl;
+						//std::cout << "0 : " << i << std::endl;
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						pktLF.ID = pScene->m_pObjects[0]->m_iId;
@@ -475,8 +483,8 @@ void Framework::CheckCollision(CScene* pScene)
 				{
 					if (Bullet->GetOOBB(i).Intersects(pScene->m_pObjects[1]->GetOOBB(j)))
 					{
-						std::cout << "플2 : 플1 총알 충돌" << std::endl;
-						std::cout << "1 : " << i << std::endl;
+						//std::cout << "플2 : 플1 총알 충돌" << std::endl;
+						//std::cout << "1 : " << i << std::endl;
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						pktLF.ID = pScene->m_pObjects[1]->m_iId;
@@ -504,8 +512,8 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							if (Bullet->GetOOBB(i).Intersects(pScene->m_pObstacles[k]->GetOOBB(j)))
 							{
-								std::cout << "장애물 : 플1 총알 충돌" << std::endl;
-								std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
+								//std::cout << "장애물 : 플1 총알 충돌" << std::endl;
+								//std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
 								pktDO.Object_Index = Bullet->index;
 								delete_msg_queue.push(pktDO);
 								Bullet->DeleteObject();
@@ -532,8 +540,8 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							if (Bullet->GetOOBB(i).Intersects(pScene->m_pObstacles[k]->GetOOBB(j)))
 							{
-								std::cout << "장애물 : 플2 총알 충돌" << std::endl;
-								std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
+								//std::cout << "장애물 : 플2 총알 충돌" << std::endl;
+								//std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
 								pktDO.Object_Index = Bullet->index;
 								delete_msg_queue.push(pktDO);
 								Bullet->DeleteObject();
