@@ -168,12 +168,15 @@ void CGameFramework::InitNetwork()
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
+	
+	for (int i = 0; i < 7; ++i)
+	{
+		// 다른 클라이언트 플레이어 정보
+		PKT_CREATE_OBJECT pktCreateObject;
+		retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
 
-	// 다른 클라이언트 플레이어 정보
-	PKT_CREATE_OBJECT pktCreateObject;
-	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
-
-	CreateObject(pktCreateObject);
+		CreateObject(pktCreateObject);
+	}
 
 	PKT_GAME_STATE pktGameState;
 	retval = recvn(m_sock, (char*)&pktGameState, sizeof(PKT_GAME_STATE), 0);

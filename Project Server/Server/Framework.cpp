@@ -115,32 +115,21 @@ void Framework::main_loop()
 				PKT_PLAYER_INFO pktdata;
 				PKT_CREATE_OBJECT anotherpktdata;
 				std::cout << count << std::endl;
-				if (count == 0)
-				{
-					pktdata.ID = clients[0].id;
-					pktdata.WorldMatrix = m_pScene->m_pObjects[0]->m_xmf4x4World;
-					std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
-					pktdata.IsShooting = false;
-					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
+				pktdata.ID = clients[count].id;
+				pktdata.WorldMatrix = m_pScene->m_pObjects[count]->m_xmf4x4World;
+				std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
+				pktdata.IsShooting = false;
+				retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
 
-					anotherpktdata.Object_Type = m_pScene->m_pObjects[1]->m_Object_Type;
-					anotherpktdata.Object_Index = 1;
-					anotherpktdata.WorldMatrix = m_pScene->m_pObjects[1]->m_xmf4x4World;
-					retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
-					std::cout << "count0 send\n";
-				}
-				else if (count == 1)
+				for (int i = 0; i < MAX_CLIENT; ++i)
 				{
-					pktdata.ID = clients[1].id;
-					pktdata.WorldMatrix = Objects[1]->m_xmf4x4World;
-					pktdata.IsShooting = false;
-					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
-
-					anotherpktdata.Object_Type = Objects[0]->m_Object_Type;
-					anotherpktdata.Object_Index = 0;
-					anotherpktdata.WorldMatrix = Objects[0]->m_xmf4x4World;
-					retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
-					std::cout << "count1 send\n";
+					if (i != count)
+					{
+						anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+						anotherpktdata.Object_Index = i;
+						anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+						retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+					}
 				}
 
 				Arg* arg = new Arg;
@@ -154,7 +143,7 @@ void Framework::main_loop()
 				count++;
 			}
 		}
-		else if(count == 2)
+		else if(count >= 2)
 		{
 			Update_Arg* arg = new Update_Arg;
 			arg->pthis = this;
@@ -243,7 +232,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 	while (true)
 	{
-		WaitForMultipleObjects(2, client_Event, TRUE, INFINITE);
+		WaitForMultipleObjects(MAX_CLIENT, client_Event, TRUE, INFINITE);
 		ResetEvent(Event);
 		
 		//서버의 시간을 모든 플레이어에게 보내줌
@@ -257,7 +246,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
-		for (int i = 2; i < MAX_NUM_OBJECT; ++i)
+		for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 		{
 			if (pScene->m_pObjects[i] != NULL)
 			{
@@ -398,7 +387,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		retval = Send_msg((char*)&pid_cpl, sizeof(PKT_ID), 0);
 		//std::cout << "패킷 전송 완료\n";
 
-		std::cout << m_GameTimer->GetTimeElapsed() << std::endl;
+		//std::cout << m_GameTimer->GetTimeElapsed() << std::endl;
 
 		SetEvent(Event);
 	}

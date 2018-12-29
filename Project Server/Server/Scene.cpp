@@ -34,17 +34,22 @@ void CScene::BuildObjects()
 	std::cout << m_ppObstacleMesh[0]->GetCenter().x << ", " << m_ppObstacleMesh[0]->GetCenter().y << ", " << m_ppObstacleMesh[0]->GetCenter().z << std::endl;
 	std::cout << obstacleextend.x << ", " << obstacleextend.y << ", " << obstacleextend.z << std::endl;
 
-	m_pObjects[0] = new CGameObject();
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		m_pObjects[i] = new CGameObject();
+		m_pObjects[i]->m_Object_Type = OBJECT_TYPE_PLAYER;
+		m_pObjects[i]->m_iId = i;
+		m_pObjects[i]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
+	}
 	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
-	m_pObjects[0]->m_Object_Type = OBJECT_TYPE_PLAYER;
-	m_pObjects[0]->m_iId = 0;
-	m_pObjects[0]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
-
-	m_pObjects[1] = new CGameObject();
 	m_pObjects[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f };
-	m_pObjects[1]->m_Object_Type = OBJECT_TYPE_PLAYER;
-	m_pObjects[1]->m_iId = 1;
-	m_pObjects[1]->SetMesh(ppMesh, ppCubeMesh, nMeshes);
+	m_pObjects[2]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f };
+	m_pObjects[3]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f };
+	m_pObjects[4]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f };
+	m_pObjects[5]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f };
+	m_pObjects[6]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f };
+	m_pObjects[7]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f };
+
 
 	m_pObstacles[0] = new CGameObject();
 	m_pObstacles[0]->SetPrepareRotate(0, 0, 0);
