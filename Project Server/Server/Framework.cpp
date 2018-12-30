@@ -20,6 +20,14 @@ int Framework::Build()
 
 	Event = CreateEvent(NULL, TRUE, FALSE, NULL);
 	
+	std::cout << "입장 가능한 플레이어수(1~8) : ";
+	std::cin >> playernum;
+
+	if (playernum <= 0)
+		playernum = 1;
+	else if (playernum > 8)
+		playernum = 8;
+
 	m_pScene = new CScene();
 	m_pScene->BuildObjects();
 	m_GameTimer = new CGameTimer();
@@ -52,7 +60,7 @@ int Framework::Build()
 
 void Framework::Release()
 {
-	WaitForMultipleObjects(2, thread, true, INFINITE);
+	WaitForMultipleObjects(playernum, thread, true, INFINITE);
 
 	// CloseHandle()
 	for (int i = 0; i < MAX_CLIENT; ++i)
@@ -76,7 +84,18 @@ void Framework::main_loop()
 
 	while (true)
 	{
-		if (count < MAX_CLIENT && count != -1)
+		if (count >= playernum)
+		{
+			Update_Arg* arg = new Update_Arg;
+			arg->pthis = this;
+			arg->pScene = m_pScene;
+
+			update_thread = CreateThread(
+				NULL, 0, Update,
+				(LPVOID)arg, 0, NULL);
+			count = -1;
+		}
+		if (count < playernum && count != -1)
 		{
 			SOCKET client_sock;
 			SOCKADDR_IN clientaddr;
@@ -142,17 +161,6 @@ void Framework::main_loop()
 					(LPVOID)arg, 0, NULL);
 				count++;
 			}
-		}
-		else if(count >= 2)
-		{
-			Update_Arg* arg = new Update_Arg;
-			arg->pthis = this;
-			arg->pScene = m_pScene;
-		
-			update_thread = CreateThread(
-				NULL, 0, Update,
-				(LPVOID)arg, 0, NULL);
-			count = -1;
 		}
 	}
 }
@@ -232,7 +240,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 	while (true)
 	{
-		WaitForMultipleObjects(MAX_CLIENT, client_Event, TRUE, INFINITE);
+		WaitForMultipleObjects(playernum, client_Event, TRUE, INFINITE);
 		ResetEvent(Event);
 		
 		//서버의 시간을 모든 플레이어에게 보내줌
@@ -246,7 +254,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
-		for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
+		for (int i = playernum; i < MAX_NUM_OBJECT; ++i)
 		{
 			if (pScene->m_pObjects[i] != NULL)
 			{

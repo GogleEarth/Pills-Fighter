@@ -31,6 +31,7 @@ class Framework
 	CMesh BulletMesh;
 	CMesh HangarMesh;
 	CGameTimer *m_GameTimer;
+	int playernum;
 
 public:
 	CScene* m_pScene;
