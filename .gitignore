@@ -9,3 +9,7 @@
 *.suo
 *.cso
 *.res
+*.log
+*.idb
+*.log
+*.ipch
