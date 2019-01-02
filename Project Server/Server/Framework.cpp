@@ -20,13 +20,15 @@ int Framework::Build()
 
 	Event = CreateEvent(NULL, TRUE, FALSE, NULL);
 	
-	std::cout << "입장 가능한 플레이어수(1~8) : ";
-	std::cin >> playernum;
+	//std::cout << "입장 가능한 플레이어수(1~8) : ";
+	//std::cin >> playernum;
 
-	if (playernum <= 0)
-		playernum = 1;
-	else if (playernum > 8)
-		playernum = 8;
+	//if (playernum <= 0)
+	//	playernum = 1;
+	//else if (playernum > 8)
+	//	playernum = 8;
+
+	game_start = false;
 
 	m_pScene = new CScene();
 	m_pScene->BuildObjects();
@@ -82,20 +84,17 @@ void Framework::main_loop()
 	char buf[sizeof(int)];
 	int retval;
 
+	Update_Arg* arg = new Update_Arg;
+	arg->pthis = this;
+	arg->pScene = m_pScene;
+
+	update_thread = CreateThread(
+		NULL, 0, Update,
+		(LPVOID)arg, 0, NULL);
+
 	while (true)
 	{
-		if (count >= playernum)
-		{
-			Update_Arg* arg = new Update_Arg;
-			arg->pthis = this;
-			arg->pScene = m_pScene;
-
-			update_thread = CreateThread(
-				NULL, 0, Update,
-				(LPVOID)arg, 0, NULL);
-			count = -1;
-		}
-		if (count < playernum && count != -1)
+		if (count < MAX_CLIENT && count != -1)
 		{
 			SOCKET client_sock;
 			SOCKADDR_IN clientaddr;
@@ -232,6 +231,18 @@ DWORD __stdcall Framework::Update(LPVOID arg)
 
 DWORD Framework::Update_Process(CScene* pScene)
 {
+	while (true)
+	{
+		std::cout << "게임시작 대기중\n";
+		if (game_start)
+		{
+			playernum = count;
+			count = -1;
+			std::cout << "게임 시작!\n";
+			break;
+		}
+	}
+
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
@@ -254,7 +265,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
-		for (int i = playernum; i < MAX_NUM_OBJECT; ++i)
+		for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 		{
 			if (pScene->m_pObjects[i] != NULL)
 			{
@@ -412,35 +423,40 @@ DWORD Framework::client_process(SOCKET arg)
 {
 	SOCKET client_socket = arg;
 	int retval;
-	SOCKADDR_IN clientaddr;
-	int addrlen;
 
-	// 클라이언트 정보 얻기
-	addrlen = sizeof(clientaddr);
-	getpeername(client_socket, (SOCKADDR*)&clientaddr, &addrlen);
+	PKT_ID iPktID;
+	int nPktSize = 0;
 
-	while (1)
+	char* buf;
+
+	while (true)
 	{
-		char data_buf[sizeof(PKT_PLAYER_INFO)];
-		//std::cout << "리시브 시작\n";
-		retval = recvn(client_socket, data_buf, sizeof(PKT_PLAYER_INFO), 0);
-		if (retval == SOCKET_ERROR)
+		// 데이터 받기 # 패킷 식별 ID
+		retval = recvn(client_socket, (char*)&iPktID, sizeof(PKT_ID), 0);
+		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
+
+		// 데이터 받기 # 패킷 구조체 - SIZE 결정
+		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
+		else if (iPktID == PKT_ID_GAME_STATE) game_start = true;// 오브젝트 업데이트 정보
+		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
+
+		// 데이터 받기 # 패킷 구조체 - 결정
+
+		if (iPktID != PKT_ID_GAME_STATE)
 		{
-			std::cout << "thread ERROR : ";
-			err_display("recv()");
-			break;
-		}
-		//std::cout << retval << "바이트 받음\n";
-		PKT_PLAYER_INFO p_info;
-		memcpy(&p_info, &data_buf, sizeof(PKT_PLAYER_INFO));
-		//std::cout << p_info.ID << " : " << p_info.WorldMatrix._41 << ", " << p_info.WorldMatrix._42 << ", " << p_info.WorldMatrix._43 << std::endl;
-		// 받은 데이터 출력
+			//PKT_PLAYER_INFO p_info;
+			buf = new char[nPktSize];
+			retval = recvn(client_socket, buf, nPktSize, 0);
+			if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
+			
+			//memcpy(&p_info, &buf, sizeof(PKT_PLAYER_INFO));
+			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting });
 
-		msg_queue.push(PKT_PLAYER_INFO{ p_info.ID, p_info.WorldMatrix, p_info.IsShooting });	
-
-		SetEvent(client_Event[p_info.ID]);
-		WaitForSingleObject(Event, INFINITE);
+			SetEvent(client_Event[((PKT_PLAYER_INFO*)buf)->ID]);
+			WaitForSingleObject(Event, INFINITE);
+		}	
 	}
+
 	return 0;
 }
 

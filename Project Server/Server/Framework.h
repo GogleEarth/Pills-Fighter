@@ -32,6 +32,7 @@ class Framework
 	CMesh HangarMesh;
 	CGameTimer *m_GameTimer;
 	int playernum;
+	bool game_start = false;
 
 public:
 	CScene* m_pScene;

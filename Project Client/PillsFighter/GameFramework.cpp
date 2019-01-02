@@ -178,6 +178,24 @@ void CGameFramework::InitNetwork()
 		CreateObject(pktCreateObject);
 	}
 
+	if (m_Client_Info == 0)
+	{
+		while (true)
+		{
+			std::string gamestart;
+			std::cout << "게임시작하려면 'start'를 입력 : ";
+			std::cin >> gamestart;
+			if (gamestart == "start")
+			{
+				PKT_ID pid = PKT_ID_GAME_STATE;
+				retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
+				if (retval == SOCKET_ERROR)
+					std::cout << "소켓에러\n";
+				break;
+			}
+		}
+	}
+
 	PKT_GAME_STATE pktGameState;
 	retval = recvn(m_sock, (char*)&pktGameState, sizeof(PKT_GAME_STATE), 0);
 
@@ -782,6 +800,8 @@ void CGameFramework::FrameAdvance()
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
 		if (m_LButtonDown) pktPlayerInfo.IsShooting = 1;
 		else pktPlayerInfo.IsShooting = 0;
+		PKT_ID pid = PKT_ID_PLAYER_INFO;
+		retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
 
 		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)	err_display("send");
