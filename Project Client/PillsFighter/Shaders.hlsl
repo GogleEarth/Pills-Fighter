@@ -1,7 +1,16 @@
+struct MATERIAL
+{
+	float4				m_cAmbient;
+	float4				m_cDiffuse;
+	float4				m_cSpecular; //a = power
+	float4				m_cEmissive;
+};
+
 cbuffer cbGameObjectInfo : register(b0)
 {
 	matrix		gmtxGameObject : packoffset(c0);
-	uint		gnMaterial : packoffset(c4);
+	MATERIAL	gMaterial : packoffset(c4);
+	uint		gnTexturesMask : packoffset(c8);
 };
 
 cbuffer cbCameraInfo : register(b1)
@@ -11,12 +20,29 @@ cbuffer cbCameraInfo : register(b1)
 	float3		gvCameraPosition : packoffset(c8);
 };
 
+cbuffer cbUIInfo : register(b4)
+{
+	int		giPlayerMaxHP;// : packoffset(c0.x);
+	int		giPlayerHP; //: packoffset(c0.y);
+};
+
+cbuffer cbTextureSprite : register(b5)
+{
+	float4	gfTextureSpriteInfo : packoffset(c0);
+};
+
 #include "Light.hlsl"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-Texture2D gtxtTexture : register(t1);
+
+Texture2D gtxtTexture[3] : register(t1); //	t1 ~ t3
+Texture2D gtxtSpecularTexture : register(t4);
+Texture2D gtxtNormalTexture : register(t5);
+TextureCube gtxtSkyCubeTexture : register(t6);
+
 SamplerState gssWrap : register(s0);
+SamplerState gssClamp : register(s1);
 
 struct VS_TEXTURED_INPUT
 {
@@ -47,10 +73,11 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 
 float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.Sample(gssWrap, input.uv);
+	// 임시 텍스처 배열 인덱스는 0
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	input.normalW = normalize(input.normalW);
-	float4 cIllumination = Lighting(input.positionW, input.normalW, gnMaterial);
+	float4 cIllumination = Lighting(input.positionW, input.normalW, gMaterial);
 
 	return(cColor * cIllumination);
 }
@@ -79,60 +106,6 @@ VS_WIRE_OUTPUT VSWire(VS_WIRE_INPUT input)
 float4 PSWire(VS_WIRE_OUTPUT input) : SV_TARGET
 {
 	return(float4(1.0f, 0.0f, 0.0f, 1.0f));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-struct INSTANCEDGAMEOBJECTINFO
-{
-	matrix mtxGameObject;
-	uint   nMaterial;
-};
-
-StructuredBuffer<INSTANCEDGAMEOBJECTINFO> gGameObjectInfo : register(t0);
-
-struct VS_INSTANCED_TEXTURED_OUTPUT
-{
-	float4 position : SV_POSITION;
-	float3 positionW : POSITION;
-	float3 normalW : NORMAL;
-	float2 uv : TEXCOORD;
-	uint instance : INSTANCE;
-};
-
-VS_INSTANCED_TEXTURED_OUTPUT VSInstancingTextured(VS_TEXTURED_INPUT input, uint nInstanceID : SV_InstanceID)
-{
-	VS_INSTANCED_TEXTURED_OUTPUT output;
-
-	output.normalW = mul(input.normal, (float3x3)gGameObjectInfo[nInstanceID].mtxGameObject);
-	output.positionW = (float3)mul(float4(input.position, 1.0f), gGameObjectInfo[nInstanceID].mtxGameObject);
-	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
-	output.uv = input.uv;
-	output.instance = nInstanceID;
-
-	return(output);
-}
-
-float4 PSInstancingTextured(VS_INSTANCED_TEXTURED_OUTPUT input) : SV_TARGET
-{
-	float4 cColor = gtxtTexture.Sample(gssWrap, input.uv);
-
-	input.normalW = normalize(input.normalW);
-	float4 cIllumination = Lighting(input.positionW, input.normalW, gGameObjectInfo[input.instance].nMaterial);
-
-	return(cColor* cIllumination);
-}
-
-////////////
-
-VS_WIRE_OUTPUT VSInstancingDiffused(VS_WIRE_INPUT input, uint nInstanceID : SV_InstanceID)
-{
-	VS_WIRE_OUTPUT output;
-
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gGameObjectInfo[nInstanceID].mtxGameObject), gmtxView), gmtxProjection);
-
-	return(output);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,12 +170,6 @@ void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tria
 	}
 }
 
-cbuffer cbUIInfo : register(b4)
-{
-	int		giPlayerMaxHP;// : packoffset(c0.x);
-	int		giPlayerHP; //: packoffset(c0.y);
-};
-
 [maxvertexcount(4)]
 void GS_UI_HP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
 {
@@ -237,17 +204,13 @@ void GS_UI_HP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout T
 
 float4 PS_UI(GS_OUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.Sample(gssWrap, input.uv);
-	if (cColor.a < 0.3) discard;
+	// 임시 텍스처 배열 인덱스는 0
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	return(cColor);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////
-
-
-Texture2D gtxtTerrainBaseTexture : register(t2);
 
 struct VS_TERRAIN_INPUT
 {
@@ -281,7 +244,8 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
 
 float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 {
-	float4 cBaseTexColor = gtxtTerrainBaseTexture.Sample(gssWrap, input.uv0);
+	// 지형 텍스처 배열 인덱스 0 = Base, 1 = Detail
+	float4 cBaseTexColor = gtxtTexture[0].Sample(gssWrap, input.uv0);
 
 	float4 cColor = input.color * saturate(cBaseTexColor * 0.5f);
 
@@ -311,9 +275,6 @@ VS_SKYBOX_CUBEMAP_OUTPUT VSSkyBox(VS_SKYBOX_CUBEMAP_INPUT input)
 	return(output);
 }
 
-TextureCube gtxtSkyCubeTexture : register(t3);
-SamplerState gssClamp : register(s1);
-
 float4 PSSkyBox(VS_SKYBOX_CUBEMAP_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtSkyCubeTexture.Sample(gssClamp, input.positionL);
@@ -336,11 +297,6 @@ struct VS_SPRITE_OUTPUT
 	float2 uv : TEXCOORD;
 };
 
-cbuffer cbTextureSprite : register(b5)
-{
-	float4	gfTextureSpriteInfo : packoffset(c0);
-};
-
 VS_SPRITE_OUTPUT VSSprite(VS_SPRITE_INPUT input)
 {
 	VS_SPRITE_OUTPUT output;
@@ -356,7 +312,8 @@ VS_SPRITE_OUTPUT VSSprite(VS_SPRITE_INPUT input)
 
 float4 PSSprite(VS_SPRITE_OUTPUT input, uint primitiveID : SV_PrimitiveID) : SV_TARGET
 {
-	float4 cColor = gtxtTexture.SampleLevel(gssWrap, input.uv, 0);
+	// 임시 텍스처 배열 인덱스는 0
+	float4 cColor = gtxtTexture[0].SampleLevel(gssWrap, input.uv, 0);
 
 	return(cColor);
 }

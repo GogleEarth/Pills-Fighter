@@ -14,13 +14,7 @@
 
 class CShader;
 class CUserInterface;
-class CNonFixedObjectsShader;
-
-struct CB_PLAYER_INFO
-{
-	XMFLOAT4X4					m_xmf4x4World;
-	UINT						m_nMaterial;
-};
+class CObjectsShader;
 
 class CPlayer : public CGameObject
 {
@@ -55,7 +49,6 @@ public:
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void ReleaseUploadBuffers();
 
@@ -65,15 +58,14 @@ public:
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 private:
-	CShader *m_pShader = NULL;
-
-	CNonFixedObjectsShader *m_pBulletShader = NULL;
+	CObjectsShader *m_pBulletShader = NULL;
 	bool m_Shotable = TRUE;
 	float m_ShotTime;
 	BOOL m_bIsShooting = FALSE;
+
 public:
 	BOOL IsShoothin(void) { return m_bIsShooting; }
-	void SetBullet(CShader *Bullet) { m_pBulletShader = (CNonFixedObjectsShader*)Bullet; }
+	void SetBullet(CShader *Bullet) { m_pBulletShader = (CObjectsShader*)Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void CheckElapsedTime(float ElapsedTime); // 시간이 지남에 따라 사용되야할 변수를 체크하는 함수

@@ -14,9 +14,10 @@ protected:
 	XMFLOAT4						*m_pxmf4Colors = NULL;
 	XMFLOAT3						*m_pxmf3Normals = NULL;
 	XMFLOAT3						*m_pxmf3Tangents = NULL;
-	XMFLOAT3						*m_pxmf3BiTangents = NULL;
+	XMFLOAT3						*m_pxmf3Binormals = NULL;
 	XMFLOAT2						*m_pxmf2TextureCoords0 = NULL;
 	XMFLOAT2						*m_pxmf2TextureCoords1 = NULL;
+	int								*m_pnMaterialIndices = NULL;
 
 	ID3D12Resource					*m_pd3dPositionBuffer = NULL;
 	ID3D12Resource					*m_pd3dPositionUploadBuffer = NULL;
@@ -34,9 +35,9 @@ protected:
 	ID3D12Resource					*m_pd3dTangentUploadBuffer = NULL;
 	D3D12_VERTEX_BUFFER_VIEW		m_d3dTangentBufferView;
 
-	ID3D12Resource					*m_pd3dBiTangentBuffer = NULL;
-	ID3D12Resource					*m_pd3dBiTangentUploadBuffer = NULL;
-	D3D12_VERTEX_BUFFER_VIEW		m_d3dBiTangentBufferView;
+	ID3D12Resource					*m_pd3dBinormalBuffer = NULL;
+	ID3D12Resource					*m_pd3dBinormalUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dBinormalBufferView;
 
 	ID3D12Resource					*m_pd3dTextureCoord0Buffer = NULL;
 	ID3D12Resource					*m_pd3dTextureCoord0UploadBuffer = NULL;
@@ -45,6 +46,10 @@ protected:
 	ID3D12Resource					*m_pd3dTextureCoord1Buffer = NULL;
 	ID3D12Resource					*m_pd3dTextureCoord1UploadBuffer = NULL;
 	D3D12_VERTEX_BUFFER_VIEW		m_d3dTextureCoord1BufferView;
+
+	ID3D12Resource					*m_pd3dMaterialIndexBuffer = NULL;
+	ID3D12Resource					*m_pd3dMaterialIndexUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dMaterialIndexBufferView;
 
 	UINT							m_nIndices = 0;
 	UINT							*m_pnIndices = NULL;
@@ -59,7 +64,7 @@ public:
 	virtual ~CMesh();
 
 	virtual void ReleaseUploadBuffers();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	BoundingOrientedBox m_xmOOBB;
 	void SetOOBB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents, XMFLOAT4& xmOrientation) { m_xmOOBB = BoundingOrientedBox(xmCenter, xmExtents, xmOrientation); }
@@ -75,7 +80,7 @@ public:
 	CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, float fWidth = 2.0f, float fHeight = 2.0f, float fDepth = 2.0f);
 	virtual ~CCubeMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,10 +88,12 @@ public:
 class CStandardMesh : public CMesh
 {
 public:
+	CStandardMesh() {}
 	CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
 	virtual ~CStandardMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	void LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);//, FbxMesh *pfbxMesh);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +114,7 @@ public:
 	virtual ~CUIRect();
 
 	void ReleaseUploadBuffers();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 
@@ -161,7 +168,7 @@ public:
 	virtual XMFLOAT4 OnGetColor(int x, int z, void *pContext);
 
 	virtual void ReleaseUploadBuffers();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +179,7 @@ public:
 	CSkyBoxMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 20.0f, float fHeight = 20.0f, float fDepth = 20.0f);
 	virtual ~CSkyBoxMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,5 +191,5 @@ public:
 	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight);
 	virtual ~CRectMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 };

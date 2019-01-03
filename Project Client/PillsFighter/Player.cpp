@@ -7,45 +7,31 @@
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
-	//플레이어의 카메라를 3인칭 카메라로 변경(생성)한다.
-	m_pCamera = SetCamera(0.0f);
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	// 플레이어 쉐이더 생성
-	m_pShader = new CShader();
-	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	
-	UINT nTextures;
-	CTexture **ppTextures;
-
-	CMesh **ppMeshes;
-	CCubeMesh **ppCubeMeshes;
-	UINT nMeshes;
-
-	::CreateRobotObjectMesh(pd3dDevice, pd3dCommandList, ppMeshes, ppCubeMeshes, nMeshes);
-	::CreateRobotObjectTexture(pd3dDevice, pd3dCommandList, ppTextures, nTextures);
-	::CreateRobotObjectShader(pd3dDevice, pd3dCommandList, ppTextures, m_pShader);
-
-	SetMesh(ppMeshes, ppCubeMeshes, nMeshes);
-
-	UINT nMaterials = nTextures;
-	CMaterial **ppMaterials = new CMaterial*[nMaterials];
-
-	for (UINT i = 0; i < nTextures; i++)
-	{
-		ppMaterials[i] = new CMaterial();
-		ppMaterials[i]->SetTexture(ppTextures[i]);
-		ppMaterials[i]->m_nReflection = 0;
-	}
-
-	m_pShader->SetMaterial(ppMaterials, nMaterials);
-	SetMaterial(ppMaterials, nMaterials);
-
-	//플레이어의 위치를 설정한다. 
+	m_ShotTime = 0;
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
 
-	m_ShotTime = 0;
+	m_pCamera = SetCamera(0.0f);
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
+	XMFLOAT3 Extents = m_pMesh->GetExtents();
+	XMFLOAT3 Center = m_pMesh->GetCenter();
+	m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
+	SetMesh(m_pMesh, m_pCubeMesh);
+
+	CTexture *pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", 0);
+
+	CMaterial **ppMaterials = new CMaterial*[1];
+	ppMaterials[0] = new CMaterial(1);
+	ppMaterials[0]->SetTexture(pTextures, 0);
+
+	SetMaterial(ppMaterials, 1);
+
+	m_pShader = new CShader();
+	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pShader->CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
+	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -64,21 +50,7 @@ CPlayer::~CPlayer()
 {
 	ReleaseShaderVariables();
 
-	if (m_ppMeshes)
-	{
-		for (UINT j = 0; j < m_nMeshes; j++)
-		{
-			if (m_ppMeshes[j]) delete m_ppMeshes[j];
-			if (m_ppCubeMeshes[j]) delete m_ppCubeMeshes[j];
-		}
-
-		delete[] m_ppMeshes;
-		delete[] m_ppCubeMeshes;
-	}
-
 	if (m_pUserInterface) delete m_pUserInterface;
-
-	if (m_pShader) delete m_pShader;
 
 	if (m_pCamera) delete m_pCamera;
 }
@@ -96,23 +68,11 @@ void CPlayer::ReleaseShaderVariables()
 
 	if (m_pUserInterface) m_pUserInterface->ReleaseShaderVariables();
 
-	if (m_pShader)
-	{
-		m_pShader->ReleaseShaderVariables();
-	}
-
 	CGameObject::ReleaseShaderVariables();
-}
-
-void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	CGameObject::UpdateShaderVariables(pd3dCommandList);
 }
 
 void CPlayer::ReleaseUploadBuffers()
 {
-	if (m_pShader) m_pShader->ReleaseUploadBuffers();
-
 	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
 
 	CGameObject::ReleaseUploadBuffers();
@@ -231,8 +191,9 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 {
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
 
-	//플레이어 객체를 렌더링한다. 
-	m_pShader->OnPrepareRender(pd3dCommandList);
+	//플레이어 객체를 렌더링한다.	
+	if(m_pShader)
+		m_pShader->OnPrepareRender(pd3dCommandList);
 
 	CGameObject::Render(pd3dCommandList, pCamera);
 }
@@ -240,7 +201,8 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	//플레이어 충돌박스를 렌더링한다.
-	m_pShader->OnPrepareRenderWire(pd3dCommandList);
+	if(m_pShader)
+		m_pShader->OnPrepareRenderWire(pd3dCommandList);
 
 	CGameObject::RenderWire(pd3dCommandList, pCamera);
 }
@@ -249,21 +211,24 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 {
 	if (m_Shotable)
 	{
-		//Bullet *pBullet = NULL;
+#ifndef ON_NETWORKING
+		Bullet *pBullet = NULL;
 
-		//pBullet = new Bullet();
+		pBullet = new Bullet();
 
-		//XMFLOAT3 xmfPosition = GetPosition();
-		//xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
-		//pBullet->SetPosition(xmfPosition);
-		////pBullet->SetRight(m_pCamera->GetRightVector());
-		////pBullet->SetUp(m_pCamera->GetUpVector());
-		////pBullet->SetLook(m_pCamera->GetLookVector());
-		//pBullet->SetRight(m_xmf3Right);
-		//pBullet->SetUp(m_xmf3Up);
-		//pBullet->SetLook(m_xmf3Look);
+		XMFLOAT3 xmfPosition = GetPosition();
+		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
+		pBullet->SetPosition(xmfPosition);
+		//pBullet->SetRight(m_pCamera->GetRightVector());
+		//pBullet->SetUp(m_pCamera->GetUpVector());
+		//pBullet->SetLook(m_pCamera->GetLookVector());
+		pBullet->SetRight(m_xmf3Right);
+		pBullet->SetUp(m_xmf3Up);
+		pBullet->SetLook(m_xmf3Look);
+		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
-		//m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
+		m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
+#endif
 
 		m_Shotable = FALSE;
 	}

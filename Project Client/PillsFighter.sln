@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28010.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PillFighter", "PillsFighter\PillsFighter.vcxproj", "{1331E2CD-9C84-4267-9690-F116C1C82A3D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj", "{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{1331E2CD-9C84-4267-9690-F116C1C82A3D}.Release|x64.Build.0 = Release|x64
 		{1331E2CD-9C84-4267-9690-F116C1C82A3D}.Release|x86.ActiveCfg = Release|Win32
 		{1331E2CD-9C84-4267-9690-F116C1C82A3D}.Release|x86.Build.0 = Release|Win32
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Debug|x64.ActiveCfg = Debug|x64
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Debug|x64.Build.0 = Debug|x64
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Debug|x86.ActiveCfg = Debug|Win32
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Debug|x86.Build.0 = Debug|Win32
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Release|x64.ActiveCfg = Release|x64
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Release|x64.Build.0 = Release|x64
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Release|x86.ActiveCfg = Release|Win32
+		{0F9DD40B-2F77-4E65-884B-0D1CF558AEFE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

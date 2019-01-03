@@ -12,18 +12,20 @@ CMesh::~CMesh()
 	if (m_pd3dColorBuffer) m_pd3dColorBuffer->Release();
 	if (m_pd3dNormalBuffer) m_pd3dNormalBuffer->Release();
 	if (m_pd3dTangentBuffer) m_pd3dTangentBuffer->Release();
-	if (m_pd3dBiTangentBuffer) m_pd3dBiTangentBuffer->Release();
+	if (m_pd3dBinormalBuffer) m_pd3dBinormalBuffer->Release();
 	if (m_pd3dTextureCoord0Buffer) m_pd3dTextureCoord0Buffer->Release();
 	if (m_pd3dTextureCoord1Buffer) m_pd3dTextureCoord1Buffer->Release();
+	if (m_pd3dMaterialIndexBuffer) m_pd3dMaterialIndexBuffer->Release();
 	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
 
 	if (m_pxmf3Positions) delete[] m_pxmf3Positions;
 	if (m_pxmf4Colors) delete[] m_pxmf4Colors;
 	if (m_pxmf3Normals) delete[] m_pxmf3Normals;
 	if (m_pxmf3Tangents) delete[] m_pxmf3Tangents;
-	if (m_pxmf3BiTangents) delete[] m_pxmf3BiTangents;
+	if (m_pxmf3Binormals) delete[] m_pxmf3Binormals;
 	if (m_pxmf2TextureCoords0) delete[] m_pxmf2TextureCoords0;
 	if (m_pxmf2TextureCoords1) delete[] m_pxmf2TextureCoords1;
+	if (m_pnMaterialIndices) delete[] m_pnMaterialIndices;
 	if (m_pnIndices) delete[] m_pnIndices;
 }
 
@@ -41,8 +43,8 @@ void CMesh::ReleaseUploadBuffers()
 	if (m_pd3dTangentUploadBuffer) m_pd3dTangentUploadBuffer->Release();
 	m_pd3dTangentUploadBuffer = NULL;
 
-	if (m_pd3dBiTangentUploadBuffer) m_pd3dBiTangentUploadBuffer->Release();
-	m_pd3dBiTangentUploadBuffer = NULL;
+	if (m_pd3dBinormalUploadBuffer) m_pd3dBinormalUploadBuffer->Release();
+	m_pd3dBinormalUploadBuffer = NULL;
 
 	if (m_pd3dTextureCoord0UploadBuffer) m_pd3dTextureCoord0UploadBuffer->Release();
 	m_pd3dTextureCoord0UploadBuffer = NULL;
@@ -50,17 +52,20 @@ void CMesh::ReleaseUploadBuffers()
 	if (m_pd3dTextureCoord1UploadBuffer) m_pd3dTextureCoord1UploadBuffer->Release();
 	m_pd3dTextureCoord1UploadBuffer = NULL;
 
+	if (m_pd3dMaterialIndexUploadBuffer) m_pd3dMaterialIndexUploadBuffer->Release();
+	m_pd3dMaterialIndexUploadBuffer = NULL;
+
 	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
 	m_pd3dIndexUploadBuffer = NULL;
 };
 
-void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pd3dIndexBuffer)
 	{
 		pd3dCommandList->IASetIndexBuffer(&m_d3dIndexBufferView);
 
-		pd3dCommandList->DrawIndexedInstanced(m_nIndices, nInstances, 0, 0, 0);
+		pd3dCommandList->DrawIndexedInstanced(m_nIndices, 1, 0, 0, 0);
 	}
 	else
 	{
@@ -122,13 +127,13 @@ CCubeMesh::~CCubeMesh()
 {
 }
 
-void CCubeMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+void CCubeMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
 
-	CMesh::Render(pd3dCommandList, nInstances);
+	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,20 +165,20 @@ void FindXYZ(XMFLOAT3* pPositions, UINT nVertices, XMFLOAT3& Center, XMFLOAT3& E
 
 CStandardMesh::CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName) : CMesh()
 {
-	// FBXExporter 생성
-	FBXExporter* myExporter = new FBXExporter();
-	myExporter->Initialize();
+	FBXExporter *pFbxExporter = new FBXExporter();
+	pFbxExporter->Initialize();
+	pFbxExporter->LoadScene(pstrFileName);
+	pFbxExporter->ExportFBX();
 
-	// FBX메쉬파일로드
-	myExporter->LoadScene(pstrFileName);
-	myExporter->ExportFBX(&m_nVertices, &m_nIndices); // 정점 및 인덱스 갯수 불러오기
+	m_nVertices = pFbxExporter->GetVertices();
+	m_nIndices = pFbxExporter->GetIndices();
 
 	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
 	m_pxmf3Normals = new XMFLOAT3[m_nVertices];
 	m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
 	m_pnIndices = new UINT[m_nIndices];
 
-	myExporter->WriteMeshToStream(m_pxmf3Positions, m_pxmf3Normals, m_pxmf2TextureCoords0, m_pnIndices);
+	pFbxExporter->WriteMeshToStream(m_pxmf3Positions, m_pxmf3Normals, m_pxmf2TextureCoords0, m_pnIndices);
 
 	// 정점 버퍼 생성( 위치 )
 	m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Positions, sizeof(XMFLOAT3) * m_nVertices,
@@ -215,15 +220,261 @@ CStandardMesh::CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 CStandardMesh::~CStandardMesh()
 {
 }
+/*
+void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxMesh *pfbxMesh)
+{
 
-void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+	int nPolygon = pfbxMesh->GetPolygonCount();
+	int nVertices = nPolygon * 3;
+
+	m_nVertices = nVertices;
+	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
+
+	FbxGeometryElementNormal *pFbxGeoElemNorm = pfbxMesh->GetElementNormal();
+	if(pFbxGeoElemNorm)
+		m_pxmf3Normals = new XMFLOAT3[m_nVertices];
+
+	FbxGeometryElementUV *pFbxGeoElemUV = pfbxMesh->GetElementUV();
+	if (pFbxGeoElemUV)
+	{
+		m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
+		m_pnMaterialIndices = new int[m_nVertices];
+	}
+
+	FbxGeometryElementBinormal *pFbxGeoElemBinormal = pfbxMesh->GetElementBinormal();
+	if(pFbxGeoElemBinormal)
+		m_pxmf3Binormals = new XMFLOAT3[m_nVertices];
+
+	FbxGeometryElementTangent *pFbxGeoElemTangent = pfbxMesh->GetElementTangent();
+	if (pFbxGeoElemTangent)
+		m_pxmf3Tangents = new XMFLOAT3[m_nVertices];
+
+	int nIndex = 0;
+
+	for (int i = 0; i < nPolygon; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			int nCtrlPointIndex = pfbxMesh->GetPolygonVertex(i, j);
+			int nTextureUVIndex = pfbxMesh->GetTextureUVIndex(i, j);
+			int nIndexByCtrlPoint = pFbxGeoElemNorm->GetIndexArray().GetAt(nCtrlPointIndex);
+			int nIndexByIndex = pFbxGeoElemNorm->GetIndexArray().GetAt(nIndex);
+
+			FbxVector4 fv4CtrlPoint = pfbxMesh->GetControlPointAt(nCtrlPointIndex);
+			m_pxmf3Positions[i * 3 + j] = XMFLOAT3(
+				fv4CtrlPoint.mData[0],
+				fv4CtrlPoint.mData[1],
+				fv4CtrlPoint.mData[2]
+			);
+
+			auto fbxElemRefMode = pFbxGeoElemNorm->GetReferenceMode();
+
+			switch (pFbxGeoElemNorm->GetMappingMode())
+			{
+			case FbxGeometryElement::eByControlPoint:
+				switch (fbxElemRefMode)
+				{
+				case FbxGeometryElement::eDirect:
+				{
+					if (pFbxGeoElemNorm)
+						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[1],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]);
+
+					if (pFbxGeoElemBinormal)
+						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[1],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]);
+
+					if (pFbxGeoElemTangent)
+						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[1],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]);
+
+					if (pFbxGeoElemUV)
+						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
+							pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
+							pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]);
+				}
+				break;
+				case FbxGeometryElement::eIndexToDirect:
+				{
+					if (pFbxGeoElemNorm)
+						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]);
+
+					if (pFbxGeoElemBinormal)
+						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]);
+
+					if (pFbxGeoElemTangent)
+						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]);
+
+					if (pFbxGeoElemUV)
+						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
+							pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
+							pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]);
+				}
+				break;
+				}
+				break;
+			case FbxGeometryElement::eByPolygonVertex:
+				switch (fbxElemRefMode)
+				{
+				case FbxGeometryElement::eDirect:
+				{
+					if (pFbxGeoElemNorm)
+						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[0],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[1],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[2]);
+
+					if (pFbxGeoElemBinormal)
+						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[0],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[1],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[2]);
+
+					if (pFbxGeoElemTangent)
+						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[0],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[1],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[2]);
+
+					if (pFbxGeoElemUV)
+						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
+							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0],
+							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]);
+				}
+				break;
+				case FbxGeometryElement::eIndexToDirect:
+				{
+					if (pFbxGeoElemNorm)
+						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[0],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[1],
+							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[2]);
+
+					if (pFbxGeoElemBinormal)
+						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[0],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[1],
+							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[2]);
+
+					if (pFbxGeoElemTangent)
+						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[0],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[1],
+							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[2]);
+
+					if (pFbxGeoElemUV)
+						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
+							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0],
+							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]);
+				}
+				break;
+				}
+				break;
+			}
+
+			auto fbxMaterialIndex = &(pfbxMesh->GetElementMaterial()->GetIndexArray());
+			auto fbxMaterialMappingMode = pfbxMesh->GetElementMaterial()->GetMappingMode();
+
+			switch (fbxMaterialMappingMode)
+			{
+			case FbxGeometryElement::eByPolygon:
+			{
+				m_pnMaterialIndices[i * 3 + j] = fbxMaterialIndex->GetAt(i);
+			}
+			break;
+			case FbxGeometryElement::eAllSame:
+			{
+				m_pnMaterialIndices[i * 3 + j] = fbxMaterialIndex->GetAt(0);
+			}
+			break;
+			}
+
+			nIndex++;
+			printf("\n");
+		}
+	}
+
+	// 정점 버퍼 생성( 위치 )
+	m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Positions, sizeof(XMFLOAT3) * m_nVertices,
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dPositionUploadBuffer);
+
+	m_d3dPositionBufferView.BufferLocation = m_pd3dPositionBuffer->GetGPUVirtualAddress();
+	m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
+	m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+
+	// 정점 버퍼 생성( 법선 벡터 )
+	if (pFbxGeoElemNorm)
+	{
+		m_pd3dNormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Normals, sizeof(XMFLOAT3) * m_nVertices,
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dNormalUploadBuffer);
+
+		m_d3dNormalBufferView.BufferLocation = m_pd3dNormalBuffer->GetGPUVirtualAddress();
+		m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+	}
+
+	// 정점 버퍼 생성( 종법선 벡터 )
+	if (pFbxGeoElemBinormal)
+	{
+		m_pd3dBinormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Binormals, sizeof(XMFLOAT3) * m_nVertices,
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dBinormalUploadBuffer);
+
+		m_d3dBinormalBufferView.BufferLocation = m_pd3dBinormalBuffer->GetGPUVirtualAddress();
+		m_d3dBinormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		m_d3dBinormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+	}
+
+	// 정점 버퍼 생성( 접선 벡터 )
+	if (pFbxGeoElemTangent)
+	{
+		m_pd3dTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Tangents, sizeof(XMFLOAT3) * m_nVertices,
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTangentUploadBuffer);
+
+		m_d3dTangentBufferView.BufferLocation = m_pd3dTangentBuffer->GetGPUVirtualAddress();
+		m_d3dTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		m_d3dTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+	}
+
+	// 정점 버퍼 생성( 텍스쳐 좌표 )
+	if (pFbxGeoElemUV)
+	{
+		m_pd3dTextureCoord0Buffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2TextureCoords0, sizeof(XMFLOAT2) * m_nVertices,
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTextureCoord0UploadBuffer);
+
+		m_d3dTextureCoord0BufferView.BufferLocation = m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
+		m_d3dTextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
+		m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;
+	}
+
+	XMFLOAT3 Center, Extents;
+	FindXYZ(m_pxmf3Positions, m_nVertices, Center, Extents);
+
+	SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+}
+*/
+void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[3] = { m_d3dPositionBufferView, m_d3dNormalBufferView, m_d3dTextureCoord0BufferView };
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 3, pVertexBufferViews);
 
-	CMesh::Render(pd3dCommandList, nInstances);
+	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,14 +521,14 @@ void CUIRect::ReleaseUploadBuffers()
 	CMesh::ReleaseUploadBuffers();
 }
 
-void CUIRect::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+void CUIRect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[2] = { m_d3dPositionBufferView, m_d3dSizeBufferView };
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 2, pVertexBufferViews);
 
-	CMesh::Render(pd3dCommandList, nInstances);
+	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -529,7 +780,7 @@ void CHeightMapGridMesh::ReleaseUploadBuffers()
 	m_pd3dTextureNumberUploadBuffer = NULL;
 }
 
-void CHeightMapGridMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+void CHeightMapGridMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 
@@ -537,7 +788,7 @@ void CHeightMapGridMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[4] = { m_d3dPositionBufferView, m_d3dColorBufferView, m_d3dTextureCoord0BufferView, m_d3dTextureCoord1BufferView};
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 4, pVertexBufferViews);
 
-	CMesh::Render(pd3dCommandList, nInstances);
+	CMesh::Render(pd3dCommandList);
 }
 
 
@@ -605,13 +856,13 @@ CSkyBoxMesh::~CSkyBoxMesh()
 {
 }
 
-void CSkyBoxMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+void CSkyBoxMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
 
-	CMesh::Render(pd3dCommandList, nInstances);
+	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -658,7 +909,7 @@ CRectMesh::~CRectMesh()
 
 }
 
-void CRectMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, UINT nInstances)
+void CRectMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 

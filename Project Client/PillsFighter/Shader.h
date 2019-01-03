@@ -19,12 +19,11 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderWire(ID3DBlob **ppd3dShaderBlob);
-	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName,
-		LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
+	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
-	virtual void CreateSrvDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nShaderResourceViews);
+	virtual void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews);
 	virtual void CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
@@ -57,14 +56,6 @@ protected:
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateWire = NULL;
-
-protected:
-	UINT		m_nMaterials;
-	CMaterial**	m_ppMaterials = NULL;
-
-public:
-	virtual void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
-	virtual void GetMaterial(CMaterial**& ppMaterials, UINT& nMaterials) { ppMaterials = m_ppMaterials; nMaterials = m_nMaterials; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,38 +67,8 @@ public:
 	virtual ~CObjectsShader();
 
 	virtual void ReleaseUploadBuffers();
-
-protected:
-	UINT							m_nMeshes = 0;
-	CMesh**							m_ppMeshes = NULL;
-	CCubeMesh**						m_ppCubeMeshes = NULL;
-
-public:
-	virtual void SetMesh(CMesh** ppMeshes, CCubeMesh** ppCubeMeshes, UINT nMeshes) { m_ppMeshes = ppMeshes; m_ppCubeMeshes = ppCubeMeshes; m_nMeshes = nMeshes; }
-	virtual void GetMesh(CMesh**& ppMeshes, CCubeMesh**& ppCubeMeshes, UINT& nMeshes) {	ppMeshes = m_ppMeshes; ppCubeMeshes = m_ppCubeMeshes; nMeshes = m_nMeshes; }
-
-	virtual void GetObjects(std::vector<CGameObject*> *vObjects, CGameObject ***ppObjects, UINT *nObjects) {}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CFixedObjectsShader : public CObjectsShader // 인스턴싱 사용
-{
-public:
-	CFixedObjectsShader();
-	virtual ~CFixedObjectsShader();
-
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob);
-	
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();
 
@@ -115,19 +76,54 @@ public:
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	UINT							m_nObjects = 0;
-	CGameObject						**m_ppObjects = NULL;
+	CMesh					*m_pMesh = NULL;
+	CCubeMesh				*m_pCubeMesh = NULL;
 
-	ID3D12Resource					*m_pd3dcbGameObjects = NULL;
-	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObjects = NULL;
+	UINT					m_nMaterials;
+	CMaterial				**m_ppMaterials = NULL;
+
+	std::vector<CGameObject*>	m_vObjects;
 
 public:
-	virtual void GetObjects(std::vector<CGameObject*> *vObjects, CGameObject ***ppObjects, UINT *nObjects) { *ppObjects = m_ppObjects; *nObjects = m_nObjects; }
+	virtual void SetMesh(CMesh* pMesh, CCubeMesh* pCubeMesh) { m_pMesh = pMesh; m_pCubeMesh = pCubeMesh; }
+	virtual void GetMesh(CMesh*& pMesh, CCubeMesh*& pCubeMesh) { pMesh = m_pMesh; pCubeMesh = m_pCubeMesh; }
+
+	virtual void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
+	virtual void GetMaterial(CMaterial**& ppMaterials, UINT& nMaterials) { ppMaterials = m_ppMaterials; nMaterials = m_nMaterials; }
+
+	virtual void GetObjects(std::vector<CGameObject*> *vObjects) {}
+
+	void CheckDeleteObjects();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {};
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CBulletShader : public CObjectsShader
+{
+public:
+	CBulletShader();
+	virtual ~CBulletShader();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CBuildingShader : public CFixedObjectsShader
+class CGundamShader : public CObjectsShader
+{
+public:
+	CGundamShader();
+	virtual ~CGundamShader();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CBuildingShader : public CObjectsShader
 {
 public:
 	CBuildingShader();
@@ -135,64 +131,10 @@ public:
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CNonFixedObjectsShader : public CObjectsShader
-{
-public:
-	CNonFixedObjectsShader();
-	virtual ~CNonFixedObjectsShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL );
-	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
-	virtual void ReleaseObjects();
-
-	virtual void ReleaseShaderVariables();
-
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	
-protected:
-	std::vector<CGameObject*>	m_vObjects;
-
-public:
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
-	virtual void GetObjects(std::vector<CGameObject*> *vObjects, CGameObject ***ppObjects, UINT *nObjects) { *vObjects = m_vObjects; }
-
-	void CheckDeleteObjects();
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CBulletShader : public CNonFixedObjectsShader
-{
-public:
-	CBulletShader();
-	virtual ~CBulletShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CGundamShader : public CNonFixedObjectsShader
-{
-public:
-	CGundamShader();
-	virtual ~CGundamShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
-};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CEffectShader : public CNonFixedObjectsShader
+class CEffectShader : public CObjectsShader
 {
 public:
 	CEffectShader();

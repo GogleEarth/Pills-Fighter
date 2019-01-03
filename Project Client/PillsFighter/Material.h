@@ -5,51 +5,31 @@ class Material
 {
 public:
 	std::string mName;
-	XMFLOAT3 mAmbient;
-	XMFLOAT3 mDiffuse;
-	XMFLOAT3 mEmissive;
-	double mTransparencyFactor;
-	std::string mDiffuseMapName;
-	std::string mEmissiveMapName;
-	std::string mGlossMapName;
+
 	std::string mNormalMapName;
-	std::string mSpecularMapName;
 
-	virtual void WriteToStream(std::ostream& inStream) = 0;
-};
+	XMFLOAT3 mAmbient;
 
-class LambertMaterial : public Material
-{
-public:
+	XMFLOAT3 mDiffuse;
+	std::string mDiffuseMapName;
 
-	void WriteToStream(std::ostream& inStream)
-	{
-		inStream << "Ambient: " << mAmbient.x << " " << mAmbient.y << " " << mAmbient.z << std::endl;
-		inStream << "Diffuse: " << mDiffuse.x << " " << mDiffuse.y << " " << mDiffuse.z << std::endl;
-		inStream << "Emissive: " << mEmissive.x << " " << mEmissive.y << " " << mEmissive.z << std::endl;
+	XMFLOAT3 mEmissive;
+	std::string mEmissiveMapName;
 
-		if (!mDiffuseMapName.empty())
-		{
-			inStream << "DiffuseMap: " << mDiffuseMapName << std::endl;
-		}
-
-		if (!mNormalMapName.empty())
-		{
-			inStream << "NormalMap: " << mNormalMapName << std::endl;
-		}
-	}
-};
-
-class PhongMaterial : public Material
-{
-public:
 	XMFLOAT3 mSpecular;
-	XMFLOAT3 mReflection;
+	std::string mSpecularMapName;
 	double mSpecularPower;
-	double mShininess;
+
+	XMFLOAT3 mReflection;
 	double mReflectionFactor;
 
-	void WriteToStream(std::ostream& inStream)
+	double mShininess;
+
+	double mTransparencyFactor;
+
+	std::string mGlossMapName;
+
+	virtual void WriteToStream(std::ostream& inStream)
 	{
 		inStream << "Ambient: " << mAmbient.x << " " << mAmbient.y << " " << mAmbient.z << std::endl;
 		inStream << "Diffuse: " << mDiffuse.x << " " << mDiffuse.y << " " << mDiffuse.z << std::endl;

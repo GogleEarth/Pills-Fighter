@@ -26,20 +26,6 @@ struct LIGHTS
 	XMFLOAT4 m_xmf4GlobalAmbient;
 };
 
-struct MATERIAL
-{
-	XMFLOAT4 m_xmf4Ambient;
-	XMFLOAT4 m_xmf4Diffuse;
-	XMFLOAT4 m_xmf4Specular; //(r,g,b,a=power)
-	XMFLOAT4 m_xmf4Emissive;
-};
-
-struct MATERIALS
-{
-	MATERIAL m_pReflections[MAX_MATERIALS];
-};
-
-
 class CScene
 {
 public:
@@ -99,11 +85,6 @@ protected:
 
 	ID3D12Resource	*m_pd3dcbLights = NULL;
 	LIGHTS			*m_pcbMappedLights = NULL;
-
-	MATERIALS		*m_pMaterials = NULL;
-
-	ID3D12Resource	*m_pd3dcbMaterials = NULL;
-	MATERIAL		*m_pcbMappedMaterials = NULL;
 
 public: // For Network
 	CGameObject* m_pObjects[MAX_NUM_OBJECT];

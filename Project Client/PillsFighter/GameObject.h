@@ -3,19 +3,28 @@
 #include "Mesh.h"
 #include "Camera.h"
 
+class CShader;
+
+struct MATERIAL
+{
+	XMFLOAT4		m_xmf4Ambient;
+	XMFLOAT4		m_xmf4Diffuse;
+	XMFLOAT4		m_xmf4Specular;
+	XMFLOAT4		m_xmf4Emissive;
+};
+
+struct CB_GAMEOBJECT_INFO
+{
+	XMFLOAT4X4						m_xmf4x4World;
+	MATERIAL						m_Material;
+	UINT							m_nTexturesMask;
+};
+
 #define RESOURCE_TEXTURE2D			0x01
 #define RESOURCE_TEXTURE2D_ARRAY	0x02	//[]
 #define RESOURCE_TEXTURE2DARRAY		0x03
 #define RESOURCE_TEXTURE_CUBE		0x04
 #define RESOURCE_BUFFER				0x05
-
-class CShader;
-
-struct CB_GAMEOBJECT_INFO
-{
-	XMFLOAT4X4						m_xmf4x4World;
-	UINT							m_nMaterial;
-};
 
 struct SRVROOTARGUMENTINFO
 {
@@ -25,7 +34,9 @@ struct SRVROOTARGUMENTINFO
 
 class CTexture
 {
+protected:
 	UINT							m_nTextureType = RESOURCE_TEXTURE2D;
+
 	int								m_nTextures = 0;
 	ID3D12Resource					**m_ppd3dTextures = NULL;
 	ID3D12Resource					**m_ppd3dTextureUploadBuffers;
@@ -44,9 +55,9 @@ public:
 
 	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
-	void ReleaseShaderVariables();
 
 	void LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex);
+	ID3D12Resource *CreateTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nWidth, UINT nHeight, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE *pd3dClearValue, UINT nIndex);
 
 	int GetTextures() { return(m_nTextures); }
 	ID3D12Resource *GetTexture(int nIndex) { return(m_ppd3dTextures[nIndex]); }
@@ -55,29 +66,53 @@ public:
 	void ReleaseUploadBuffers();
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define MATERIAL_ALBEDO_MAP			0x01
+#define MATERIAL_SPECULAR_MAP		0x02
+#define MATERIAL_NORMAL_MAP			0x04
+#define MATERIAL_METALLIC_MAP		0x08
+#define MATERIAL_EMISSION_MAP		0x10
+#define MATERIAL_DETAIL_ALBEDO_MAP	0x20
+#define MATERIAL_DETAIL_NORMAL_MAP	0x40
+
 class CMaterial
 {
 public:
-	CMaterial();
+	CMaterial(int nTextures);
 	virtual ~CMaterial();
 
-	XMFLOAT4						m_xmf4Albedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+protected:
+	XMFLOAT4						m_xmf4AlbedoColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4						m_xmf4EmissiveColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	UINT							m_nType = 0x00;
+
+	float							m_fGlossiness = 0.0f;
+	float							m_fSmoothness = 0.0f;
+	float							m_fSpecularHighlight = 0.0f;
+	float							m_fMetallic = 0.0f;
+	float							m_fGlossyReflection = 0.0f;
 
 	CTexture						*m_pTexture = NULL;
-	UINT							m_nReflection = 0;
-	CShader							*m_pShader = NULL;
 
-	void SetAlbedo(XMFLOAT4 xmf4Albedo) { m_xmf4Albedo = xmf4Albedo; }
-	void SetTexture(CTexture *pTexture);
+	int 							m_nTextures = 0;
+	CTexture						**m_ppTextures = NULL; //0:Albedo, 1:Specular, 2:Metallic, 3:Normal, 4:Emission, 5:DetailAlbedo, 6:DetailNormal
 
-	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	void ReleaseShaderVariables();
+public:
+	void SetMaterialType(UINT nType) { m_nType |= nType; }
+	void SetTexture(CTexture *pTexture, UINT nTexture = 0);
+
+	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
+	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void ReleaseUploadBuffers();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
 class CGameObject
 {
 public:
@@ -91,27 +126,24 @@ protected:
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;
 
-	XMFLOAT3 m_xmf3Direction;
-
 	float m_fPitch;
 	float m_fYaw;
 	float m_fRoll;
 
 	// 렌더링 하기 전 오브젝트 회전 설정
-	float m_PPitch;
-	float m_PYaw;
-	float m_PRoll;
+	float m_fPreparePitch;
+	float m_fPrepareYaw;
+	float m_fPrepareRoll;
 
 	// 이동 속력
 	float m_MovingSpeed;
-	
-	UINT							m_nMeshes = 0;
-	CMesh							**m_ppMeshes = NULL;
-	CCubeMesh						**m_ppCubeMeshes = NULL;
 
-	BoundingOrientedBox				*m_xmOOBB = NULL;
+	CMesh							*m_pMesh = NULL;
+	CCubeMesh						*m_pCubeMesh = NULL;
 
-	UINT							m_nMaterials;
+	BoundingOrientedBox				m_xmOOBB;
+
+	UINT							m_nMaterials = 0;
 	CMaterial						**m_ppMaterials = NULL;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
@@ -119,14 +151,15 @@ protected:
 	ID3D12Resource					*m_pd3dcbGameObject = NULL;
 	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObject = NULL;
 
-	bool m_Delete = FALSE;
+	bool							 m_Delete = FALSE;
 
+	CShader							*m_pShader = NULL;
 public:
 	CGameObject();
+	CGameObject(CGameObject *pObject);
 	virtual ~CGameObject();
 
-	void SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMeshes);
-	UINT GetNumMeshes() { return m_nMeshes; }
+	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 	void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
 
 	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
@@ -139,8 +172,8 @@ public:
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, UINT nInstances = 1);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, UINT nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 
 	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
 	virtual void ReleaseUploadBuffers();
@@ -149,23 +182,23 @@ public:
 	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
 	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }
 	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
-	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
 	void SetWorldTransf(XMFLOAT4X4& xmf4x4World);
 	XMFLOAT3 GetPosition() { return m_xmf3Position; }
 	XMFLOAT3 GetLook() { return m_xmf3Look; }
 	XMFLOAT3 GetUp() { return m_xmf3Up; }
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
-	XMFLOAT3 GetDirection() { return m_xmf3Direction; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
 	XMFLOAT4X4 GetWorldTransf();
-	CMaterial* GetMaterial(UINT nIndex) { return m_ppMaterials[nIndex]; }
+
+	void GetMaterial(UINT &nMaterials, CMaterial **&ppMaterials) { nMaterials = m_nMaterials; ppMaterials = m_ppMaterials; };
+	void GetMesh(CMesh *&pMeshes, CCubeMesh *&pCubeMeshes) { pMeshes = m_pMesh; pCubeMeshes = m_pCubeMesh; };
 
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3& xmf3Position);
 	void SetMovingSpeed(float MovingSpeed) { m_MovingSpeed = MovingSpeed; }
 
-	void SetPrepareRotate(float Pitch, float Yaw, float Roll) {	m_PPitch = Pitch; m_PYaw = Yaw; m_PRoll = Roll; }
+	void SetPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch = Pitch; m_fPrepareYaw = Yaw; m_fPrepareRoll = Roll; }
 
 	//게임 객체를 로컬 x-축, y-축, z-축 방향으로 이동한다.
 	void MoveStrafe(float fDistance = 1.0f);
@@ -176,7 +209,7 @@ public:
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
-	BoundingOrientedBox GetOOBB(UINT nIndex) { return m_xmOOBB[nIndex]; }
+	BoundingOrientedBox GetOOBB() { return m_xmOOBB; }
 	void Delete() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
@@ -222,19 +255,13 @@ public:
 	Bullet();
 	virtual ~Bullet();
 
-	virtual void Animate(float ElapsedTime);
+	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
 
 private:
 	float m_RotationSpeed;
 	float m_DurationTime; // 발사 후 생존?시간
 	float m_ElapsedTime; // 행동한 시간
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-extern void CreateRobotObjectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMesh**& ppMesh, CCubeMesh**& ppCubeMeshes, UINT& nMeshes);
-extern void CreateRobotObjectTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, UINT& nTextures);
-extern void CreateRobotObjectShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture**& ppTexture, CShader* pShader);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -245,7 +272,6 @@ public:
 	virtual ~CHeightMapTerrain();
 
 private:
-	CShader						*m_pTerrainShader = NULL;
 	CHeightMapImage				*m_pHeightMapImage;
 
 	int							m_nWidth;
@@ -254,8 +280,6 @@ private:
 	XMFLOAT3					m_xmf3Scale;
 
 public:
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, UINT nInstances = 1);
-
 	float GetHeight(float x, float z, bool bReverseQuad = false) { return(m_pHeightMapImage->GetHeight(x, z, bReverseQuad) * m_xmf3Scale.y); } //World
 	XMFLOAT3 GetNormal(float x, float z) { return(m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z / m_xmf3Scale.z))); }
 
@@ -265,8 +289,6 @@ public:
 	XMFLOAT3 GetScale() { return(m_xmf3Scale); }
 	float GetWidth() { return(m_nWidth * m_xmf3Scale.x); }
 	float GetLength() { return(m_nLength * m_xmf3Scale.z); }
-
-	virtual void ReleaseUploadBuffers();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -277,11 +299,7 @@ public:
 	CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual ~CSkyBox();
 
-	virtual void ReleaseUploadBuffers();
-
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL, UINT nInstances = 1);
-private:
-	CShader						*m_pSkyboxShader = NULL;
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "FBXExporter.h"
 #include "Utilities.h"
+#include "Mesh.h"
 
 FBXExporter::FBXExporter()
 {
@@ -14,13 +15,13 @@ FBXExporter::FBXExporter()
 bool FBXExporter::Initialize()
 {
 	mFBXManager = FbxManager::Create();
+
 	if (!mFBXManager)
 	{
 		return false;
 	}
 
-	FbxIOSettings* fbxIOSettings = FbxIOSettings::Create(mFBXManager, IOSROOT);
-	mFBXManager->SetIOSettings(fbxIOSettings);
+	mFBXManager->SetIOSettings(FbxIOSettings::Create(mFBXManager, IOSROOT));
 
 	mFBXScene = FbxScene::Create(mFBXManager, "myScene");
 
@@ -29,10 +30,8 @@ bool FBXExporter::Initialize()
 
 bool FBXExporter::LoadScene(const char* pstrFileName)
 {
-	LARGE_INTEGER start;
-	LARGE_INTEGER end;
 	mInputFilePath = pstrFileName;
-	QueryPerformanceCounter(&start);
+	QueryPerformanceCounter(&mStart);
 	FbxImporter* fbxImporter = FbxImporter::Create(mFBXManager, "myImporter");
 
 	if (!fbxImporter)
@@ -50,42 +49,42 @@ bool FBXExporter::LoadScene(const char* pstrFileName)
 		return false;
 	}
 	fbxImporter->Destroy();
-	QueryPerformanceCounter(&end);
-	std::cout << "Loading FBX File: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
+	QueryPerformanceCounter(&mEnd);
+	std::cout << "Loading FBX File: " << ((mEnd.QuadPart - mStart.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 
 	return true;
 }
 
-void FBXExporter::ExportFBX(UINT* nVertices, UINT* nIndices)
+void FBXExporter::ExportFBX()
 {
-	LARGE_INTEGER start;
-	LARGE_INTEGER end;
-
 	// Get the clean name of the model
-	//std::string genericFileName = Utilities::GetFileName(mInputFilePath);
-	//genericFileName = Utilities::RemoveSuffix(genericFileName);
+	std::string genericFileName = Utilities::GetFileName(mInputFilePath); 
+	genericFileName = Utilities::RemoveSuffix(genericFileName);
 
-	QueryPerformanceCounter(&start);
+	// Load Bone
+	QueryPerformanceCounter(&mStart);
 	ProcessSkeletonHierarchy(mFBXScene->GetRootNode());
+	std::cout << "\nExporting Model:" << genericFileName << "\n";
+	QueryPerformanceCounter(&mEnd);
+	std::cout << "Processing Skeleton Hierarchy: " << ((mEnd.QuadPart - mStart.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 	if (mSkeleton.mJoints.empty())
 	{
 		mHasAnimation = false;
 	}
 
-	//std::cout << "\n\n\n\nExporting Model:" << genericFileName << "\n";
-	QueryPerformanceCounter(&end);
-	std::cout << "Processing Skeleton Hierarchy: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
-
-	QueryPerformanceCounter(&start);
+	// Load Mesh, Material
+	QueryPerformanceCounter(&mStart);
 	ProcessGeometry(mFBXScene->GetRootNode());
-	QueryPerformanceCounter(&end);
-	std::cout << "Processing Geometry: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
+	QueryPerformanceCounter(&mEnd);
+	std::cout << "Processing Geometry: " << ((mEnd.QuadPart - mStart.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 
-	QueryPerformanceCounter(&start);
+	// Optimization
+	QueryPerformanceCounter(&mStart);
 	Optimize();
-	QueryPerformanceCounter(&end);
-	std::cout << "Optimization: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
-	//PrintMaterial();
+	QueryPerformanceCounter(&mEnd);
+	std::cout << "Optimization: " << ((mEnd.QuadPart - mStart.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
+
+	PrintMaterial();
 	//std::cout << "\n\n";
 	if (mHasAnimation)
 	{
@@ -94,14 +93,8 @@ void FBXExporter::ExportFBX(UINT* nVertices, UINT* nIndices)
 	}
 	else
 	{
-		std::cout << "\t<format>pnt</format>" << std::endl;
+		//std::cout << "\t<format>pnt</format>" << std::endl;
 	}
-
-	std::cout << "\t<triangles count='" << mTriangleCount << "'>" << std::endl;
-	*nIndices = mTriangleCount * 3;
-
-	std::cout << "\t<vertices count='" << mVertices.size() << "'>" << std::endl;
-	*nVertices = mVertices.size();
 
 	if (mHasAnimation)
 	{
@@ -112,34 +105,35 @@ void FBXExporter::ExportFBX(UINT* nVertices, UINT* nIndices)
 	//CleanupFbxManager();
 }
 
-void FBXExporter::ProcessGeometry(FbxNode* inNode)
+void FBXExporter::ProcessGeometry(FbxNode* pfbxNode)
 {
-	if (inNode->GetNodeAttribute())
+	FbxNodeAttribute *pNodeAttribute = pfbxNode->GetNodeAttribute();
+
+	if (pNodeAttribute)
 	{
-		switch (inNode->GetNodeAttribute()->GetAttributeType())
+		switch (pNodeAttribute->GetAttributeType())
 		{
 		case FbxNodeAttribute::eMesh:
-			ProcessControlPoints(inNode);
+			ProcessControlPoints(pfbxNode);
 			if (mHasAnimation)
 			{
-				ProcessJointsAndAnimations(inNode);
+				ProcessJointsAndAnimations(pfbxNode);
 			}
-			ProcessMesh(inNode);
-			AssociateMaterialToMesh(inNode);
-			ProcessMaterials(inNode);
+			ProcessMesh(pfbxNode);
+			AssociateMaterialToMesh(pfbxNode);
+			ProcessMaterials(pfbxNode);
 			break;
 		}
 	}
 
-	for (int i = 0; i < inNode->GetChildCount(); ++i)
+	for (int i = 0; i < pfbxNode->GetChildCount(); ++i)
 	{
-		ProcessGeometry(inNode->GetChild(i));
+		ProcessGeometry(pfbxNode->GetChild(i));
 	}
 }
 
 void FBXExporter::ProcessSkeletonHierarchy(FbxNode* inRootNode)
 {
-
 	for (int childIndex = 0; childIndex < inRootNode->GetChildCount(); ++childIndex)
 	{
 		FbxNode* currNode = inRootNode->GetChild(childIndex);
@@ -162,7 +156,7 @@ void FBXExporter::ProcessSkeletonHierarchyRecursively(FbxNode* inNode, int inDep
 	}
 }
 
-void FBXExporter::ProcessControlPoints(FbxNode* inNode)
+void FBXExporter::ProcessControlPoints(FbxNode* inNode) // 메쉬의 정점 리스트
 {
 	FbxMesh* currMesh = inNode->GetMesh();
 	unsigned int ctrlPointCount = currMesh->GetControlPointsCount();
@@ -170,9 +164,9 @@ void FBXExporter::ProcessControlPoints(FbxNode* inNode)
 	{
 		CtrlPoint* currCtrlPoint = new CtrlPoint();
 		XMFLOAT3 currPosition;
-		currPosition.x = static_cast<float>(currMesh->GetControlPointAt(i).mData[0]);
-		currPosition.y = static_cast<float>(currMesh->GetControlPointAt(i).mData[1]);
-		currPosition.z = static_cast<float>(currMesh->GetControlPointAt(i).mData[2]);
+		currPosition.x = static_cast<float>(currMesh->GetControlPointAt(i).mData[0]); // x
+		currPosition.y = static_cast<float>(currMesh->GetControlPointAt(i).mData[1]); // y
+		currPosition.z = static_cast<float>(currMesh->GetControlPointAt(i).mData[2]); // z
 		currCtrlPoint->mPosition = currPosition;
 		mControlPoints[i] = currCtrlPoint;
 	}
@@ -236,12 +230,12 @@ void FBXExporter::ProcessJointsAndAnimations(FbxNode* inNode)
 			FbxString animStackName = currAnimStack->GetName();
 			mAnimationName = animStackName.Buffer();
 			FbxTakeInfo* takeInfo = mFBXScene->GetTakeInfo(animStackName);
-			FbxTime start = takeInfo->mLocalTimeSpan.GetStart();
+			FbxTime mStart = takeInfo->mLocalTimeSpan.GetStart();
 			FbxTime end = takeInfo->mLocalTimeSpan.GetStop();
-			mAnimationLength = end.GetFrameCount(FbxTime::eFrames24) - start.GetFrameCount(FbxTime::eFrames24) + 1;
+			mAnimationLength = end.GetFrameCount(FbxTime::eFrames24) - mStart.GetFrameCount(FbxTime::eFrames24) + 1;
 			Keyframe** currAnim = &mSkeleton.mJoints[currJointIndex].mAnimation;
 
-			for (FbxLongLong i = start.GetFrameCount(FbxTime::eFrames24); i <= end.GetFrameCount(FbxTime::eFrames24); ++i)
+			for (FbxLongLong i = mStart.GetFrameCount(FbxTime::eFrames24); i <= end.GetFrameCount(FbxTime::eFrames24); ++i)
 			{
 				FbxTime currTime;
 				currTime.SetFrame(i, FbxTime::eFrames24);
@@ -289,8 +283,9 @@ void FBXExporter::ProcessMesh(FbxNode* inNode)
 	FbxMesh* currMesh = inNode->GetMesh();
 
 	mTriangleCount = currMesh->GetPolygonCount();
-	int vertexCounter = 0;
 	mTriangles.reserve(mTriangleCount);
+
+	int vertexCounter = 0;
 
 	for (unsigned int i = 0; i < mTriangleCount; ++i)
 	{
@@ -299,6 +294,7 @@ void FBXExporter::ProcessMesh(FbxNode* inNode)
 		//XMFLOAT3 binormal[3];
 		XMFLOAT2 UV[3][2];
 		Triangle currTriangle;
+
 		mTriangles.push_back(currTriangle);
 
 		for (unsigned int j = 0; j < 3; ++j)
@@ -306,19 +302,21 @@ void FBXExporter::ProcessMesh(FbxNode* inNode)
 			int ctrlPointIndex = currMesh->GetPolygonVertex(i, j);
 			CtrlPoint* currCtrlPoint = mControlPoints[ctrlPointIndex];
 
-
 			ReadNormal(currMesh, ctrlPointIndex, vertexCounter, normal[j]);
+			//ReadBinormal(currMesh, ctrlPointIndex, vertexCounter, binormal[j]);
+			//ReadTangent(currMesh, ctrlPointIndex, vertexCounter, tangent[j]);
+
 			// We only have diffuse texture
 			for (int k = 0; k < 1; ++k)
 			{
 				ReadUV(currMesh, ctrlPointIndex, currMesh->GetTextureUVIndex(i, j), k, UV[j][k]);
 			}
 
-
 			PNTIWVertex temp;
 			temp.mPosition = currCtrlPoint->mPosition;
 			temp.mNormal = normal[j];
 			temp.mUV = UV[j][0];
+
 			// Copy the blending info from each control point
 			for (unsigned int i = 0; i < currCtrlPoint->mBlendingInfo.size(); ++i)
 			{
@@ -332,7 +330,9 @@ void FBXExporter::ProcessMesh(FbxNode* inNode)
 			temp.SortBlendingInfoByWeight();
 
 			mVertices.push_back(temp);
+
 			mTriangles.back().mIndices.push_back(vertexCounter);
+
 			++vertexCounter;
 		}
 	}
@@ -722,6 +722,7 @@ void FBXExporter::AssociateMaterialToMesh(FbxNode* inNode)
 void FBXExporter::ProcessMaterials(FbxNode* inNode)
 {
 	unsigned int materialCount = inNode->GetMaterialCount();
+	std::cout << "materialCount : " << materialCount << std::endl;
 
 	for (unsigned int i = 0; i < materialCount; ++i)
 	{
@@ -737,33 +738,33 @@ void FBXExporter::ProcessMaterialAttribute(FbxSurfaceMaterial* inMaterial, unsig
 	FbxDouble double1;
 	if (inMaterial->GetClassId().Is(FbxSurfacePhong::ClassId))
 	{
-		PhongMaterial* currMaterial = new PhongMaterial();
+		Material* currMaterial = new Material();
 
-		// Amibent Color
+		// Amibent Color x, y, z
 		double3 = reinterpret_cast<FbxSurfacePhong *>(inMaterial)->Ambient;
 		currMaterial->mAmbient.x = static_cast<float>(double3.mData[0]);
 		currMaterial->mAmbient.y = static_cast<float>(double3.mData[1]);
 		currMaterial->mAmbient.z = static_cast<float>(double3.mData[2]);
 
-		// Diffuse Color
+		// Diffuse Color x, y, z
 		double3 = reinterpret_cast<FbxSurfacePhong *>(inMaterial)->Diffuse;
 		currMaterial->mDiffuse.x = static_cast<float>(double3.mData[0]);
 		currMaterial->mDiffuse.y = static_cast<float>(double3.mData[1]);
 		currMaterial->mDiffuse.z = static_cast<float>(double3.mData[2]);
 
-		// Specular Color
+		// Specular Color x, y, z
 		double3 = reinterpret_cast<FbxSurfacePhong *>(inMaterial)->Specular;
 		currMaterial->mSpecular.x = static_cast<float>(double3.mData[0]);
 		currMaterial->mSpecular.y = static_cast<float>(double3.mData[1]);
 		currMaterial->mSpecular.z = static_cast<float>(double3.mData[2]);
 
-		// Emissive Color
+		// Emissive Color x, y, z
 		double3 = reinterpret_cast<FbxSurfacePhong *>(inMaterial)->Emissive;
 		currMaterial->mEmissive.x = static_cast<float>(double3.mData[0]);
 		currMaterial->mEmissive.y = static_cast<float>(double3.mData[1]);
 		currMaterial->mEmissive.z = static_cast<float>(double3.mData[2]);
 
-		// Reflection
+		// Reflection x, y, z
 		double3 = reinterpret_cast<FbxSurfacePhong *>(inMaterial)->Reflection;
 		currMaterial->mReflection.x = static_cast<float>(double3.mData[0]);
 		currMaterial->mReflection.y = static_cast<float>(double3.mData[1]);
@@ -790,7 +791,7 @@ void FBXExporter::ProcessMaterialAttribute(FbxSurfaceMaterial* inMaterial, unsig
 	}
 	else if (inMaterial->GetClassId().Is(FbxSurfaceLambert::ClassId))
 	{
-		LambertMaterial* currMaterial = new LambertMaterial();
+		Material* currMaterial = new Material();
 
 		// Amibent Color
 		double3 = reinterpret_cast<FbxSurfaceLambert *>(inMaterial)->Ambient;
@@ -844,19 +845,22 @@ void FBXExporter::ProcessMaterialTexture(FbxSurfaceMaterial* inMaterial, Materia
 						std::string textureType = property.GetNameAsCStr();
 						FbxFileTexture* fileTexture = FbxCast<FbxFileTexture>(texture);
 
+						std::string genericFileName = Utilities::GetFileName(fileTexture->GetFileName());
+						genericFileName = Utilities::RemoveSuffix(genericFileName);
+
 						if (fileTexture)
 						{
 							if (textureType == "DiffuseColor")
 							{
-								ioMaterial->mDiffuseMapName = fileTexture->GetFileName();
+								ioMaterial->mDiffuseMapName = genericFileName;
 							}
 							else if (textureType == "SpecularColor")
 							{
-								ioMaterial->mSpecularMapName = fileTexture->GetFileName();
+								ioMaterial->mSpecularMapName = genericFileName;
 							}
 							else if (textureType == "Bump")
 							{
-								ioMaterial->mNormalMapName = fileTexture->GetFileName();
+								ioMaterial->mNormalMapName = genericFileName;
 							}
 						}
 					}
@@ -910,7 +914,7 @@ void FBXExporter::WriteMeshToStream(XMFLOAT3* pPositions, XMFLOAT3* pNormals, XM
 	}
 	else
 	{
-		std::cout << "\t<format>pnt</format>" << std::endl;
+		//std::cout << "\t<format>pnt</format>" << std::endl;
 	}
 	//std::cout << "\t<texture>" << mMaterialLookUp[0]->mDiffuseMapName << "</texture>" << std::endl;
 	//std::cout << "\t<triangles count='" << mTriangleCount << "'>" << std::endl;
@@ -921,28 +925,20 @@ void FBXExporter::WriteMeshToStream(XMFLOAT3* pPositions, XMFLOAT3* pNormals, XM
 		{
 			//std::cout << "\t\t<tri>" << mTriangles[i].mIndices[j] << std::endl;
 			pnIndices[i * 3 + j] = mTriangles[i].mIndices[j];
-			//std::cout << pnIndices[i * 3 + j] << std::endl;
 		}
 	}
 
-
 	for (unsigned int i = 0; i < mVertices.size(); ++i)
 	{
-		//std::cout << "\t\t<vtx>" << std::endl;
-		//std::cout << "\t\t\t<pos>" << mVertices[i].mPosition.x << "," << mVertices[i].mPosition.y << "," << -mVertices[i].mPosition.z << "</pos>" << std::endl;
-		
 		pPositions[i] = XMFLOAT3(mVertices[i].mPosition.x, mVertices[i].mPosition.y, mVertices[i].mPosition.z);
 		pNormals[i] = XMFLOAT3(mVertices[i].mNormal.x, mVertices[i].mNormal.y, mVertices[i].mNormal.z);
 		pTextureCoords0[i] = XMFLOAT2(mVertices[i].mUV.x, 1.0f - mVertices[i].mUV.y);
 
-		//std::cout << "\t\t\t<norm>" << mVertices[i].mNormal.x << "," << mVertices[i].mNormal.y << "," << -mVertices[i].mNormal.z << "</norm>" << std::endl;
 		//if (mHasAnimation)
 		//{
 		//	std::cout << "\t\t\t<sw>" << static_cast<float>(mVertices[i].mVertexBlendingInfos[0].mBlendingWeight) << "," << static_cast<float>(mVertices[i].mVertexBlendingInfos[1].mBlendingWeight) << "," << static_cast<float>(mVertices[i].mVertexBlendingInfos[2].mBlendingWeight) << "," << static_cast<float>(mVertices[i].mVertexBlendingInfos[3].mBlendingWeight) << "</sw>" << std::endl;
 		//	std::cout << "\t\t\t<si>" << mVertices[i].mVertexBlendingInfos[0].mBlendingIndex << "," << mVertices[i].mVertexBlendingInfos[1].mBlendingIndex << "," << mVertices[i].mVertexBlendingInfos[2].mBlendingIndex << "," << mVertices[i].mVertexBlendingInfos[3].mBlendingIndex << "</si>" << std::endl;
 		//}
-		//std::cout << "\t\t\t<tex>" << mVertices[i].mUV.x << "," << 1.0f - mVertices[i].mUV.y << "</tex>" << std::endl;
-		//std::cout << "\t\t</vtx>" << std::endl;
 	}
 }
 
