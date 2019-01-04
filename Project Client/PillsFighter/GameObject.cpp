@@ -2,133 +2,6 @@
 #include "GameObject.h"
 #include "Shader.h"
 
-CTexture::CTexture(int nTextures, UINT nTextureType, int nSamplers)
-{
-	m_nTextureType = nTextureType;
-	m_nTextures = nTextures;
-
-	if (m_nTextures > 0)
-	{
-		m_pRootArgumentInfos = new SRVROOTARGUMENTINFO[m_nTextures];
-		m_ppd3dTextureUploadBuffers = new ID3D12Resource*[m_nTextures];
-		m_ppd3dTextures = new ID3D12Resource*[m_nTextures];
-	}
-
-	m_nSamplers = nSamplers;
-	if (m_nSamplers > 0) m_pd3dSamplerGpuDescriptorHandles = new D3D12_GPU_DESCRIPTOR_HANDLE[m_nSamplers];
-}
-
-CTexture::~CTexture()
-{
-	if (m_ppd3dTextures)
-	{
-		for (int i = 0; i < m_nTextures; i++) if (m_ppd3dTextures[i]) m_ppd3dTextures[i]->Release();
-		delete[] m_ppd3dTextures;
-	}
-
-	if (m_pRootArgumentInfos) delete[] m_pRootArgumentInfos;
-
-	if (m_pd3dSamplerGpuDescriptorHandles) delete[] m_pd3dSamplerGpuDescriptorHandles;
-}
-
-void CTexture::SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle)
-{
-	m_pRootArgumentInfos[nIndex].m_nRootParameterIndex = nRootParameterIndex;
-	m_pRootArgumentInfos[nIndex].m_d3dSrvGpuDescriptorHandle = d3dSrvGpuDescriptorHandle;
-}
-
-void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle)
-{
-	m_pd3dSamplerGpuDescriptorHandles[nIndex] = d3dSamplerGpuDescriptorHandle;
-}
-
-void CTexture::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_nTextureType == RESOURCE_TEXTURE2D_ARRAY)
-	{
-		pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[0].m_nRootParameterIndex, m_pRootArgumentInfos[0].m_d3dSrvGpuDescriptorHandle);
-	}
-	else
-	{
-		for (int i = 0; i < m_nTextures; i++)
-		{
-			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[i].m_nRootParameterIndex, m_pRootArgumentInfos[i].m_d3dSrvGpuDescriptorHandle);
-		}
-	}
-}
-
-void CTexture::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex)
-{
-	pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[nIndex].m_nRootParameterIndex, m_pRootArgumentInfos[nIndex].m_d3dSrvGpuDescriptorHandle);
-}
-
-void CTexture::ReleaseUploadBuffers()
-{
-	if (m_ppd3dTextureUploadBuffers)
-	{
-		for (int i = 0; i < m_nTextures; i++) if (m_ppd3dTextureUploadBuffers[i]) m_ppd3dTextureUploadBuffers[i]->Release();
-		delete[] m_ppd3dTextureUploadBuffers;
-		m_ppd3dTextureUploadBuffers = NULL;
-	}
-}
-
-void CTexture::LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex)
-{
-	m_ppd3dTextures[nIndex] = ::CreateTextureResourceFromFile(pd3dDevice, pd3dCommandList, pszFileName, &m_ppd3dTextureUploadBuffers[nIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-}
-
-ID3D12Resource *CTexture::CreateTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nWidth, UINT nHeight, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE *pd3dClearValue, UINT nIndex)
-{
-	m_ppd3dTextures[nIndex] = ::CreateTexture2DResource(pd3dDevice, pd3dCommandList, nWidth, nHeight, dxgiFormat, d3dResourceFlags, d3dResourceStates, pd3dClearValue);
-	return(m_ppd3dTextures[nIndex]);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-CMaterial::CMaterial()
-{
-}
-
-CMaterial::~CMaterial()
-{
-	for (auto& Texture : m_vTextures)
-		if (Texture)
-			delete Texture;
-
-	m_vTextures.empty();
-}
-
-void CMaterial::SetTexture(CTexture *pTexture)
-{
-	m_vTextures.emplace_back(pTexture);
-}
-
-void CMaterial::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
-{
-	pcbMappedGameObject->m_Material.m_xmf4Ambient = m_xmf4AmbientColor;
-	pcbMappedGameObject->m_Material.m_xmf4Diffuse = m_xmf4AlbedoColor;
-	pcbMappedGameObject->m_Material.m_xmf4Emissive = m_xmf4EmissiveColor;
-	pcbMappedGameObject->m_Material.m_xmf4Specular = m_xmf4SpecularColor;
-	pcbMappedGameObject->m_nTexturesMask = m_nType;
-}
-
-void CMaterial::UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	for (auto& Texture : m_vTextures)
-	{
-		if (Texture) Texture->UpdateShaderVariable(pd3dCommandList, 0);
-	}
-}
-
-void CMaterial::ReleaseUploadBuffers()
-{
-	for (auto& Texture : m_vTextures)
-	{
-		if (Texture)
-			Texture->ReleaseUploadBuffers();
-	}
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CGameObject::CGameObject()
@@ -151,47 +24,28 @@ CGameObject::CGameObject()
 	m_fPrepareYaw = 0.0f;
 }
 
-CGameObject::CGameObject(CGameObject *pObject)
-{
-	pObject->GetMaterial(m_nMaterials, m_ppMaterials);
-	pObject->GetMesh(m_pMesh, m_pCubeMesh);
-
-	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
-	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_xmf3PrevPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
-
-	serverPosition = XMFLOAT3(0, 0, 0);
-
-	m_fPitch = 0.0f;
-	m_fRoll = 0.0f;
-	m_fYaw = 0.0f;
-
-	m_fPreparePitch = 0.0f;
-	m_fPrepareRoll = 0.0f;
-	m_fPrepareYaw = 0.0f;
-}
-
 CGameObject::~CGameObject()
 {
 	ReleaseShaderVariables();
 
-	if (m_pMesh)
-	{
-		delete m_pMesh;
-		if(m_pCubeMesh) delete m_pCubeMesh;
-	}
-
-	if (m_ppMaterials)
-	{
-		for (UINT i = 0; i < m_nMaterials; i++)
-			if (m_ppMaterials[i]) delete m_ppMaterials[i];
-		delete[] m_ppMaterials;
-	}
+	if (m_pModel)
+		delete m_pModel;
 
 	if (m_pShader) delete m_pShader;
+}
+
+void CGameObject::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
+{
+	if (!m_pModel) m_pModel = new CModel();
+
+	m_pModel->SetMesh(pMesh, pCubeMesh);
+}
+
+void CGameObject::SetMaterial(CMaterial **ppMaterials, UINT nMaterials)
+{
+	if (!m_pModel) m_pModel = new CModel();
+
+	m_pModel->SetMaterial(ppMaterials, nMaterials);
 }
 
 void CGameObject::SetWorldTransf(XMFLOAT4X4& xmf4x4World)
@@ -214,15 +68,6 @@ XMFLOAT4X4 CGameObject::GetWorldTransf()
 	};
 
 	return xmf4x4World;
-}
-
-void CGameObject::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
-{
-	m_pMesh = pMesh;
-	m_pCubeMesh = pCubeMesh;
-
-	if(pMesh)
-		m_xmOOBB = pMesh->m_xmOOBB;
 }
 
 void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -276,11 +121,12 @@ void CGameObject::OnPrepareRender()
 
 void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-	if (m_pMesh)
+	if (m_pModel)
 	{
 		OnPrepareRender();
 
-		m_pMesh->m_xmOOBB.Transform(m_xmOOBB, XMLoadFloat4x4(&m_xmf4x4World));
+		m_pModel->UpdateCollisionBox(m_xmOOBB, m_xmf4x4World);
+
 		XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB.Orientation)));
 	}
 }
@@ -289,22 +135,12 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 {
 	OnPrepareRender();
 	UpdateShaderVariables(pd3dCommandList);
-	
+
 	if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
 
-	if (m_nMaterials > 0)
+	if(m_pModel)
 	{
-		for (int i = 0; i < m_nMaterials; i++)
-		{
-			if (m_ppMaterials[i])
-			{
-				m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, m_pcbMappedGameObject);
-				m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
-
-			}
-
-			if (m_pMesh) m_pMesh->Render(pd3dCommandList);
-		}
+		m_pModel->Render(pd3dCommandList, pCamera, m_pcbMappedGameObject);
 	}
 }
 
@@ -314,24 +150,14 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	if (m_pCubeMesh) m_pCubeMesh->Render(pd3dCommandList);
+	if(m_pModel) m_pModel->RenderWire(pd3dCommandList, pCamera);
 }
 
 void CGameObject::ReleaseUploadBuffers()
 {
-	if (m_pMesh)
+	if(m_pModel)
 	{
-		m_pMesh->ReleaseUploadBuffers();
-		if (m_pCubeMesh) m_pCubeMesh->ReleaseUploadBuffers();
-		
-	}
-
-	if (m_ppMaterials)
-	{
-		for (UINT i = 0; i < m_nMaterials; i++)
-		{
-			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
-		}
+		m_pModel->ReleaseUploadBuffers();
 	}
 
 	if (m_pShader)	m_pShader->ReleaseUploadBuffers();

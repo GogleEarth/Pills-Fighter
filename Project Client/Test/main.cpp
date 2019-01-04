@@ -68,7 +68,7 @@ int main()
 	FbxImporter *pFbxImporter = FbxImporter::Create(pFbxManager, "Importer");
 
 	//pFbxImporter->Initialize("./Resource/Test/testbox.fbx", -1, pFbxManager->GetIOSettings());
-	pFbxImporter->Initialize("./Resource/GM/test_binary.fbx", -1, pFbxManager->GetIOSettings());
+	pFbxImporter->Initialize("./Resource/GM/Body/UpperBody.fbx", -1, pFbxManager->GetIOSettings());
 	//pFbxImporter->Initialize("./11/Wolf.fbx", -1, pFbxManager->GetIOSettings());
 
 	char strFilePath[256];
@@ -391,11 +391,7 @@ int main()
 
 								if (strTextureType == "DiffuseColor")
 								{
-									strcat_s(strFilePath, "Texture\\");
-									strcat_s(strFilePath, strFileName.c_str());
-									strcat_s(strFilePath, ".dds");
-
-									printf("Is Diffuse Map : %s\n", strFilePath);
+									printf("Is Diffuse Map : %s\n", strFileName.c_str());
 								}
 								else if (strTextureType == "SpecularColor")
 								{

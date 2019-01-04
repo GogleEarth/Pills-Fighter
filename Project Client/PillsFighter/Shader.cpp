@@ -317,37 +317,14 @@ CObjectsShader::CObjectsShader()
 
 CObjectsShader::~CObjectsShader()
 {
-	if (m_pMesh)
-	{
-		delete m_pMesh;
-
-		if (m_pCubeMesh) delete m_pCubeMesh;
-	}
-
-	if (m_ppMaterials)
-	{
-		for (UINT i = 0; i < m_nMaterials; i++)
-			if (m_ppMaterials[i]) delete m_ppMaterials[i];
-		delete[] m_ppMaterials;
-	}
+	if (m_pModel)
+		delete m_pModel;
 }
 
 void CObjectsShader::ReleaseUploadBuffers()
 {
-	if (m_pMesh)
-	{
-		m_pMesh->ReleaseUploadBuffers();
-
-		if (m_pCubeMesh) m_pCubeMesh->ReleaseUploadBuffers();
-	}
-
-	if (m_ppMaterials)
-	{
-		for (UINT i = 0; i < m_nMaterials; i++)
-		{
-			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
-		}
-	}
+	if (m_pModel)
+		m_pModel->ReleaseUploadBuffers();
 
 	CShader::ReleaseUploadBuffers();
 }
@@ -368,8 +345,7 @@ void CObjectsShader::ReleaseObjects()
 	{
 		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
 		{
-			(*Object)->SetMesh(NULL, NULL);
-			(*Object)->SetMaterial(NULL, 0);
+			(*Object)->SetModel(NULL);
 			delete *Object;
 			Object = m_vObjects.erase(Object);
 		}
@@ -394,8 +370,7 @@ void CObjectsShader::CheckDeleteObjects()
 		{
 			if ((*Object)->IsDelete())
 			{
-				(*Object)->SetMesh(NULL, NULL);
-				(*Object)->SetMaterial(NULL, 0);
+				(*Object)->SetModel(NULL);
 				(*Object)->ReleaseShaderVariables();
 				delete *Object;
 
@@ -410,8 +385,7 @@ void CObjectsShader::CheckDeleteObjects()
 void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
 {
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pObject->SetMesh(m_pMesh, m_pCubeMesh);
-	pObject->SetMaterial(m_ppMaterials, m_nMaterials);
+	pObject->SetModel(m_pModel);
 
 	m_vObjects.emplace_back(pObject);
 }
@@ -448,21 +422,7 @@ CBulletShader::~CBulletShader()
 
 void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
 {
-	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Bullet/bullet.dds", 0);
-
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-
-	m_nMaterials = 1;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial();
-	m_ppMaterials[0]->SetTexture(pTextures);
-
-	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet.fbx");
-	XMFLOAT3 Extents = m_pMesh->GetExtents();
-	XMFLOAT3 Center = m_pMesh->GetCenter();
-	m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
+	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx", this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -477,21 +437,8 @@ CGundamShader::~CGundamShader()
 
 void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
 {
-	CTexture *pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", 0);
-
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-
-	m_nMaterials = 1;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial();
-	m_ppMaterials[0]->SetTexture(pTextures);
-
-	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
-	XMFLOAT3 Extents = m_pMesh->GetExtents();
-	XMFLOAT3 Center = m_pMesh->GetCenter();
-	m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
+	//m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx", this);
+	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx", this);
 
 	RandomMoveObject *pObject = new RandomMoveObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
@@ -512,21 +459,8 @@ CBuildingShader::~CBuildingShader()
 
 void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
-	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/hangar.dds", 0);
-
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-
-	m_nMaterials = 1;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial();
-	m_ppMaterials[0]->SetTexture(pTextures);
-
-	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
-	XMFLOAT3 Extents = m_pMesh->GetExtents();
-	XMFLOAT3 Center = m_pMesh->GetCenter();
-	m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
+	//m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx", this);
+	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx", this);
 
 	CGameObject *pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(-100.0f, 0.0f, 0.0f));
@@ -630,12 +564,17 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
 	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nMaterials = 1;
-	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial();
-	m_ppMaterials[0]->SetTexture(pTextures);
+	int nMaterials = 1;
+	CMaterial **ppMaterials = new CMaterial*[nMaterials];
+	ppMaterials[0] = new CMaterial();
+	ppMaterials[0]->SetTexture(pTextures);
 
-	m_pMesh = new CRectMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f);
+	CMesh *pMesh = new CRectMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f);
+
+	m_pModel = new CModel();
+
+	m_pModel->SetMesh(pMesh, NULL);
+	m_pModel->SetMaterial(ppMaterials, nMaterials);
 
 	CEffect *pEffect = new CEffect();
 	pEffect->SetPosition(0.0f, 20.0f, 0.0f);

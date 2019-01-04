@@ -76,21 +76,11 @@ public:
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	CMesh					*m_pMesh = NULL;
-	CCubeMesh				*m_pCubeMesh = NULL;
-
-	UINT					m_nMaterials;
-	CMaterial				**m_ppMaterials = NULL;
+	CModel						*m_pModel = NULL;
 
 	std::vector<CGameObject*>	m_vObjects;
 
 public:
-	virtual void SetMesh(CMesh* pMesh, CCubeMesh* pCubeMesh) { m_pMesh = pMesh; m_pCubeMesh = pCubeMesh; }
-	virtual void GetMesh(CMesh*& pMesh, CCubeMesh*& pCubeMesh) { pMesh = m_pMesh; pCubeMesh = m_pCubeMesh; }
-
-	virtual void SetMaterial(CMaterial** ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
-	virtual void GetMaterial(CMaterial**& ppMaterials, UINT& nMaterials) { ppMaterials = m_ppMaterials; nMaterials = m_nMaterials; }
-
 	virtual void GetObjects(std::vector<CGameObject*> *vObjects) {}
 
 	void CheckDeleteObjects();

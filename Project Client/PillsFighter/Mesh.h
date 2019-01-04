@@ -1,4 +1,5 @@
 #pragma once
+#include"fbxsdk.h"
 
 class CMesh
 {
@@ -89,11 +90,11 @@ class CStandardMesh : public CMesh
 {
 public:
 	CStandardMesh() {}
-	CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName);
+	CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CStandardMesh();
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
-	void LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);//, FbxMesh *pfbxMesh);
+	void LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxMesh *pfbxMesh);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

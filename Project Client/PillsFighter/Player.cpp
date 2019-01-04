@@ -13,25 +13,9 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pCamera = SetCamera(0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
-	XMFLOAT3 Extents = m_pMesh->GetExtents();
-	XMFLOAT3 Center = m_pMesh->GetCenter();
-	m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, Center, Extents.x, Extents.y, Extents.z);
-	SetMesh(m_pMesh, m_pCubeMesh);
-
-	CTexture *pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", 0);
-
-	CMaterial **ppMaterials = new CMaterial*[1];
-	ppMaterials[0] = new CMaterial();
-	ppMaterials[0]->SetTexture(pTextures);
-
-	SetMaterial(ppMaterials, 1);
-
-	m_pShader = new CShader();
-	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pShader->CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	//m_pShader = new CShader();
+	//m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	//m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx", m_pShader);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);

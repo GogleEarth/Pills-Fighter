@@ -1,19 +1,29 @@
 #pragma once
 
+#include"Mesh.h"
+
+class CCamera;
+class CShader;
+
 #define RESOURCE_TEXTURE2D			0x01
 #define RESOURCE_TEXTURE2D_ARRAY	0x02	//[]
 #define RESOURCE_TEXTURE2DARRAY		0x03
 #define RESOURCE_TEXTURE_CUBE		0x04
 #define RESOURCE_BUFFER				0x05
 
-class CStandardMesh;
-class CShader;
-
 struct SRVROOTARGUMENTINFO
 {
 	UINT							m_nRootParameterIndex = 0;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGpuDescriptorHandle;
 };
+
+#define TEXTURE_ALBEDO_MAP			0
+#define TEXTURE_SPECULAR_MAP		1
+#define TEXTURE_NORMAL_MAP			2
+#define TEXTURE_METALLIC_MAP		3
+#define TEXTURE_EMISSION_MAP		4
+#define TEXTURE_DETAIL_ALBEDO_MAP	5
+#define TEXTURE_DETAIL_NORMAL_MAP	6
 
 class CTexture
 {
@@ -39,7 +49,7 @@ public:
 	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
 
-	void LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const wchar_t *pszFileName, UINT nIndex);
+	void LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex);
 	ID3D12Resource *CreateTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nWidth, UINT nHeight, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE *pd3dClearValue, UINT nIndex);
 
 	int GetTextures() { return(m_nTextures); }
@@ -47,15 +57,34 @@ public:
 	UINT GetTextureType() { return(m_nTextureType); }
 
 	void ReleaseUploadBuffers();
+
+protected:
+	int					m_nType = TEXTURE_ALBEDO_MAP;
+
+public:
+	int GetType() { return m_nType; }
 };
 
-#define MATERIAL_DIFFUSE_MAP		0x01 // 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define MATERIAL_ALBEDO_MAP			0x01
 #define MATERIAL_SPECULAR_MAP		0x02
 #define MATERIAL_NORMAL_MAP			0x04
 #define MATERIAL_METALLIC_MAP		0x08
 #define MATERIAL_EMISSION_MAP		0x10
 #define MATERIAL_DETAIL_ALBEDO_MAP	0x20
 #define MATERIAL_DETAIL_NORMAL_MAP	0x40
+
+struct MATERIAL
+{
+	XMFLOAT4		m_xmf4Ambient;
+	XMFLOAT4		m_xmf4Diffuse;
+	XMFLOAT4		m_xmf4Specular;
+	XMFLOAT4		m_xmf4Emissive;
+};
+
+struct CB_GAMEOBJECT_INFO;
 
 class CMaterial
 {
@@ -64,34 +93,35 @@ public:
 	virtual ~CMaterial();
 
 protected:
-	UINT							m_nType = 0x00;
-
-	CShader							*m_pShader = NULL;
-
-	XMFLOAT4						m_xmf4DiffuseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4						m_xmf4AlbedoColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	XMFLOAT4						m_xmf4EmissiveColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	std::vector<CTexture*>			m_vTextures; 
+	UINT							m_nType = 0x00;
+
+	float							m_fGlossiness = 0.0f;
+	float							m_fSmoothness = 0.0f;
+	float							m_fSpecularHighlight = 0.0f;
+	float							m_fMetallic = 0.0f;
+	float							m_fGlossyReflection = 0.0f;
+
+	std::vector<CTexture*>			m_vTextures; //Albedo, Specular, Metallic, Normal, Emission, DetailAlbedo, DetailNormal
 
 public:
-	void SetAlbedo(XMFLOAT4 xmf4Albedo) { m_xmf4DiffuseColor = xmf4Albedo; }
-	void SetEmissive(XMFLOAT4 xmf4Emissive) { m_xmf4EmissiveColor = xmf4Emissive; }
-	void SetSpecular(XMFLOAT4 xmf4Specular) { m_xmf4SpecularColor = xmf4Specular; }
-	void SetAmbient(XMFLOAT4 xmf4Ambient) { m_xmf4AmbientColor = xmf4Ambient; }
-
-	int GetTextureCount() { return m_vTextures.size(); }
-
-	void SetShader(CShader *pShader) { m_pShader = pShader; }
 	void SetMaterialType(UINT nType) { m_nType |= nType; }
 	void SetTexture(CTexture *pTexture);
 
-	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
+	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
+
 	void ReleaseUploadBuffers();
 
+public:
 	void LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxSurfaceMaterial *pfbxMaterial, CShader *pShader, const char *pstrFilePath);
 	void CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader);
+
+	int GetTextureCount() { return m_vTextures.size(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,15 +129,27 @@ public:
 class CModel
 {
 public:
-	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, const char *pFileName, CShader *pShader);
+	CModel() {};
+	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pFileName, CShader *pShader);
 	virtual ~CModel();
 
 protected:
-	CStandardMesh *m_pMesh = NULL;
+	CMesh			*m_pMesh = NULL;
+	CCubeMesh		*m_pCubeMesh = NULL;
 
-	int			m_nMaterials;
-	CMaterial **m_ppMaterials = NULL;
+	int				m_nMaterials;
+	CMaterial		**m_ppMaterials = NULL;
 
-	bool m_bHasAnimation = false;
+	bool			m_bHasAnimation = false;
+
+public:
+	void ReleaseUploadBuffers();
+
+	void UpdateCollisionBox(BoundingOrientedBox &xmOOBB, XMFLOAT4X4 &xmf4x4World);
+
+	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
+
+	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh) { m_pMesh = pMesh; m_pCubeMesh = pCubeMesh; }
+	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
 };
-

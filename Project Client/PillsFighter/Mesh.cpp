@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "Mesh.h"
-#include "FBXExporter.h"
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
@@ -163,64 +162,14 @@ void FindXYZ(XMFLOAT3* pPositions, UINT nVertices, XMFLOAT3& Center, XMFLOAT3& E
 	Extents.x /= 2; Extents.y /= 2; Extents.z /= 2;
 }
 
-CStandardMesh::CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pstrFileName) : CMesh()
+CStandardMesh::CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) : CMesh(pd3dDevice, pd3dCommandList)
 {
-	FBXExporter *pFbxExporter = new FBXExporter();
-	pFbxExporter->Initialize();
-	pFbxExporter->LoadScene(pstrFileName);
-	pFbxExporter->ExportFBX();
-
-	m_nVertices = pFbxExporter->GetVertices();
-	m_nIndices = pFbxExporter->GetIndices();
-
-	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
-	m_pxmf3Normals = new XMFLOAT3[m_nVertices];
-	m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
-	m_pnIndices = new UINT[m_nIndices];
-
-	pFbxExporter->WriteMeshToStream(m_pxmf3Positions, m_pxmf3Normals, m_pxmf2TextureCoords0, m_pnIndices);
-
-	// 정점 버퍼 생성( 위치 )
-	m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Positions, sizeof(XMFLOAT3) * m_nVertices,
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dPositionUploadBuffer);
-
-	m_d3dPositionBufferView.BufferLocation = m_pd3dPositionBuffer->GetGPUVirtualAddress();
-	m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
-	m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
-
-	// 정점 버퍼 생성( 법선 벡터 )
-	m_pd3dNormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Normals, sizeof(XMFLOAT3) * m_nVertices,
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dNormalUploadBuffer);
-
-	m_d3dNormalBufferView.BufferLocation = m_pd3dNormalBuffer->GetGPUVirtualAddress();
-	m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
-	m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
-
-	// 정점 버퍼 생성( 텍스쳐 좌표 )
-	m_pd3dTextureCoord0Buffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2TextureCoords0, sizeof(XMFLOAT2) * m_nVertices,
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTextureCoord0UploadBuffer);
-
-	m_d3dTextureCoord0BufferView.BufferLocation = m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
-	m_d3dTextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
-	m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;
-
-	// 인덱스 버퍼 생성
-	m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
-
-	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
-	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
-
-	XMFLOAT3 Center, Extents;
-	FindXYZ(m_pxmf3Positions, m_nVertices, Center, Extents);
-
-	SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 CStandardMesh::~CStandardMesh()
 {
 }
-/*
+
 void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxMesh *pfbxMesh)
 {
 
@@ -466,7 +415,7 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
-*/
+
 void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
