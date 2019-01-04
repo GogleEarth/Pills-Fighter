@@ -13,9 +13,9 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pCamera = SetCamera(0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	//m_pShader = new CShader();
-	//m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	//m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx", m_pShader);
+	m_pShader = new CShader();
+	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx", m_pShader);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);

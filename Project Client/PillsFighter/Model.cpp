@@ -283,6 +283,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 					std::string strFileName = GetFileName(pFbxFileTexture->GetFileName());
 
 					if (pFbxFileTexture)
+
 					{
 						std::string strTextureType = fbxProperty.GetNameAsCStr();
 						char strFile[256] = { 0 };

@@ -211,10 +211,9 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 			FbxVector4 fv4CtrlPoint = pfbxMesh->GetControlPointAt(nCtrlPointIndex);
 			m_pxmf3Positions[i * 3 + j] = XMFLOAT3(
-				fv4CtrlPoint.mData[0],
-				fv4CtrlPoint.mData[1],
-				fv4CtrlPoint.mData[2]
-			);
+				static_cast<float>(fv4CtrlPoint.mData[0]),
+				static_cast<float>(fv4CtrlPoint.mData[1]),
+				static_cast<float>(fv4CtrlPoint.mData[2]));
 
 			auto fbxElemRefMode = pFbxGeoElemNorm->GetReferenceMode();
 
@@ -227,52 +226,52 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 				{
 					if (pFbxGeoElemNorm)
 						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[1],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]));
 
 					if (pFbxGeoElemBinormal)
 						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[1],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]));
 
 					if (pFbxGeoElemTangent)
 						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[1],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]));
 
 					if (pFbxGeoElemUV)
 						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[0],
-							pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]);
+							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
+							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]));
 				}
 				break;
 				case FbxGeometryElement::eIndexToDirect:
 				{
 					if (pFbxGeoElemNorm)
 						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]);
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]));
 
 					if (pFbxGeoElemBinormal)
 						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]);
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]));
 
 					if (pFbxGeoElemTangent)
 						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]);
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]));
 
 					if (pFbxGeoElemUV)
 						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0],
-							pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]);
+							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
+							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]));
 				}
 				break;
 				}
@@ -284,52 +283,52 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 				{
 					if (pFbxGeoElemNorm)
 						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[0],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[1],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[2]));
 
 					if (pFbxGeoElemBinormal)
 						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[0],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[1],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[2]));
 
 					if (pFbxGeoElemTangent)
 						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[0],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[1],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[2]));
 
 					if (pFbxGeoElemUV)
 						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0],
-							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]);
+							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0]),
+							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]));
 				}
 				break;
 				case FbxGeometryElement::eIndexToDirect:
 				{
 					if (pFbxGeoElemNorm)
 						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[0],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[1],
-							pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[2]));
 
 					if (pFbxGeoElemBinormal)
 						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[0],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[1],
-							pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[2]));
 
 					if (pFbxGeoElemTangent)
 						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[0],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[1],
-							pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[2]);
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[0]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[1]),
+							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[2]));
 
 					if (pFbxGeoElemUV)
 						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0],
-							pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]);
+							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0]),
+							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]));
 				}
 				break;
 				}
@@ -354,7 +353,6 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 			}
 
 			nIndex++;
-			printf("\n");
 		}
 	}
 

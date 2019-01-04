@@ -68,7 +68,7 @@ int main()
 	FbxImporter *pFbxImporter = FbxImporter::Create(pFbxManager, "Importer");
 
 	//pFbxImporter->Initialize("./Resource/Test/testbox.fbx", -1, pFbxManager->GetIOSettings());
-	pFbxImporter->Initialize("./Resource/GM/Body/UpperBody.fbx", -1, pFbxManager->GetIOSettings());
+	pFbxImporter->Initialize("./Resource/GM/Head/Head.fbx", -1, pFbxManager->GetIOSettings());
 	//pFbxImporter->Initialize("./11/Wolf.fbx", -1, pFbxManager->GetIOSettings());
 
 	char strFilePath[256];
