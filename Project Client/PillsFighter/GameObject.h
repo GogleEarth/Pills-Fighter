@@ -3,23 +3,6 @@
 #include "Mesh.h"
 #include "Camera.h"
 
-class CShader;
-
-struct MATERIAL
-{
-	XMFLOAT4		m_xmf4Ambient;
-	XMFLOAT4		m_xmf4Diffuse;
-	XMFLOAT4		m_xmf4Specular;
-	XMFLOAT4		m_xmf4Emissive;
-};
-
-struct CB_GAMEOBJECT_INFO
-{
-	XMFLOAT4X4						m_xmf4x4World;
-	MATERIAL						m_Material;
-	UINT							m_nTexturesMask;
-};
-
 #define RESOURCE_TEXTURE2D			0x01
 #define RESOURCE_TEXTURE2D_ARRAY	0x02	//[]
 #define RESOURCE_TEXTURE2DARRAY		0x03
@@ -77,10 +60,25 @@ public:
 #define MATERIAL_DETAIL_ALBEDO_MAP	0x20
 #define MATERIAL_DETAIL_NORMAL_MAP	0x40
 
+struct MATERIAL
+{
+	XMFLOAT4		m_xmf4Ambient;
+	XMFLOAT4		m_xmf4Diffuse;
+	XMFLOAT4		m_xmf4Specular;
+	XMFLOAT4		m_xmf4Emissive;
+};
+
+struct CB_GAMEOBJECT_INFO
+{
+	XMFLOAT4X4						m_xmf4x4World;
+	MATERIAL						m_Material;
+	UINT							m_nTexturesMask;
+};
+
 class CMaterial
 {
 public:
-	CMaterial(int nTextures);
+	CMaterial();
 	virtual ~CMaterial();
 
 protected:
@@ -97,14 +95,11 @@ protected:
 	float							m_fMetallic = 0.0f;
 	float							m_fGlossyReflection = 0.0f;
 
-	CTexture						*m_pTexture = NULL;
-
-	int 							m_nTextures = 0;
-	CTexture						**m_ppTextures = NULL; //0:Albedo, 1:Specular, 2:Metallic, 3:Normal, 4:Emission, 5:DetailAlbedo, 6:DetailNormal
+	std::vector<CTexture*>			m_vTextures; //Albedo, Specular, Metallic, Normal, Emission, DetailAlbedo, DetailNormal
 
 public:
 	void SetMaterialType(UINT nType) { m_nType |= nType; }
-	void SetTexture(CTexture *pTexture, UINT nTexture = 0);
+	void SetTexture(CTexture *pTexture);
 
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
 	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -113,6 +108,9 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+class CShader;
+
 class CGameObject
 {
 public:

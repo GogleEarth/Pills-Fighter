@@ -23,8 +23,8 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/GM/Head/Head.dds", 0);
 
 	CMaterial **ppMaterials = new CMaterial*[1];
-	ppMaterials[0] = new CMaterial(1);
-	ppMaterials[0]->SetTexture(pTextures, 0);
+	ppMaterials[0] = new CMaterial();
+	ppMaterials[0]->SetTexture(pTextures);
 
 	SetMaterial(ppMaterials, 1);
 

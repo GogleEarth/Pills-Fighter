@@ -456,7 +456,7 @@ void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 	m_nMaterials = 1;
 	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial(1);
+	m_ppMaterials[0] = new CMaterial();
 	m_ppMaterials[0]->SetTexture(pTextures);
 
 	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet.fbx");
@@ -485,7 +485,7 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 	m_nMaterials = 1;
 	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial(1);
+	m_ppMaterials[0] = new CMaterial();
 	m_ppMaterials[0]->SetTexture(pTextures);
 
 	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
@@ -520,7 +520,7 @@ void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	m_nMaterials = 1;
 	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial(1);
+	m_ppMaterials[0] = new CMaterial();
 	m_ppMaterials[0]->SetTexture(pTextures);
 
 	m_pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
@@ -632,7 +632,7 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	m_nMaterials = 1;
 	m_ppMaterials = new CMaterial*[m_nMaterials];
-	m_ppMaterials[0] = new CMaterial(1);
+	m_ppMaterials[0] = new CMaterial();
 	m_ppMaterials[0]->SetTexture(pTextures);
 
 	m_pMesh = new CRectMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f);

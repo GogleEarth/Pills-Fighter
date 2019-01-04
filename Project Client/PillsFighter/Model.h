@@ -73,7 +73,7 @@ protected:
 	XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	std::vector<CTexture*>			m_vpTextures; 
+	std::vector<CTexture*>			m_vTextures; 
 
 public:
 	void SetAlbedo(XMFLOAT4 xmf4Albedo) { m_xmf4DiffuseColor = xmf4Albedo; }
@@ -81,7 +81,7 @@ public:
 	void SetSpecular(XMFLOAT4 xmf4Specular) { m_xmf4SpecularColor = xmf4Specular; }
 	void SetAmbient(XMFLOAT4 xmf4Ambient) { m_xmf4AmbientColor = xmf4Ambient; }
 
-	int GetTextureCount() { return m_vpTextures.size(); }
+	int GetTextureCount() { return m_vTextures.size(); }
 
 	void SetShader(CShader *pShader) { m_pShader = pShader; }
 	void SetMaterialType(UINT nType) { m_nType |= nType; }

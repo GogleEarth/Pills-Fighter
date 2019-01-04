@@ -100,21 +100,21 @@ CMaterial::CMaterial()
 
 CMaterial::~CMaterial()
 {
-	for (auto& Texture : m_vpTextures) 
+	for (auto& Texture : m_vTextures)
 		if (Texture) 
 			delete Texture;
 
-	m_vpTextures.empty();
+	m_vTextures.empty();
 }
 
 void CMaterial::SetTexture(CTexture *pTexture)
 {
-	m_vpTextures.emplace_back(pTexture);
+	m_vTextures.emplace_back(pTexture);
 }
 
 void CMaterial::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	for (auto& Texture : m_vpTextures)
+	for (auto& Texture : m_vTextures)
 	{
 		if (Texture) Texture->UpdateShaderVariable(pd3dCommandList, 0);
 	}
@@ -122,7 +122,7 @@ void CMaterial::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 
 void CMaterial::ReleaseUploadBuffers()
 {
-	for (auto& Texture : m_vpTextures)
+	for (auto& Texture : m_vTextures)
 	{
 		if (Texture) 
 			Texture->ReleaseUploadBuffers();
@@ -267,7 +267,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 						}
 						pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
 
-						m_vpTextures.emplace_back(pTexture);
+						m_vTextures.emplace_back(pTexture);
 					}
 				}
 			}
@@ -277,7 +277,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 void CMaterial::CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader)
 {
-	for (auto& Texture : m_vpTextures)
+	for (auto& Texture : m_vTextures)
 	{
 		//UINT nType = Texture->GetType();
 

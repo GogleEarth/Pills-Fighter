@@ -85,27 +85,22 @@ ID3D12Resource *CTexture::CreateTexture(ID3D12Device *pd3dDevice, ID3D12Graphics
 
 ///////////////////////////////////////////////////////////////////////////////
 
-CMaterial::CMaterial(int nTextures)
+CMaterial::CMaterial()
 {
-	m_nTextures = nTextures;
-
-	m_ppTextures = new CTexture*[m_nTextures];
-	for (int i = 0; i < m_nTextures; i++) m_ppTextures[i] = NULL;
 }
 
 CMaterial::~CMaterial()
 {
-	if (m_ppTextures)
-	{
-		for (int i = 0; i < m_nTextures; i++) if (m_ppTextures[i]) delete m_ppTextures[i];
-		delete[] m_ppTextures;
-	}
+	for (auto& Texture : m_vTextures)
+		if (Texture)
+			delete Texture;
+
+	m_vTextures.empty();
 }
 
-void CMaterial::SetTexture(CTexture *pTexture, UINT nTexture)
+void CMaterial::SetTexture(CTexture *pTexture)
 {
-	if (m_ppTextures[nTexture]) delete m_ppTextures[nTexture];
-	m_ppTextures[nTexture] = pTexture;
+	m_vTextures.emplace_back(pTexture);
 }
 
 void CMaterial::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
@@ -119,17 +114,18 @@ void CMaterial::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList,
 
 void CMaterial::UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	for (int i = 0; i < m_nTextures; i++)
+	for (auto& Texture : m_vTextures)
 	{
-		if (m_ppTextures[i]) m_ppTextures[i]->UpdateShaderVariable(pd3dCommandList, 0);
+		if (Texture) Texture->UpdateShaderVariable(pd3dCommandList, 0);
 	}
 }
 
 void CMaterial::ReleaseUploadBuffers()
 {
-	for (int i = 0; i < m_nTextures; i++)
+	for (auto& Texture : m_vTextures)
 	{
-		if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
+		if (Texture)
+			Texture->ReleaseUploadBuffers();
 	}
 }
 
@@ -544,8 +540,8 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 	
 	CMaterial **ppTerrainMaterial = new CMaterial*[1];
-	ppTerrainMaterial[0] = new CMaterial(1);
-	ppTerrainMaterial[0]->SetTexture(pTerrainTexture, 0);
+	ppTerrainMaterial[0] = new CMaterial();
+	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
 
 	SetMaterial(ppTerrainMaterial, 1);
 }
@@ -574,7 +570,7 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false);
 
 	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
-	ppSkyBoxMaterial[0] = new CMaterial(1);
+	ppSkyBoxMaterial[0] = new CMaterial();
 	ppSkyBoxMaterial[0]->SetTexture(pSkyBoxTexture);
 
 	SetMaterial(ppSkyBoxMaterial, 1);
