@@ -74,12 +74,12 @@ void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, float fWidth, float fHeight, float fDepth) : CMesh()
+CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, XMFLOAT3 xmf3Extents) : CMesh()
 {
 	m_nVertices = 8;
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-	float fx = fWidth, fy = fHeight, fz = fDepth;
+	float fx = xmf3Extents.x, fy = xmf3Extents.y, fz = xmf3Extents.z;
 
 	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
 

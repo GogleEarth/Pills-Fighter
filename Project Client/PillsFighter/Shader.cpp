@@ -753,7 +753,7 @@ void CUserInterface::ReleaseUploadBuffers()
 {
 	if (m_ppUIRects)
 	{
-		for (UINT i = 0; i < m_nUIRect; i++)
+		for (int i = 0; i < m_nUIRect; i++)
 		{
 			if (m_ppUIRects[i]) m_ppUIRects[i]->ReleaseUploadBuffers();
 		}
@@ -761,7 +761,7 @@ void CUserInterface::ReleaseUploadBuffers()
 
 	if (m_ppTextures)
 	{
-		for (UINT i = 0; i < m_nTextures; i++)
+		for (int i = 0; i < m_nTextures; i++)
 		{
 			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
 		}

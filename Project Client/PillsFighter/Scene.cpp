@@ -248,24 +248,23 @@ bool CScene::ProcessInput(UCHAR *pKeysBuffer)
 
 void CScene::CheckCollision()
 {
-	//CGameObject	**ppBuildingObjects;
-	//UINT nBuildingObjects;
+	std::vector<CGameObject*> *vEnemys;
+	std::vector<CGameObject*> *vBullets;
 
-	//m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects(NULL, &ppBuildingObjects, &nBuildingObjects);
+	vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
+	vBullets = m_ppShaders[INDEX_SHADER_BULLET]->GetObjects();
 
-	//for (UINT nIndexBuilding = 0; nIndexBuilding < nBuildingObjects; nIndexBuilding++)
-	//{
-	//	for (UINT j = 0; j < ppBuildingObjects[nIndexBuilding]->GetNumMeshes(); j++)
-	//	{
-	//		for (UINT i = 0; i < m_pPlayer->GetNumMeshes(); i++)
-	//		{
-	//			if (m_pPlayer->GetOOBB(i).Intersects(ppBuildingObjects[nIndexBuilding]->GetOOBB(j)))
-	//			{
-	//				m_pPlayer->CallBackPosition();
-	//			}
-	//		}
-	//	}
-	//}
+	for (const auto& Enemy : *vEnemys)
+	{
+		if(m_pPlayer->GetOOBB().Intersects(Enemy->GetOOBB()))
+			std::cout << "Collision By Enemy\n" << std::endl;
+
+		for (const auto& Bullet : *vBullets)
+		{
+			if (Bullet->GetOOBB().Intersects(Enemy->GetOOBB()))
+				std::cout << "Collision Enemy By Bullet\n" << std::endl;
+		}
+	}
 }
 
 void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)

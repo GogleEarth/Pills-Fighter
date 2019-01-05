@@ -85,7 +85,7 @@ protected:
 	std::vector<CGameObject*>	m_vObjects;
 
 public:
-	virtual void GetObjects(std::vector<CGameObject*> *vObjects) {}
+	std::vector<CGameObject*>* GetObjects() { return &m_vObjects; }
 
 	void CheckDeleteObjects();
 
@@ -202,7 +202,7 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayerHP = NULL;
 	CB_PLAYER_HP					*m_pcbMappedPlayerHP = NULL;
 
-	UINT							m_nUIRect = 0;
+	int								m_nUIRect = 0;
 	CUIRect							**m_ppUIRects = NULL;
 
 	int								m_nTextures;

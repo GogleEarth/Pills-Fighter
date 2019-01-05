@@ -121,7 +121,7 @@ public:
 	void LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxSurfaceMaterial *pfbxMaterial, const char *pstrFilePath);
 	void CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader);
 
-	int GetTextureCount() { return m_vTextures.size(); }
+	int GetTextureCount() { return (int)m_vTextures.size(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

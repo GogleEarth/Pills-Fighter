@@ -38,7 +38,7 @@ int CTexture::SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DE
 	m_pRootArgumentInfos[nIndex].m_nRootParameterIndex = nRootParameterIndex;
 	m_pRootArgumentInfos[nIndex].m_vd3dSrvGpuDescriptorHandle.emplace_back(d3dSrvGpuDescriptorHandle);
 
-	return m_pRootArgumentInfos[nIndex].m_vd3dSrvGpuDescriptorHandle.size() - 1;
+	return (int)(m_pRootArgumentInfos[nIndex].m_vd3dSrvGpuDescriptorHandle.size() - 1);
 }
 
 void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle)
@@ -94,14 +94,14 @@ std::string GetFileName(const std::string strFileName)
 	std::string strPathSeparator("\\");
 	std::string strSuffixSeparator(".");
 
-	int nPathpos = 1 + strFileName.find_last_of(strPathSeparator);
+	int nPathpos = 1 + (int)(strFileName.find_last_of(strPathSeparator));
 	if (nPathpos == 0)
 	{
 		strPathSeparator = "/";
-		nPathpos = 1 + strFileName.find_last_of(strPathSeparator);
+		nPathpos = 1 + (int)(strFileName.find_last_of(strPathSeparator));
 	}
 
-	int nSuffixpos = strFileName.find_last_of(strSuffixSeparator);
+	int nSuffixpos = (int)(strFileName.find_last_of(strSuffixSeparator));
 
 	return strFileName.substr(nPathpos, nSuffixpos - nPathpos);
 }
@@ -110,11 +110,11 @@ std::string GetFilePath(const std::string strFileName)
 {
 	std::string strPathSeparator("\\");
 
-	int nPathpos = 1 + strFileName.find_last_of(strPathSeparator);
+	int nPathpos = 1 + (int)(strFileName.find_last_of(strPathSeparator));
 	if (nPathpos == 0)
 	{
 		strPathSeparator = "/";
-		nPathpos = 1 + strFileName.find_last_of(strPathSeparator);
+		nPathpos = 1 + (int)(strFileName.find_last_of(strPathSeparator));
 	}
 	std::cout << nPathpos << std::endl;
 
@@ -192,27 +192,34 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 {
 	if (pfbxMaterial->GetClassId().Is(FbxSurfacePhong::ClassId))
 	{
-		std::cout << "Is Phong\n";
 
 		FbxDouble3 fbxd3Ambient = ((FbxSurfacePhong*)pfbxMaterial)->Ambient;
 		m_xmf4AmbientColor.x = static_cast<float>(fbxd3Ambient.mData[0]);
 		m_xmf4AmbientColor.y = static_cast<float>(fbxd3Ambient.mData[1]);
 		m_xmf4AmbientColor.z = static_cast<float>(fbxd3Ambient.mData[2]);
+		printf("Ambient(%f, %f, %f)\n", m_xmf4AmbientColor.x, m_xmf4AmbientColor.y, m_xmf4AmbientColor.z);
 
 		FbxDouble3 fbxd3Diffuse = ((FbxSurfacePhong*)pfbxMaterial)->Diffuse;
 		m_xmf4AlbedoColor.x = static_cast<float>(fbxd3Diffuse.mData[0]);
 		m_xmf4AlbedoColor.y = static_cast<float>(fbxd3Diffuse.mData[1]);
 		m_xmf4AlbedoColor.z = static_cast<float>(fbxd3Diffuse.mData[2]);
+		printf("Diffuse(%f, %f, %f)\n", m_xmf4AlbedoColor.x, m_xmf4AlbedoColor.y, m_xmf4AlbedoColor.z);
 
 		FbxDouble3 fbxd3Specular = ((FbxSurfacePhong*)pfbxMaterial)->Specular;
 		m_xmf4SpecularColor.x = static_cast<float>(fbxd3Specular.mData[0]);
 		m_xmf4SpecularColor.y = static_cast<float>(fbxd3Specular.mData[1]);
 		m_xmf4SpecularColor.z = static_cast<float>(fbxd3Specular.mData[2]);
 
+		FbxDouble fbxd3SpecularFactor = ((FbxSurfacePhong*)pfbxMaterial)->SpecularFactor;
+		m_xmf4SpecularColor.w = static_cast<float>(fbxd3SpecularFactor);
+
+		printf("Specular(%f, %f, %f, %f)\n", m_xmf4SpecularColor.x, m_xmf4SpecularColor.y, m_xmf4SpecularColor.z, m_xmf4SpecularColor.w);
+
 		FbxDouble3 fbxd3Emissive = ((FbxSurfacePhong*)pfbxMaterial)->Emissive;
 		m_xmf4EmissiveColor.x = static_cast<float>(fbxd3Emissive.mData[0]);
 		m_xmf4EmissiveColor.y = static_cast<float>(fbxd3Emissive.mData[1]);
 		m_xmf4EmissiveColor.z = static_cast<float>(fbxd3Emissive.mData[2]);
+		printf("Emissive(%f, %f, %f)\n", m_xmf4EmissiveColor.x, m_xmf4EmissiveColor.y, m_xmf4EmissiveColor.z);
 
 		//FbxDouble3 fbxd3Reflection = ((FbxSurfacePhong*)pfbxMaterial)->Reflection;
 		//printf("Reflection Color : %f, %f, %f\n",
@@ -230,9 +237,6 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 		//printf("Shininess : %f\n",
 		//	fbxd3Shininess);
 
-		FbxDouble fbxd3SpecularFactor = ((FbxSurfacePhong*)pfbxMaterial)->SpecularFactor;
-		m_xmf4SpecularColor.w = static_cast<float>(fbxd3SpecularFactor);
-
 		//FbxDouble fbxd3ReflectionFactor = ((FbxSurfacePhong*)pfbxMaterial)->ReflectionFactor;
 		//printf("Reflection Factor : %f\n",
 			//	fbxd3ReflectionFactor);
@@ -245,6 +249,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 		m_xmf4AmbientColor.x = static_cast<float>(fbxd3Ambient.mData[0]);
 		m_xmf4AmbientColor.y = static_cast<float>(fbxd3Ambient.mData[1]);
 		m_xmf4AmbientColor.z = static_cast<float>(fbxd3Ambient.mData[2]);
+		printf("Ambient(%f, %f, %f)\n", m_xmf4AmbientColor.x, m_xmf4AmbientColor.y, m_xmf4AmbientColor.z);
 
 		//FbxDouble3 fbxd3Diffuse = ((FbxSurfaceLambert*)pfbxMaterial)->Diffuse;
 		//printf("Diffuse Color : %f, %f, %f\n",
@@ -256,6 +261,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 		m_xmf4EmissiveColor.x = static_cast<float>(fbxd3Emissive.mData[0]);
 		m_xmf4EmissiveColor.y = static_cast<float>(fbxd3Emissive.mData[1]);
 		m_xmf4EmissiveColor.z = static_cast<float>(fbxd3Emissive.mData[2]);
+		printf("Emissive(%f, %f, %f)\n", m_xmf4EmissiveColor.x, m_xmf4EmissiveColor.y, m_xmf4EmissiveColor.z);
 
 		//// 재질 투명도
 		//FbxDouble fbxd3TransparencyFactor = ((FbxSurfaceLambert*)pfbxMaterial)->TransparencyFactor;
@@ -289,11 +295,11 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 					{
 						std::string strTextureType = fbxProperty.GetNameAsCStr();
 						char strFile[256] = { 0 };
-						strcpy(strFile, GetFilePath(pstrFilePath).c_str());
+						strcpy_s(strFile, GetFilePath(pstrFilePath).c_str());
 						strcat_s(strFile, strFileName.c_str());
 						strcat_s(strFile, ".dds");
 
-						INT nLen = strlen(strFile) + 1;
+						INT nLen = (int)(strlen(strFile)) + 1;
 						WCHAR* pstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
 						MultiByteToWideChar(949, 0, strFile, -1, pstrFileName, nLen);
 
@@ -385,6 +391,7 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 		FbxMesh *pFbxMesh = pfbxNode->GetMesh();
 		m_pMesh = new CStandardMesh();
 		((CStandardMesh*)m_pMesh)->LoadMeshFromFBX(pd3dDevice, pd3dCommandList, pFbxMesh);
+		m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, m_pMesh->GetCenter(), m_pMesh->GetExtents());
 
 		int nMaterialCount = m_nMaterials = pfbxNode->GetMaterialCount();
 
@@ -415,7 +422,7 @@ CModel::~CModel()
 
 	if (m_ppMaterials)
 	{
-		for (UINT i = 0; i < m_nMaterials; i++)
+		for (int i = 0; i < m_nMaterials; i++)
 			if (m_ppMaterials[i]) delete m_ppMaterials[i];
 		delete[] m_ppMaterials;
 	}
@@ -446,7 +453,7 @@ void CModel::ReleaseUploadBuffers()
 
 	if (m_ppMaterials)
 	{
-		for (UINT i = 0; i < m_nMaterials; i++)
+		for (int i = 0; i < m_nMaterials; i++)
 		{
 			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
 		}
