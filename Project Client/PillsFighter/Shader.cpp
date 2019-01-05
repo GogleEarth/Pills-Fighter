@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Shader.h"
 #include "DDSTextureLoader12.h"
+#include "Repository.h"
 
 CShader::CShader()
 {
@@ -263,7 +264,7 @@ void CShader::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Graphics
 		pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
 		m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
 
-		pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
+		m_nHandleIndex = pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
 		m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
 	}
 }
@@ -317,16 +318,6 @@ CObjectsShader::CObjectsShader()
 
 CObjectsShader::~CObjectsShader()
 {
-	if (m_pModel)
-		delete m_pModel;
-}
-
-void CObjectsShader::ReleaseUploadBuffers()
-{
-	if (m_pModel)
-		m_pModel->ReleaseUploadBuffers();
-
-	CShader::ReleaseUploadBuffers();
 }
 
 void CObjectsShader::ReleaseShaderVariables()
@@ -396,7 +387,7 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 	for (const auto& Object : m_vObjects)
 	{
-		Object->Render(pd3dCommandList, pCamera);
+		Object->Render(pd3dCommandList, pCamera, m_nHandleIndex);
 	}
 }
 
@@ -420,9 +411,10 @@ CBulletShader::~CBulletShader()
 {
 }
 
-void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
+void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx", this);
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx");
+	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -435,10 +427,10 @@ CGundamShader::~CGundamShader()
 {
 }
 
-void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, void *pContext)
+void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	//m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx", this);
-	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx", this);
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
+	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 
 	RandomMoveObject *pObject = new RandomMoveObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
@@ -457,10 +449,11 @@ CBuildingShader::~CBuildingShader()
 {
 }
 
-void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	//m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx", this);
-	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx", this);
+	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx");
+	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 
 	CGameObject *pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(-100.0f, 0.0f, 0.0f));
@@ -490,6 +483,8 @@ CEffectShader::CEffectShader()
 
 CEffectShader::~CEffectShader()
 {
+	if (m_pModel)
+		delete m_pModel;
 }
 
 D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
@@ -556,7 +551,7 @@ D3D12_BLEND_DESC CEffectShader::CreateBlendState()
 	return(d3dBlendDesc);
 }
 
-void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Fire.dds", 0);
@@ -596,6 +591,12 @@ void CEffectShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	}
 
 	CObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject);
+}
+
+void CEffectShader::ReleaseUploadBuffers()
+{
+	if (m_pModel)
+		m_pModel->ReleaseUploadBuffers();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -850,13 +851,13 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	UpdateShaderVariables(pd3dCommandList);
 
 	// Draw HP BAR
-	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList); // Base UI
+	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList, 0); // Base UI
 	m_ppUIRects[1]->Render(pd3dCommandList);
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Base UI
-	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList); // Base UI
+	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList, 0); // Base UI
 	m_ppUIRects[0]->Render(pd3dCommandList);
 }
 

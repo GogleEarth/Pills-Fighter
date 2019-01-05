@@ -13,8 +13,8 @@ class CShader;
 
 struct SRVROOTARGUMENTINFO
 {
-	UINT							m_nRootParameterIndex = 0;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGpuDescriptorHandle;
+	UINT										m_nRootParameterIndex = 0;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE>	m_vd3dSrvGpuDescriptorHandle;
 };
 
 #define TEXTURE_ALBEDO_MAP			0
@@ -43,11 +43,11 @@ public:
 	CTexture(int nTextureResources = 1, UINT nResourceType = RESOURCE_TEXTURE2D, int nSamplers = 0);
 	virtual ~CTexture();
 
-	void SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dsrvGpuDescriptorHandle);
+	int SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dsrvGpuDescriptorHandle);
 	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);
 
-	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, int nHandleIndex);
+	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex, int nHandleIndex);
 
 	void LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex);
 	ID3D12Resource *CreateTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nWidth, UINT nHeight, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE *pd3dClearValue, UINT nIndex);
@@ -113,12 +113,12 @@ public:
 	void SetTexture(CTexture *pTexture);
 
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
-	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
+	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nHandleIndex);
 
 	void ReleaseUploadBuffers();
 
 public:
-	void LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxSurfaceMaterial *pfbxMaterial, CShader *pShader, const char *pstrFilePath);
+	void LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxSurfaceMaterial *pfbxMaterial, const char *pstrFilePath);
 	void CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader);
 
 	int GetTextureCount() { return m_vTextures.size(); }
@@ -130,9 +130,10 @@ class CModel
 {
 public:
 	CModel() {};
-	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, const char *pFileName, CShader *pShader);
+	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pFileName);
 	virtual ~CModel();
 
+	void CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader);
 protected:
 	CMesh			*m_pMesh = NULL;
 	CCubeMesh		*m_pCubeMesh = NULL;
@@ -148,8 +149,14 @@ public:
 	void UpdateCollisionBox(BoundingOrientedBox &xmOOBB, XMFLOAT4X4 &xmf4x4World);
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject, int nHandleIndex);
 
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh) { m_pMesh = pMesh; m_pCubeMesh = pCubeMesh; }
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
+
+protected:
+	char			*m_pstrName = NULL;
+
+public:
+	bool IsName(char *pstrName) { if(!strcmp(m_pstrName, pstrName))	return true; return false; };
 };

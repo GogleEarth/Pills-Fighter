@@ -157,7 +157,7 @@ void CGameFramework::InitNetwork()
 	PKT_PLAYER_INFO pktPlayerInfo;
 	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain());
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	pPlayer->SetMovingSpeed(100.0f);
@@ -216,7 +216,7 @@ void CGameFramework::CreateScene(SCENEINFO SN)
 	{
 	case SCENE_NAME_COLONY:
 		m_pScene = new CScene();
-		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
+		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 		break;
 	}
 }
@@ -542,15 +542,16 @@ void CGameFramework::BuildObjects()
 {
 	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
+	m_pRepository = new CRepository();
 	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
 
 #ifdef ON_NETWORKING
 	InitNetwork();
 #else
 	m_pScene = new CScene();
-	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
+	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pScene->GetTerrain());
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
@@ -573,6 +574,8 @@ void CGameFramework::BuildObjects()
 	//그래픽 리소스들을 생성하는 과정에 생성된 업로드 버퍼들을 소멸시킨다. 
 	if (m_pScene) m_pScene->ReleaseUploadBuffers();
 	if (m_pPlayer) m_pPlayer->ReleaseUploadBuffers();
+
+	if(m_pRepository) m_pRepository->ReleaseUploadBuffers();
 }
 
 void CGameFramework::ReleaseObjects()
@@ -584,6 +587,8 @@ void CGameFramework::ReleaseObjects()
 		m_pScene->ReleaseObjects();
 		delete m_pScene;
 	}
+
+	if (m_pRepository) delete m_pRepository;
 }
 
 void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)

@@ -15,6 +15,7 @@
 class CShader;
 class CUserInterface;
 class CObjectsShader;
+class CRepository;
 
 class CPlayer : public CGameObject
 {
@@ -25,7 +26,7 @@ protected:
 	CCamera *m_pCamera = NULL;
 
 public:
-	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext = NULL);
+	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext = NULL);
 	virtual ~CPlayer();
 
 	CCamera *GetCamera() { return(m_pCamera); }

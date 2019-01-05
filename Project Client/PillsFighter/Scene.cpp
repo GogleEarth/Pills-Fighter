@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Scene.h"
+#include "Repository.h"
 
 CScene::CScene()
 {
@@ -143,7 +144,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	return(pd3dGraphicsRootSignature);
 }
 
-void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
@@ -161,30 +162,34 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	////// Building Shader
 	CBuildingShader *pBuildingShader = new CBuildingShader();
 	pBuildingShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pBuildingShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	pBuildingShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
 	m_ppShaders[INDEX_SHADER_OBSTACLE] = pBuildingShader;
+	//m_ppShaders[INDEX_SHADER_OBSTACLE] = NULL;
 
-	//CGundamShader *pGundamhader = new CGundamShader();
-	//pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	//pGundamhader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	//// Enemy Shader
+	CGundamShader *pGundamhader = new CGundamShader();
+	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
-	//m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
-	m_ppShaders[INDEX_SHADER_ENEMY] = NULL;
+	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
+	//m_ppShaders[INDEX_SHADER_ENEMY] = NULL;
 
-	////// Bullet Shader
+	//// Bullet Shader
 	CBulletShader *pBulletShader = new CBulletShader();
 	pBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
+	//m_ppShaders[INDEX_SHADER_BULLET] = NULL;
 
-	////// Bullet Shader
+	// Effect Shader
 	CEffectShader *pEffectShader = new CEffectShader();
 	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 
 	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
+	//m_ppShaders[INDEX_SHADER_EFFECT] = NULL;
 
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);

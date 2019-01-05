@@ -1,10 +1,11 @@
 #include "stdafx.h"
 #include "Player.h"
 #include "Shader.h"
+#include "Repository.h"
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, void *pContext) : CGameObject()
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CGameObject()
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
 	m_ShotTime = 0;
@@ -15,7 +16,9 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	m_pShader = new CShader();
 	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pModel = new CModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx", m_pShader);
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
+	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_pShader);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -32,6 +35,8 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 CPlayer::~CPlayer()
 {
+	m_pModel = NULL;
+
 	ReleaseShaderVariables();
 
 	if (m_pUserInterface) delete m_pUserInterface;
@@ -179,7 +184,7 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	if(m_pShader)
 		m_pShader->OnPrepareRender(pd3dCommandList);
 
-	CGameObject::Render(pd3dCommandList, pCamera);
+	CGameObject::Render(pd3dCommandList, pCamera, m_pShader->m_nHandleIndex);
 }
 
 void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

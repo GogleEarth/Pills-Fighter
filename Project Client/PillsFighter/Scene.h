@@ -26,6 +26,8 @@ struct LIGHTS
 	XMFLOAT4 m_xmf4GlobalAmbient;
 };
 
+class CRepository;
+
 class CScene
 {
 public:
@@ -36,7 +38,7 @@ public:
 	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	void ReleaseObjects();
 
 	//그래픽 루트 시그너쳐를 생성한다. 

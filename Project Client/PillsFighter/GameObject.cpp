@@ -131,7 +131,7 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	}
 }
 
-void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nHandleIndex)
 {
 	OnPrepareRender();
 	UpdateShaderVariables(pd3dCommandList);
@@ -140,7 +140,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 
 	if(m_pModel)
 	{
-		m_pModel->Render(pd3dCommandList, pCamera, m_pcbMappedGameObject);
+		m_pModel->Render(pd3dCommandList, pCamera, m_pcbMappedGameObject, nHandleIndex);
 	}
 }
 
@@ -155,10 +155,7 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 
 void CGameObject::ReleaseUploadBuffers()
 {
-	if(m_pModel)
-	{
-		m_pModel->ReleaseUploadBuffers();
-	}
+	if (m_pModel) m_pModel->ReleaseUploadBuffers();
 
 	if (m_pShader)	m_pShader->ReleaseUploadBuffers();
 }
@@ -377,6 +374,11 @@ CHeightMapTerrain::~CHeightMapTerrain()
 	if (m_pHeightMapImage) delete m_pHeightMapImage;
 }
 
+void CHeightMapTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CGameObject::Render(pd3dCommandList, pCamera, m_pShader->m_nHandleIndex);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
 CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature) : CGameObject()
@@ -411,7 +413,7 @@ void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
 	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
 
-	CGameObject::Render(pd3dCommandList, pCamera);
+	CGameObject::Render(pd3dCommandList, pCamera, m_pShader->m_nHandleIndex);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -424,7 +426,6 @@ CEffect::CEffect() : CGameObject()
 
 CEffect::~CEffect()
 {
-
 }
 
 void CEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)

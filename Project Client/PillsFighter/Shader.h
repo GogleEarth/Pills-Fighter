@@ -3,6 +3,8 @@
 #include "GameObject.h"
 #include "Camera.h"
 
+class CRepository;
+
 class CShader
 {
 public:
@@ -56,6 +58,9 @@ protected:
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateWire = NULL;
+
+public:
+	int								m_nHandleIndex = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +71,6 @@ public:
 	CObjectsShader();
 	virtual ~CObjectsShader();
 
-	virtual void ReleaseUploadBuffers();
 	virtual void ReleaseShaderVariables();
 
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
@@ -85,7 +89,7 @@ public:
 
 	void CheckDeleteObjects();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {};
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL) {};
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext = NULL);
 };
 
@@ -97,7 +101,7 @@ public:
 	CBulletShader();
 	virtual ~CBulletShader();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +112,7 @@ public:
 	CGundamShader();
 	virtual ~CGundamShader();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +123,7 @@ public:
 	CBuildingShader();
 	virtual ~CBuildingShader();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -137,7 +141,9 @@ public:
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual D3D12_BLEND_DESC CreateBlendState();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	void ReleaseUploadBuffers();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext);
 };
 

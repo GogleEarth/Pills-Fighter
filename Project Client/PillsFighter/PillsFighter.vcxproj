@@ -168,6 +168,7 @@
     </ClInclude>
     <ClInclude Include="PillsFighter.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Repository.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
@@ -186,6 +187,7 @@
     </ClCompile>
     <ClCompile Include="PillsFighter.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Repository.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stdafx.cpp">

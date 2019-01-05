@@ -1,12 +1,6 @@
 #pragma once
 
-#include"GameObject.h"
-
-struct GAMEOBJECTINFO
-{
-	char m_pstrFileName[64] = "\0";
-	CGameObject *m_pObject = NULL;
-};
+#include"Model.h"
 
 class CRepository
 {
@@ -14,13 +8,11 @@ public:
 	CRepository();
 	virtual ~CRepository();
 
-	GAMEOBJECTINFO *CreateObjectInfo(char *pstrFileName);
-	GAMEOBJECTINFO *GetObjectInfo(char *pstrFileName);
+	CModel* GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrName);
 
 	void ReleaseUploadBuffers();
-	void ReleaseObjects();
 
 protected:
-	std::vector<GAMEOBJECTINFO> m_vObjectsInfo;
+	std::vector<CModel*> m_vModels;
 };
 

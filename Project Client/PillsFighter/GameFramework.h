@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include "Scene.h"
 #include "Player.h"
+#include "Repository.h"
 
 class CGameFramework;
 
@@ -103,6 +104,9 @@ public:
 	void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+
+protected:
+	CRepository	 *m_pRepository;
 
 public: // for Network
 	HANDLE m_hThread;
