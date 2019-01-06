@@ -429,7 +429,7 @@ CGundamShader::~CGundamShader()
 
 void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/Head/Head.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM.fbx");
 	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 
 	RandomMoveObject *pObject = new RandomMoveObject();
