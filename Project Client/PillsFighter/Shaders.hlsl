@@ -48,6 +48,8 @@ struct VS_TEXTURED_INPUT
 {
 	float3 position : POSITION;
 	float3 normal : NORMAL;
+	float3 binormal : BINORMAL;
+	float3 tangen : TANGENT;
 	float2 uv : TEXCOORD;
 };
 
@@ -56,14 +58,22 @@ struct VS_TEXTURED_OUTPUT
 	float4 position : SV_POSITION;
 	float3 positionW : POSITION;
 	float3 normalW : NORMAL;
+	float3 binormalW : BINORMAL;
+	float3 tangenW : TANGENT;
 	float2 uv : TEXCOORD;
 };
+
+#define MATERIAL_ALBEDO_MAP			0x01
+#define MATERIAL_SPECULAR_MAP		0x02
+#define MATERIAL_NORMAL_MAP			0x04
 
 VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 {
 	VS_TEXTURED_OUTPUT output;
 	
 	output.normalW = mul(input.normal, (float3x3)gmtxGameObject);
+	output.binormalW = mul(input.binormal, (float3x3)gmtxGameObject);
+	output.tangenW = mul(input.tangen, (float3x3)gmtxGameObject);
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gmtxGameObject);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
@@ -74,10 +84,27 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	float4 AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if(gnTexturesMask & MATERIAL_ALBEDO_MAP)
+		AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	input.normalW = normalize(input.normalW);
-	float4 cIllumination = Lighting(input.positionW, input.normalW, gMaterial);
+	float4 NormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
+		NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
+
+	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	float4 cColor = AlbedoColor;
+
+	float3 normalW = normalize(input.normalW);
+
+	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
+	{
+		float3x3 TBN = float3x3(normalize(input.tangenW), normalize(input.binormalW), normalW);
+		float3 vNormal = normalize(NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
+		normalW = normalize(mul(vNormal, TBN));
+	}
+
+	cIllumination = Lighting(input.positionW, normalW, gMaterial);
 
 	return(cColor * cIllumination);
 }

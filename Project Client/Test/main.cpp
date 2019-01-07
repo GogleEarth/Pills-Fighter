@@ -1,8 +1,4 @@
-#include<iostream>
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "libfbxsdk-md.lib")
-
-#include"fbxsdk.h"
+#include"FBXExporter.h"
 
 std::string GetFileName(const std::string strFileName)
 {
@@ -59,8 +55,10 @@ FbxNode* GetMeshNode(FbxNode* pfbxNode)
 	return NULL;
 }
 
+
 int main()
 {
+#ifdef AA
 	FbxManager *pFbxManager = FbxManager::Create();
 	pFbxManager->SetIOSettings(FbxIOSettings::Create(pFbxManager, "IOSetting"));
 
@@ -412,7 +410,10 @@ int main()
 
 	}
 	}
-
+#else
+FBXExporter a;
+a.LoadScene("./Resource/GM/GM2.fbx");
+#endif
 
 
 	return 0;

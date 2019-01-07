@@ -172,7 +172,6 @@ CStandardMesh::~CStandardMesh()
 
 void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxMesh *pfbxMesh)
 {
-
 	int nPolygon = pfbxMesh->GetPolygonCount();
 	int nVertices = nPolygon * 3;
 
@@ -335,6 +334,12 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 				break;
 			}
 
+			if (!pfbxMesh->GetElementMaterial())
+			{
+				if (!pfbxMesh->GetElementMaterial(1))
+					printf("Not Found Material\n");
+			}
+
 			auto fbxMaterialIndex = &(pfbxMesh->GetElementMaterial()->GetIndexArray());
 			auto fbxMaterialMappingMode = pfbxMesh->GetElementMaterial()->GetMappingMode();
 
@@ -418,8 +423,8 @@ void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
 
-	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[3] = { m_d3dPositionBufferView, m_d3dNormalBufferView, m_d3dTextureCoord0BufferView };
-	pd3dCommandList->IASetVertexBuffers(m_nSlot, 3, pVertexBufferViews);
+	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[5] = { m_d3dPositionBufferView, m_d3dNormalBufferView, m_d3dBinormalBufferView, m_d3dTangentBufferView, m_d3dTextureCoord0BufferView };
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 5, pVertexBufferViews);
 
 	CMesh::Render(pd3dCommandList);
 }

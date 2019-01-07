@@ -269,31 +269,33 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 		//	fbxd3TransparencyFactor);
 	}
 
-	int j;
+	int nTextureIndex;
 
-	FBXSDK_FOR_EACH_TEXTURE(j)
+	FBXSDK_FOR_EACH_TEXTURE(nTextureIndex)
 	{
-		auto fbxProperty = pfbxMaterial->FindProperty(FbxLayerElement::sTextureChannelNames[j]);
-
+		FbxProperty fbxProperty = pfbxMaterial->FindProperty(FbxLayerElement::sTextureChannelNames[nTextureIndex]);
+		
 		if (fbxProperty.IsValid())
 		{
-			FbxLayeredTexture *pfbxLayeredTexture = fbxProperty.GetSrcObject<FbxLayeredTexture>(j);
-			if (pfbxLayeredTexture)
+			int nTextureCount = fbxProperty.GetSrcObjectCount<FbxTexture>();
+
+			for (int i = 0; i < nTextureCount; i++)
 			{
-				std::cout << "Current Material is Layered\n";
-			}
-			else
-			{
-				FbxTexture *pfbxTexture = fbxProperty.GetSrcObject<FbxTexture>(j);
-				if (pfbxTexture)
+				FbxLayeredTexture *pfbxLayeredTexture = fbxProperty.GetSrcObject<FbxLayeredTexture>(i);
+
+				if (pfbxLayeredTexture)
 				{
-					FbxFileTexture *pFbxFileTexture = FbxCast<FbxFileTexture>(pfbxTexture);
-					std::string strFileName = GetFileName(pFbxFileTexture->GetFileName());
+					std::cout << "Current Material is Layered\n";
+				}
+				else
+				{
+					FbxTexture *pfbxTexture = fbxProperty.GetSrcObject<FbxTexture>(i);
 
-					if (pFbxFileTexture)
-
+					if (pfbxTexture)
 					{
-						std::string strTextureType = fbxProperty.GetNameAsCStr();
+						FbxFileTexture *pfbxFileTexture = fbxProperty.GetSrcObject<FbxFileTexture>(i);
+						std::string strFileName = GetFileName(pfbxFileTexture->GetFileName());
+
 						char strFile[256] = { 0 };
 						strcpy_s(strFile, GetFilePath(pstrFilePath).c_str());
 						strcat_s(strFile, strFileName.c_str());
@@ -305,27 +307,25 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 						CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 
-						if (strTextureType == "DiffuseColor")
+						const char *pstrName = fbxProperty.GetNameAsCStr();
+
+						if (!strcmp(pstrName, "DiffuseColor"))
 						{
 							m_nType |= MATERIAL_ALBEDO_MAP;
+							pTexture->SetType(TEXTURE_ALBEDO_MAP);
 
 							printf("Is Diffuse Map : %s\n", strFileName.c_str());
 						}
-						else if (strTextureType == "SpecularColor")
-						{
-							m_nType |= MATERIAL_SPECULAR_MAP;
-
-							printf("Is Specular Map : %s\n", strFileName.c_str());
-						}
-						else if (strTextureType == "Bump")
+						else if (!strcmp(pstrName, "NormalMap"))
 						{
 							m_nType |= MATERIAL_NORMAL_MAP;
+							pTexture->SetType(TEXTURE_NORMAL_MAP);
 
-							printf("Is Bump Map : %s\n", strFileName.c_str());
+							printf("Is Normal Map : %s\n", strFileName.c_str());
 						}
 						else
 						{
-							printf("Do Not Support This Texture Type");
+							printf("Do Not Support This Type[%s]\n", pstrName);
 							delete pTexture;
 
 							continue;
@@ -363,6 +363,88 @@ void CMaterial::CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void DisplayMaterial(FbxNode* pfbxNode)
+{
+	printf("Node Name : %s\n", pfbxNode->GetName());
+
+	int nMaterialCount = pfbxNode->GetMaterialCount();
+	int nSurfaceMaterialCount = pfbxNode->GetSrcObjectCount<FbxSurfaceMaterial>();
+
+	printf("Node Surface Material Count : %d\n", nSurfaceMaterialCount);
+
+	for (int i = 0; i < nSurfaceMaterialCount; i++)
+	{
+		FbxSurfaceMaterial *pfbxMaterial = pfbxNode->GetSrcObject<FbxSurfaceMaterial>(i);
+
+		printf("\tMaterial Name : %s\n", pfbxMaterial->GetName());
+
+		int nTextureIndex;
+		FBXSDK_FOR_EACH_TEXTURE(nTextureIndex)
+		{
+			FbxProperty fbxProperty = pfbxMaterial->FindProperty(FbxLayerElement::sTextureChannelNames[nTextureIndex]);
+
+			if (fbxProperty.IsValid())
+			{
+				int nTextureCount = fbxProperty.GetSrcObjectCount<FbxTexture>();
+
+				for (int j = 0; j < nTextureCount; j++)
+				{
+					FbxLayeredTexture *pfbxLayeredTexture = fbxProperty.GetSrcObject<FbxLayeredTexture>(j);
+
+					if (pfbxLayeredTexture)
+					{
+						printf("\t\t[%d]Material's Texture is Layered\n", i);
+
+						int nTextureCount2 = pfbxLayeredTexture->GetSrcObjectCount<FbxTexture>();
+
+						for (int k = 0; k < nTextureCount2; k++)
+						{
+							FbxTexture *pfbxTexture = pfbxLayeredTexture->GetSrcObject<FbxTexture>(k);
+
+							if (pfbxTexture)
+							{
+								FbxFileTexture *pfbxFileTexture = pfbxLayeredTexture->GetSrcObject<FbxFileTexture>(k);
+								const char *pstrName = fbxProperty.GetNameAsCStr();
+
+								printf("\t\t\tTextures Connected to [%d]Material\n", i);
+								printf("\t\t\tTexture Name : %s\n", pfbxTexture->GetName());
+								printf("\t\t\tTexture File Name : %s\n", pfbxFileTexture->GetName());
+								printf("\t\t\tTexture Type : %s\n", pstrName);
+							}
+						}
+					}
+					else
+					{
+						printf("\t\t[%d]Material's Texture is Not Layered\n", i);
+
+						FbxTexture *pfbxTexture = fbxProperty.GetSrcObject<FbxTexture>(j);
+						FbxFileTexture *pfbxFileTexture = fbxProperty.GetSrcObject<FbxFileTexture>(j);
+						const char *pstrName = fbxProperty.GetNameAsCStr();
+
+						if (pfbxTexture)
+						{
+							printf("\t\t\tTextures Connected to [%d]Material\n", i);
+							printf("\t\t\tTexture Name : %s\n", pfbxTexture->GetName());
+							printf("\t\t\tTexture File Name : %s\n", pfbxFileTexture->GetName());
+							printf("\t\t\tTexture Type : %s\n", pstrName);
+						}
+					}
+				
+				}
+			}
+		}
+	}
+
+	int nChild = pfbxNode->GetChildCount();
+
+	for (int i = 0; i < nChild; i++)
+	{
+		DisplayMaterial(pfbxNode->GetChild(i));
+	}
+
+	printf("\n");
+}
+
 CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pFileName)
 {
 	m_pstrName = pFileName;
@@ -378,9 +460,12 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 	pFbxImporter->Import(pFbxScene);
 	pFbxImporter->Destroy();
 
+	//DisplayMaterial(pFbxScene->GetRootNode());
+
 	// Find Mesh Node
 	FbxNode *pfbxNode = GetMeshNode(pFbxScene->GetRootNode());
-
+	pfbxNode = GetMeshNode(pfbxNode);
+	
 	auto pfbxNodeAttribute = pfbxNode->GetNodeAttribute();
 	auto fbxAttributeType = pfbxNodeAttribute->GetAttributeType();
 
@@ -411,6 +496,7 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 	pFbxIOS->Destroy();
 	pFbxManager->Destroy();
 }
+
 
 CModel::~CModel()
 {
