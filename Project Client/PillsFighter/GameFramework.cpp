@@ -731,9 +731,11 @@ void CGameFramework::ProcessInput()
 		if (pKeyBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
 		if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
 		if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
-		if (pKeyBuffer['Q'] & 0xF0) dwDirection |= DIR_UP;
-		if (pKeyBuffer['E'] & 0xF0) dwDirection |= DIR_DOWN;
+		if (pKeyBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
+		if (pKeyBuffer['V'] & 0xF0) dwDirection |= DIR_DOWN;
 	}
+
+	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
 
 	float cxDelta = 0.0f, cyDelta = 0.0f;
 	POINT ptCursorPos;
@@ -750,17 +752,14 @@ void CGameFramework::ProcessInput()
 		::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 	}
 
-	if ((dwDirection != 0) || (cxDelta != 0.0f) || (cyDelta != 0.0f))
+	if ((cxDelta != 0.0f) || (cyDelta != 0.0f))
 	{
 		if (cxDelta || cyDelta)
 		{
 			//m_pCamera->Rotate(cyDelta, cxDelta, 0.0f);
 			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
-
-		if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
 	}
-
 
 	if (m_LButtonDown)
 	{

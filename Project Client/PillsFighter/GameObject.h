@@ -114,17 +114,14 @@ public:
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
 
 protected:
-	int		m_nHitPoint;
-	int		m_nMaxHitPoint;
-	XMFLOAT3 serverPosition;
+	int			m_nHitPoint;
+	int			m_nMaxHitPoint;
+	XMFLOAT3	serverPosition;
 
 public:
 	int *GetHitPoint() { return &m_nHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
 	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; }
-
-public:
-	void LoadModelFromFBX(ID3D12Device *pd3dDevice, ID3D12CommandList *pd3dCommandList, const char *pstrFileName);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

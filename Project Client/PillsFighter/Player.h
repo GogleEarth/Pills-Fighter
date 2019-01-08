@@ -73,4 +73,16 @@ public:
 
 protected:
 	CShader				*m_pUserInterface = NULL;
+
+protected:
+	int					m_nBoosterGauge = 100;
+	int					m_nState = 0x00;
+	float				m_fBoosteringTime = 0.0f;
+	float				m_fBoosterGaugeChargeTime = 0.0f;
+
+	float				m_fOnGroundTime = 0.0f;
+public:
+	void ProcessBooster(float fElapsedTime);
+	void ProcessOnGround(float fTimeElapsed);
+	void ProcessHitPoint();
 };

@@ -91,38 +91,49 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 	return(m_pCamera);
 }
-/*플레이어의 위치를 변경하는 함수이다. 플레이어의 위치는 기본적으로 사용자가 플레이어를 이동하기 위한 키보드를
-누를 때 변경된다. 플레이어의 이동 방향(dwDirection)에 따라 플레이어를 fDistance 만큼 이동한다.*/
+
 void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (dwDirection)
 	{
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 
-		//화살표 키 ‘↑’를 누르면 로컬 z-축 방향으로 이동(전진)한다. ‘↓’를 누르면 반대 방향으로 이동한다. 
+		// 앞, 뒤, 왼쪽, 오른쪽
 		if (dwDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
-		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look,	-fDistance);
-
-		//화살표 키 ‘→’를 누르면 로컬 x-축 방향으로 이동한다. ‘←’를 누르면 반대 방향으로 이동한다. 
+		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 		if (dwDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
 		if (dwDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 
-		//‘Page Up’을 누르면 로컬 y-축 방향으로 이동한다. ‘Page Down’을 누르면 반대 방향으로 이동한다. 
-		if (dwDirection & DIR_UP) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
-		if (dwDirection & DIR_DOWN) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, -fDistance);
+		// 부스터 상승
+		if (dwDirection & DIR_UP)
+		{
+			if (m_nBoosterGauge > 0)
+			{
+				if (!(m_nState & OBJECT_STATE_BOOSTERING))
+				{
+					m_nState |= OBJECT_STATE_BOOSTERING;
+					m_nState &= ~OBJECT_STATE_ONGROUND;
+				}
 
-		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다. 
+				xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
+			}
+		}
+
+		// 부스터 하강
+		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )
+		{
+			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, -fDistance);
+		}
+
 		Move(xmf3Shift);
 	}
 }
 
 void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 {
-	//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다. 
 	m_xmf3PrevPosition = m_xmf3Position;
 	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
 
-	//플레이어의 위치가 변경되었으므로 카메라의 위치도 xmf3Shift 벡터만큼 이동한다. 
 	m_pCamera->Move(xmf3Shift);
 }
 
@@ -147,11 +158,11 @@ void CPlayer::Update(float fTimeElapsed)
 	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
 
-	if (m_nHitPoint < 0) {
-		m_nHitPoint = 100;
-		SetPosition(serverPosition);
-	}
-	Animate(fTimeElapsed);
+	ProcessBooster(fTimeElapsed);
+	ProcessOnGround(fTimeElapsed);
+	ProcessHitPoint();
+
+	CGameObject::Animate(fTimeElapsed);
 
 	CheckElapsedTime(fTimeElapsed);
 }
@@ -252,6 +263,9 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 		//SetVelocity(xmf3PlayerVelocity);
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
+
+		m_nState |= OBJECT_STATE_ONGROUND;
+		if (m_nState & OBJECT_STATE_BOOSTERING) m_nState &= ~OBJECT_STATE_BOOSTERING;
 	}
 }
 
@@ -270,5 +284,64 @@ void CPlayer::OnCameraUpdateCallback(float fTimeElapsed)
 
 		CCamera *pCamera = (CCamera *)m_pCamera;
 		pCamera->SetLookAt(GetPosition());
+	}
+}
+
+void CPlayer::ProcessHitPoint()
+{
+	if (m_nHitPoint < 0)
+	{
+		m_nHitPoint = 100;
+		SetPosition(serverPosition);
+	}
+}
+
+void CPlayer::ProcessBooster(float fTimeElapsed)
+{
+	if (m_nState & OBJECT_STATE_BOOSTERING)
+	{
+		m_fOnGroundTime = 0.0f;
+
+		// 부스터 지속시간 처리
+		if (m_fBoosteringTime > 1.0f)
+		{
+			m_fBoosteringTime = 0.0f;
+			m_nBoosterGauge -= 5;
+		}
+
+		// 부스터 게이지 처리
+		if (m_nBoosterGauge <= 0)
+		{
+			m_nState &= ~OBJECT_STATE_BOOSTERING;
+			m_nBoosterGauge = 0;
+		}
+
+		m_fBoosteringTime += fTimeElapsed;
+	}
+	else if (m_nState & OBJECT_STATE_ONGROUND)
+	{
+		if (m_fOnGroundTime > 5.0f)
+		{
+			if (m_nBoosterGauge < 100)
+			{
+				if (m_fBoosterGaugeChargeTime > 1.0f)
+				{
+					m_nBoosterGauge += 5;
+					m_fBoosterGaugeChargeTime = 0.0f;
+				}
+
+				m_fBoosterGaugeChargeTime += fTimeElapsed;
+			}
+			else
+				m_nBoosterGauge = 100;
+		}
+	}
+}
+
+void CPlayer::ProcessOnGround(float fTimeElapsed)
+{
+	if(m_nState & OBJECT_STATE_ONGROUND)
+	{
+		m_fOnGroundTime += fTimeElapsed;
 	}
 }
