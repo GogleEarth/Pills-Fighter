@@ -674,9 +674,9 @@ D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader(ID3DBlob **ppd3dShade
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI", "gs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderHP(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI_HP", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI_Bar", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
@@ -742,7 +742,7 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
 
-	d3dPipelineStateDesc.GS = CreateGeometryShaderHP(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.GS = CreateGeometryShaderBar(&pd3dGeometryShaderBlob);
 
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateHP);
 
@@ -776,12 +776,17 @@ void CUserInterface::ReleaseUploadBuffers()
 
 void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	UINT ncbElementBytes = ((sizeof(CB_PLAYER_HP) + 255) & ~255); //256의 배수
+	UINT ncbElementBytes = ((sizeof(CB_PLAYER_VALUE) + 255) & ~255); //256의 배수
 
 	m_pd3dcbPlayerHP = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 
 	m_pd3dcbPlayerHP->Map(0, NULL, (void **)&m_pcbMappedPlayerHP);
+
+	m_pd3dcbPlayerBooster = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+	m_pd3dcbPlayerBooster->Map(0, NULL, (void **)&m_pcbMappedPlayerBooster);
 }
 
 void CUserInterface::ReleaseShaderVariables()
@@ -792,16 +797,22 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbPlayerHP->Release();
 	}
 
+	if (m_pd3dcbPlayerBooster)
+	{
+		m_pd3dcbPlayerBooster->Unmap(0, NULL);
+		m_pd3dcbPlayerBooster->Release();
+	}
+
 	CShader::ReleaseShaderVariables();
 }
 
-void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue)
 {
-	m_pcbMappedPlayerHP->MaxHP = *m_pPlayerMaxHP;
-	m_pcbMappedPlayerHP->HP = *m_pPlayerHP;
+	pcbMapped->nMaxValue = nMaxValue;
+	pcbMapped->nValue = nValue;
 
-	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbPlayerHP->GetGPUVirtualAddress();
-	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_HP, d3dGpuVirtualAddress);
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = pd3dcb->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
 
 }
 
@@ -819,22 +830,27 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 2;
+	m_nTextures = 3;
 	m_ppTextures = new CTexture*[m_nTextures];
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 2);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 3);
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HUD.dds", 0);
+	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI.dds", 0);
 
 	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HP.dds", 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_HP.dds", 0);
 
 	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nUIRect = 2;
+	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Booster.dds", 0);
+
+	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_nUIRect = 3;
 	m_ppUIRects = new CUIRect*[m_nUIRect];
 
 	// Base UI
@@ -845,6 +861,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = CalculateCenter(-0.375000, -0.332812, 0.257778, -0.257778);
 	xmf2Size = CalculateSize(-0.375000, -0.332812, 0.257778, -0.257778);
 	m_ppUIRects[1] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = CalculateCenter(0.375000, 0.417287, 0.257778, -0.257778);
+	xmf2Size = CalculateSize(0.375000, 0.417287, 0.257778, -0.257778);
+	m_ppUIRects[2] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -852,16 +872,20 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateHP);
 	pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvDescriptorHeap);
 
-	UpdateShaderVariables(pd3dCommandList);
-
 	// Draw HP BAR
-	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList, 0); // Base UI
+	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerHP, m_pcbMappedPlayerHP, m_pPlayer->GetMaxHitPoint(), m_pPlayer->GetHitPoint());
+	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList, 0);
 	m_ppUIRects[1]->Render(pd3dCommandList);
+
+	// Draw Booster Gauge BAR
+	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerBooster, m_pcbMappedPlayerBooster, 100, m_pPlayer->GetBoosterGauge());
+	if (m_ppTextures[2]) m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList, 0);
+	m_ppUIRects[2]->Render(pd3dCommandList);
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Base UI
-	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList, 0); // Base UI
+	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList, 0);
 	m_ppUIRects[0]->Render(pd3dCommandList);
 }
 

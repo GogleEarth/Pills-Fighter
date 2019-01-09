@@ -95,4 +95,7 @@ public: // For Network
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
 	void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
 	void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
+
+protected:
+	float		m_fGravity = 0.0f;
 };

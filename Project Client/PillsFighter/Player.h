@@ -81,6 +81,10 @@ protected:
 	float				m_fBoosterGaugeChargeTime = 0.0f;
 
 	float				m_fOnGroundTime = 0.0f;
+
+public:
+	int GetBoosterGauge() { return m_nBoosterGauge; }
+
 public:
 	void ProcessBooster(float fElapsedTime);
 	void ProcessOnGround(float fTimeElapsed);

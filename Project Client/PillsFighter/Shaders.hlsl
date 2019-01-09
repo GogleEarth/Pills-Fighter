@@ -20,12 +20,6 @@ cbuffer cbCameraInfo : register(b1)
 	float3		gvCameraPosition : packoffset(c8);
 };
 
-cbuffer cbUIInfo : register(b4)
-{
-	int		giPlayerMaxHP;// : packoffset(c0.x);
-	int		giPlayerHP; //: packoffset(c0.y);
-};
-
 cbuffer cbTextureSprite : register(b5)
 {
 	float4	gfTextureSpriteInfo : packoffset(c0);
@@ -138,6 +132,12 @@ float4 PSWire(VS_WIRE_OUTPUT input) : SV_TARGET
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+cbuffer cbUIBarInfo : register(b4)
+{
+	int		giMaxValue;// : packoffset(c0.x);
+	int		giValue; //: packoffset(c0.y);
+};
+
 struct VS_UI_INPUT
 {
 	float2 center : POSITION;
@@ -198,9 +198,9 @@ void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tria
 }
 
 [maxvertexcount(4)]
-void GS_UI_HP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
+void GS_UI_Bar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
 {
-	float yPos = float(giPlayerHP) / float(giPlayerMaxHP);
+	float yPos = float(giValue) / float(giMaxValue);
 	float2 vUp = float2(0.0f, yPos);
 	float2 vRight = float2(1.0f, 0.0f);
 	float fHalfW = input[0].size.x;

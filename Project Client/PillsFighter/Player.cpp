@@ -23,7 +23,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	pUserInterface->SetPlayerHP(&m_nMaxHitPoint, &m_nHitPoint);
+	pUserInterface->SetPlayer(this);
 
 	m_pUserInterface = pUserInterface;
 
@@ -69,7 +69,6 @@ void CPlayer::ReleaseUploadBuffers()
 
 CCamera *CPlayer::SetCamera(float fTimeElapsed)
 {
-	//플레이어의 특성을 3인칭 카메라 모드에 맞게 변경한다. 지연 효과와 카메라 오프셋을 설정한다. 
 	m_pCamera = new CCamera();
 
 	m_xmf3Right = m_pCamera->GetRightVector();
@@ -78,15 +77,12 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 	m_pCamera->SetPlayer(this);
 
-	//3인칭 카메라의 지연 효과를 설정한다.
 	m_pCamera->SetTimeLag(0.0f);
-
 	m_pCamera->SetOffset(CAMERA_POSITION);
 	m_pCamera->GenerateProjectionMatrix(1.0f, 5000.0f, ASPECT_RATIO, 60.0f);
 	m_pCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
 	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
-	//플레이어를 시간의 경과에 따라 갱신(위치와 방향을 변경: 속도, 마찰력, 중력 등을 처리)한다. 
 	Update(fTimeElapsed);
 
 	return(m_pCamera);
@@ -139,23 +135,16 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 
 void CPlayer::Update(float fTimeElapsed)
 {
-	/*플레이어의 위치가 변경될 때 추가로 수행할 작업을 수행한다. 
-	플레이어의 새로운 위치가 유효한 위치가 아닐 수도 있고 또는 플레이어의 충돌 검사 등을 수행할 필요가 있다. 
-	이러한 상황에서 플레이어의 위치를 유효한 위치로 다시 변경할 수 있다.*/
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 
-	//플레이어의 위치가 변경되었으므로 카메라를 갱신한다. 
 	m_pCamera->Update(m_xmf3Position, fTimeElapsed);
 
-	//카메라의 위치가 변경될 때 추가로 수행할 작업을 수행한다. 
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
-	//카메라가 변경된 플레이어 위치를 바라보도록 한다. 
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	//m_pCamera->SetLookAt(m_xmf3Position);
 	m_pCamera->SetLookAt(xmf3LookAt);
 
-	//카메라의 카메라 변환 행렬을 다시 생성한다. 
 	m_pCamera->RegenerateViewMatrix();
 
 	ProcessBooster(fTimeElapsed);
@@ -165,6 +154,8 @@ void CPlayer::Update(float fTimeElapsed)
 	CGameObject::Animate(fTimeElapsed);
 
 	CheckElapsedTime(fTimeElapsed);
+
+	printf("HP : %d, BG : %d\n", m_nHitPoint, m_nBoosterGauge);
 }
 
 void CPlayer::Rotate(float x, float y, float z)

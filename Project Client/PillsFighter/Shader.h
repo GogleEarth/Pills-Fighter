@@ -2,6 +2,7 @@
 
 #include "GameObject.h"
 #include "Camera.h"
+#include "Player.h"
 
 class CRepository;
 
@@ -164,10 +165,10 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct CB_PLAYER_HP
+struct CB_PLAYER_VALUE
 {
-	int MaxHP;
-	int HP;
+	int nMaxValue;
+	int nValue;
 };
 
 class CUserInterface : public CShader
@@ -178,14 +179,14 @@ public:
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderHP(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -196,11 +197,13 @@ public:
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateHP = NULL;
 
-	int								*m_pPlayerHP = NULL;
-	int								*m_pPlayerMaxHP = NULL;
+	CPlayer							*m_pPlayer = NULL;
 
 	ID3D12Resource					*m_pd3dcbPlayerHP = NULL;
-	CB_PLAYER_HP					*m_pcbMappedPlayerHP = NULL;
+	CB_PLAYER_VALUE					*m_pcbMappedPlayerHP = NULL;
+
+	ID3D12Resource					*m_pd3dcbPlayerBooster = NULL;
+	CB_PLAYER_VALUE					*m_pcbMappedPlayerBooster = NULL;
 
 	int								m_nUIRect = 0;
 	CUIRect							**m_ppUIRects = NULL;
@@ -209,8 +212,7 @@ protected:
 	CTexture						**m_ppTextures = NULL;
 
 public:
-	void SetPlayerHP(int *pPlayerMaxHP, int *pPlayerHP) { m_pPlayerMaxHP = pPlayerMaxHP; m_pPlayerHP = pPlayerHP;}
-	int GetPlayerHP() { return *m_pPlayerHP; }
+	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 };
 
 

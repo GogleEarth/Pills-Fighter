@@ -119,7 +119,8 @@ protected:
 	XMFLOAT3	serverPosition;
 
 public:
-	int *GetHitPoint() { return &m_nHitPoint; }
+	int GetHitPoint() { return m_nHitPoint; }
+	int GetMaxHitPoint() { return m_nMaxHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
 	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; }
 };
