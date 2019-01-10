@@ -96,6 +96,6 @@ public: // For Network
 	void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
 	void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 
-protected:
-	float		m_fGravity = 0.0f;
+public:
+	float		m_fGravAcc = 9.8f;
 };

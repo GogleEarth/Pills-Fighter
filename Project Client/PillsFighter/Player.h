@@ -81,9 +81,21 @@ protected:
 	float				m_fBoosterGaugeChargeTime = 0.0f;
 
 	float				m_fOnGroundTime = 0.0f;
+	float				m_fGravAcc;
+	float				m_fMass = 10.0f;
+
+	float				m_fVelocityY = 0.0f;
+	float				m_fAccelerationY = 0.0f;
+	float				m_fBoosterPower = 0.0f;
+	float				m_fGravity = 0.0f;
 
 public:
 	int GetBoosterGauge() { return m_nBoosterGauge; }
+	void SetGravity(float fGravity) { m_fGravAcc = fGravity; }
+
+	void SetBoosterPower(float fPower) { m_fBoosterPower = fPower; }
+	float GetVelocity() { return m_fVelocityY; }
+	void SetVelocity(float fVelocity) { m_fVelocityY = fVelocity; }
 
 public:
 	void ProcessBooster(float fElapsedTime);

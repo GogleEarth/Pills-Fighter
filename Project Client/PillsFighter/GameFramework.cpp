@@ -558,6 +558,7 @@ void CGameFramework::BuildObjects()
 
 	m_pPlayer = pPlayer;
 	m_pScene->SetPlayer(pPlayer);
+	m_pPlayer->SetGravity(m_pScene->m_fGravAcc);
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));

@@ -92,13 +92,13 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (dwDirection)
 	{
-		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
+		XMFLOAT3 xmf3Force = XMFLOAT3(0, 0, 0);
 
 		// 앞, 뒤, 왼쪽, 오른쪽
-		if (dwDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
-		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
-		if (dwDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
-		if (dwDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
+		if (dwDirection & DIR_FORWARD) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Look, fDistance);
+		if (dwDirection & DIR_BACKWARD) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Look, -fDistance);
+		if (dwDirection & DIR_RIGHT) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Right, fDistance);
+		if (dwDirection & DIR_LEFT) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Right, -fDistance);
 
 		// 부스터 상승
 		if (dwDirection & DIR_UP)
@@ -111,34 +111,62 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 					m_nState &= ~OBJECT_STATE_ONGROUND;
 				}
 
-				xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
+				SetBoosterPower(0.5f);
 			}
 		}
 
 		// 부스터 하강
 		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )
 		{
-			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, -fDistance);
+			SetBoosterPower(-0.5f);
 		}
 
-		Move(xmf3Shift);
+		Move(xmf3Force);
 	}
 }
 
-void CPlayer::Move(const XMFLOAT3& xmf3Shift)
+void CPlayer::Move(const XMFLOAT3& xmf3Force)
 {
 	m_xmf3PrevPosition = m_xmf3Position;
-	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
+	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Force);
 
-	m_pCamera->Move(xmf3Shift);
+	m_pCamera->Move(xmf3Force);
 }
 
 void CPlayer::Update(float fTimeElapsed)
 {
+	m_fGravity = m_fGravAcc * m_fMass * fTimeElapsed;
+	m_fAccelerationY -= m_fGravity;
+
+	if (m_nState & OBJECT_STATE_BOOSTERING)
+	{
+		if (!IsZero(m_fBoosterPower))
+		{
+			bool bIsNegativeNum = false;
+			if (m_fBoosterPower < FLT_EPSILON) bIsNegativeNum = true;
+
+			m_fBoosterPower = fabsf(m_fBoosterPower);
+			float fNormaize = m_fBoosterPower / m_fBoosterPower;
+			m_fBoosterPower -= fNormaize * fTimeElapsed;
+			if (m_fBoosterPower < FLT_EPSILON)
+				m_fBoosterPower = 0.0f;
+			else
+			{
+				if (bIsNegativeNum) m_fBoosterPower *= -1.0f;
+			}
+		}
+		float fHoldPower = m_fGravity;
+		m_fAccelerationY += m_fBoosterPower + fHoldPower;
+
+		if (fabsf(m_fAccelerationY) < FLT_EPSILON) m_fVelocityY = 0.0f;
+	}
+
+	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
+	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+	m_fAccelerationY = 0.0f;
+
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
-
 	m_pCamera->Update(m_xmf3Position, fTimeElapsed);
-
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
@@ -247,15 +275,17 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 	int z = (int)(xmf3PlayerPosition.z / xmf3Scale.z);
 	bool bReverseQuad = ((z % 2) != 0);
 	float fHeight = pTerrain->GetHeight(xmf3PlayerPosition.x, xmf3PlayerPosition.z, bReverseQuad);
+	std::cout << "Height : " << fHeight << std::endl;
 	if (xmf3PlayerPosition.y < fHeight)
 	{
-		//XMFLOAT3 xmf3PlayerVelocity = GetVelocity();
-		//xmf3PlayerVelocity.y = 0.0f;
-		//SetVelocity(xmf3PlayerVelocity);
+		float fPlayerVelocity = GetVelocity();
+		fPlayerVelocity = 0.0f;
+		SetVelocity(fPlayerVelocity);
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
 
 		m_nState |= OBJECT_STATE_ONGROUND;
+		m_fBoosteringTime = 0.0f;
 		if (m_nState & OBJECT_STATE_BOOSTERING) m_nState &= ~OBJECT_STATE_BOOSTERING;
 	}
 }
@@ -311,13 +341,13 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 	}
 	else if (m_nState & OBJECT_STATE_ONGROUND)
 	{
-		if (m_fOnGroundTime > 5.0f)
+		if (m_fOnGroundTime > 4.0f)
 		{
 			if (m_nBoosterGauge < 100)
 			{
-				if (m_fBoosterGaugeChargeTime > 1.0f)
+				if (m_fBoosterGaugeChargeTime > 0.5f)
 				{
-					m_nBoosterGauge += 5;
+					m_nBoosterGauge += 20;
 					m_fBoosterGaugeChargeTime = 0.0f;
 				}
 

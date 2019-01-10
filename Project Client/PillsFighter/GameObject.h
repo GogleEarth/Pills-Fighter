@@ -41,7 +41,7 @@ protected:
 	float m_MovingSpeed;
 
 protected:
-	CModel						*m_pModel = NULL;
+	CModel							*m_pModel = NULL;
 
 	BoundingOrientedBox				m_xmOOBB;
 
