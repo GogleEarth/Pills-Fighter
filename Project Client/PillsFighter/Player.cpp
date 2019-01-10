@@ -92,15 +92,12 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (dwDirection)
 	{
-		XMFLOAT3 xmf3Force = XMFLOAT3(0, 0, 0);
+		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 
-		// 앞, 뒤, 왼쪽, 오른쪽
-		if (dwDirection & DIR_FORWARD) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Look, fDistance);
-		if (dwDirection & DIR_BACKWARD) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Look, -fDistance);
-		if (dwDirection & DIR_RIGHT) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Right, fDistance);
-		if (dwDirection & DIR_LEFT) xmf3Force = Vector3::Add(xmf3Force, m_xmf3Right, -fDistance);
-
-		// 부스터 상승
+		if (dwDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
+		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
+		if (dwDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
+		if (dwDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 		if (dwDirection & DIR_UP)
 		{
 			if (m_nBoosterGauge > 0)
@@ -114,23 +111,18 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 				SetBoosterPower(0.5f);
 			}
 		}
+		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )	SetBoosterPower(-0.5f);
 
-		// 부스터 하강
-		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )
-		{
-			SetBoosterPower(-0.5f);
-		}
-
-		Move(xmf3Force);
+		Move(xmf3Shift);
 	}
 }
 
-void CPlayer::Move(const XMFLOAT3& xmf3Force)
+void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 {
 	m_xmf3PrevPosition = m_xmf3Position;
-	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Force);
+	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
 
-	m_pCamera->Move(xmf3Force);
+	m_pCamera->Move(xmf3Shift);
 }
 
 void CPlayer::Update(float fTimeElapsed)
