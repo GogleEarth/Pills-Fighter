@@ -413,10 +413,10 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 		m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;
 	}
 
-	XMFLOAT3 Center, Extents;
-	FindXYZ(m_pxmf3Positions, m_nVertices, Center, Extents);
+	XMFLOAT3 xmf3Center, xmf3Extents;
+	FindXYZ(m_pxmf3Positions, m_nVertices, xmf3Center, xmf3Extents);
 
-	SetOOBB(Center, Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	SetOOBB(xmf3Center, xmf3Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -687,6 +687,12 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+
+	XMFLOAT3 xmf3Center;
+	XMFLOAT3 xmf3Extents;
+	FindXYZ(m_pxmf3Positions, m_nVertices, xmf3Center, xmf3Extents);
+
+	SetOOBB(xmf3Center, xmf3Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 CHeightMapGridMesh::~CHeightMapGridMesh()

@@ -754,7 +754,6 @@ void CGameFramework::ProcessInput()
 	{
 		if (cxDelta || cyDelta)
 		{
-			//m_pCamera->Rotate(cyDelta, cxDelta, 0.0f);
 			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 	}

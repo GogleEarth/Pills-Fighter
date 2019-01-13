@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "Shader.h"
 #include "Repository.h"
+#include "Scene.h"
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
@@ -196,16 +197,19 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 		xmf3Position = Vector3::Add(xmf3Position, XMFLOAT3(0.0f, 5.0f, 0.0f));
 		pBullet->SetPosition(xmf3Position);
 
-			   		XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
-		XMFLOAT3 xmf3Look = Vector3::Subtract(xmf3Position, m_pCamera->GetPosition());
-		xmf3Look.y = -xmf3Look.y;
+		float fDistance = m_pScene->GetDistance();
+		XMFLOAT3 xmf3CameraPos = m_pCamera->GetPosition();
+		XMFLOAT3 xmf3CameraLook = m_pCamera->GetLookVector();
+		XMFLOAT3 xmf3DestPos = XMFLOAT3(xmf3CameraPos.x + xmf3CameraLook.x * fDistance, 
+			xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
+			xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
+
+		XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
+		XMFLOAT3 xmf3Look = Vector3::Subtract(xmf3DestPos, xmf3Position);
 		XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
 		pBullet->SetRight(xmf3Right);
 		pBullet->SetUp(xmf3Up);
 		pBullet->SetLook(xmf3Look);
-		//pBullet->SetRight(m_xmf3Right);
-		//pBullet->SetUp(m_xmf3Up);
-		//pBullet->SetLook(m_xmf3Look);
 		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 		
 		m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);

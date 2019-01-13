@@ -272,6 +272,8 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 			m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
 	}
 
+	if(m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
+
 	CheckCollision();
 }
 
@@ -280,7 +282,7 @@ float CScene::GetDistance()
 	std::vector<CGameObject*> *vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
 	std::vector<CGameObject*> *vObstacle = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
 
-	float fMinDistance = FLT_MAX;
+	float fMinDistance = 1000.0f;
 	XMVECTOR xmvPosition = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetPosition()));
 	XMVECTOR xmvLook = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetLookVector()));
 
@@ -289,13 +291,25 @@ float CScene::GetDistance()
 		float fDistance = 0.0f;
 		if (Enemy->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
 		{
-			if (fMinDistance > fDistance)
-				fMinDistance = fDistance;
+			if (fMinDistance > fDistance) fMinDistance = fDistance;
 		}
 	}
 
-	//XMVECTOR xmf3Pos = XMVector3ClampLength(xmvLook, xmvPosition, fMinDistance);
-	//printf("%f, %f, %f\n", )
+	for (const auto& Obstacle : *vObstacle)
+	{
+		float fDistance = 0.0f;
+		if (Obstacle->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
+		{
+			if (fMinDistance > fDistance) fMinDistance = fDistance;
+		}
+	}
+
+	float fDistance = 0.0f;
+	if (m_pTerrain->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
+	{
+		if (fMinDistance > fDistance) fMinDistance = fDistance;
+	}
+
 	return fMinDistance;
 }
 
