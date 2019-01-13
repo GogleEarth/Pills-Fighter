@@ -205,8 +205,10 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 			xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
 
 		XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
-		XMFLOAT3 xmf3Look = Vector3::Subtract(xmf3DestPos, xmf3Position);
+		XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3DestPos, xmf3Position));
 		XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
+		xmf3Right = Vector3::CrossProduct(xmf3Up, xmf3Look, true);
+
 		pBullet->SetRight(xmf3Right);
 		pBullet->SetUp(xmf3Up);
 		pBullet->SetLook(xmf3Look);
