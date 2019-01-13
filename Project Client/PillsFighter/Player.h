@@ -109,4 +109,5 @@ protected:
 
 public:
 	void SetScene(CScene *pCScene) { m_pScene = pCScene; }
+	void SetOnGround();
 };

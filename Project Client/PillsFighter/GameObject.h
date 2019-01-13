@@ -45,7 +45,7 @@ public:
 protected:
 	CModel							*m_pModel = NULL;
 
-	BoundingOrientedBox				m_xmOOBB;
+	BoundingBox						m_xmAABB;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
 
@@ -110,7 +110,7 @@ public:
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
-	BoundingOrientedBox GetOOBB() { return m_xmOOBB; }
+	BoundingBox GetAABB() { return m_xmAABB; }
 	void Delete() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }

@@ -67,10 +67,10 @@ public:
 	virtual void ReleaseUploadBuffers();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	BoundingOrientedBox m_xmOOBB;
-	void SetOOBB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents, XMFLOAT4& xmOrientation) { m_xmOOBB = BoundingOrientedBox(xmCenter, xmExtents, xmOrientation); }
-	XMFLOAT3& GetExtents() { return m_xmOOBB.Extents; }
-	XMFLOAT3& GetCenter() { return m_xmOOBB.Center; }
+	BoundingBox m_xmAABB;
+	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents, XMFLOAT4& xmOrientation) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
+	XMFLOAT3& GetExtents() { return m_xmAABB.Extents; }
+	XMFLOAT3& GetCenter() { return m_xmAABB.Center; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

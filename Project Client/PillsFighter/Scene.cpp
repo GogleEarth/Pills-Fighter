@@ -247,19 +247,159 @@ void CScene::CheckCollision()
 {
 	std::vector<CGameObject*> *vEnemys;
 	std::vector<CGameObject*> *vBullets;
+	std::vector<CGameObject*> *vObstacles;
 
 	vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
 	vBullets = m_ppShaders[INDEX_SHADER_BULLET]->GetObjects();
+	vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
 
 	for (const auto& Enemy : *vEnemys)
 	{
-		if(m_pPlayer->GetOOBB().Intersects(Enemy->GetOOBB()))
+		if(m_pPlayer->GetAABB().Intersects(Enemy->GetAABB()))
 			std::cout << "Collision By Enemy\n" << std::endl;
 
 		for (const auto& Bullet : *vBullets)
 		{
-			if (Bullet->GetOOBB().Intersects(Enemy->GetOOBB()))
+			if (Bullet->GetAABB().Intersects(Enemy->GetAABB()))
 				std::cout << "Collision Enemy By Bullet\n" << std::endl;
+		}
+	}
+
+	BoundingBox xmPlayerAABB = m_pPlayer->GetAABB();
+	XMFLOAT3 xmf3Center = xmPlayerAABB.Center;
+	XMFLOAT3 xmf3Extents = xmPlayerAABB.Extents;
+	XMFLOAT3 xmf3Min = Vector3::Subtract(xmf3Center, xmf3Extents);
+	XMFLOAT3 xmf3Max = Vector3::Add(xmf3Center, xmf3Extents);
+
+	for (const auto& Obstacle : *vObstacles)
+	{
+		BoundingBox xmObstAABB = Obstacle->GetAABB();
+		XMFLOAT3 xmf3ObstCenter = xmObstAABB.Center;
+		XMFLOAT3 xmf3ObstExtents = xmObstAABB.Extents;
+		XMFLOAT3 xmf3ObstMin = Vector3::Subtract(xmf3ObstCenter, xmf3ObstExtents);
+		XMFLOAT3 xmf3ObstMax = Vector3::Add(xmf3ObstCenter, xmf3ObstExtents);
+
+		if (xmPlayerAABB.Intersects(xmObstAABB))
+		{
+			XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			XMFLOAT3 xmf3Pos = m_pPlayer->GetPosition();
+
+			if (xmf3Min.x < xmf3ObstMax.x)
+			{
+				xmf3Distance.x = xmf3ObstMax.x - xmf3Min.x;
+				xmf3Pos.x = xmf3ObstMax.x + xmf3Extents.x;
+			}
+
+			if (xmf3Max.x > xmf3ObstMin.x)
+			{
+				xmf3Temp.x = xmf3ObstMin.x - xmf3Max.x;
+				if (abs(xmf3Distance.x) > abs(xmf3Temp.x))
+				{
+					xmf3Distance.x = xmf3Temp.x;
+					xmf3Pos.x = xmf3ObstMin.x - xmf3Extents.x;
+				}
+			}
+			
+			if (xmf3Min.y < xmf3ObstMax.y)
+			{
+				xmf3Distance.y = xmf3ObstMax.y - xmf3Min.y;
+				xmf3Pos.y = xmf3ObstMax.y + xmf3Extents.y;
+			}
+			if (xmf3Max.y > xmf3ObstMin.y)
+			{
+				xmf3Temp.y = xmf3ObstMin.y - xmf3Max.y;
+				if (abs(xmf3Distance.y) > abs(xmf3Temp.y))
+				{
+					xmf3Distance.y = xmf3Temp.y;
+					xmf3Pos.y = xmf3ObstMin.y - xmf3Extents.y;
+				}
+			}
+
+			if (xmf3Min.z < xmf3ObstMax.z)
+			{
+				xmf3Distance.z = xmf3ObstMax.z - xmf3Min.z;
+				xmf3Pos.z = xmf3ObstMax.z + xmf3Extents.z;
+			}
+			if (xmf3Max.z > xmf3ObstMin.z)
+			{
+				xmf3Temp.z = xmf3ObstMin.z - xmf3Max.z;
+				if (abs(xmf3Distance.z) > abs(xmf3Temp.z))
+				{
+					xmf3Distance.z = xmf3Temp.z;
+					xmf3Pos.z = xmf3ObstMin.z - xmf3Extents.z;
+				}
+			}
+
+			xmf3Temp = xmf3Distance;
+			if (!IsZero(xmf3Temp.x))
+			{
+				if (!IsZero(xmf3Temp.y))
+				{
+					if (abs(xmf3Temp.x) > abs(xmf3Temp.y))
+					{
+						xmf3Pos.x = m_pPlayer->GetPosition().x;
+						xmf3Distance.x = 0.0f;
+
+						if (!IsZero(xmf3Temp.z))
+						{
+							if (abs(xmf3Temp.y) > abs(xmf3Temp.z))
+							{
+								xmf3Pos.y = m_pPlayer->GetPosition().y;
+								xmf3Distance.y = 0.0f;
+							}
+							else
+							{
+								xmf3Pos.z = m_pPlayer->GetPosition().z;
+								xmf3Distance.z = 0.0f;
+							}
+						}
+					}
+					else
+					{
+						xmf3Pos.y = m_pPlayer->GetPosition().y;
+						xmf3Distance.y = 0.0f;
+
+						if (!IsZero(xmf3Temp.z))
+						{
+							if (abs(xmf3Temp.x) > abs(xmf3Temp.z))
+							{
+								xmf3Pos.x = m_pPlayer->GetPosition().x;
+								xmf3Distance.x = 0.0f;
+							}
+							else
+							{
+								xmf3Pos.z = m_pPlayer->GetPosition().z;
+								xmf3Distance.z = 0.0f;
+							}
+						}
+					}
+
+				}
+			}
+			else if (!IsZero(xmf3Temp.y))
+			{
+				if (!IsZero(xmf3Temp.z))
+				{
+					if (abs(xmf3Temp.y) > abs(xmf3Temp.z))
+					{
+						xmf3Pos.y = m_pPlayer->GetPosition().y;
+						xmf3Distance.y = 0.0f;
+					}
+					else
+					{
+						xmf3Pos.z = m_pPlayer->GetPosition().z;
+						xmf3Distance.z = 0.0f;
+					}
+				}
+			}
+			if (!IsZero(xmf3Distance.y))
+			{
+				m_pPlayer->SetOnGround();
+			}
+
+
+			m_pPlayer->SetPosition(xmf3Pos);
 		}
 	}
 }
@@ -280,7 +420,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 float CScene::GetDistance()
 {
 	std::vector<CGameObject*> *vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
-	std::vector<CGameObject*> *vObstacle = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
+	std::vector<CGameObject*> *vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
 
 	float fMinDistance = 1000.0f;
 	XMVECTOR xmvPosition = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetPosition()));
@@ -289,23 +429,23 @@ float CScene::GetDistance()
 	for (const auto& Enemy : *vEnemys)
 	{
 		float fDistance = 0.0f;
-		if (Enemy->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
+		if (Enemy->GetAABB().Intersects(xmvPosition, xmvLook, fDistance))
 		{
 			if (fMinDistance > fDistance) fMinDistance = fDistance;
 		}
 	}
 
-	for (const auto& Obstacle : *vObstacle)
+	for (const auto& Obstacle : *vObstacles)
 	{
 		float fDistance = 0.0f;
-		if (Obstacle->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
-		{
+		if (Obstacle->GetAABB().Intersects(xmvPosition, xmvLook, fDistance))
+		{ 
 			if (fMinDistance > fDistance) fMinDistance = fDistance;
 		}
 	}
 
 	float fDistance = 0.0f;
-	if (m_pTerrain->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
+	if (m_pTerrain->GetAABB().Intersects(xmvPosition, xmvLook, fDistance))
 	{
 		if (fMinDistance > fDistance) fMinDistance = fDistance;
 	}

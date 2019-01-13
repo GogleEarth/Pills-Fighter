@@ -546,9 +546,9 @@ void CModel::ReleaseUploadBuffers()
 	}
 }
 
-void CModel::UpdateCollisionBox(BoundingOrientedBox &xmOOBB, XMFLOAT4X4 &xmf4x4World)
+void CModel::UpdateCollisionBox(BoundingBox &xmAABB, XMFLOAT4X4 &xmf4x4World)
 {
-	m_pMesh->m_xmOOBB.Transform(xmOOBB, XMLoadFloat4x4(&xmf4x4World));
+	m_pMesh->m_xmAABB.Transform(xmAABB, XMLoadFloat4x4(&xmf4x4World));
 }
 void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
 {

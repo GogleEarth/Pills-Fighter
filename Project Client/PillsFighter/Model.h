@@ -147,7 +147,7 @@ protected:
 public:
 	void ReleaseUploadBuffers();
 
-	void UpdateCollisionBox(BoundingOrientedBox &xmOOBB, XMFLOAT4X4 &xmf4x4World);
+	void UpdateCollisionBox(BoundingBox &xmAABB, XMFLOAT4X4 &xmf4x4World);
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject, int nHandleIndex);

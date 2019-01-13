@@ -872,9 +872,10 @@ void CGameFramework::FrameAdvance()
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
 	
-	ProcessInput();
 	
 	AnimateObjects(m_fElapsedTime);
+
+	ProcessInput();
 
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();

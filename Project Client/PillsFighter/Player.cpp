@@ -249,9 +249,7 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
 
-		m_nState |= OBJECT_STATE_ONGROUND;
-		m_fBoosteringTime = 0.0f;
-		if (m_nState & OBJECT_STATE_BOOSTERING) m_nState &= ~OBJECT_STATE_BOOSTERING;
+		SetOnGround();
 	}
 }
 
@@ -277,6 +275,13 @@ void CPlayer::ProcessHitPoint()
 		m_nHitPoint = 100;
 		SetPosition(serverPosition);
 	}
+}
+
+void CPlayer::SetOnGround()
+{
+	m_nState |= OBJECT_STATE_ONGROUND;
+	m_fBoosteringTime = 0.0f;
+	if (m_nState & OBJECT_STATE_BOOSTERING) m_nState &= ~OBJECT_STATE_BOOSTERING;
 }
 
 void CPlayer::ProcessBooster(float fTimeElapsed)

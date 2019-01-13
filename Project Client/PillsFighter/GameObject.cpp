@@ -125,9 +125,7 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	{
 		OnPrepareRender();
 
-		m_pModel->UpdateCollisionBox(m_xmOOBB, m_xmf4x4World);
-
-		XMStoreFloat4(&m_xmOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB.Orientation)));
+		m_pModel->UpdateCollisionBox(m_xmAABB, m_xmf4x4World);
 	}
 }
 
