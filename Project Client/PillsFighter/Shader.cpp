@@ -415,8 +415,7 @@ CBulletShader::~CBulletShader()
 
 void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx");
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.fbx");
 	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 }
 
@@ -444,39 +443,37 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 ////////////////////////////////////////////////////////////
 
-CBuildingShader::CBuildingShader()
+CObstacleShader::CObstacleShader()
 {
 }
 
-CBuildingShader::~CBuildingShader()
+CObstacleShader::~CObstacleShader()
 {
 }
 
-void CBuildingShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/hangar.fbx");
-	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/bullet_binary.fbx");
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Hangar/Hangar.fbx");
 	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 
 	CGameObject *pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(-100.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(0.0f, 90.0f, 0.0f);
+	pObject->SetPosition(XMFLOAT3(-200.0f, 0.0f, 0.0f));
+	pObject->SetPrepareRotate(-90.0f, 90.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(100.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(0.0f, -90.0f, 0.0f);
+	pObject->SetPosition(XMFLOAT3(200.0f, 0.0f, 0.0f));
+	pObject->SetPrepareRotate(-90.0f, -90.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 100.0f));
-	pObject->SetPrepareRotate(0.0f, 180.0f, 0.0f);
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 200.0f));
+	pObject->SetPrepareRotate(-90.0f, 180.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -100.0f));
-	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -200.0f));
+	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 

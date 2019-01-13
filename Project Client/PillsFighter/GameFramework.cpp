@@ -157,17 +157,8 @@ void CGameFramework::InitNetwork()
 	PKT_PLAYER_INFO pktPlayerInfo;
 	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
-	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
-	pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
-	pPlayer->SetMovingSpeed(100.0f);
-	pPlayer->SetHitPoint(100);
-
-	m_pPlayer = pPlayer;
-	m_pScene->SetPlayer(pPlayer);
-	m_pCamera = m_pPlayer->GetCamera();
-
-	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
+	BuildScene();
+	m_pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	
 	for (int i = 0; i < 7; ++i)
 	{
@@ -538,16 +529,8 @@ void CGameFramework::CreateDepthStencilView()
 	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, &d3dDepthStencilViewDesc/*NULL*/, d3dDsvCPUDescriptorHandle);
 }
 
-void CGameFramework::BuildObjects()
+void CGameFramework::BuildScene()
 {
-	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
-
-	m_pRepository = new CRepository();
-	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
-
-#ifdef ON_NETWORKING
-	InitNetwork();
-#else
 	m_pScene = new CScene();
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
@@ -559,9 +542,23 @@ void CGameFramework::BuildObjects()
 	m_pPlayer = pPlayer;
 	m_pScene->SetPlayer(pPlayer);
 	m_pPlayer->SetGravity(m_pScene->m_fGravAcc);
+	m_pPlayer->SetScene(m_pScene);
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
+}
+
+void CGameFramework::BuildObjects()
+{
+	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
+
+	m_pRepository = new CRepository();
+	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
+
+#ifdef ON_NETWORKING
+	InitNetwork();
+#else
+	BuildScene();
 #endif
 
 	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
@@ -837,7 +834,7 @@ void CGameFramework::FrameAdvance()
 		for (const auto& PlayerLife : m_vMsgPlayerLife)
 		{
 			if (PlayerLife->ID == m_Client_Info)
-				m_pPlayer->SetHitPoint(*(m_pPlayer->GetHitPoint()) - PlayerLife->HP);
+				m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - PlayerLife->HP);
 			else
 				m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
 		}

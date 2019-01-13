@@ -108,10 +108,10 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 					m_nState &= ~OBJECT_STATE_ONGROUND;
 				}
 
-				SetBoosterPower(0.5f);
+				SetBoosterPower(1.0f);
 			}
 		}
-		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )	SetBoosterPower(-0.5f);
+		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )	SetBoosterPower(-1.0f);
 
 		Move(xmf3Shift);
 	}
@@ -127,55 +127,20 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 
 void CPlayer::Update(float fTimeElapsed)
 {
-	m_fGravity = m_fGravAcc * m_fMass * fTimeElapsed;
-	m_fAccelerationY -= m_fGravity;
-
-	if (m_nState & OBJECT_STATE_BOOSTERING)
-	{
-		if (!IsZero(m_fBoosterPower))
-		{
-			bool bIsNegativeNum = false;
-			if (m_fBoosterPower < FLT_EPSILON) bIsNegativeNum = true;
-
-			m_fBoosterPower = fabsf(m_fBoosterPower);
-			float fNormaize = m_fBoosterPower / m_fBoosterPower;
-			m_fBoosterPower -= fNormaize * fTimeElapsed;
-			if (m_fBoosterPower < FLT_EPSILON)
-				m_fBoosterPower = 0.0f;
-			else
-			{
-				if (bIsNegativeNum) m_fBoosterPower *= -1.0f;
-			}
-		}
-		float fHoldPower = m_fGravity;
-		m_fAccelerationY += m_fBoosterPower + fHoldPower;
-
-		if (fabsf(m_fAccelerationY) < FLT_EPSILON) m_fVelocityY = 0.0f;
-	}
-
-	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
-	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
-	m_fAccelerationY = 0.0f;
-
-	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
-	m_pCamera->Update(m_xmf3Position, fTimeElapsed);
-	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
-
-	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
-	//m_pCamera->SetLookAt(m_xmf3Position);
-	m_pCamera->SetLookAt(xmf3LookAt);
-
-	m_pCamera->RegenerateViewMatrix();
-
+	ProcessGravity(fTimeElapsed);
 	ProcessBooster(fTimeElapsed);
 	ProcessOnGround(fTimeElapsed);
 	ProcessHitPoint();
-
-	CGameObject::Animate(fTimeElapsed);
-
 	CheckElapsedTime(fTimeElapsed);
 
-	printf("HP : %d, BG : %d\n", m_nHitPoint, m_nBoosterGauge);
+	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
+	m_pCamera->Update(fTimeElapsed);
+	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
+	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
+	m_pCamera->SetLookAt(xmf3LookAt);
+	m_pCamera->RegenerateViewMatrix();
+
+	CGameObject::Animate(fTimeElapsed);
 }
 
 void CPlayer::Rotate(float x, float y, float z)
@@ -191,11 +156,11 @@ void CPlayer::Rotate(float x, float y, float z)
 		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 	}
 
-	m_pCamera->Rotate(x, 0.0f, 0.0f);
-
 	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
 	m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3Look, true);
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
+
+	m_pCamera->Rotate(x, y, 0.0f);
 }
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -227,17 +192,22 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 
 		pBullet = new Bullet();
 
-		XMFLOAT3 xmfPosition = GetPosition();
-		xmfPosition = Vector3::Add(xmfPosition, XMFLOAT3(0.0f, 5.0f, 0.0f));
-		pBullet->SetPosition(xmfPosition);
-		//pBullet->SetRight(m_pCamera->GetRightVector());
-		//pBullet->SetUp(m_pCamera->GetUpVector());
-		//pBullet->SetLook(m_pCamera->GetLookVector());
-		pBullet->SetRight(m_xmf3Right);
-		pBullet->SetUp(m_xmf3Up);
-		pBullet->SetLook(m_xmf3Look);
-		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+		XMFLOAT3 xmf3Position = GetPosition();
+		xmf3Position = Vector3::Add(xmf3Position, XMFLOAT3(0.0f, 5.0f, 0.0f));
+		pBullet->SetPosition(xmf3Position);
 
+			   		XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
+		XMFLOAT3 xmf3Look = Vector3::Subtract(xmf3Position, m_pCamera->GetPosition());
+		xmf3Look.y = -xmf3Look.y;
+		XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
+		pBullet->SetRight(xmf3Right);
+		pBullet->SetUp(xmf3Up);
+		pBullet->SetLook(xmf3Look);
+		//pBullet->SetRight(m_xmf3Right);
+		//pBullet->SetUp(m_xmf3Up);
+		//pBullet->SetLook(m_xmf3Look);
+		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+		
 		m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
 #endif
 
@@ -267,7 +237,6 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 	int z = (int)(xmf3PlayerPosition.z / xmf3Scale.z);
 	bool bReverseQuad = ((z % 2) != 0);
 	float fHeight = pTerrain->GetHeight(xmf3PlayerPosition.x, xmf3PlayerPosition.z, bReverseQuad);
-	std::cout << "Height : " << fHeight << std::endl;
 	if (xmf3PlayerPosition.y < fHeight)
 	{
 		float fPlayerVelocity = GetVelocity();
@@ -294,9 +263,6 @@ void CPlayer::OnCameraUpdateCallback(float fTimeElapsed)
 	{
 		xmf3CameraPosition.y = fHeight;
 		m_pCamera->SetPosition(xmf3CameraPosition);
-
-		CCamera *pCamera = (CCamera *)m_pCamera;
-		pCamera->SetLookAt(GetPosition());
 	}
 }
 
@@ -357,4 +323,37 @@ void CPlayer::ProcessOnGround(float fTimeElapsed)
 	{
 		m_fOnGroundTime += fTimeElapsed;
 	}
+}
+
+void CPlayer::ProcessGravity(float fTimeElapsed)
+{
+	m_fGravity = m_fGravAcc * m_fMass * fTimeElapsed;
+	m_fAccelerationY = -m_fGravity;
+
+	if (m_nState & OBJECT_STATE_BOOSTERING)
+	{
+		if (!IsZero(m_fBoosterPower))
+		{
+			bool bIsNegativeNum = false;
+			if (m_fBoosterPower < FLT_EPSILON) bIsNegativeNum = true;
+
+			m_fBoosterPower = fabsf(m_fBoosterPower);
+			float fNormaize = m_fBoosterPower / m_fBoosterPower;
+			m_fBoosterPower -= fNormaize * fTimeElapsed;
+			if (m_fBoosterPower < FLT_EPSILON)
+				m_fBoosterPower = 0.0f;
+			else
+
+			{
+				if (bIsNegativeNum) m_fBoosterPower *= -1.0f;
+			}
+		}
+		float fHoldPower = m_fGravity;
+		m_fAccelerationY += m_fBoosterPower + fHoldPower;
+
+		if (fabsf(m_fAccelerationY) < FLT_EPSILON) m_fVelocityY = 0.0f;
+	}
+
+	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
+	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 }

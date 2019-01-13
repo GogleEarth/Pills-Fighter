@@ -28,6 +28,8 @@ protected:
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;
 
+
+public:
 	float m_fPitch;
 	float m_fYaw;
 	float m_fRoll;

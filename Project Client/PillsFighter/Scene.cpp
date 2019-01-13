@@ -157,17 +157,14 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_nShaders = 4;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 
-	/////////////////////////////// Enemy Shader
+	CObstacleShader *pObstacleShader = new CObstacleShader();
+	pObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pObstacleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
-	////// Building Shader
-	CBuildingShader *pBuildingShader = new CBuildingShader();
-	pBuildingShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pBuildingShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-
-	m_ppShaders[INDEX_SHADER_OBSTACLE] = pBuildingShader;
+	m_ppShaders[INDEX_SHADER_OBSTACLE] = pObstacleShader;
 	//m_ppShaders[INDEX_SHADER_OBSTACLE] = NULL;
 
-	//// Enemy Shader
+
 	CGundamShader *pGundamhader = new CGundamShader();
 	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
@@ -175,7 +172,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
 	//m_ppShaders[INDEX_SHADER_ENEMY] = NULL;
 
-	//// Bullet Shader
+
 	CBulletShader *pBulletShader = new CBulletShader();
 	pBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
@@ -183,7 +180,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
 	//m_ppShaders[INDEX_SHADER_BULLET] = NULL;
 
-	// Effect Shader
+
 	CEffectShader *pEffectShader = new CEffectShader();
 	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
@@ -276,6 +273,30 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	}
 
 	CheckCollision();
+}
+
+float CScene::GetDistance()
+{
+	std::vector<CGameObject*> *vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
+	std::vector<CGameObject*> *vObstacle = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
+
+	float fMinDistance = FLT_MAX;
+	XMVECTOR xmvPosition = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetPosition()));
+	XMVECTOR xmvLook = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetLookVector()));
+
+	for (const auto& Enemy : *vEnemys)
+	{
+		float fDistance = 0.0f;
+		if (Enemy->GetOOBB().Intersects(xmvPosition, xmvLook, fDistance))
+		{
+			if (fMinDistance > fDistance)
+				fMinDistance = fDistance;
+		}
+	}
+
+	//XMVECTOR xmf3Pos = XMVector3ClampLength(xmvLook, xmvPosition, fMinDistance);
+	//printf("%f, %f, %f\n", )
+	return fMinDistance;
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

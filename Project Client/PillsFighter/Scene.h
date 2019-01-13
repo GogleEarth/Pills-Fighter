@@ -98,4 +98,6 @@ public: // For Network
 
 public:
 	float		m_fGravAcc = 9.8f;
+
+	float GetDistance();
 };

@@ -16,6 +16,7 @@ class CShader;
 class CUserInterface;
 class CObjectsShader;
 class CRepository;
+class CScene;
 
 class CPlayer : public CGameObject
 {
@@ -101,4 +102,11 @@ public:
 	void ProcessBooster(float fElapsedTime);
 	void ProcessOnGround(float fTimeElapsed);
 	void ProcessHitPoint();
+	void ProcessGravity(float fTimeElapsed);
+
+protected:
+	CScene			*m_pScene = NULL;
+
+public:
+	void SetScene(CScene *pCScene) { m_pScene = pCScene; }
 };

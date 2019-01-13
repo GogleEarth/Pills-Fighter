@@ -118,11 +118,11 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CBuildingShader : public CObjectsShader
+class CObstacleShader : public CObjectsShader
 {
 public:
-	CBuildingShader();
-	virtual ~CBuildingShader();
+	CObstacleShader();
+	virtual ~CObstacleShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 };
