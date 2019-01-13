@@ -456,6 +456,7 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	{
 	case PKT_ID_PLAYER_INFO:
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
+		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		break;
 	case PKT_ID_PLAYER_LIFE:
 		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
