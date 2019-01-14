@@ -314,7 +314,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 				pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
 				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
-				bulletpkt.WorldMatrix = pScene->m_pObjects[pkt.ID]->GetWorldTransf();
+				bulletpkt.WorldMatrix = pkt.BulletWorldMatrix;
 				bulletpkt.WorldMatrix._42 += 10.0f;
 				bulletpkt.Object_Index = pScene->GetIndex();
 				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
@@ -324,7 +324,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 				CGameObject bullet;
 				bullet.m_Object_Type = OBJECT_TYPE_BULLET;
 				bullet.m_iId = pkt.ID;
-				bullet.SetWorldTransf(pScene->m_pObjects[pkt.ID]->GetWorldTransf());
+				bullet.SetWorldTransf(pkt.BulletWorldMatrix);
 				bullet.SetMovingSpeed(1000.0f);
 				pScene->AddObject(bullet);
 			}
@@ -450,7 +450,7 @@ DWORD Framework::client_process(SOCKET arg)
 			if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 			
 			//memcpy(&p_info, &buf, sizeof(PKT_PLAYER_INFO));
-			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting });
+			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting, ((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix });
 
 			SetEvent(client_Event[((PKT_PLAYER_INFO*)buf)->ID]);
 			WaitForSingleObject(Event, INFINITE);
