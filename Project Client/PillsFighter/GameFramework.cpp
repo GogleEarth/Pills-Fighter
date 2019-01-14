@@ -799,7 +799,11 @@ void CGameFramework::FrameAdvance()
 
 		pktPlayerInfo.ID = m_Client_Info;
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
-		if (m_LButtonDown) pktPlayerInfo.IsShooting = 1;
+		if (m_LButtonDown) 
+		{
+			pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
+			pktPlayerInfo.IsShooting = 1;
+		}
 		else pktPlayerInfo.IsShooting = 0;
 		PKT_ID pid = PKT_ID_PLAYER_INFO;
 		retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
@@ -871,12 +875,11 @@ void CGameFramework::FrameAdvance()
 	m_GameTimer.Tick(0.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
-	
-	
-	AnimateObjects(m_fElapsedTime);
 
 	ProcessInput();
-
+	
+	AnimateObjects(m_fElapsedTime);
+	
 	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);

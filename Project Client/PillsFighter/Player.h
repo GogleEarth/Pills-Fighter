@@ -110,4 +110,7 @@ protected:
 public:
 	void SetScene(CScene *pCScene) { m_pScene = pCScene; }
 	void SetOnGround();
+
+public:
+	XMFLOAT4X4 GetToTarget();
 };

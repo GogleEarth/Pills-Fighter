@@ -188,37 +188,44 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 {
 	if (m_Shotable)
 	{
+
 #ifndef ON_NETWORKING
 		Bullet *pBullet = NULL;
-
 		pBullet = new Bullet();
 
-		XMFLOAT3 xmf3Position = GetPosition();
-		xmf3Position = Vector3::Add(xmf3Position, XMFLOAT3(0.0f, 5.0f, 0.0f));
-		pBullet->SetPosition(xmf3Position);
+		XMFLOAT4X4 xmf4x4World = GetToTarget();
 
-		float fDistance = m_pScene->GetDistance();
-		XMFLOAT3 xmf3CameraPos = m_pCamera->GetPosition();
-		XMFLOAT3 xmf3CameraLook = m_pCamera->GetLookVector();
-		XMFLOAT3 xmf3DestPos = XMFLOAT3(xmf3CameraPos.x + xmf3CameraLook.x * fDistance, 
-			xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
-			xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
-
-		XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
-		XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3DestPos, xmf3Position));
-		XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
-		xmf3Right = Vector3::CrossProduct(xmf3Up, xmf3Look, true);
-
-		pBullet->SetRight(xmf3Right);
-		pBullet->SetUp(xmf3Up);
-		pBullet->SetLook(xmf3Look);
+		pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
+		pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
+		pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
+		pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
 		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 		
 		m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
 #endif
-
 		m_Shotable = FALSE;
 	}
+}
+
+XMFLOAT4X4 CPlayer::GetToTarget()
+{
+	float fDistance = m_pScene->GetDistance();
+	XMFLOAT3 xmf3CameraPos = m_pCamera->GetPosition();
+	XMFLOAT3 xmf3CameraLook = m_pCamera->GetLookVector();
+	XMFLOAT3 xmf3DestPos = XMFLOAT3(xmf3CameraPos.x + xmf3CameraLook.x * fDistance,
+		xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
+		xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
+
+	XMFLOAT3 xmf3Position = Vector3::Add(GetPosition(), XMFLOAT3(0.0f, 5.0f, 0.0f));
+	XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
+	XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3DestPos, xmf3Position));
+	XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
+	xmf3Right = Vector3::CrossProduct(xmf3Up, xmf3Look, true);
+
+	return XMFLOAT4X4(xmf3Right.x, xmf3Right.y, xmf3Right.z, 0.0f,
+		xmf3Up.x, xmf3Up.y, xmf3Up.z, 0.0f,
+		xmf3Look.x, xmf3Look.y, xmf3Look.z, 0.0f,
+		xmf3Position.x, xmf3Position.y, xmf3Position.z, 1.0f);
 }
 
 void CPlayer::CheckElapsedTime(float ElapsedTime)
@@ -262,7 +269,7 @@ void CPlayer::OnCameraUpdateCallback(float fTimeElapsed)
 	XMFLOAT3 xmf3CameraPosition = m_pCamera->GetPosition();
 	int z = (int)(xmf3CameraPosition.z / xmf3Scale.z);
 	bool bReverseQuad = ((z % 2) != 0);
-	float fHeight = pTerrain->GetHeight(xmf3CameraPosition.x, xmf3CameraPosition.z, bReverseQuad);
+	float fHeight = pTerrain->GetHeight(xmf3CameraPosition.x, xmf3CameraPosition.z, bReverseQuad)+5.0f;
 	if (xmf3CameraPosition.y <= fHeight)
 	{
 		xmf3CameraPosition.y = fHeight;
