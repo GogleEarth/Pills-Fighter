@@ -311,21 +311,21 @@ DWORD Framework::Update_Process(CScene* pScene)
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
 			if (pkt.IsShooting == true)
 			{
-				pid = PKT_ID_CREATE_OBJECT;
-				PKT_CREATE_OBJECT bulletpkt;
-				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
-				bulletpkt.WorldMatrix = pkt.BulletWorldMatrix;
-				bulletpkt.WorldMatrix._42 += 10.0f;
-				bulletpkt.Object_Index = pScene->GetIndex();
-				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
-				//std::cout << "오브젝트 생성 패킷 전송\n";
-				//std::cout << "index : " << bulletpkt.Object_Index << std::endl;
 				CGameObject bullet;
 				bullet.m_Object_Type = OBJECT_TYPE_BULLET;
 				bullet.m_iId = pkt.ID;
 				bullet.SetWorldTransf(pkt.BulletWorldMatrix);
 				bullet.SetMovingSpeed(1000.0f);
+
+				pid = PKT_ID_CREATE_OBJECT;
+				PKT_CREATE_OBJECT bulletpkt;
+				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
+				bulletpkt.WorldMatrix = bullet.GetWorldTransf();
+				bulletpkt.Object_Index = pScene->GetIndex();
+				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
+				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+				//std::cout << "오브젝트 생성 패킷 전송\n";
+				//std::cout << "index : " << bulletpkt.Object_Index << std::endl;
 				pScene->AddObject(bullet);
 			}
 		}

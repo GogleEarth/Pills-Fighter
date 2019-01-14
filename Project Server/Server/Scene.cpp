@@ -52,25 +52,32 @@ void CScene::BuildObjects()
 
 
 	m_pObstacles[0] = new CGameObject();
-	m_pObstacles[0]->SetPrepareRotate(0, 0, 0);
-	m_pObstacles[0]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -200.0f, 0.0f, 100.0f, 1.0f });
+	m_pObstacles[0]->SetPrepareRotate(-90.0f, 90.0f, 0);
+	m_pObstacles[0]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -200.0f, 0.0f, 0.0f, 1.0f });
 	m_pObstacles[0]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
 	m_pObstacles[0]->index = 0;
 	m_pObstacles[0]->SetMesh(m_ppObstacleMesh, NULL, 1);
 
 	m_pObstacles[1] = new CGameObject();
-	m_pObstacles[1]->SetPrepareRotate(0, 0, 0);
-	m_pObstacles[1]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 200.0f, 0.0f, 100.0f, 1.0f });
+	m_pObstacles[1]->SetPrepareRotate(-90.0f, -90.0f, 0);
+	m_pObstacles[1]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 200.0f, 0.0f, 0.0f, 1.0f });
 	m_pObstacles[1]->index = 1;	
 	m_pObstacles[1]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
 	m_pObstacles[1]->SetMesh(m_ppObstacleMesh, NULL, 1);
 
 	m_pObstacles[2] = new CGameObject();
-	m_pObstacles[2]->SetPrepareRotate(0, 0, 0);
-	m_pObstacles[2]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 100.0f, 1.0f });
+	m_pObstacles[2]->SetPrepareRotate(-90.0f, 0, 0);
+	m_pObstacles[2]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
 	m_pObstacles[2]->index = 2;	
 	m_pObstacles[2]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
 	m_pObstacles[2]->SetMesh(m_ppObstacleMesh, NULL, 1);
+
+	m_pObstacles[3] = new CGameObject();
+	m_pObstacles[3]->SetPrepareRotate(-90.0f, 0, 0);
+	m_pObstacles[3]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
+	m_pObstacles[3]->index = 2;
+	m_pObstacles[3]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
+	m_pObstacles[3]->SetMesh(m_ppObstacleMesh, NULL, 1);
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)

@@ -34,7 +34,7 @@ void CGameObject::SetWorldTransf(XMFLOAT4X4& xmf4x4World)
 	m_xmf3Up = XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23);
 	m_xmf3Look = XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33);
 	m_xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
-	m_xmf4x4World = xmf4x4World;
+	//m_xmf4x4World = xmf4x4World;
 }
 
 void CGameObject::SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMeshes)
