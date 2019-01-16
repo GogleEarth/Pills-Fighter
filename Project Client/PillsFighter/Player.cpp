@@ -209,7 +209,7 @@ void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 
 XMFLOAT4X4 CPlayer::GetToTarget()
 {
-	float fDistance = m_pScene->GetDistance();
+	float fDistance = m_pScene->FindAimToTargetDistance();
 	XMFLOAT3 xmf3CameraPos = m_pCamera->GetPosition();
 	XMFLOAT3 xmf3CameraLook = m_pCamera->GetLookVector();
 	XMFLOAT3 xmf3DestPos = XMFLOAT3(xmf3CameraPos.x + xmf3CameraLook.x * fDistance,
@@ -244,6 +244,8 @@ void CPlayer::CheckElapsedTime(float ElapsedTime)
 
 void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 {
+	m_pScene->CheckCollisionPlayer();
+
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)m_pPlayerUpdatedContext;
 	XMFLOAT3 xmf3Scale = pTerrain->GetScale();
 	XMFLOAT3 xmf3PlayerPosition = GetPosition();
@@ -264,6 +266,8 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 
 void CPlayer::OnCameraUpdateCallback(float fTimeElapsed)
 {
+	//m_pScene->CheckCollisionCamera();
+
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)m_pCameraUpdatedContext;
 	XMFLOAT3 xmf3Scale = pTerrain->GetScale();
 	XMFLOAT3 xmf3CameraPosition = m_pCamera->GetPosition();

@@ -279,7 +279,7 @@ void RandomMoveObject::Animate(float fTimeElapsed, CCamera *pCamera)
 			m_ElapsedTime += fTimeElapsed;
 	}
 
-	MoveForward(m_MovingSpeed * fTimeElapsed);
+	//MoveForward(m_MovingSpeed * fTimeElapsed);
 
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }

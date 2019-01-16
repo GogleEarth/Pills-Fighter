@@ -243,27 +243,10 @@ bool CScene::ProcessInput(UCHAR *pKeysBuffer)
 	return(false);
 }
 
-void CScene::CheckCollision()
+void CScene::CheckCollisionPlayer()
 {
-	std::vector<CGameObject*> *vEnemys;
-	std::vector<CGameObject*> *vBullets;
 	std::vector<CGameObject*> *vObstacles;
-
-	vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
-	vBullets = m_ppShaders[INDEX_SHADER_BULLET]->GetObjects();
 	vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
-
-	for (const auto& Enemy : *vEnemys)
-	{
-		if(m_pPlayer->GetAABB().Intersects(Enemy->GetAABB()))
-			std::cout << "Collision By Enemy\n" << std::endl;
-
-		for (const auto& Bullet : *vBullets)
-		{
-			if (Bullet->GetAABB().Intersects(Enemy->GetAABB()))
-				std::cout << "Collision Enemy By Bullet\n" << std::endl;
-		}
-	}
 
 	BoundingBox xmPlayerAABB = m_pPlayer->GetAABB();
 	XMFLOAT3 xmf3Center = xmPlayerAABB.Center;
@@ -279,16 +262,16 @@ void CScene::CheckCollision()
 		XMFLOAT3 xmf3ObstMin = Vector3::Subtract(xmf3ObstCenter, xmf3ObstExtents);
 		XMFLOAT3 xmf3ObstMax = Vector3::Add(xmf3ObstCenter, xmf3ObstExtents);
 
+		XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
 		if (xmPlayerAABB.Intersects(xmObstAABB))
 		{
 			XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
 			XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			XMFLOAT3 xmf3Pos = m_pPlayer->GetPosition();
 
 			if (xmf3Min.x < xmf3ObstMax.x)
 			{
 				xmf3Distance.x = xmf3ObstMax.x - xmf3Min.x;
-				xmf3Pos.x = xmf3ObstMax.x + xmf3Extents.x;
+				xmf3PlayerPos.x = xmf3ObstMax.x + xmf3Extents.x;
 			}
 
 			if (xmf3Max.x > xmf3ObstMin.x)
@@ -297,14 +280,14 @@ void CScene::CheckCollision()
 				if (abs(xmf3Distance.x) > abs(xmf3Temp.x))
 				{
 					xmf3Distance.x = xmf3Temp.x;
-					xmf3Pos.x = xmf3ObstMin.x - xmf3Extents.x;
+					xmf3PlayerPos.x = xmf3ObstMin.x - xmf3Extents.x;
 				}
 			}
-			
+
 			if (xmf3Min.y < xmf3ObstMax.y)
 			{
 				xmf3Distance.y = xmf3ObstMax.y - xmf3Min.y;
-				xmf3Pos.y = xmf3ObstMax.y + xmf3Extents.y;
+				xmf3PlayerPos.y = xmf3ObstMax.y + xmf3Extents.y;
 			}
 			if (xmf3Max.y > xmf3ObstMin.y)
 			{
@@ -312,14 +295,14 @@ void CScene::CheckCollision()
 				if (abs(xmf3Distance.y) > abs(xmf3Temp.y))
 				{
 					xmf3Distance.y = xmf3Temp.y;
-					xmf3Pos.y = xmf3ObstMin.y - xmf3Extents.y;
+					xmf3PlayerPos.y = xmf3ObstMin.y - xmf3Extents.y;
 				}
 			}
 
 			if (xmf3Min.z < xmf3ObstMax.z)
 			{
 				xmf3Distance.z = xmf3ObstMax.z - xmf3Min.z;
-				xmf3Pos.z = xmf3ObstMax.z + xmf3Extents.z;
+				xmf3PlayerPos.z = xmf3ObstMax.z + xmf3Extents.z;
 			}
 			if (xmf3Max.z > xmf3ObstMin.z)
 			{
@@ -327,7 +310,7 @@ void CScene::CheckCollision()
 				if (abs(xmf3Distance.z) > abs(xmf3Temp.z))
 				{
 					xmf3Distance.z = xmf3Temp.z;
-					xmf3Pos.z = xmf3ObstMin.z - xmf3Extents.z;
+					xmf3PlayerPos.z = xmf3ObstMin.z - xmf3Extents.z;
 				}
 			}
 
@@ -338,38 +321,38 @@ void CScene::CheckCollision()
 				{
 					if (abs(xmf3Temp.x) > abs(xmf3Temp.y))
 					{
-						xmf3Pos.x = m_pPlayer->GetPosition().x;
+						xmf3PlayerPos.x = m_pPlayer->GetPosition().x;
 						xmf3Distance.x = 0.0f;
 
 						if (!IsZero(xmf3Temp.z))
 						{
 							if (abs(xmf3Temp.y) > abs(xmf3Temp.z))
 							{
-								xmf3Pos.y = m_pPlayer->GetPosition().y;
+								xmf3PlayerPos.y = m_pPlayer->GetPosition().y;
 								xmf3Distance.y = 0.0f;
 							}
 							else
 							{
-								xmf3Pos.z = m_pPlayer->GetPosition().z;
+								xmf3PlayerPos.z = m_pPlayer->GetPosition().z;
 								xmf3Distance.z = 0.0f;
 							}
 						}
 					}
 					else
 					{
-						xmf3Pos.y = m_pPlayer->GetPosition().y;
+						xmf3PlayerPos.y = m_pPlayer->GetPosition().y;
 						xmf3Distance.y = 0.0f;
 
 						if (!IsZero(xmf3Temp.z))
 						{
 							if (abs(xmf3Temp.x) > abs(xmf3Temp.z))
 							{
-								xmf3Pos.x = m_pPlayer->GetPosition().x;
+								xmf3PlayerPos.x = m_pPlayer->GetPosition().x;
 								xmf3Distance.x = 0.0f;
 							}
 							else
 							{
-								xmf3Pos.z = m_pPlayer->GetPosition().z;
+								xmf3PlayerPos.z = m_pPlayer->GetPosition().z;
 								xmf3Distance.z = 0.0f;
 							}
 						}
@@ -383,23 +366,146 @@ void CScene::CheckCollision()
 				{
 					if (abs(xmf3Temp.y) > abs(xmf3Temp.z))
 					{
-						xmf3Pos.y = m_pPlayer->GetPosition().y;
+						xmf3PlayerPos.y = m_pPlayer->GetPosition().y;
 						xmf3Distance.y = 0.0f;
 					}
 					else
 					{
-						xmf3Pos.z = m_pPlayer->GetPosition().z;
+						xmf3PlayerPos.z = m_pPlayer->GetPosition().z;
 						xmf3Distance.z = 0.0f;
 					}
 				}
 			}
+
 			if (!IsZero(xmf3Distance.y))
 			{
 				m_pPlayer->SetOnGround();
 			}
 
 
-			m_pPlayer->SetPosition(xmf3Pos);
+			m_pPlayer->SetPosition(xmf3PlayerPos);
+		}
+		
+		XMFLOAT3 xmf3CameraPos = m_pPlayer->GetCamera()->GetPosition();
+		if (xmObstAABB.Contains(XMLoadFloat3(&xmf3CameraPos)))
+		{
+			XMFLOAT3 xmf3MovePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+			if (xmf3CameraPos.x > xmf3ObstMin.x && xmf3CameraPos.x < xmf3ObstMax.x)
+			{
+				xmf3MovePos.x = (xmf3CameraPos.x - xmf3ObstMin.x) < (xmf3ObstMax.x - xmf3CameraPos.x) ? xmf3ObstMin.x : xmf3ObstMax.x;
+			}
+			if (xmf3CameraPos.y > xmf3ObstMin.y && xmf3CameraPos.y < xmf3ObstMax.y)
+			{
+				xmf3MovePos.y = (xmf3CameraPos.y - xmf3ObstMin.y) < (xmf3ObstMax.y - xmf3CameraPos.y) ? xmf3ObstMin.y : xmf3ObstMax.y;
+			}
+			if (xmf3CameraPos.z > xmf3ObstMin.z && xmf3CameraPos.z < xmf3ObstMax.z)
+			{
+				xmf3MovePos.z = (xmf3CameraPos.z - xmf3ObstMin.z) < (xmf3ObstMax.z - xmf3CameraPos.z) ? xmf3ObstMin.z : xmf3ObstMax.z;
+			}
+
+			xmf3Temp = xmf3MovePos;
+			if (!IsZero(xmf3Temp.x))
+			{
+				float fDistanceX = abs(abs(xmf3PlayerPos.x) - abs(xmf3Temp.x));
+
+				if (!IsZero(xmf3Temp.y))
+				{
+					float fDistanceY = abs(abs(xmf3PlayerPos.y) - abs(xmf3Temp.y));
+
+					if (fDistanceX > fDistanceY)
+					{
+						xmf3MovePos.x = xmf3CameraPos.x;
+
+						if (!IsZero(xmf3Temp.z))
+						{
+							float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
+
+							if (fDistanceY > fDistanceZ)
+							{
+								xmf3MovePos.y = xmf3CameraPos.y;
+							}
+							else
+								xmf3MovePos.z = xmf3CameraPos.z;
+						}
+
+					}
+					else
+					{
+						xmf3MovePos.x = xmf3CameraPos.x;
+
+						if (!IsZero(xmf3Temp.z))
+						{
+							float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
+
+							if (fDistanceY > fDistanceZ)
+							{
+								xmf3MovePos.y = xmf3CameraPos.y;
+							}
+							else
+								xmf3MovePos.z = xmf3CameraPos.z;
+						}
+					}
+				}
+				else if (!IsZero(xmf3MovePos.z))
+				{
+					float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
+
+					if (fDistanceX > fDistanceZ)
+					{
+						xmf3MovePos.x = xmf3CameraPos.x;
+					}
+					else
+						xmf3MovePos.z = xmf3CameraPos.z;
+				}
+			}
+			else if (!IsZero(xmf3MovePos.y))
+			{
+				float fDistanceY = abs(abs(xmf3PlayerPos.y) - abs(xmf3Temp.y));
+
+				if (!IsZero(xmf3Temp.z))
+				{
+					float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
+
+					if (fDistanceY > fDistanceZ)
+					{
+						xmf3MovePos.y = xmf3CameraPos.y;
+					}
+					else
+						xmf3MovePos.z = xmf3CameraPos.z;
+				}
+			}
+
+			if (xmf3MovePos.x != xmf3CameraPos.x)
+				printf("Move x\n");
+			else if (xmf3MovePos.y != xmf3CameraPos.y)
+				printf("Move y\n");
+			else if (xmf3MovePos.z != xmf3CameraPos.z)
+				printf("Move z\n");
+
+			m_pPlayer->GetCamera()->SetPosition(xmf3MovePos);
+		}
+	}
+}
+
+void CScene::CheckCollision()
+{
+	std::vector<CGameObject*> *vEnemys;
+	std::vector<CGameObject*> *vBullets;
+
+	vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
+	vBullets = m_ppShaders[INDEX_SHADER_BULLET]->GetObjects();
+
+	for (const auto& Enemy : *vEnemys)
+	{
+		if(m_pPlayer->GetAABB().Intersects(Enemy->GetAABB()))
+			std::cout << "Collision By Enemy\n" << std::endl;
+
+		for (const auto& Bullet : *vBullets)
+		{
+			if (Bullet->GetAABB().Intersects(Enemy->GetAABB()))
+				std::cout << "Collision Enemy By Bullet\n" << std::endl;
 		}
 	}
 }
@@ -417,40 +523,59 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	CheckCollision();
 }
 
-float CScene::GetDistance()
+float CScene::FindAimToTargetDistance()
 {
 	std::vector<CGameObject*> *vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
 	std::vector<CGameObject*> *vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
 
-	float fMinDistance = 1000.0f;
-	XMVECTOR xmvPosition = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetPosition()));
+	float fDistance = 1000.0f;
+	CGameObject *pTarget = NULL;
+	XMFLOAT3 xmf3CameraPos = m_pPlayer->GetCamera()->GetPosition();
+	XMVECTOR xmvCameraPos = XMLoadFloat3(&xmf3CameraPos);
 	XMVECTOR xmvLook = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetLookVector()));
+	
+	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
 
 	for (const auto& Enemy : *vEnemys)
 	{
-		float fDistance = 0.0f;
-		if (Enemy->GetAABB().Intersects(xmvPosition, xmvLook, fDistance))
+		// 카메라 이동 X 단 목표가 되지 않음.
+		float fTemp = 0.0f;
+		if (Enemy->GetAABB().Intersects(xmvCameraPos, xmvLook, fTemp))
 		{
-			if (fMinDistance > fDistance) fMinDistance = fDistance;
+			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+
+			if (fDistBetweenCnP < fTemp)
+			{
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Enemy;
+				}
+			}
 		}
 	}
 
 	for (const auto& Obstacle : *vObstacles)
 	{
-		float fDistance = 0.0f;
-		if (Obstacle->GetAABB().Intersects(xmvPosition, xmvLook, fDistance))
-		{ 
-			if (fMinDistance > fDistance) fMinDistance = fDistance;
+		// 카메라 이동 O
+		float fTemp = 0.0f;
+		if (Obstacle->GetAABB().Intersects(xmvCameraPos, xmvLook, fTemp))
+		{
+			if (fDistance > fTemp)
+			{
+				fDistance = fTemp;
+				pTarget = Obstacle;
+			}
 		}
 	}
 
-	float fDistance = 0.0f;
-	if (m_pTerrain->GetAABB().Intersects(xmvPosition, xmvLook, fDistance))
+	float fTemp = 0.0f;
+	if (m_pTerrain->GetAABB().Intersects(xmvCameraPos, xmvLook, fTemp))
 	{
-		if (fMinDistance > fDistance) fMinDistance = fDistance;
+		if (fDistance > fTemp) fDistance = fTemp;
 	}
 
-	return fMinDistance;
+	return fDistance;
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

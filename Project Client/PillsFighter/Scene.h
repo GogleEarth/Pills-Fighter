@@ -68,7 +68,9 @@ protected:
 
 public:
 	// 충돌 체크를 검사한다.
-	void CheckCollision();
+	virtual void CheckCollision();
+	virtual void CheckCollisionPlayer();
+	virtual float FindAimToTargetDistance();
 
 	void SetPlayer(CPlayer* pPlayer);
 
@@ -99,5 +101,4 @@ public: // For Network
 public:
 	float		m_fGravAcc = 9.8f;
 
-	float GetDistance();
 };

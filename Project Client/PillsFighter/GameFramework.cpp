@@ -872,7 +872,7 @@ void CGameFramework::FrameAdvance()
 	//}
 	ResetEvent(hEvent);
 #else
-	m_GameTimer.Tick(0.0f);
+	m_GameTimer.Tick(60.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
 
