@@ -14,11 +14,9 @@ public:
 protected:
 
 	CGameObject					*m_pTerrain = NULL;
-	CMesh**						m_ppBulletMesh = NULL;
-	CMesh**						m_ppObstacleMesh = NULL;
-	CCubeMesh**					m_ppBulletCubeMesh = NULL;
-	CCubeMesh**					m_ppObstacleCubeMesh = NULL;
-
+	CModel*						m_pBulletMesh = NULL;
+	CModel*						m_pObstacleMesh = NULL;
+	CModel*						m_pGMMesh = NULL;
 public:
 
 
@@ -29,7 +27,7 @@ public: // For Network
 	void InsertObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
 	int GetIndex();
-	void AddObject(CGameObject objcet);
+	void AddObject(CGameObject* objcet);
 	void releaseObject(int index);
 	CGameObject** GetObjects(OBJECT_TYPE type) 
 	{

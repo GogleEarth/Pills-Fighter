@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include "Scene.h"
 #include "Timer.h"
+#include "Model.h"
 
 struct Client_INFO
 {
@@ -27,9 +28,9 @@ class Framework
 	std::queue<PKT_CREATE_EFFECT> effect_msg_queue;
 	std::vector<Client_INFO> clients;
 	int count = 0;
-	CMesh PlayerMesh;
-	CMesh BulletMesh;
-	CMesh HangarMesh;
+	CModel PlayerMesh;
+	CModel BulletMesh;
+	CModel HangarMesh;
 	CGameTimer *m_GameTimer;
 	int playernum;
 	bool game_start = false;

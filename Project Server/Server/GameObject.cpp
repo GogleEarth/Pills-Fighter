@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "GameObject.h"
+#include "Model.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8,14 +9,20 @@ CGameObject::CGameObject()
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_xmf3PrevPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	serverPosition = XMFLOAT3(0, 0, 0);
 
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
+
+	m_fPreparePitch = 0.0f;
+	m_fPrepareRoll = 0.0f;
+	m_fPrepareYaw = 0.0f;
 
 	m_ElapsedTime = 0;
 	m_DurationTime = 3.0f;
@@ -25,26 +32,37 @@ CGameObject::CGameObject()
 
 CGameObject::~CGameObject()
 {
-	if (m_xmOOBB) delete[] m_xmOOBB;
+	if (m_pModel)
+		m_pModel = NULL;
+}
+
+void CGameObject::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
+{
+	if (!m_pModel) m_pModel = new CModel();
+
+	m_pModel->SetMesh(pMesh, pCubeMesh);
 }
 
 void CGameObject::SetWorldTransf(XMFLOAT4X4& xmf4x4World)
-{ 
+{
 	m_xmf3Right = XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13);
 	m_xmf3Up = XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23);
 	m_xmf3Look = XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33);
 	m_xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
-	//m_xmf4x4World = xmf4x4World;
+	serverPosition = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
 }
 
-void CGameObject::SetMesh(CMesh **ppMeshes, CCubeMesh **ppCubeMeshes, UINT nMeshes)
+XMFLOAT4X4 CGameObject::GetWorldTransf()
 {
-	m_ppMeshes = ppMeshes;
-	m_ppCubeMeshes = ppCubeMeshes;
-	m_nMeshes = nMeshes;
+	XMFLOAT4X4 xmf4x4World;
+	xmf4x4World = XMFLOAT4X4{
+		m_xmf3Right.x,		m_xmf3Right.y,		m_xmf3Right.z, 0.0f,
+		m_xmf3Up.x,			m_xmf3Up.y,			m_xmf3Up.z, 0.0f,
+		m_xmf3Look.x,		m_xmf3Look.y,		m_xmf3Look.z, 0.0f,
+		m_xmf3Position.x,	m_xmf3Position.y,	m_xmf3Position.z, 0.0f,
+	};
 
-	if (m_xmOOBB) delete[] m_xmOOBB;
-	m_xmOOBB = new BoundingOrientedBox[m_nMeshes];
+	return xmf4x4World;
 }
 
 void CGameObject::OnPrepareRender()
@@ -62,7 +80,7 @@ void CGameObject::OnPrepareRender()
 	m_xmf4x4World._42 = m_xmf3Position.y;
 	m_xmf4x4World._43 = m_xmf3Position.z;
 
-	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_PPitch), XMConvertToRadians(m_PYaw), XMConvertToRadians(m_PRoll));
+	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPreparePitch), XMConvertToRadians(m_fPrepareYaw), XMConvertToRadians(m_fPrepareRoll));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
 
@@ -70,26 +88,28 @@ void CGameObject::Animate(float fTimeElapsed)
 {
 	if (m_Object_Type == OBJECT_TYPE_BULLET)
 	{
+		//std::cout << index << " bullet position.y : " << m_xmf3Position.y << std::endl;
 		if (m_ElapsedTime >= m_DurationTime)
 		{
-			DeleteObject();
+			Delete();
 		}
 		else
 		{
 			MoveForward(m_MovingSpeed * fTimeElapsed);
 			m_ElapsedTime += fTimeElapsed;
+			if (m_pModel)
+			{
+				OnPrepareRender();
+				m_pModel->UpdateCollisionBox(m_xmAABB, m_xmf4x4World);
+			}
 		}
 	}
-	for (UINT i = 0; i < m_nMeshes; i++)
+	else
 	{
-		if (m_ppMeshes[i])
+		if (m_pModel)
 		{
-			//XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPitch), XMConvertToRadians(m_fYaw), XMConvertToRadians(m_fRoll));
-			//XMFLOAT4X4 xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
-
 			OnPrepareRender();
-			m_ppMeshes[i]->m_xmOOBB.Transform(m_xmOOBB[i], XMLoadFloat4x4(&m_xmf4x4World));
-			XMStoreFloat4(&m_xmOOBB[i].Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_xmOOBB[i].Orientation)));
+			m_pModel->UpdateCollisionBox(m_xmAABB, m_xmf4x4World);
 		}
 	}
 }
@@ -125,6 +145,10 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 
 void CGameObject::SetPosition(float x, float y, float z)
 {
+	m_xmf3PrevPosition.x = m_xmf3Position.x;
+	m_xmf3PrevPosition.y = m_xmf3Position.y;
+	m_xmf3PrevPosition.z = m_xmf3Position.z;
+
 	m_xmf3Position.x = x;
 	m_xmf3Position.y = y;
 	m_xmf3Position.z = z;
@@ -192,7 +216,7 @@ void RandomMoveObject::InitRandomRotate()
 	m_ElapsedTime = 0.0f;
 }
 
-void RandomMoveObject::Animate(float ElapsedTime)
+void RandomMoveObject::Animate(float fTimeElapsed)
 {
 	if (m_ElapsedTime >= m_Time)
 	{
@@ -202,28 +226,28 @@ void RandomMoveObject::Animate(float ElapsedTime)
 	{
 		if (m_Angle < m_RotateAngle)
 		{
-			m_Angle += m_RotateSpeed * ElapsedTime;
+			m_Angle += m_RotateSpeed * fTimeElapsed;
 
 			if (m_Angle > m_RotateAngle) m_Angle = m_RotateAngle;
-			else Rotate(0.0f, m_RotateSpeed * ElapsedTime, 0.0f);
+			else Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
 		}
 		else
-			m_ElapsedTime += ElapsedTime;
+			m_ElapsedTime += fTimeElapsed;
 	}
 
-	MoveForward(m_MovingSpeed * ElapsedTime);
+	MoveForward(m_MovingSpeed * fTimeElapsed);
 
-	CGameObject::Animate(ElapsedTime);
+	CGameObject::Animate(fTimeElapsed);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 
 Bullet::Bullet() : CGameObject()
 {
-	//m_ElapsedTime = 0;
-	//m_DurationTime = 3.0f;
-	//m_MovingSpeed = 1000.0f;
-	//m_RotationSpeed = 1440.0f;
+	m_ElapsedTime = 0;
+	m_DurationTime = 3.0f;
+	m_MovingSpeed = 500.0f;
+	m_RotationSpeed = 1440.0f;
 }
 
 Bullet::~Bullet()
@@ -232,67 +256,16 @@ Bullet::~Bullet()
 
 void Bullet::Animate(float ElapsedTime)
 {
-	/*if (m_ElapsedTime >= m_DurationTime)
+	std::cout << "bullet position.y : " << m_xmf3Position.y << std::endl;
+	if (m_ElapsedTime >= m_DurationTime)
 	{
-		DeleteObject();
+		Delete();
 	}
 	else
 	{
-		CGameObject::Rotate(0.0f, 0.0f, m_RotationSpeed * ElapsedTime);
 		MoveForward(m_MovingSpeed * ElapsedTime);
-
 		m_ElapsedTime += ElapsedTime;
-	}*/
+	}
 
 	CGameObject::Animate(ElapsedTime);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-void CreateRobotObjectMesh(CMesh**& ppMeshes, CCubeMesh**& ppCubeMeshes, UINT& nMeshes)
-{
-	ppMeshes = new CMesh*[7];
-	::ZeroMemory(ppMeshes, sizeof(CMesh*) * 7);
-	ppCubeMeshes = new CCubeMesh*[7];
-	::ZeroMemory(ppCubeMeshes, sizeof(CCubeMesh*) * 7);	
-
-	XMFLOAT3 Extents;
-	XMFLOAT3 Center;
-
-	ppMeshes[0] = new CMesh("./Resource/GM/Head/Head.FBX");
-	Extents = ppMeshes[0]->GetExtents();
-	Center = ppMeshes[0]->GetCenter();
-	ppCubeMeshes[0] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	ppMeshes[1] = new CMesh("./Resource/GM/Body/UpperBody.FBX");
-	Extents = ppMeshes[1]->GetExtents();
-	Center = ppMeshes[1]->GetCenter();
-	ppCubeMeshes[1] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	ppMeshes[2] = new CMesh("./Resource/GM/Body/LowerBody.FBX");
-	Extents = ppMeshes[2]->GetExtents();
-	Center = ppMeshes[2]->GetCenter();
-	ppCubeMeshes[2] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	ppMeshes[3] = new CMesh("./Resource/GM/Arm/Arm-Left.FBX");
-	Extents = ppMeshes[3]->GetExtents();
-	Center = ppMeshes[3]->GetCenter();
-	ppCubeMeshes[3] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	ppMeshes[4] = new CMesh("./Resource/GM/Arm/Arm-Right.FBX");
-	Extents = ppMeshes[4]->GetExtents();
-	Center = ppMeshes[4]->GetCenter();
-	ppCubeMeshes[4] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	ppMeshes[5] = new CMesh("./Resource/GM/Leg/Leg-Left.FBX");
-	Extents = ppMeshes[5]->GetExtents();
-	Center = ppMeshes[5]->GetCenter();
-	ppCubeMeshes[5] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	ppMeshes[6] = new CMesh("./Resource/GM/Leg/Leg-Right.FBX");
-	Extents = ppMeshes[6]->GetExtents();
-	Center = ppMeshes[6]->GetCenter();
-	ppCubeMeshes[6] = new CCubeMesh(Center, Extents.x, Extents.y, Extents.z);
-
-	nMeshes = 7;
 }
