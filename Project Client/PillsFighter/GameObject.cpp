@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "GameObject.h"
 #include "Shader.h"
+#include "Scene.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -357,8 +358,7 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	m_pShader = new CTerrainShader();
 	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pShader->CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTerrainTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, pTerrainTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 	
 	CMaterial **ppTerrainMaterial = new CMaterial*[1];
 	ppTerrainMaterial[0] = new CMaterial();
@@ -392,8 +392,7 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pShader = new CSkyBoxShader();
 	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	m_pShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	m_pShader->CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	m_pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false);
 
 	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
 	ppSkyBoxMaterial[0] = new CMaterial();

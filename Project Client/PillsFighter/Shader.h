@@ -26,35 +26,22 @@ public:
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
-	virtual void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews);
-	virtual void CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement);
-
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void ReleaseShaderVariables() {};
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) { }
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera) { }
 	virtual void ReleaseObjects() { }
 
-	virtual void ReleaseUploadBuffers();
+	virtual void ReleaseUploadBuffers() {};
 
 	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void OnPrepareRenderWire(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandleForHeapStart() { return(m_pd3dSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart()); }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandleForHeapStart() { return(m_pd3dSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart()); }
-
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUSrvDescriptorStartHandle() { return(m_d3dSrvCPUDescriptorStartHandle); }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUSrvDescriptorStartHandle() { return(m_d3dSrvGPUDescriptorStartHandle); }
-
 protected:
-	ID3D12DescriptorHeap			*m_pd3dSrvDescriptorHeap = NULL;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
 
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;

@@ -14,16 +14,8 @@ class CShader;
 struct SRVROOTARGUMENTINFO
 {
 	UINT										m_nRootParameterIndex = 0;
-	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE>	m_vd3dSrvGpuDescriptorHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE					m_d3dSrvGpuDescriptorHandle;
 };
-
-#define TEXTURE_ALBEDO_MAP			0
-#define TEXTURE_SPECULAR_MAP		1
-#define TEXTURE_NORMAL_MAP			2
-#define TEXTURE_METALLIC_MAP		3
-#define TEXTURE_EMISSION_MAP		4
-#define TEXTURE_DETAIL_ALBEDO_MAP	5
-#define TEXTURE_DETAIL_NORMAL_MAP	6
 
 class CTexture
 {
@@ -43,27 +35,19 @@ public:
 	CTexture(int nTextureResources = 1, UINT nResourceType = RESOURCE_TEXTURE2D, int nSamplers = 0);
 	virtual ~CTexture();
 
-	int SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dsrvGpuDescriptorHandle);
+	void SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dsrvGpuDescriptorHandle);
 	void SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle);
 
-	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, int nHandleIndex);
-	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex, int nHandleIndex);
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
 
 	void LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex);
-	ID3D12Resource *CreateTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nWidth, UINT nHeight, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE *pd3dClearValue, UINT nIndex);
 
 	int GetTextures() { return(m_nTextures); }
 	ID3D12Resource *GetTexture(int nIndex) { return(m_ppd3dTextures[nIndex]); }
 	UINT GetTextureType() { return(m_nTextureType); }
 
 	void ReleaseUploadBuffers();
-
-protected:
-	int					m_nType = TEXTURE_ALBEDO_MAP;
-
-public:
-	int GetType() { return m_nType; }
-	void SetType(int nType) { m_nType = nType; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,14 +60,6 @@ public:
 #define MATERIAL_EMISSION_MAP		0x10
 #define MATERIAL_DETAIL_ALBEDO_MAP	0x20
 #define MATERIAL_DETAIL_NORMAL_MAP	0x40
-
-struct MATERIAL
-{
-	XMFLOAT4		m_xmf4Ambient;
-	XMFLOAT4		m_xmf4Diffuse;
-	XMFLOAT4		m_xmf4Specular;
-	XMFLOAT4		m_xmf4Emissive;
-};
 
 struct CB_GAMEOBJECT_INFO;
 
@@ -109,20 +85,32 @@ protected:
 
 	std::vector<CTexture*>			m_vTextures; //Albedo, Specular, Metallic, Normal, Emission, DetailAlbedo, DetailNormal
 
+
 public:
 	void SetMaterialType(UINT nType) { m_nType |= nType; }
 	void SetTexture(CTexture *pTexture);
 
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
-	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nHandleIndex);
+	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void ReleaseUploadBuffers();
 
 public:
 	void LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxSurfaceMaterial *pfbxMaterial, const char *pstrFilePath);
-	void CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader);
 
-	int GetTextureCount() { return (int)m_vTextures.size(); }
+public:
+	CShader							*m_pShader = NULL;
+
+	void SetShader(CShader *pShader) { m_pShader = pShader; }
+	void SetStandardShader() { CMaterial::SetShader(m_pStandardShader); }
+	void SetSkinnedAnimationShader() { CMaterial::SetShader(m_pSkinnedAnimationShader); }
+
+	static void CMaterial::PrepareShaders(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	static void CMaterial::ReleaseShaders();
+
+protected:
+	static CShader					*m_pStandardShader;
+	static CShader					*m_pSkinnedAnimationShader;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +122,6 @@ public:
 	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pFileName);
 	virtual ~CModel();
 
-	void CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader);
 protected:
 	CMesh			*m_pMesh = NULL;
 	CCubeMesh		*m_pCubeMesh = NULL;

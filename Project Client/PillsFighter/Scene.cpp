@@ -2,6 +2,11 @@
 #include "Scene.h"
 #include "Repository.h"
 
+ID3D12DescriptorHeap *CScene::m_pd3dDescriptorHeap = NULL;
+
+D3D12_CPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvCPUDescriptorStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvGPUDescriptorStartHandle;
+
 CScene::CScene()
 {
 	CONSOLE_CURSOR_INFO C;
@@ -18,7 +23,6 @@ CScene::~CScene()
 {
 }
 
-// 1 //
 ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 {
 	ID3D12RootSignature *pd3dGraphicsRootSignature = NULL;
@@ -149,6 +153,10 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 3/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 2/*Bullet*/ + 2/*GM*/ + 2/*Hangar*/);
+
+	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+
 	BuildLightsAndMaterials();
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -197,7 +205,10 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 void CScene::ReleaseObjects()
 {
+	CMaterial::ReleaseShaders();
+
 	if (m_pd3dGraphicsRootSignature) m_pd3dGraphicsRootSignature->Release();
+	if (m_pd3dDescriptorHeap) m_pd3dDescriptorHeap->Release();
 
 	if (m_pLights) delete m_pLights;
 	if (m_pSkyBox) delete m_pSkyBox;
@@ -580,7 +591,8 @@ float CScene::FindAimToTargetDistance()
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	SetGraphicsRootSignature(pd3dCommandList);
+	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
+	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
 
 	if (pCamera)
 	{
@@ -675,6 +687,85 @@ void CScene::ReleaseShaderVariables()
 		m_pd3dcbLights->Unmap(0, NULL);
 		m_pd3dcbLights->Release();
 	}
+}
+
+void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
+	d3dDescriptorHeapDesc.NumDescriptors = nViews;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	d3dDescriptorHeapDesc.NodeMask = 0;
+	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
+
+	m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
+	d3dShaderResourceViewDesc.Format = d3dResourceDesc.Format;
+	d3dShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	switch (nTextureType)
+	{
+	case RESOURCE_TEXTURE2D: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 1)
+	case RESOURCE_TEXTURE2D_ARRAY:
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		d3dShaderResourceViewDesc.Texture2D.MipLevels = -1;
+		d3dShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
+		d3dShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		break;
+	case RESOURCE_TEXTURE2DARRAY: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize != 1)
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+		d3dShaderResourceViewDesc.Texture2DArray.MipLevels = -1;
+		d3dShaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.Texture2DArray.PlaneSlice = 0;
+		d3dShaderResourceViewDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+		d3dShaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
+		d3dShaderResourceViewDesc.Texture2DArray.ArraySize = d3dResourceDesc.DepthOrArraySize;
+		break;
+	case RESOURCE_TEXTURE_CUBE: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 6)
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		d3dShaderResourceViewDesc.TextureCube.MipLevels = -1;
+		d3dShaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+		break;
+	case RESOURCE_BUFFER: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		d3dShaderResourceViewDesc.Buffer.FirstElement = 0;
+		d3dShaderResourceViewDesc.Buffer.NumElements = 0;
+		d3dShaderResourceViewDesc.Buffer.StructureByteStride = 0;
+		d3dShaderResourceViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		break;
+	}
+	return(d3dShaderResourceViewDesc);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+
+	if (pTexture)
+	{
+		int nTextures = pTexture->GetTextures();
+		int nTextureType = pTexture->GetTextureType();
+
+		for (int i = 0; i < nTextures; i++)
+		{
+			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
+			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
+			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
+			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
+			m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+
+			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
+			m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		}
+	}
+
+	return d3dSrvGPUDescriptorHandle;
 }
 
 //////////////////////////////// for Networking

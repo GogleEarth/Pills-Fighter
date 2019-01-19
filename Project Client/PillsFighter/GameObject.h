@@ -8,6 +8,14 @@
 class CShader;
 class CModel;
 
+struct MATERIAL
+{
+	XMFLOAT4		m_xmf4Ambient;
+	XMFLOAT4		m_xmf4Diffuse;
+	XMFLOAT4		m_xmf4Specular;
+	XMFLOAT4		m_xmf4Emissive;
+};
+
 struct CB_GAMEOBJECT_INFO
 {
 	XMFLOAT4X4						m_xmf4x4World;

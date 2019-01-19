@@ -2,10 +2,10 @@
 #include "Shader.h"
 #include "DDSTextureLoader12.h"
 #include "Repository.h"
+#include "Scene.h"
 
 CShader::CShader()
 {
-	m_d3dSrvCPUDescriptorStartHandle.ptr = m_d3dSrvGPUDescriptorStartHandle.ptr = NULL;
 }
 
 CShader::~CShader()
@@ -199,96 +199,11 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
-D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
-{
-	D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
-	d3dShaderResourceViewDesc.Format = d3dResourceDesc.Format;
-	d3dShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	switch (nTextureType)
-	{
-	case RESOURCE_TEXTURE2D: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 1)
-	case RESOURCE_TEXTURE2D_ARRAY:
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		d3dShaderResourceViewDesc.Texture2D.MipLevels = -1;
-		d3dShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-		d3dShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
-		d3dShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-		break;
-	case RESOURCE_TEXTURE2DARRAY: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize != 1)
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-		d3dShaderResourceViewDesc.Texture2DArray.MipLevels = -1;
-		d3dShaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-		d3dShaderResourceViewDesc.Texture2DArray.PlaneSlice = 0;
-		d3dShaderResourceViewDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-		d3dShaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-		d3dShaderResourceViewDesc.Texture2DArray.ArraySize = d3dResourceDesc.DepthOrArraySize;
-		break;
-	case RESOURCE_TEXTURE_CUBE: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 6)
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-		d3dShaderResourceViewDesc.TextureCube.MipLevels = -1;
-		d3dShaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
-		d3dShaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-		break;
-	case RESOURCE_BUFFER: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		d3dShaderResourceViewDesc.Buffer.FirstElement = 0;
-		d3dShaderResourceViewDesc.Buffer.NumElements = 0;
-		d3dShaderResourceViewDesc.Buffer.StructureByteStride = 0;
-		d3dShaderResourceViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-		break;
-	}
-	return(d3dShaderResourceViewDesc);
-}
-
-void CShader::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
-{
-	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
-	d3dDescriptorHeapDesc.NumDescriptors = nViews;
-	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	d3dDescriptorHeapDesc.NodeMask = 0;
-	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dSrvDescriptorHeap);
-
-	m_d3dSrvCPUDescriptorStartHandle = m_pd3dSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dSrvGPUDescriptorStartHandle = m_pd3dSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-}
-
-void CShader::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
-{
-	int nTextures = pTexture->GetTextures();
-	int nTextureType = pTexture->GetTextureType();
-
-	for (int i = 0; i < nTextures; i++)
-	{
-		ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
-		D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
-		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
-		pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
-		m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-
-		m_nHandleIndex = pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
-		m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-	}
-}
-
-void CShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-}
-
-void CShader::ReleaseUploadBuffers()
-{
-}
-
-void CShader::ReleaseShaderVariables()
-{
-	if (m_pd3dSrvDescriptorHeap) m_pd3dSrvDescriptorHeap->Release();
-}
 
 void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	// Pipeline Set, Texture Set
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-	pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvDescriptorHeap);
 
 	UpdateShaderVariables(pd3dCommandList);
 }
@@ -416,7 +331,6 @@ CBulletShader::~CBulletShader()
 void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.fbx");
-	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -432,7 +346,6 @@ CGundamShader::~CGundamShader()
 void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
-	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 
 	RandomMoveObject *pObject = new RandomMoveObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
@@ -454,7 +367,6 @@ CObstacleShader::~CObstacleShader()
 void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Hangar/Hangar.fbx");
-	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, this);
 
 	CGameObject *pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(-200.0f, 0.0f, 0.0f));
@@ -557,8 +469,7 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	CTexture* pTextures = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	pTextures->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Fire.dds", 0);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1);
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, pTextures, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	int nMaterials = 1;
 	CMaterial **ppMaterials = new CMaterial*[nMaterials];
@@ -830,22 +741,20 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_nTextures = 3;
 	m_ppTextures = new CTexture*[m_nTextures];
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 3);
-
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI.dds", 0);
 
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_HP.dds", 0);
 
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Booster.dds", 0);
 
-	CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_nUIRect = 3;
 	m_ppUIRects = new CUIRect*[m_nUIRect];
@@ -866,23 +775,22 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateHP);
-	pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvDescriptorHeap);
+	CShader::Render(pd3dCommandList, pCamera);
 
 	// Draw HP BAR
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerHP, m_pcbMappedPlayerHP, m_pPlayer->GetMaxHitPoint(), m_pPlayer->GetHitPoint());
-	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList, 0);
+	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[1]->Render(pd3dCommandList);
 
 	// Draw Booster Gauge BAR
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerBooster, m_pcbMappedPlayerBooster, 100, m_pPlayer->GetBoosterGauge());
-	if (m_ppTextures[2]) m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList, 0);
+	if (m_ppTextures[2]) m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[2]->Render(pd3dCommandList);
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Base UI
-	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList, 0);
+	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[0]->Render(pd3dCommandList);
 }
 

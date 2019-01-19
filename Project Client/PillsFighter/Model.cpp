@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "fbxsdk.h"
+#include "Scene.h"
 
 CTexture::CTexture(int nTextures, UINT nTextureType, int nSamplers)
 {
@@ -33,12 +34,10 @@ CTexture::~CTexture()
 	if (m_pd3dSamplerGpuDescriptorHandles) delete[] m_pd3dSamplerGpuDescriptorHandles;
 }
 
-int CTexture::SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle)
+void CTexture::SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle)
 {
 	m_pRootArgumentInfos[nIndex].m_nRootParameterIndex = nRootParameterIndex;
-	m_pRootArgumentInfos[nIndex].m_vd3dSrvGpuDescriptorHandle.emplace_back(d3dSrvGpuDescriptorHandle);
-
-	return (int)(m_pRootArgumentInfos[nIndex].m_vd3dSrvGpuDescriptorHandle.size() - 1);
+	m_pRootArgumentInfos[nIndex].m_d3dSrvGpuDescriptorHandle = d3dSrvGpuDescriptorHandle;
 }
 
 void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuDescriptorHandle)
@@ -46,24 +45,24 @@ void CTexture::SetSampler(int nIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSamplerGpuD
 	m_pd3dSamplerGpuDescriptorHandles[nIndex] = d3dSamplerGpuDescriptorHandle;
 }
 
-void CTexture::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, int nHandleIndex)
+void CTexture::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_nTextureType == RESOURCE_TEXTURE2D_ARRAY)
 	{
-		pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[0].m_nRootParameterIndex, m_pRootArgumentInfos[0].m_vd3dSrvGpuDescriptorHandle[nHandleIndex]);
+		pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[0].m_nRootParameterIndex, m_pRootArgumentInfos[0].m_d3dSrvGpuDescriptorHandle);
 	}
 	else
 	{
 		for (int i = 0; i < m_nTextures; i++)
 		{
-			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[i].m_nRootParameterIndex, m_pRootArgumentInfos[i].m_vd3dSrvGpuDescriptorHandle[nHandleIndex]);
+			pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[i].m_nRootParameterIndex, m_pRootArgumentInfos[i].m_d3dSrvGpuDescriptorHandle);
 		}
 	}
 }
 
-void CTexture::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex, int nHandleIndex)
+void CTexture::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex)
 {
-	pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[nIndex].m_nRootParameterIndex, m_pRootArgumentInfos[nIndex].m_vd3dSrvGpuDescriptorHandle[nHandleIndex]);
+	pd3dCommandList->SetGraphicsRootDescriptorTable(m_pRootArgumentInfos[nIndex].m_nRootParameterIndex, m_pRootArgumentInfos[nIndex].m_d3dSrvGpuDescriptorHandle);
 }
 
 void CTexture::ReleaseUploadBuffers()
@@ -79,12 +78,6 @@ void CTexture::ReleaseUploadBuffers()
 void CTexture::LoadTextureFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, wchar_t *pszFileName, UINT nIndex)
 {
 	m_ppd3dTextures[nIndex] = ::CreateTextureResourceFromFile(pd3dDevice, pd3dCommandList, pszFileName, &m_ppd3dTextureUploadBuffers[nIndex], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-}
-
-ID3D12Resource *CTexture::CreateTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nWidth, UINT nHeight, DXGI_FORMAT dxgiFormat, D3D12_RESOURCE_FLAGS d3dResourceFlags, D3D12_RESOURCE_STATES d3dResourceStates, D3D12_CLEAR_VALUE *pd3dClearValue, UINT nIndex)
-{
-	m_ppd3dTextures[nIndex] = ::CreateTexture2DResource(pd3dDevice, pd3dCommandList, nWidth, nHeight, dxgiFormat, d3dResourceFlags, d3dResourceStates, pd3dClearValue);
-	return(m_ppd3dTextures[nIndex]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -171,11 +164,11 @@ void CMaterial::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList,
 	pcbMappedGameObject->m_nTexturesMask = m_nType;
 }
 
-void CMaterial::UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nHandleIndex)
+void CMaterial::UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	for (auto& Texture : m_vTextures)
 	{
-		if (Texture) Texture->UpdateShaderVariable(pd3dCommandList, 0, nHandleIndex);
+		if (Texture) Texture->UpdateShaderVariable(pd3dCommandList, 0);
 	}
 }
 
@@ -312,15 +305,25 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 						if (!strcmp(pstrName, "DiffuseColor"))
 						{
 							m_nType |= MATERIAL_ALBEDO_MAP;
-							pTexture->SetType(TEXTURE_ALBEDO_MAP);
 
+							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
+							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 							printf("Is Diffuse Map : %s\n", strFileName.c_str());
 						}
 						else if (!strcmp(pstrName, "NormalMap"))
 						{
 							m_nType |= MATERIAL_NORMAL_MAP;
-							pTexture->SetType(TEXTURE_NORMAL_MAP);
 
+							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
+							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false);
+							printf("Is Normal Map : %s\n", strFileName.c_str());
+						}
+						else if (!strcmp(pstrName, "SpecularMap"))
+						{
+							m_nType |= MATERIAL_SPECULAR_MAP;
+
+							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
+							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false);
 							printf("Is Normal Map : %s\n", strFileName.c_str());
 						}
 						else
@@ -331,7 +334,6 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 							continue;
 						}
 
-						pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
 						m_vTextures.emplace_back(pTexture);
 					}
 				}
@@ -340,25 +342,35 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 	}
 }
 
-void CMaterial::CreateShaderResourceViewsInMaterial(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader)
-{
-	for (auto& Texture : m_vTextures)
-	{
-		UINT nType = Texture->GetType();
+CShader *CMaterial::m_pSkinnedAnimationShader = NULL;
+CShader *CMaterial::m_pStandardShader = NULL;
 
-		if (nType == TEXTURE_ALBEDO_MAP)
-		{
-			pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, Texture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-		}
-		else if (nType == TEXTURE_SPECULAR_MAP)
-		{
-			pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, Texture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false);
-		}
-		else if (nType == TEXTURE_NORMAL_MAP)
-		{
-			pShader->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, Texture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false);
-		}
-	}
+void CMaterial::PrepareShaders(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature)
+{
+	m_pStandardShader = new CShader();
+	m_pStandardShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pStandardShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	//m_pStandardShader = new CStandardShader();
+	//m_pStandardShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	//m_pStandardShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	//m_pSkinnedAnimationShader = new CSkinnedAnimationShader();
+	//m_pSkinnedAnimationShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	//m_pSkinnedAnimationShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CMaterial::ReleaseShaders()
+{
+	if (m_pStandardShader) delete m_pStandardShader;
+
+	//m_pStandardShader = new CStandardShader();
+	//m_pStandardShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	//m_pStandardShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	//m_pSkinnedAnimationShader = new CSkinnedAnimationShader();
+	//m_pSkinnedAnimationShader->CreateShader(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature);
+	//m_pSkinnedAnimationShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -488,6 +500,7 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 
 			m_ppMaterials[i] = new CMaterial();
 			m_ppMaterials[i]->LoadMaterialFromFBX(pd3dDevice, pd3dCommandList, pfbxMaterial, pFileName);
+			m_ppMaterials[i]->SetStandardShader();
 		}
 	}
 	}
@@ -511,20 +524,6 @@ CModel::~CModel()
 		for (int i = 0; i < m_nMaterials; i++)
 			if (m_ppMaterials[i]) delete m_ppMaterials[i];
 		delete[] m_ppMaterials;
-	}
-}
-
-void CModel::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CShader *pShader)
-{
-	int nTextureCount = 0;
-
-	for (int i = 0; i < m_nMaterials; i++)	nTextureCount += m_ppMaterials[i]->GetTextureCount();
-
-	pShader->CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, nTextureCount);
-
-	for (int i = 0; i < m_nMaterials; i++)
-	{
-		m_ppMaterials[i]->CreateShaderResourceViewsInMaterial(pd3dDevice, pd3dCommandList, pShader);
 	}
 }
 
@@ -563,8 +562,9 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 		{
 			if (m_ppMaterials[i])
 			{
+				if (m_ppMaterials[i]->m_pShader) m_ppMaterials[i]->m_pShader->Render(pd3dCommandList, pCamera);
 				m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, pcbMappedGameObject);
-				m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList, nHandleIndex);
+				m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
 			}
 
 			if (m_pMesh) m_pMesh->Render(pd3dCommandList);

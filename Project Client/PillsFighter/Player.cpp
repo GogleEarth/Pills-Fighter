@@ -19,7 +19,6 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
-	m_pModel->CreateShaderResourceViews(pd3dDevice, pd3dCommandList, m_pShader);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
