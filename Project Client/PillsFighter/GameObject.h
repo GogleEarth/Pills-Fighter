@@ -53,8 +53,6 @@ public:
 protected:
 	CModel							*m_pModel = NULL;
 
-	BoundingBox						m_xmAABB;
-
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
 
 	ID3D12Resource					*m_pd3dcbGameObject = NULL;
@@ -110,7 +108,6 @@ public:
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
-	BoundingBox GetAABB() { return m_xmAABB; }
 	void Delete() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
@@ -125,6 +122,15 @@ public:
 	int GetMaxHitPoint() { return m_nMaxHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
 	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nMaxHitPoint < m_nHitPoint) m_nHitPoint = m_nMaxHitPoint; }
+
+public:
+	BoundingBox		m_xmAABB;
+
+	void UpdateWorldTransform();
+	CModel *GetModel() { return m_pModel; }
+	BoundingBox GetAABB() { return m_xmAABB; }
+	bool CollisionCheck(CGameObject *pObject);
+	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *fDistance);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,8 +197,6 @@ public:
 	XMFLOAT3 GetScale() { return(m_xmf3Scale); }
 	float GetWidth() { return(m_nWidth * m_xmf3Scale.x); }
 	float GetLength() { return(m_nLength * m_xmf3Scale.z); }
-
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

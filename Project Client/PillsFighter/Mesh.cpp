@@ -416,7 +416,7 @@ void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 	XMFLOAT3 xmf3Center, xmf3Extents;
 	FindXYZ(m_pxmf3Positions, m_nVertices, xmf3Center, xmf3Extents);
 
-	SetAABB(xmf3Center, xmf3Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	SetAABB(xmf3Center, xmf3Extents);
 }
 
 void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -692,7 +692,7 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	XMFLOAT3 xmf3Extents;
 	FindXYZ(m_pxmf3Positions, m_nVertices, xmf3Center, xmf3Extents);
 
-	SetAABB(xmf3Center, xmf3Extents, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	SetAABB(xmf3Center, xmf3Extents);
 }
 
 CHeightMapGridMesh::~CHeightMapGridMesh()

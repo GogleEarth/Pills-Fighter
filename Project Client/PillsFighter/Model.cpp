@@ -460,8 +460,15 @@ void DisplayMaterial(FbxNode* pfbxNode)
 	printf("\n");
 }
 
+CModel::CModel()
+{
+	m_xmf4x4ToParent = Matrix4x4::Identity();
+}
+
 CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pFileName)
 {
+	m_xmf4x4ToParent = Matrix4x4::Identity();
+
 	m_pstrName = pFileName;
 
 	FbxManager *pFbxManager = FbxManager::Create();
@@ -548,10 +555,20 @@ void CModel::ReleaseUploadBuffers()
 	}
 }
 
-void CModel::UpdateCollisionBox(BoundingBox &xmAABB, XMFLOAT4X4 &xmf4x4World)
+void CModel::UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4World)
 {
-	m_pMesh->m_xmAABB.Transform(xmAABB, XMLoadFloat4x4(&xmf4x4World));
+	m_xmf4x4World = (pxmf4x4World) ? Matrix4x4::Multiply(m_xmf4x4ToParent, *pxmf4x4World) : m_xmf4x4ToParent;
 }
+
+
+void CModel::UpdateCollisionBox(BoundingBox *pxmAABB)
+{
+	if (m_pMesh)
+	{
+		m_pMesh->m_xmAABB.Transform(*pxmAABB, XMLoadFloat4x4(&m_xmf4x4World));
+	}
+}
+
 void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
 {
 	if (m_pCubeMesh) m_pCubeMesh->Render(pd3dCommandList);

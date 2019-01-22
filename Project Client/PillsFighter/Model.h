@@ -118,7 +118,7 @@ protected:
 class CModel
 {
 public:
-	CModel() {};
+	CModel();
 	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pFileName);
 	virtual ~CModel();
 
@@ -131,10 +131,11 @@ protected:
 
 	bool			m_bHasAnimation = false;
 
+	XMFLOAT4X4		m_xmf4x4ToParent;
+	XMFLOAT4X4		m_xmf4x4World;
+
 public:
 	void ReleaseUploadBuffers();
-
-	void UpdateCollisionBox(BoundingBox &xmAABB, XMFLOAT4X4 &xmf4x4World);
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
@@ -147,4 +148,9 @@ protected:
 
 public:
 	bool IsName(char *pstrName) { if(!strcmp(m_pstrName, pstrName))	return true; return false; };
+
+	// 충돌처리
+public:
+	void UpdateCollisionBox(BoundingBox *pxmAABB);
+	void UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4World);
 };

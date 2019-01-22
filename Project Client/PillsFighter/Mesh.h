@@ -68,7 +68,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	BoundingBox m_xmAABB;
-	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents, XMFLOAT4& xmOrientation) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
+	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
 	XMFLOAT3& GetExtents() { return m_xmAABB.Extents; }
 	XMFLOAT3& GetCenter() { return m_xmAABB.Center; }
 };

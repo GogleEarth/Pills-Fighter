@@ -352,6 +352,12 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+
+	pObject = new RandomMoveObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -10.0f));
+	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+
+	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
 ////////////////////////////////////////////////////////////
@@ -786,8 +792,6 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[0]->Render(pd3dCommandList);
-
-	printf("%d, %d\n", m_pPlayer->GetBoosterGauge(), m_pPlayer->GetHitPoint());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

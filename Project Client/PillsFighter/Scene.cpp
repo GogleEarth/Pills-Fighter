@@ -509,12 +509,12 @@ void CScene::CheckCollision()
 
 	for (const auto& Enemy : *vEnemys)
 	{
-		if(m_pPlayer->GetAABB().Intersects(Enemy->GetAABB()))
-			std::cout << "Collision By Enemy\n" << std::endl;
+		if(m_pPlayer->CollisionCheck(Enemy))
+			std::cout << "Collision Player By Enemy\n" << std::endl;
 
 		for (const auto& Bullet : *vBullets)
 		{
-			if (Bullet->GetAABB().Intersects(Enemy->GetAABB()))
+			if (Enemy->CollisionCheck(Bullet))
 				std::cout << "Collision Enemy By Bullet\n" << std::endl;
 		}
 	}
@@ -539,6 +539,7 @@ float CScene::FindAimToTargetDistance()
 	std::vector<CGameObject*> *vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
 
 	float fDistance = 1000.0f;
+	float fTemp = 0.0f;
 	CGameObject *pTarget = NULL;
 	XMFLOAT3 xmf3CameraPos = m_pPlayer->GetCamera()->GetPosition();
 	XMVECTOR xmvCameraPos = XMLoadFloat3(&xmf3CameraPos);
@@ -549,8 +550,7 @@ float CScene::FindAimToTargetDistance()
 	for (const auto& Enemy : *vEnemys)
 	{
 		// 카메라 이동 X 단 목표가 되지 않음.
-		float fTemp = 0.0f;
-		if (Enemy->GetAABB().Intersects(xmvCameraPos, xmvLook, fTemp))
+		if (Enemy->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 		{
 			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
 
@@ -568,8 +568,7 @@ float CScene::FindAimToTargetDistance()
 	for (const auto& Obstacle : *vObstacles)
 	{
 		// 카메라 이동 O
-		float fTemp = 0.0f;
-		if (Obstacle->GetAABB().Intersects(xmvCameraPos, xmvLook, fTemp))
+		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 		{
 			if (fDistance > fTemp)
 			{
@@ -579,8 +578,7 @@ float CScene::FindAimToTargetDistance()
 		}
 	}
 
-	float fTemp = 0.0f;
-	if (m_pTerrain->GetAABB().Intersects(xmvCameraPos, xmvLook, fTemp))
+	if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 	{
 		if (fDistance > fTemp) fDistance = fTemp;
 	}

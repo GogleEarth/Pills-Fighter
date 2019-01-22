@@ -115,13 +115,29 @@ void CGameObject::OnPrepareRender()
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
 }
 
+void CGameObject::UpdateWorldTransform()
+{
+	if(m_pModel) m_pModel->UpdateWorldTransform(&m_xmf4x4World);
+}
+
+bool CGameObject::CollisionCheck(CGameObject *pObject)
+{
+	return m_xmAABB.Intersects(pObject->m_xmAABB);
+}
+
+bool CGameObject::CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *fDistance)
+{
+	return m_xmAABB.Intersects(*pxmf4Origin, *pxmf4Look, *fDistance);
+}
+
 void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_pModel)
 	{
 		OnPrepareRender();
 
-		m_pModel->UpdateCollisionBox(m_xmAABB, m_xmf4x4World);
+		UpdateWorldTransform();
+		m_pModel->UpdateCollisionBox(&m_xmAABB);
 	}
 }
 
@@ -229,6 +245,7 @@ void CGameObject::Move(XMFLOAT3 xmf3Direction, float fDistance)
 	xmf3Position = Vector3::Add(xmf3Position, xmf3Direction, fDistance);
 	CGameObject::SetPosition(xmf3Position);
 }
+
 ///////////////////////////////////////////////////////////////////////////////////
 
 RandomMoveObject::RandomMoveObject() : CGameObject()
@@ -362,11 +379,6 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 CHeightMapTerrain::~CHeightMapTerrain()
 {
 	if (m_pHeightMapImage) delete m_pHeightMapImage;
-}
-
-void CHeightMapTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
