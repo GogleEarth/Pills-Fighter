@@ -64,7 +64,7 @@ void CScene::BuildObjects()
 	m_pObstacles[3] = new CGameObject();
 	m_pObstacles[3]->SetPrepareRotate(-90.0f, 0, 0.0f);
 	m_pObstacles[3]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
-	m_pObstacles[3]->index = 2;
+	m_pObstacles[3]->index = 3;
 	m_pObstacles[3]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
 	m_pObstacles[3]->SetModel(m_pObstacleMesh);
 }
@@ -111,14 +111,18 @@ int CScene::GetIndex()
 	return -1;
 }
 
-void CScene::AddObject(CGameObject* objcet)
+void CScene::AddObject(CGameObject* object)
 {
 	int index = GetIndex();
 	if (index != -1)
 	{
-		m_pObjects[index] = objcet;
+		m_pObjects[index] = object;
 		m_pObjects[index]->index = index;
-		if (objcet->m_Object_Type == OBJECT_TYPE_BULLET)
+		if (object->m_Object_Type == OBJECT_TYPE_BULLET)
+		{
+			m_pObjects[index]->SetModel(m_pBulletMesh);
+		}
+		else if (object->m_Object_Type == OBJECT_TYPE_ITEM_HEALING)
 		{
 			m_pObjects[index]->SetModel(m_pBulletMesh);
 		}

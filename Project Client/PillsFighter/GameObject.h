@@ -124,7 +124,7 @@ public:
 	int GetHitPoint() { return m_nHitPoint; }
 	int GetMaxHitPoint() { return m_nMaxHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
-	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; }
+	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nMaxHitPoint < m_nHitPoint) m_nHitPoint = m_nMaxHitPoint; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

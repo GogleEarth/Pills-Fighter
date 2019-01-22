@@ -34,7 +34,8 @@ class Framework
 	CGameTimer *m_GameTimer;
 	int playernum;
 	bool game_start = false;
-
+	float item_cooltime = 0.0f;
+	bool spawn_item = false;
 public:
 	CScene* m_pScene;
 	Framework();

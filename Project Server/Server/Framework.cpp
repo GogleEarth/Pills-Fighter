@@ -260,7 +260,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 		server_time.elapsedtime = FIXED_FRAME;
 		retval = Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
 		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
-
+		if (!spawn_item)
+			item_cooltime += server_time.elapsedtime;
 		//std::cout << server_time.elapsedtime << std::endl;
 
 		// 씬의 오브젝트 애니메이트
@@ -327,7 +328,28 @@ DWORD Framework::Update_Process(CScene* pScene)
 			}
 		}
 
-		// 오브제트 업데이트 패킷 보내기
+		// 아이템 생성 패킷 보내기(10초마다 생성)
+		if(item_cooltime >= ITEM_COOLTIME && !spawn_item)
+		{
+			std::cout << "아이템 생성" << std::endl;
+			PKT_ID pid = PKT_ID_CREATE_OBJECT;
+			PKT_CREATE_OBJECT bulletpkt;
+			bulletpkt.Object_Type = OBJECT_TYPE_ITEM_HEALING;
+			bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 10.0f, 0.0f, 1.0f };
+			bulletpkt.Object_Index = pScene->GetIndex();
+			retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
+			retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+
+			CGameObject* item = new CGameObject;
+			item->m_Object_Type = OBJECT_TYPE_ITEM_HEALING;
+			item->m_iId = ITEM_ID;
+			item->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 10.0f, 0.0f, 1.0f });
+			pScene->AddObject(item);
+			item_cooltime = 0.0f;
+			spawn_item = true;
+		}
+
+		// 오브젝트 업데이트 패킷 보내기
 		while (true)
 		{
 			PKT_UPDATE_OBJECT pkt_u;
@@ -460,6 +482,7 @@ DWORD Framework::client_process(SOCKET arg)
 void Framework::CheckCollision(CScene* pScene)
 {
 	std::vector<CGameObject*> vPlayerBulletObjects;
+	std::vector<CGameObject*> vHealingItem;
 	PKT_DELETE_OBJECT pktDO;
 	PKT_PLAYER_LIFE pktLF;
 	PKT_CREATE_EFFECT pktCE;
@@ -470,10 +493,12 @@ void Framework::CheckCollision(CScene* pScene)
 		{
 			if (pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_BULLET)
 				vPlayerBulletObjects.emplace_back(pScene->m_pObjects[i]);
+			if (pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_ITEM_HEALING)
+				vHealingItem.emplace_back(pScene->m_pObjects[i]);
 		}
 	}
 
-	// 플레이어1과 플레이어2의총알 충돌체크
+	// 플레이어와 플레이어의 총알 충돌체크
 	for (const auto& Bullet : vPlayerBulletObjects)
 	{
 		for (int k = 0; k < MAX_CLIENT; ++k)
@@ -527,6 +552,37 @@ void Framework::CheckCollision(CScene* pScene)
 						pktDO.Object_Index = Bullet->index;
 						delete_msg_queue.push(pktDO);
 						Bullet->Delete();
+					}
+				}
+			}
+		}
+	}
+
+	// 플레이어와 아이템의 충돌체크
+	for (const auto& Item : vHealingItem)
+	{
+		for (int k = 0; k < MAX_CLIENT; ++k)
+		{
+			if (pScene->m_pObjects[k]->m_bPlay)
+			{
+				if (!Item->IsDelete())
+				{
+					if (Item->m_iId != pScene->m_pObjects[k]->m_iId)
+					{
+						if (Item->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						{
+							spawn_item = false;
+							XMFLOAT3 position = Item->GetPosition();
+							pktCE.efType = EFFECT_TYPE_ONE;
+							pktCE.xmf3Position = position;
+							effect_msg_queue.push(pktCE);
+							pktDO.Object_Index = Item->index;
+							delete_msg_queue.push(pktDO);
+							pktLF.ID = pScene->m_pObjects[k]->m_iId;
+							pktLF.HP = -50;
+							life_msg_queue.push(pktLF);
+							Item->Delete();
+						}
 					}
 				}
 			}

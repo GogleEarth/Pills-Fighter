@@ -796,6 +796,12 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	case OBJECT_TYPE_OBSTACLE:
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
+	case OBJECT_TYPE_ITEM_HEALING:
+		pGameObject = new Bullet();
+		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
 	}
 
 	m_pObjects[CreateObjectInfo.Object_Index] = pGameObject;
