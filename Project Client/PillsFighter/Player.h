@@ -32,7 +32,6 @@ public:
 
 	CCamera *GetCamera() { return(m_pCamera); }
 	void SetCamera(CCamera *pCamera) { m_pCamera = pCamera; }
-	void SetShader(CShader* pShader) { m_pShader = pShader; }
 
 	void Move(ULONG nDirection, float fDistance);
 	void Move(const XMFLOAT3& xmf3Shift);
@@ -57,7 +56,6 @@ public:
 	virtual CCamera *SetCamera(float fTimeElapsed);
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 private:
 	CObjectsShader *m_pBulletShader = NULL;

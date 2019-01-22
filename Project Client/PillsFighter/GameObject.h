@@ -62,7 +62,6 @@ protected:
 
 	bool							 m_Delete = FALSE;
 
-	CShader							*m_pShader = NULL;
 public:
 	CGameObject();
 	virtual ~CGameObject();
@@ -71,17 +70,13 @@ public:
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials);
 
-	void SetCbvGPUDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE d3dCbvGPUDescriptorHandle) { m_d3dCbvGPUDescriptorHandle = d3dCbvGPUDescriptorHandle; }
-	void SetCbvGPUDescriptorHandlePtr(UINT64 nCbvGPUDescriptorHandlePtr) { m_d3dCbvGPUDescriptorHandle.ptr = nCbvGPUDescriptorHandlePtr; }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetCbvGPUDescriptorHandle() { return(m_d3dCbvGPUDescriptorHandle); }
-
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nHandleIndex);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 
 	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
@@ -98,9 +93,6 @@ public:
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
 	float GetMovingSpeed() { return(m_MovingSpeed); }
 	XMFLOAT4X4 GetWorldTransf();
-
-	//void GetMaterial(UINT &nMaterials, CMaterial **&ppMaterials) { nMaterials = m_nMaterials; ppMaterials = m_ppMaterials; };
-	//void GetMesh(CMesh *&pMeshes, CCubeMesh *&pCubeMeshes) { pMeshes = m_pMesh; pCubeMeshes = m_pCubeMesh; };
 
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);

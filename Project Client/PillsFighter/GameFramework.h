@@ -89,7 +89,7 @@ public:
 
 	//렌더링할 메쉬와 게임 객체를 생성하고 소멸하는 함수이다. 
 	void BuildObjects();
-	void BuildScene();
+	void BuildScene(SCENEINFO *pSI = NULL);
 	void ReleaseObjects();
 
 	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
@@ -142,7 +142,6 @@ public: // for Network
 
 	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
 	void CreateEffect(PKT_CREATE_EFFECT CreateEffectInfo);
-	void CreateScene(SCENEINFO SN);
 
 	char *buf;
 };

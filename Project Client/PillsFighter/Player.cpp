@@ -15,9 +15,6 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pCamera = SetCamera(0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_pShader = new CShader();
-	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
 
 	CUserInterface *pUserInterface = new CUserInterface();
@@ -167,20 +164,7 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 {
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
 
-	//플레이어 객체를 렌더링한다.	
-	if(m_pShader)
-		m_pShader->OnPrepareRender(pd3dCommandList);
-
-	CGameObject::Render(pd3dCommandList, pCamera, m_pShader->m_nHandleIndex);
-}
-
-void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	//플레이어 충돌박스를 렌더링한다.
-	if(m_pShader)
-		m_pShader->OnPrepareRenderWire(pd3dCommandList);
-
-	CGameObject::RenderWire(pd3dCommandList, pCamera);
+	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
 void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)

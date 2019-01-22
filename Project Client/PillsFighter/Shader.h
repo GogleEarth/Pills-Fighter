@@ -42,13 +42,8 @@ public:
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-
-protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateWire = NULL;
-
-public:
-	int								m_nHandleIndex = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

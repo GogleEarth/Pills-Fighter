@@ -148,6 +148,9 @@ CMaterial::~CMaterial()
 			delete Texture;
 
 	m_vTextures.empty();
+
+	if (m_pShader != m_pStandardShader && m_pShader != m_pSkinnedAnimationShader)
+		delete m_pShader;
 }
 
 void CMaterial::SetTexture(CTexture *pTexture)
@@ -554,7 +557,7 @@ void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCa
 	if (m_pCubeMesh) m_pCubeMesh->Render(pd3dCommandList);
 }
 
-void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject, int nHandleIndex)
+void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
 {
 	if (m_nMaterials > 0)
 	{

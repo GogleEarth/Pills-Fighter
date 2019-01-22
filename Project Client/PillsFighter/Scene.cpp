@@ -154,7 +154,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
 	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 3/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 2/*Bullet*/ + 2/*GM*/ + 2/*Hangar*/);
-
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();

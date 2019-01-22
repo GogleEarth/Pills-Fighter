@@ -128,12 +128,6 @@ void CGameFramework::InitNetwork()
 
 	int retval;
 
-	// recv Time Out 3 sec
-	//int optval = 3000;
-	//retval = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&optval, sizeof(optval));
-	//if (retval == SOCKET_ERROR)
-	//	err_quit("setsockopt()");
-
 	// connect()
 	SOCKADDR_IN serveraddr;
 	ZeroMemory(&serveraddr, sizeof(serveraddr));
@@ -154,14 +148,12 @@ void CGameFramework::InitNetwork()
 	retval = recvn(m_sock, (char*)&SceneInfo, sizeof(SCENEINFO), 0);
 	if (retval == SOCKET_ERROR)	err_display("recv()");
 
-	CreateScene(SceneInfo);
-
 	// 씬에서의 오브젝트 초기정보(위치, .. 등등) 받기 [ 다른 플레이어의 초기 위치 ]
 	// 자신의 씬에서의 위치
 	PKT_PLAYER_INFO pktPlayerInfo;
 	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 
-	BuildScene();
+	BuildScene(&SceneInfo);
 	m_pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 	
 	for (int i = 0; i < 7; ++i)
@@ -203,17 +195,6 @@ void CGameFramework::InitNetwork()
 	}
 	else
 		exit(0);
-}
-
-void CGameFramework::CreateScene(SCENEINFO SN)
-{
-	switch (SN)
-	{
-	case SCENE_NAME_COLONY:
-		m_pScene = new CScene();
-		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
-		break;
-	}
 }
 
 void CGameFramework::CloseNetwork()
@@ -278,17 +259,13 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	m_hInstance = hInstance;
 	m_hWnd = hMainWnd;
 
-	//Direct3D 디바이스, 명령 큐와 명령 리스트, 스왑 체인 등을 생성하는 함수를 호출한다. 
 	CreateDirect3DDevice();
 	CreateCommandQueueAndList();
 	CreateRtvAndDsvDescriptorHeaps();
 	CreateSwapChain();
 
-	//렌더링할 객체(게임 월드 객체)를 생성한다. 
 	BuildObjects();
-	//InitNetwork();
 
-	//마우스 커서를 클라이언트 중심에 놓는다.
 	POINT pt;
 	pt.x = FRAME_BUFFER_WIDTH / 2;
 	pt.y = FRAME_BUFFER_HEIGHT / 2;
@@ -296,7 +273,6 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	ClientToScreen(hMainWnd, &pt);
 	SetCursorPos(pt.x, pt.y);
 
-	//마우스 캡쳐를 하고 현재 마우스 위치를 가져온다. 
 	::SetCapture(hMainWnd);
 	::GetCursorPos(&m_ptOldCursorPos);
 
@@ -533,10 +509,24 @@ void CGameFramework::CreateDepthStencilView()
 	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, &d3dDepthStencilViewDesc/*NULL*/, d3dDsvCPUDescriptorHandle);
 }
 
-void CGameFramework::BuildScene()
+void CGameFramework::BuildScene(SCENEINFO *pSI)
 {
-	m_pScene = new CScene();
-	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+	if (pSI)
+	{
+		switch (*pSI)
+		{
+		case SCENE_NAME_COLONY:
+			m_pScene = new CScene();
+			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+			break;
+		}
+
+	}
+	else
+	{
+		m_pScene = new CScene();
+		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+	}
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
 	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
@@ -794,8 +784,10 @@ void CGameFramework::WaitForGpuComplete()
 void CGameFramework::FrameAdvance()
 {
 	m_fElapsedTime = 0.0f;
-	auto start = std::chrono::high_resolution_clock::now();
+
 #ifdef ON_NETWORKING
+	auto start = std::chrono::high_resolution_clock::now();
+
 	if (TRUE)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
@@ -884,13 +876,9 @@ void CGameFramework::FrameAdvance()
 	
 	AnimateObjects(m_fElapsedTime);
 	
-	//명령 할당자와 명령 리스트를 리셋한다. 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
-	/*현재 렌더 타겟에 대한 프리젠트가 끝나기를 기다린다.
-	프리젠트가 끝나면 렌더 타겟 버퍼의 상태는 프리젠트 상태(D3D12_RESOURCE_STATE_PRESENT)에서
-	렌더 타겟 상태(D3D12_RESOURCE_STATE_RENDER_TARGET)로 바뀔 것이다.*/
 	D3D12_RESOURCE_BARRIER d3dResourceBarrier;
 	::ZeroMemory(&d3dResourceBarrier, sizeof(D3D12_RESOURCE_BARRIER));
 	d3dResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -902,30 +890,23 @@ void CGameFramework::FrameAdvance()
 	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
 
-	//현재의 렌더 타겟에 해당하는 서술자의 CPU 주소(핸들)를 계산한다. 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle =
 		m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex *
 		m_nRtvDescriptorIncrementSize);
 
-	//원하는 색상으로 렌더 타겟(뷰)을 지운다. 
 	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle,
 		pfClearColor/*Colors::Azure*/, 0, NULL);
 
-	//깊이-스텐실 서술자의 CPU 주소를 계산한다. 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle =
 		m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-	//원하는 값으로 깊이-스텐실(뷰)을 지운다. 
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle,
 		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
-	//렌더 타겟 뷰(서술자)와 깊이-스텐실 뷰(서술자)를 출력-병합 단계(OM)에 연결한다. 
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
 		&d3dDsvCPUDescriptorHandle);
-
-	/////////////// 렌더링 코드는 여기에 추가될 것이다.  ///////////////
 
 	if (m_pScene)
 	{
@@ -946,26 +927,18 @@ void CGameFramework::FrameAdvance()
 
 	//////////////////////////////////////////////////////////////////
 
-
-	/*현재 렌더 타겟에 대한 렌더링이 끝나기를 기다린다.
-	GPU가 렌더 타겟(버퍼)을 더 이상 사용하지 않으면 렌더 타겟의 상태는 프리젠트 상태(D3D12_RESOURCE_STATE_PRESENT)로 바뀔 것이다.*/
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
 
-	//명령 리스트를 닫힌 상태로 만든다. 
 	hResult = m_pd3dCommandList->Close();
 
-	//명령 리스트를 명령 큐에 추가하여 실행한다.
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(_countof(ppd3dCommandLists), ppd3dCommandLists);
-
-	//GPU가 모든 명령 리스트를 실행할 때 까지 기다린다. 
+ 
 	WaitForGpuComplete();
 
-	/*스왑체인을 프리젠트한다.
-	프리젠트를 하면 현재 렌더 타겟(후면버퍼)의 내용이 전면버퍼로 옮겨지고 렌더 타겟 인덱스가 바뀔 것이다.*/
 	m_pdxgiSwapChain->Present(0, 0);
 
 	MoveToNextFrame();

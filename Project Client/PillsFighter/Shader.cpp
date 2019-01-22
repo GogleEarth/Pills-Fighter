@@ -304,7 +304,7 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 	for (const auto& Object : m_vObjects)
 	{
-		Object->Render(pd3dCommandList, pCamera, m_nHandleIndex);
+		Object->Render(pd3dCommandList, pCamera);
 	}
 }
 

@@ -31,8 +31,6 @@ CGameObject::~CGameObject()
 
 	if (m_pModel)
 		delete m_pModel;
-
-	if (m_pShader) delete m_pShader;
 }
 
 void CGameObject::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
@@ -96,9 +94,6 @@ void CGameObject::ReleaseShaderVariables()
 		m_pd3dcbGameObject->Release();
 		m_pd3dcbGameObject = NULL;
 	}
-
-	if(m_pShader)
-		m_pShader->ReleaseShaderVariables();
 }
 
 void CGameObject::OnPrepareRender()
@@ -130,16 +125,14 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	}
 }
 
-void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nHandleIndex)
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
 {
 	OnPrepareRender();
 	UpdateShaderVariables(pd3dCommandList);
 
-	if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
-
 	if(m_pModel)
 	{
-		m_pModel->Render(pd3dCommandList, pCamera, m_pcbMappedGameObject, nHandleIndex);
+		m_pModel->Render(pd3dCommandList, pCamera, m_pcbMappedGameObject);
 	}
 }
 
@@ -155,8 +148,6 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 void CGameObject::ReleaseUploadBuffers()
 {
 	if (m_pModel) m_pModel->ReleaseUploadBuffers();
-
-	if (m_pShader)	m_pShader->ReleaseUploadBuffers();
 }
 
 void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
@@ -356,13 +347,14 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	CTexture *pTerrainTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
 
-	m_pShader = new CTerrainShader();
-	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	CShader *pShader = new CTerrainShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	CScene::CreateShaderResourceViews(pd3dDevice, pTerrainTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 	
 	CMaterial **ppTerrainMaterial = new CMaterial*[1];
 	ppTerrainMaterial[0] = new CMaterial();
 	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
+	ppTerrainMaterial[0]->SetShader(pShader);
 
 	SetMaterial(ppTerrainMaterial, 1);
 }
@@ -374,7 +366,7 @@ CHeightMapTerrain::~CHeightMapTerrain()
 
 void CHeightMapTerrain::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CGameObject::Render(pd3dCommandList, pCamera, m_pShader->m_nHandleIndex);
+	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -389,14 +381,14 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0);
 	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
 
-	m_pShader = new CSkyBoxShader();
-	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	CShader *pShader = new CSkyBoxShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	CScene::CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false);
 
 	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
 	ppSkyBoxMaterial[0] = new CMaterial();
 	ppSkyBoxMaterial[0]->SetTexture(pSkyBoxTexture);
+	ppSkyBoxMaterial[0]->SetShader(pShader);
 
 	SetMaterial(ppSkyBoxMaterial, 1);
 }
@@ -410,7 +402,7 @@ void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
 	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
 
-	CGameObject::Render(pd3dCommandList, pCamera, m_pShader->m_nHandleIndex);
+	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
