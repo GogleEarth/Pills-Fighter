@@ -177,7 +177,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	ID3D12PipelineState				*m_pd3dPipelineStateHP = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateBar = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
