@@ -194,6 +194,9 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayerBooster = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerBooster = NULL;
 
+	ID3D12Resource					*m_pd3dcbPlayerAmmo = NULL;
+	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
+
 	int								m_nUIRect = 0;
 	CUIRect							**m_ppUIRects = NULL;
 

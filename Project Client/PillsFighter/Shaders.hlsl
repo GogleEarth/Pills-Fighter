@@ -136,7 +136,7 @@ float4 PSWire(VS_WIRE_OUTPUT input) : SV_TARGET
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-cbuffer cbUIBarInfo : register(b4)
+cbuffer cbUIInfo : register(b4)
 {
 	int		giMaxValue;// : packoffset(c0.x);
 	int		giValue; //: packoffset(c0.y);
@@ -217,9 +217,9 @@ void GS_UI_Bar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout 
 	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
 
 	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[0] = float2(0.0f, yPos);
 	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[2] = float2(1.0f, yPos);
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_OUT output;

@@ -540,7 +540,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pCamera = m_pPlayer->GetCamera();
 	m_pPlayer->SetWeapon(m_pScene->GetWeapon());
 
-	m_pPlayer->m_nAmmo = 30;
+	m_pPlayer->m_nAmmo = 70;
 }
 
 void CGameFramework::BuildObjects()

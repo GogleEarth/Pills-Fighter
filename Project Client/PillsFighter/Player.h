@@ -38,12 +38,12 @@ protected:
 	ID3D12GraphicsCommandList *m_pd3dCommandList = NULL;
 
 	int m_nReloadedAmmo = 0;
-	int m_nMaxReloadAmmo = 15;
+	int m_nMaxReloadAmmo = 30;
 
 public:
 	virtual void Reload(int& nAmmo);
+	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
 	int GetReloadedAmmo() { return m_nReloadedAmmo; }
-
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 	void SetBullet(CShader *Bullet) { m_pBulletShader = (CObjectsShader*)Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CPlayer *pPlayer);
@@ -53,6 +53,9 @@ public:
 
 	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
 };
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 
 class CPlayer : public CGameObject
 {
@@ -147,7 +150,5 @@ protected:
 public:
 	int	m_nAmmo = 0;
 	void Reload();
+	CWeapon* GetWeapon() { return m_pWeapon; }
 };
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//

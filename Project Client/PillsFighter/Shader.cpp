@@ -676,10 +676,17 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 
 	m_pd3dcbPlayerHP->Map(0, NULL, (void **)&m_pcbMappedPlayerHP);
 
+
 	m_pd3dcbPlayerBooster = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 
 	m_pd3dcbPlayerBooster->Map(0, NULL, (void **)&m_pcbMappedPlayerBooster);
+
+
+	m_pd3dcbPlayerAmmo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+	m_pd3dcbPlayerAmmo->Map(0, NULL, (void **)&m_pcbMappedPlayerAmmo);
 }
 
 void CUserInterface::ReleaseShaderVariables()
@@ -695,6 +702,13 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbPlayerBooster->Unmap(0, NULL);
 		m_pd3dcbPlayerBooster->Release();
 	}
+
+	if (m_pd3dcbPlayerAmmo)
+	{
+		m_pd3dcbPlayerAmmo->Unmap(0, NULL);
+		m_pd3dcbPlayerAmmo->Release();
+	}
+
 
 	CShader::ReleaseShaderVariables();
 }
@@ -722,7 +736,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 3;
+	m_nTextures = 4;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
@@ -737,7 +751,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Booster.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nUIRect = 3;
+	m_ppTextures[3] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_nUIRect = 4;
 	m_ppUIRects = new CUIRect*[m_nUIRect];
 
 	// Base UI
@@ -752,6 +770,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = CalculateCenter(0.375000, 0.417287, 0.257778, -0.257778);
 	xmf2Size = CalculateSize(0.375000, 0.417287, 0.257778, -0.257778);
 	m_ppUIRects[2] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = CalculateCenter(0.417187, 0.456250, 0.257778, -0.257778);
+	xmf2Size = CalculateSize(0.417187, 0.456250, 0.257778, -0.257778);
+	printf("Size : %f\n", xmf2Size.y/ 30.0f);
+	m_ppUIRects[3] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -766,6 +789,12 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerBooster, m_pcbMappedPlayerBooster, 100, m_pPlayer->GetBoosterGauge());
 	if (m_ppTextures[2]) m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[2]->Render(pd3dCommandList);
+
+	// Draw Ammo
+	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, m_pPlayer->GetWeapon()->GetMaxReloadAmmo(), m_pPlayer->GetWeapon()->GetReloadedAmmo());
+	if (m_ppTextures[3]) m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[3]->Render(pd3dCommandList);
+	
 
 	// Draw Base UI
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);

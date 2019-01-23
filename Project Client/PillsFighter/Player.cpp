@@ -133,7 +133,6 @@ void CPlayer::Update(float fTimeElapsed)
 	m_pCamera->Update(fTimeElapsed);
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
-	printf("Ammo : %d\n", m_nAmmo);
 	CGameObject::Animate(fTimeElapsed);
 }
 
@@ -384,8 +383,6 @@ void CWeapon::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComm
 
 void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
 {
-	printf("Reload Ammo : %d\n", m_nReloadedAmmo);
-
 	if (m_bBurst)
 	{
 		if (m_fShotCoolTime <= 0.0f)
