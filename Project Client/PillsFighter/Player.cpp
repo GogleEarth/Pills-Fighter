@@ -9,13 +9,13 @@
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CGameObject()
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
-	m_ShotTime = 0;
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
 
 	m_pCamera = SetCamera(0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
+	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
+	SetModel(pModel);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -39,6 +39,7 @@ CPlayer::~CPlayer()
 	if (m_pUserInterface) delete m_pUserInterface;
 
 	if (m_pCamera) delete m_pCamera;
+
 }
 
 void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -50,8 +51,7 @@ void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 void CPlayer::ReleaseShaderVariables()
 {
-	if (m_pCamera) m_pCamera->ReleaseShaderVariables();
-
+	if (m_pCamera) m_pCamera->ReleaseShaderVariables();\
 	if (m_pUserInterface) m_pUserInterface->ReleaseShaderVariables();
 
 	CGameObject::ReleaseShaderVariables();
@@ -128,12 +128,12 @@ void CPlayer::Update(float fTimeElapsed)
 	ProcessBooster(fTimeElapsed);
 	ProcessOnGround(fTimeElapsed);
 	ProcessHitPoint();
-	CheckElapsedTime(fTimeElapsed);
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
+	printf("Ammo : %d\n", m_nAmmo);
 	CGameObject::Animate(fTimeElapsed);
 }
 
@@ -164,29 +164,6 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
-void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_Shotable)
-	{
-
-#ifndef ON_NETWORKING
-		Bullet *pBullet = NULL;
-		pBullet = new Bullet();
-
-		XMFLOAT4X4 xmf4x4World = GetToTarget();
-
-		pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
-		pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
-		pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
-		pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
-		pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
-		
-		m_pBulletShader->InsertObject(pd3dDevice, pd3dCommandList, pBullet);
-#endif
-		m_Shotable = FALSE;
-	}
-}
-
 XMFLOAT4X4 CPlayer::GetToTarget()
 {
 	float fDistance = m_pScene->FindAimToTargetDistance();
@@ -206,20 +183,6 @@ XMFLOAT4X4 CPlayer::GetToTarget()
 		xmf3Up.x, xmf3Up.y, xmf3Up.z, 0.0f,
 		xmf3Look.x, xmf3Look.y, xmf3Look.z, 0.0f,
 		xmf3Position.x, xmf3Position.y, xmf3Position.z, 1.0f);
-}
-
-void CPlayer::CheckElapsedTime(float ElapsedTime)
-{
-	if (!m_Shotable)
-	{
-		if (m_ShotTime > SHOT_COOLTIME)
-		{
-			m_ShotTime = 0.0f;
-			m_Shotable = TRUE;
-		}
-		else
-			m_ShotTime += ElapsedTime;
-	}
 }
 
 void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
@@ -345,7 +308,6 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 			if (m_fBoosterPower < FLT_EPSILON)
 				m_fBoosterPower = 0.0f;
 			else
-
 			{
 				if (bIsNegativeNum) m_fBoosterPower *= -1.0f;
 			}
@@ -370,5 +332,95 @@ void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAA
 		std::cout << "Set" << std::endl;
 
 		SetOnGround();
+	}
+}
+
+void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pWeapon) m_pWeapon->Shot(pd3dDevice, pd3dCommandList, this);
+	if (!m_pWeapon->GetReloadedAmmo())
+	{
+		if (m_nAmmo)
+			m_pWeapon->Reload(m_nAmmo);
+	}
+}
+
+void CPlayer::Reload()
+{
+	if (m_pWeapon) m_pWeapon->Reload(m_nAmmo);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CWeapon::CWeapon()
+{
+}
+
+CWeapon::~CWeapon()
+{
+}
+
+void CWeapon::Reload(int& nAmmo)
+{
+	m_nReloadedAmmo += nAmmo;
+
+	if (m_nReloadedAmmo > m_nMaxReloadAmmo)
+	{
+		nAmmo = m_nReloadedAmmo - m_nMaxReloadAmmo;
+		m_nReloadedAmmo = m_nMaxReloadAmmo;
+	}
+	else nAmmo = 0;
+}
+
+void CWeapon::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CPlayer *pPlayer)
+{
+	if (m_fBurstCoolTime < 0.0f && m_nReloadedAmmo > 0)
+	{
+		m_bBurst = true;
+		SetBurstCoolTime();
+	}
+}
+
+void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
+{
+	printf("Reload Ammo : %d\n", m_nReloadedAmmo);
+
+	if (m_bBurst)
+	{
+		if (m_fShotCoolTime <= 0.0f)
+		{
+			Bullet *pBullet = NULL;
+			pBullet = new Bullet();
+
+			XMFLOAT4X4 xmf4x4World = m_pPlayer->GetToTarget();
+
+			pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
+			pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
+			pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
+			pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
+			pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+
+			m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
+			SetShotCoolTime();
+
+			m_nShotCount++;
+			m_nReloadedAmmo--;
+		}
+
+		if (m_nShotCount >= 3 || m_nReloadedAmmo == 0)
+		{
+			m_nShotCount = 0;
+			m_bBurst = false;
+		}
+	}
+	else
+	{
+		m_fBurstCoolTime -= ElapsedTime;
+	}
+	
+	if (m_fShotCoolTime > 0.0f)
+	{
+		m_fShotCoolTime -= ElapsedTime;
 	}
 }

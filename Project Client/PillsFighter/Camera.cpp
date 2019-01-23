@@ -174,6 +174,9 @@ void CCamera::Update(float fTimeElapsed)
 		m_xmf3Position.x = xmf4x4Rotate._41 + xmf3PlayerPos.x;
 		m_xmf3Position.y = xmf4x4Rotate._42 + xmf3PlayerPos.y;
 		m_xmf3Position.z = xmf4x4Rotate._43 + xmf3PlayerPos.z;
+
+		XMFLOAT3 xmf3LookAt = Vector3::Add(m_pPlayer->GetPosition(), XMFLOAT3(0.0f, 20.0f, 0.0f));
+		SetLookAt(xmf3LookAt);
 	}
 }
 
@@ -182,12 +185,4 @@ void CCamera::SetLookAt(XMFLOAT3& xmf3LookAt)
 	m_xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3LookAt, m_xmf3Position));
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
 	m_xmf3Right = Vector3::CrossProduct(m_xmf3Look, m_xmf3Up, true);
-}
-
-void CCamera::OnPrepareRender()
-{
-	XMFLOAT3 xmf3LookAt = Vector3::Add(m_pPlayer->GetPosition(), XMFLOAT3(0.0f, 20.0f, 0.0f));
-	SetLookAt(xmf3LookAt);
-
-	GenerateViewMatrix();
 }

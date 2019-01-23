@@ -201,6 +201,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
+	m_pWeapon = new CWeapon();
+	m_pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	m_pWeapon->SetBullet(m_ppShaders[INDEX_SHADER_BULLET]);
+	m_pWeapon->SetForCreateBullet(pd3dDevice, pd3dCommandList);
+
 	m_pWireShader = new CWireShader();
 	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 }
@@ -216,6 +221,7 @@ void CScene::ReleaseObjects()
 	if (m_pSkyBox) delete m_pSkyBox;
 	if (m_pTerrain) delete m_pTerrain;
 	if (m_pWireShader) delete m_pWireShader;
+	if (m_pWeapon) delete m_pWeapon;
 
 	if (m_ppShaders)
 	{
@@ -239,6 +245,7 @@ void CScene::ReleaseUploadBuffers()
 {
 	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
+	if (m_pWeapon)m_pWeapon->ReleaseUploadBuffers();
 
 	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
 }
@@ -299,6 +306,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	}
 
 	if(m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
+	if (m_pWeapon) m_pWeapon->Animate(fTimeElapsed, pCamera);
 
 	CheckCollision();
 }

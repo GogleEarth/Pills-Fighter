@@ -496,9 +496,11 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 	case FbxNodeAttribute::eMesh:
 	{
 		FbxMesh *pFbxMesh = pfbxNode->GetMesh();
-		m_pMesh = new CStandardMesh();
-		((CStandardMesh*)m_pMesh)->LoadMeshFromFBX(pd3dDevice, pd3dCommandList, pFbxMesh);
-		m_pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, m_pMesh->GetCenter(), m_pMesh->GetExtents());
+
+		CStandardMesh *pMesh = new CStandardMesh();
+		((CStandardMesh*)pMesh)->LoadMeshFromFBX(pd3dDevice, pd3dCommandList, pFbxMesh);
+		CCubeMesh *pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, pMesh->GetCenter(), pMesh->GetExtents());
+		SetMesh(pMesh, pCubeMesh);
 
 		int nMaterialCount = m_nMaterials = pfbxNode->GetMaterialCount();
 
@@ -520,7 +522,6 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 	pFbxManager->Destroy();
 }
 
-
 CModel::~CModel()
 {
 	if (m_pMesh)
@@ -535,6 +536,17 @@ CModel::~CModel()
 			if (m_ppMaterials[i]) delete m_ppMaterials[i];
 		delete[] m_ppMaterials;
 	}
+
+	if (m_pSibling) delete m_pSibling;
+	if (m_pChild) delete m_pChild;
+}
+
+void CModel::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
+{
+	if (!m_pMesh) m_nMeshes++;
+
+	m_pMesh = pMesh; 
+	m_pCubeMesh = pCubeMesh;
 }
 
 void CModel::ReleaseUploadBuffers()
@@ -553,25 +565,37 @@ void CModel::ReleaseUploadBuffers()
 			if (m_ppMaterials[i]) m_ppMaterials[i]->ReleaseUploadBuffers();
 		}
 	}
+
+	if (m_pSibling) m_pSibling->ReleaseUploadBuffers();
+	if (m_pChild) m_pChild->ReleaseUploadBuffers();
 }
 
-void CModel::UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4World)
+void CModel::UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent)
 {
-	m_xmf4x4World = (pxmf4x4World) ? Matrix4x4::Multiply(m_xmf4x4ToParent, *pxmf4x4World) : m_xmf4x4ToParent;
+	m_xmf4x4World = (pxmf4x4Parent) ? Matrix4x4::Multiply(m_xmf4x4ToParent, *pxmf4x4Parent) : m_xmf4x4ToParent;
+
+	if (m_pSibling) m_pSibling->UpdateWorldTransform(pxmf4x4Parent);
+	if (m_pChild) m_pChild->UpdateWorldTransform(&m_xmf4x4World);
 }
 
 
-void CModel::UpdateCollisionBox(BoundingBox *pxmAABB)
+void CModel::UpdateCollisionBox(BoundingBox *pxmAABB, int *pnIndex)
 {
 	if (m_pMesh)
 	{
-		m_pMesh->m_xmAABB.Transform(*pxmAABB, XMLoadFloat4x4(&m_xmf4x4World));
+		m_pMesh->m_xmAABB.Transform(pxmAABB[(*pnIndex)++], XMLoadFloat4x4(&m_xmf4x4World));
 	}
+
+	if (m_pSibling) m_pSibling->UpdateCollisionBox(pxmAABB, pnIndex);
+	if (m_pChild) m_pChild->UpdateCollisionBox(pxmAABB, pnIndex);
 }
 
 void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
 {
 	if (m_pCubeMesh) m_pCubeMesh->Render(pd3dCommandList);
+
+	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera);
+	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera);
 }
 
 void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
@@ -590,4 +614,7 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 			if (m_pMesh) m_pMesh->Render(pd3dCommandList);
 		}
 	}
+
+	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, pcbMappedGameObject);
+	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, pcbMappedGameObject);
 }

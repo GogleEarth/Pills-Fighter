@@ -89,6 +89,12 @@ protected:
 	ID3D12Resource	*m_pd3dcbLights = NULL;
 	LIGHTS			*m_pcbMappedLights = NULL;
 
+protected:
+	CWeapon			*m_pWeapon = NULL;
+
+public:
+	CWeapon* GetWeapon() { return m_pWeapon; }
+
 public: // For Network
 	CGameObject* m_pObjects[MAX_NUM_OBJECT];
 

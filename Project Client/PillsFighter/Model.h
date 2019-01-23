@@ -138,13 +138,15 @@ protected:
 	CModel			*m_pSibling = NULL;
 	CModel			*m_pChild = NULL;
 
+	int				m_nMeshes = 0;
+
 public:
 	void ReleaseUploadBuffers();
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
 
-	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh) { m_pMesh = pMesh; m_pCubeMesh = pCubeMesh; }
+	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
 
 protected:
@@ -155,6 +157,8 @@ public:
 
 	// 충돌처리
 public:
-	void UpdateCollisionBox(BoundingBox *pxmAABB);
-	void UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4World);
+	void UpdateCollisionBox(BoundingBox *pxmAABB, int *pnIndex);
+	void UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent);
+
+	int GetMeshes() { return m_nMeshes; }
 };

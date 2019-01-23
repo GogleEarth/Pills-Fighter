@@ -30,14 +30,37 @@ CGameObject::~CGameObject()
 	ReleaseShaderVariables();
 
 	if (m_pModel)
+	{
 		delete m_pModel;
+
+		if (m_pxmAABB) delete[] m_pxmAABB;
+	}
+}
+
+void CGameObject::SetModel(CModel *pModel)
+{
+	m_pModel = pModel;
+
+	if (m_pxmAABB) delete m_pxmAABB;
+	
+	if (pModel)
+	{
+		m_nxmAABB = m_pModel->GetMeshes();
+		m_pxmAABB = new BoundingBox[m_nxmAABB];
+	}
 }
 
 void CGameObject::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
 {
-	if (!m_pModel) m_pModel = new CModel();
+	if (!m_pModel)
+	{
+		CModel *pModel = new CModel();
+		pModel->SetMesh(pMesh, pCubeMesh);
 
-	m_pModel->SetMesh(pMesh, pCubeMesh);
+		SetModel(pModel);
+	}
+	else
+		m_pModel->SetMesh(pMesh, pCubeMesh);
 }
 
 void CGameObject::SetMaterial(CMaterial **ppMaterials, UINT nMaterials)
@@ -122,67 +145,148 @@ void CGameObject::UpdateWorldTransform()
 
 bool CGameObject::CollisionCheck(CGameObject *pObject)
 {
-	return m_xmAABB.Intersects(pObject->m_xmAABB);
+	BoundingBox *pxmAABB = pObject->GetAABB();
+
+	for (int i = 0; i < m_nxmAABB; i++)
+	{
+		for (int j = 0; j < pObject->GetNumAABB(); j++)
+		{
+			if (m_pxmAABB[i].Intersects(pxmAABB[j]))
+				return true;
+		}
+	}
+
+	return false;
 }
 
-bool CGameObject::CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *fDistance)
+bool CGameObject::CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance)
 {
-	return m_xmAABB.Intersects(*pxmf4Origin, *pxmf4Look, *fDistance);
+	bool bCollision = false;
+	float fMinDistance = 1000.0f;
+	float fDistance = 0.0f;
+
+	for (int i = 0; i < m_nxmAABB; i++)
+	{
+		if (m_pxmAABB[i].Intersects(*pxmf4Origin, *pxmf4Look, fDistance))
+		{
+			if (fMinDistance > fDistance) fMinDistance = fDistance;
+			bCollision = true;
+		}
+	}
+
+	if (bCollision)
+		*pfDistance = fMinDistance;
+
+	return bCollision;
 }
 
 void CGameObject::MoveToCollision(CGameObject *pObject)
 {
-	BoundingBox xmObjAABB = pObject->GetAABB();
+	BoundingBox *pxmObjAABB = pObject->GetAABB();
 
-	if (m_xmAABB.Intersects(xmObjAABB))
+	for (int i = 0; i < m_nxmAABB; i++)
 	{
-		XMFLOAT3 xmf3Min = Vector3::Subtract(m_xmAABB.Center, m_xmAABB.Extents);
-		XMFLOAT3 xmf3Max = Vector3::Add(m_xmAABB.Center, m_xmAABB.Extents);
-
-		XMFLOAT3 xmf3ObjMin = Vector3::Subtract(xmObjAABB.Center, xmObjAABB.Extents);
-		XMFLOAT3 xmf3ObjMax = Vector3::Add(xmObjAABB.Center, xmObjAABB.Extents);
-
-		XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
+		for (int j = 0; j < pObject->GetNumAABB(); j++)
 		{
-			if (xmf3Min.x < xmf3ObjMax.x) xmf3Distance.x = xmf3ObjMax.x - xmf3Min.x;
-			if (xmf3Max.x > xmf3ObjMin.x)
+			if (m_pxmAABB[i].Intersects(pxmObjAABB[j]))
 			{
-				xmf3Temp.x = xmf3ObjMin.x - xmf3Max.x;
-				if (fabsf(xmf3Distance.x) > fabsf(xmf3Temp.x)) xmf3Distance.x = xmf3Temp.x;
-			}
+				XMFLOAT3 xmf3Min = Vector3::Subtract(m_pxmAABB[i].Center, m_pxmAABB[i].Extents);
+				XMFLOAT3 xmf3Max = Vector3::Add(m_pxmAABB[i].Center, m_pxmAABB[i].Extents);
 
-			if (xmf3Min.y < xmf3ObjMax.y) xmf3Distance.y = xmf3ObjMax.y - xmf3Min.y;
-			if (xmf3Max.y > xmf3ObjMin.y)
-			{
-				xmf3Temp.y = xmf3ObjMin.y - xmf3Max.y;
-				if (fabsf(xmf3Distance.y) > fabsf(xmf3Temp.y)) xmf3Distance.y = xmf3Temp.y;
-			}
+				XMFLOAT3 xmf3ObjMin = Vector3::Subtract(pxmObjAABB[j].Center, pxmObjAABB[j].Extents);
+				XMFLOAT3 xmf3ObjMax = Vector3::Add(pxmObjAABB[j].Center, pxmObjAABB[j].Extents);
 
-			if (xmf3Min.z < xmf3ObjMax.z) xmf3Distance.z = xmf3ObjMax.z - xmf3Min.z;
-			if (xmf3Max.z > xmf3ObjMin.z)
-			{
-				xmf3Temp.z = xmf3ObjMin.z - xmf3Max.z;
-				if (fabsf(xmf3Distance.z) > fabsf(xmf3Temp.z)) xmf3Distance.z = xmf3Temp.z;
-			}
-		}
-		
-		printf("%f, %f, %f\n", xmf3Distance.x, xmf3Distance.y, xmf3Distance.z);
+				XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
+				XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-		xmf3Temp = xmf3Distance;
-
-		XMFLOAT3 xmf3Position = m_xmf3Position;
-
-		if (!IsZero(xmf3Temp.x))
-		{
-			if (!IsZero(xmf3Temp.y))
-			{
-				if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.y))
 				{
-					xmf3Position.x = m_xmf3Position.x;
-					xmf3Distance.x = 0.0f;
+					if (xmf3Min.x < xmf3ObjMax.x) xmf3Distance.x = xmf3ObjMax.x - xmf3Min.x;
+					if (xmf3Max.x > xmf3ObjMin.x)
+					{
+						xmf3Temp.x = xmf3ObjMin.x - xmf3Max.x;
+						if (fabsf(xmf3Distance.x) > fabsf(xmf3Temp.x)) xmf3Distance.x = xmf3Temp.x;
+					}
 
+					if (xmf3Min.y < xmf3ObjMax.y) xmf3Distance.y = xmf3ObjMax.y - xmf3Min.y;
+					if (xmf3Max.y > xmf3ObjMin.y)
+					{
+						xmf3Temp.y = xmf3ObjMin.y - xmf3Max.y;
+						if (fabsf(xmf3Distance.y) > fabsf(xmf3Temp.y)) xmf3Distance.y = xmf3Temp.y;
+					}
+
+					if (xmf3Min.z < xmf3ObjMax.z) xmf3Distance.z = xmf3ObjMax.z - xmf3Min.z;
+					if (xmf3Max.z > xmf3ObjMin.z)
+					{
+						xmf3Temp.z = xmf3ObjMin.z - xmf3Max.z;
+						if (fabsf(xmf3Distance.z) > fabsf(xmf3Temp.z)) xmf3Distance.z = xmf3Temp.z;
+					}
+				}
+
+				printf("%f, %f, %f\n", xmf3Distance.x, xmf3Distance.y, xmf3Distance.z);
+
+				xmf3Temp = xmf3Distance;
+
+				XMFLOAT3 xmf3Position = m_xmf3Position;
+
+				if (!IsZero(xmf3Temp.x))
+				{
+					if (!IsZero(xmf3Temp.y))
+					{
+						if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.y))
+						{
+							xmf3Position.x = m_xmf3Position.x;
+							xmf3Distance.x = 0.0f;
+
+							if (!IsZero(xmf3Temp.z))
+							{
+								if (fabsf(xmf3Temp.y) > fabsf(xmf3Temp.z))
+								{
+									xmf3Position.y = m_xmf3Position.y;
+									xmf3Distance.y = 0.0f;
+								}
+								else
+								{
+									xmf3Position.z = m_xmf3Position.z;
+									xmf3Distance.z = 0.0f;
+								}
+							}
+						}
+						else
+						{
+							xmf3Position.y = m_xmf3Position.y;
+							xmf3Distance.y = 0.0f;
+
+							if (!IsZero(xmf3Temp.z))
+							{
+								if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.z))
+								{
+									xmf3Position.x = m_xmf3Position.x;
+									xmf3Distance.x = 0.0f;
+								}
+								else
+								{
+									xmf3Position.z = m_xmf3Position.z;
+									xmf3Distance.z = 0.0f;
+								}
+							}
+						}
+					}
+					else if (!IsZero(xmf3Temp.z))
+					{
+						if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.z))
+						{
+							xmf3Position.x = m_xmf3Position.x;
+							xmf3Distance.x = 0.0f;
+						}
+						else
+						{
+							xmf3Position.z = m_xmf3Position.z;
+							xmf3Distance.z = 0.0f;
+						}
+					}
+				}
+				else if (!IsZero(xmf3Temp.y))
+				{
 					if (!IsZero(xmf3Temp.z))
 					{
 						if (fabsf(xmf3Temp.y) > fabsf(xmf3Temp.z))
@@ -197,62 +301,14 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 						}
 					}
 				}
-				else
-				{
-					xmf3Position.y = m_xmf3Position.y;
-					xmf3Distance.y = 0.0f;
 
-					if (!IsZero(xmf3Temp.z))
-					{
-						if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.z))
-						{
-							xmf3Position.x = m_xmf3Position.x;
-							xmf3Distance.x = 0.0f;
-						}
-						else
-						{
-							xmf3Position.z = m_xmf3Position.z;
-							xmf3Distance.z = 0.0f;
-						}
-					}
-				}
-			}
-			else if (!IsZero(xmf3Temp.z))
-			{
-				if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.z))
-				{
-					xmf3Position.x = m_xmf3Position.x;
-					xmf3Distance.x = 0.0f;
-				}
-				else
-				{
-					xmf3Position.z = m_xmf3Position.z;
-					xmf3Distance.z = 0.0f;
-				}
+				printf("%f, %f, %f\n\n", xmf3Distance.x, xmf3Distance.y, xmf3Distance.z);
+
+				SetPosition(Vector3::Add(xmf3Position, xmf3Distance));
+
+				ProcessMoveToCollision(&m_pxmAABB[i], &pxmObjAABB[j]);
 			}
 		}
-		else if (!IsZero(xmf3Temp.y))
-		{
-			if (!IsZero(xmf3Temp.z))
-			{
-				if (fabsf(xmf3Temp.y) > fabsf(xmf3Temp.z))
-				{
-					xmf3Position.y = m_xmf3Position.y;
-					xmf3Distance.y = 0.0f;
-				}
-				else
-				{
-					xmf3Position.z = m_xmf3Position.z;
-					xmf3Distance.z = 0.0f;
-				}
-			}
-		}
-
-		printf("%f, %f, %f\n\n", xmf3Distance.x, xmf3Distance.y, xmf3Distance.z);
-
-		SetPosition(Vector3::Add(xmf3Position, xmf3Distance));
-
-		ProcessMoveToCollision(&m_xmAABB, &xmObjAABB);
 	}
 }
 
@@ -263,7 +319,9 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		OnPrepareRender();
 
 		UpdateWorldTransform();
-		m_pModel->UpdateCollisionBox(&m_xmAABB);
+
+		int i = 0;
+		m_pModel->UpdateCollisionBox(m_pxmAABB, &i);
 	}
 }
 

@@ -86,5 +86,4 @@ public:
 	virtual void Update(float fTimeElapsed);
 
 	virtual void SetLookAt(XMFLOAT3& xmf3LookAt);
-	virtual void OnPrepareRender();
 };

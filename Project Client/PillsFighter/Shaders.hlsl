@@ -78,23 +78,27 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
-	float4 AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	if(gnTexturesMask & MATERIAL_ALBEDO_MAP)
-		AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	float4 NormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float4 f4NormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
-		NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
+		f4NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
+
+	float4 f4SpecularColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_SPECULAR_MAP)
+		f4SpecularColor = gtxtSpecularTexture.Sample(gssWrap, input.uv);
 
 	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	float4 cColor = AlbedoColor;
+	float4 cColor = f4AlbedoColor + f4SpecularColor;
 
 	float3 normalW = normalize(input.normalW);
 
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
 	{
 		float3x3 TBN = float3x3(normalize(input.tangenW), normalize(input.binormalW), normalW);
-		float3 vNormal = normalize(NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
+		float3 vNormal = normalize(f4NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
 		normalW = normalize(mul(vNormal, TBN));
 	}
 
@@ -273,8 +277,9 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 {
 	// 지형 텍스처 배열 인덱스 0 = Base, 1 = Detail
 	float4 cBaseTexColor = gtxtTexture[0].Sample(gssWrap, input.uv0);
+	float4 cDetailTexColor = gtxtTexture[0].Sample(gssWrap, input.uv1);
 
-	float4 cColor = input.color * saturate(cBaseTexColor * 0.5f);
+	float4 cColor = input.color * saturate( (cBaseTexColor * 0.5f) + (cDetailTexColor * 0.2f));
 
 	return(cColor);
 }

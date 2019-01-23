@@ -465,7 +465,6 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	CMesh *pMesh = new CRectMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f);
 
 	m_pModel = new CModel();
-
 	m_pModel->SetMesh(pMesh, NULL);
 	m_pModel->SetMaterial(ppMaterials, nMaterials);
 

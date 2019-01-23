@@ -64,7 +64,7 @@ public:
 	CGameObject();
 	virtual ~CGameObject();
 
-	void SetModel(CModel *pModel) {	m_pModel = pModel; }
+	void SetModel(CModel *pModel);
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials);
 
@@ -124,13 +124,15 @@ public:
 	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nMaxHitPoint < m_nHitPoint) m_nHitPoint = m_nMaxHitPoint; }
 
 public:
-	BoundingBox		m_xmAABB;
+	int				m_nxmAABB = 0;
+	BoundingBox		*m_pxmAABB = NULL;
 
 	void UpdateWorldTransform();
 	CModel *GetModel() { return m_pModel; }
-	BoundingBox GetAABB() { return m_xmAABB; }
+	BoundingBox* GetAABB() { return m_pxmAABB; }
+	int GetNumAABB() { return m_nxmAABB; }
 	bool CollisionCheck(CGameObject *pObject);
-	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *fDistance);
+	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 };

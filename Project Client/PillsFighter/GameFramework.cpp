@@ -539,7 +539,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pPlayer->SetScene(m_pScene);
 	m_pCamera = m_pPlayer->GetCamera();
 
-	m_pPlayer->SetBullet(m_pScene->GetBulletShader(INDEX_SHADER_BULLET));
+	m_pPlayer->m_nAmmo = 30;
 }
 
 void CGameFramework::BuildObjects()
@@ -725,6 +725,8 @@ void CGameFramework::ProcessInput()
 		if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
 		if (pKeyBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
 		if (pKeyBuffer['V'] & 0xF0) dwDirection |= DIR_DOWN;
+
+		if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload();
 	}
 
 	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
@@ -751,6 +753,7 @@ void CGameFramework::ProcessInput()
 			m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 	}
+
 
 	if (m_LButtonDown)
 	{
@@ -908,7 +911,7 @@ void CGameFramework::FrameAdvance()
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
 		&d3dDsvCPUDescriptorHandle);
 
-	if (m_pCamera) m_pCamera->OnPrepareRender();
+	if (m_pCamera) m_pCamera->GenerateViewMatrix();
 
 	if (m_pScene)
 	{
