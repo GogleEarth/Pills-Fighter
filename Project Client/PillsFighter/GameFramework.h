@@ -107,7 +107,7 @@ public:
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 protected:
-	CRepository	 *m_pRepository;
+	CRepository	 *m_pRepository = NULL;
 
 public: // for Network
 	HANDLE m_hThread;

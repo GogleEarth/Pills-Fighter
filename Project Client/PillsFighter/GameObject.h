@@ -131,6 +131,8 @@ public:
 	BoundingBox GetAABB() { return m_xmAABB; }
 	bool CollisionCheck(CGameObject *pObject);
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *fDistance);
+	void MoveToCollision(CGameObject *pObject);
+	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

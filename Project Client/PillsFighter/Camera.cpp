@@ -18,7 +18,6 @@ CCamera::CCamera()
 	m_fYaw = 0.0f;
 	m_xmf3Offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_fTimeLag = 0.0f;
-	m_xmf3LookAtWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_pPlayer = NULL;
 }
 
@@ -45,7 +44,6 @@ CCamera::CCamera(CCamera *pCamera)
 		m_fYaw = 0.0f;
 		m_xmf3Offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		m_fTimeLag = 0.0f;
-		m_xmf3LookAtWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		m_pPlayer = NULL;
 	}
 }
@@ -78,23 +76,6 @@ void CCamera::GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlane
 }
 
 void CCamera::GenerateViewMatrix()
-{
-	/*카메라 변환 행렬을 생성한다. 
-	카메라의 위치 벡터, 카메라가 바라보는 지점, 카메라의 Up 벡터(로컬 y-축 벡터)를
-	파라메터로 사용하는 XMMatrixLookAtLH() 함수를 사용한다.*/
-	m_xmf4x4View = Matrix4x4::LookAtLH(m_xmf3Position, m_xmf3LookAtWorld, m_xmf3Up);
-}
-
-void CCamera::GenerateViewMatrix(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3LookAt, XMFLOAT3 xmf3Up)
-{
-	m_xmf3Position = xmf3Position;
-	m_xmf3LookAtWorld = xmf3LookAt;
-	m_xmf3Up = xmf3Up;
-
-	GenerateViewMatrix();
-}
-
-void CCamera::RegenerateViewMatrix()
 {
 	//카메라의 z-축을 기준으로 카메라의 좌표축들이 직교하도록 카메라 변환 행렬을 갱신한다. 
 	//카메라의 z-축 벡터를 정규화한다. 
@@ -201,4 +182,12 @@ void CCamera::SetLookAt(XMFLOAT3& xmf3LookAt)
 	m_xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3LookAt, m_xmf3Position));
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
 	m_xmf3Right = Vector3::CrossProduct(m_xmf3Look, m_xmf3Up, true);
+}
+
+void CCamera::OnPrepareRender()
+{
+	XMFLOAT3 xmf3LookAt = Vector3::Add(m_pPlayer->GetPosition(), XMFLOAT3(0.0f, 20.0f, 0.0f));
+	SetLookAt(xmf3LookAt);
+
+	GenerateViewMatrix();
 }

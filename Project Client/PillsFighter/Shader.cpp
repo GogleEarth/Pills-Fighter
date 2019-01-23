@@ -11,10 +11,9 @@ CShader::CShader()
 CShader::~CShader()
 {
 	if (m_pd3dPipelineState) m_pd3dPipelineState->Release();
-	if (m_pd3dPipelineStateWire) m_pd3dPipelineStateWire->Release();
 }
 
-D3D12_RASTERIZER_DESC CShader::CreateRasterizerState() //래스터라이저 상태를 설정하기 위한 구조체를 반환한다. 
+D3D12_RASTERIZER_DESC CShader::CreateRasterizerState()
 {
 	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
 	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
@@ -33,26 +32,7 @@ D3D12_RASTERIZER_DESC CShader::CreateRasterizerState() //래스터라이저 상태를 설�
 	return(d3dRasterizerDesc);
 }
 
-D3D12_RASTERIZER_DESC CShader::CreateRasterizerStateWire() //래스터라이저 상태를 설정하기 위한 구조체를 반환한다. 
-{
-	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
-	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
-	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
-	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
-	d3dRasterizerDesc.DepthBias = 0;
-	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
-	d3dRasterizerDesc.SlopeScaledDepthBias = 0.0f;
-	d3dRasterizerDesc.DepthClipEnable = TRUE;
-	d3dRasterizerDesc.MultisampleEnable = FALSE;
-	d3dRasterizerDesc.AntialiasedLineEnable = FALSE;
-	d3dRasterizerDesc.ForcedSampleCount = 0;
-	d3dRasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-
-	return(d3dRasterizerDesc);
-}
-
-D3D12_DEPTH_STENCIL_DESC CShader::CreateDepthStencilState() //깊이-스텐실 검사를 위한 상태를 설정하기 위한 구조체를 반환한다. 
+D3D12_DEPTH_STENCIL_DESC CShader::CreateDepthStencilState()
 {
 	D3D12_DEPTH_STENCIL_DESC d3dDepthStencilDesc;
 	::ZeroMemory(&d3dDepthStencilDesc, sizeof(D3D12_DEPTH_STENCIL_DESC));
@@ -74,7 +54,7 @@ D3D12_DEPTH_STENCIL_DESC CShader::CreateDepthStencilState() //깊이-스텐실 검사를
 	return(d3dDepthStencilDesc);
 }
 
-D3D12_BLEND_DESC CShader::CreateBlendState() //블렌딩 상태를 설정하기 위한 구조체를 반환한다. 
+D3D12_BLEND_DESC CShader::CreateBlendState()
 {
 	D3D12_BLEND_DESC d3dBlendDesc;
 	::ZeroMemory(&d3dBlendDesc, sizeof(D3D12_BLEND_DESC));
@@ -94,7 +74,7 @@ D3D12_BLEND_DESC CShader::CreateBlendState() //블렌딩 상태를 설정하기 위한 구조�
 	return(d3dBlendDesc);
 }
 
-D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() //입력 조립기에게 정점 버퍼의 구조를 알려주기 위한 구조체를 반환한다.
+D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() 
 {
 	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
@@ -112,38 +92,14 @@ D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() //입력 조립기에게 정점 버퍼
 	return(d3dInputLayoutDesc);
 }
 
-D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayoutWire() //입력 조립기에게 정점 버퍼의 구조를 알려주기 위한 구조체를 반환한다. 
-{
-	UINT nInputElementDescs = 1;
-	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
-
-	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-
-	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
-	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
-	d3dInputLayoutDesc.NumElements = nInputElementDescs;
-
-	return(d3dInputLayoutDesc);
-}
-
-D3D12_SHADER_BYTECODE CShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) //정점 셰이더 바이트 코드를 생성(컴파일)한다. 
+D3D12_SHADER_BYTECODE CShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) 
 {
 	return(CompileShaderFromFile(L"Shaders.hlsl", "VSTextured", "vs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CShader::CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob) //정점 셰이더 바이트 코드를 생성(컴파일)한다. 
-{
-	return(CompileShaderFromFile(L"Shaders.hlsl", "VSWire", "vs_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob) //픽셀 셰이더 바이트 코드를 생성(컴파일)한다. 
+D3D12_SHADER_BYTECODE CShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CompileShaderFromFile(L"Shaders.hlsl", "PSTextured", "ps_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CShader::CreatePixelShaderWire(ID3DBlob **ppd3dShaderBlob) //픽셀 셰이더 바이트 코드를 생성(컴파일)한다. 
-{
-	return(CompileShaderFromFile(L"Shaders.hlsl", "PSWire", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob) 
@@ -163,7 +119,7 @@ D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, L
 	return(d3dShaderByteCode);
 }
 
-void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature) //그래픽스 파이프라인 상태 객체를 생성한다. 
+void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
 	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
 
@@ -186,13 +142,6 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
 
-	d3dPipelineStateDesc.RasterizerState = CreateRasterizerStateWire();
-	d3dPipelineStateDesc.InputLayout = CreateInputLayoutWire();
-	d3dPipelineStateDesc.VS = CreateVertexShaderWire(&pd3dVertexShaderBlob);
-	d3dPipelineStateDesc.PS = CreatePixelShaderWire(&pd3dPixelShaderBlob);
-
-	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateWire);
-
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
 
@@ -202,15 +151,7 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 
 void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	// Pipeline Set, Texture Set
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-
-	UpdateShaderVariables(pd3dCommandList);
-}
-
-void CShader::OnPrepareRenderWire(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_pd3dPipelineStateWire) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateWire);
 
 	UpdateShaderVariables(pd3dCommandList);
 }
@@ -220,9 +161,50 @@ void CShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	OnPrepareRender(pd3dCommandList);
 }
 
-void CShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+D3D12_RASTERIZER_DESC CWireShader::CreateRasterizerState() 
+{ 
+	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
+	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
+	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
+	d3dRasterizerDesc.DepthBias = 0;
+	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
+	d3dRasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	d3dRasterizerDesc.DepthClipEnable = TRUE;
+	d3dRasterizerDesc.MultisampleEnable = FALSE;
+	d3dRasterizerDesc.AntialiasedLineEnable = FALSE;
+	d3dRasterizerDesc.ForcedSampleCount = 0;
+	d3dRasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	return(d3dRasterizerDesc);
+}
+
+D3D12_INPUT_LAYOUT_DESC CWireShader::CreateInputLayout()
 {
-	OnPrepareRenderWire(pd3dCommandList);
+	UINT nInputElementDescs = 1;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_SHADER_BYTECODE CWireShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) 
+{
+	return(CompileShaderFromFile(L"Shaders.hlsl", "VSWire", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CWireShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"Shaders.hlsl", "PSWire", "ps_5_1", ppd3dShaderBlob));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -310,8 +292,6 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 void CObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CShader::RenderWire(pd3dCommandList, pCamera);
-
 	for (const auto& Object : m_vObjects)
 	{
 		Object->RenderWire(pd3dCommandList, pCamera);

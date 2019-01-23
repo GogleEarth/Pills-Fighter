@@ -133,9 +133,6 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
-	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
-	m_pCamera->SetLookAt(xmf3LookAt);
-	m_pCamera->RegenerateViewMatrix();
 
 	CGameObject::Animate(fTimeElapsed);
 }
@@ -227,7 +224,7 @@ void CPlayer::CheckElapsedTime(float ElapsedTime)
 
 void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 {
-	m_pScene->CheckCollisionPlayer();
+	if(m_pScene) m_pScene->CheckCollisionPlayer();
 
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)m_pPlayerUpdatedContext;
 	XMFLOAT3 xmf3Scale = pTerrain->GetScale();
@@ -361,4 +358,17 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 
 	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
 	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+}
+
+void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB)
+{
+	XMFLOAT3 xmf3ObjMax = Vector3::Add(pxmObjAABB->Center, pxmObjAABB->Extents);
+	XMFLOAT3 xmf3Min = Vector3::Subtract(pxmAABB->Center, pxmAABB->Extents);
+
+	if (xmf3Min.y == xmf3ObjMax.y)
+	{
+		std::cout << "Set" << std::endl;
+
+		SetOnGround();
+	}
 }

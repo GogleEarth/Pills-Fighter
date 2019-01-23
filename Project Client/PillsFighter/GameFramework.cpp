@@ -548,7 +548,7 @@ void CGameFramework::BuildObjects()
 
 	m_pRepository = new CRepository();
 	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
-
+	
 #ifdef ON_NETWORKING
 	InitNetwork();
 #else
@@ -908,23 +908,23 @@ void CGameFramework::FrameAdvance()
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
 		&d3dDsvCPUDescriptorHandle);
 
+	if (m_pCamera) m_pCamera->OnPrepareRender();
+
 	if (m_pScene)
 	{
 		m_pScene->Render(m_pd3dCommandList, m_pCamera);
-
-		if (m_bRenderWire)
-			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
-
 	}
 
 	if (m_pPlayer)
 	{
 		m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
-
-		if (m_bRenderWire)
-			m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
 
+	if (m_bRenderWire)
+	{
+		if (m_pScene) m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
+		if (m_pPlayer) m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
+	}
 	//////////////////////////////////////////////////////////////////
 
 	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;

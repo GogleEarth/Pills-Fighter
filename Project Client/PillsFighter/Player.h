@@ -111,4 +111,6 @@ public:
 
 public:
 	XMFLOAT4X4 GetToTarget();
+
+	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 };

@@ -200,6 +200,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+
+	m_pWireShader = new CWireShader();
+	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 }
 
 void CScene::ReleaseObjects()
@@ -212,6 +215,7 @@ void CScene::ReleaseObjects()
 	if (m_pLights) delete m_pLights;
 	if (m_pSkyBox) delete m_pSkyBox;
 	if (m_pTerrain) delete m_pTerrain;
+	if (m_pWireShader) delete m_pWireShader;
 
 	if (m_ppShaders)
 	{
@@ -226,6 +230,7 @@ void CScene::ReleaseObjects()
 		}
 		delete[] m_ppShaders;
 	}
+
 
 	ReleaseShaderVariables();
 }
@@ -258,244 +263,9 @@ void CScene::CheckCollisionPlayer()
 	std::vector<CGameObject*> *vObstacles;
 	vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
 
-	BoundingBox xmPlayerAABB = m_pPlayer->GetAABB();
-	XMFLOAT3 xmf3Center = xmPlayerAABB.Center;
-	XMFLOAT3 xmf3Extents = xmPlayerAABB.Extents;
-	XMFLOAT3 xmf3Min = Vector3::Subtract(xmf3Center, xmf3Extents);
-	XMFLOAT3 xmf3Max = Vector3::Add(xmf3Center, xmf3Extents);
-
 	for (const auto& Obstacle : *vObstacles)
 	{
-		BoundingBox xmObstAABB = Obstacle->GetAABB();
-		XMFLOAT3 xmf3ObstCenter = xmObstAABB.Center;
-		XMFLOAT3 xmf3ObstExtents = xmObstAABB.Extents;
-		XMFLOAT3 xmf3ObstMin = Vector3::Subtract(xmf3ObstCenter, xmf3ObstExtents);
-		XMFLOAT3 xmf3ObstMax = Vector3::Add(xmf3ObstCenter, xmf3ObstExtents);
-
-		XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
-		if (xmPlayerAABB.Intersects(xmObstAABB))
-		{
-			XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-			if (xmf3Min.x < xmf3ObstMax.x)
-			{
-				xmf3Distance.x = xmf3ObstMax.x - xmf3Min.x;
-				xmf3PlayerPos.x = xmf3ObstMax.x + xmf3Extents.x;
-			}
-
-			if (xmf3Max.x > xmf3ObstMin.x)
-			{
-				xmf3Temp.x = xmf3ObstMin.x - xmf3Max.x;
-				if (abs(xmf3Distance.x) > abs(xmf3Temp.x))
-				{
-					xmf3Distance.x = xmf3Temp.x;
-					xmf3PlayerPos.x = xmf3ObstMin.x - xmf3Extents.x;
-				}
-			}
-
-			if (xmf3Min.y < xmf3ObstMax.y)
-			{
-				xmf3Distance.y = xmf3ObstMax.y - xmf3Min.y;
-				xmf3PlayerPos.y = xmf3ObstMax.y + xmf3Extents.y;
-			}
-			if (xmf3Max.y > xmf3ObstMin.y)
-			{
-				xmf3Temp.y = xmf3ObstMin.y - xmf3Max.y;
-				if (abs(xmf3Distance.y) > abs(xmf3Temp.y))
-				{
-					xmf3Distance.y = xmf3Temp.y;
-					xmf3PlayerPos.y = xmf3ObstMin.y - xmf3Extents.y;
-				}
-			}
-
-			if (xmf3Min.z < xmf3ObstMax.z)
-			{
-				xmf3Distance.z = xmf3ObstMax.z - xmf3Min.z;
-				xmf3PlayerPos.z = xmf3ObstMax.z + xmf3Extents.z;
-			}
-			if (xmf3Max.z > xmf3ObstMin.z)
-			{
-				xmf3Temp.z = xmf3ObstMin.z - xmf3Max.z;
-				if (abs(xmf3Distance.z) > abs(xmf3Temp.z))
-				{
-					xmf3Distance.z = xmf3Temp.z;
-					xmf3PlayerPos.z = xmf3ObstMin.z - xmf3Extents.z;
-				}
-			}
-
-			xmf3Temp = xmf3Distance;
-			if (!IsZero(xmf3Temp.x))
-			{
-				if (!IsZero(xmf3Temp.y))
-				{
-					if (abs(xmf3Temp.x) > abs(xmf3Temp.y))
-					{
-						xmf3PlayerPos.x = m_pPlayer->GetPosition().x;
-						xmf3Distance.x = 0.0f;
-
-						if (!IsZero(xmf3Temp.z))
-						{
-							if (abs(xmf3Temp.y) > abs(xmf3Temp.z))
-							{
-								xmf3PlayerPos.y = m_pPlayer->GetPosition().y;
-								xmf3Distance.y = 0.0f;
-							}
-							else
-							{
-								xmf3PlayerPos.z = m_pPlayer->GetPosition().z;
-								xmf3Distance.z = 0.0f;
-							}
-						}
-					}
-					else
-					{
-						xmf3PlayerPos.y = m_pPlayer->GetPosition().y;
-						xmf3Distance.y = 0.0f;
-
-						if (!IsZero(xmf3Temp.z))
-						{
-							if (abs(xmf3Temp.x) > abs(xmf3Temp.z))
-							{
-								xmf3PlayerPos.x = m_pPlayer->GetPosition().x;
-								xmf3Distance.x = 0.0f;
-							}
-							else
-							{
-								xmf3PlayerPos.z = m_pPlayer->GetPosition().z;
-								xmf3Distance.z = 0.0f;
-							}
-						}
-					}
-
-				}
-			}
-			else if (!IsZero(xmf3Temp.y))
-			{
-				if (!IsZero(xmf3Temp.z))
-				{
-					if (abs(xmf3Temp.y) > abs(xmf3Temp.z))
-					{
-						xmf3PlayerPos.y = m_pPlayer->GetPosition().y;
-						xmf3Distance.y = 0.0f;
-					}
-					else
-					{
-						xmf3PlayerPos.z = m_pPlayer->GetPosition().z;
-						xmf3Distance.z = 0.0f;
-					}
-				}
-			}
-
-			if (!IsZero(xmf3Distance.y))
-			{
-				m_pPlayer->SetOnGround();
-			}
-
-
-			m_pPlayer->SetPosition(xmf3PlayerPos);
-		}
-		
-		XMFLOAT3 xmf3CameraPos = m_pPlayer->GetCamera()->GetPosition();
-		if (xmObstAABB.Contains(XMLoadFloat3(&xmf3CameraPos)))
-		{
-			XMFLOAT3 xmf3MovePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-			if (xmf3CameraPos.x > xmf3ObstMin.x && xmf3CameraPos.x < xmf3ObstMax.x)
-			{
-				xmf3MovePos.x = (xmf3CameraPos.x - xmf3ObstMin.x) < (xmf3ObstMax.x - xmf3CameraPos.x) ? xmf3ObstMin.x : xmf3ObstMax.x;
-			}
-			if (xmf3CameraPos.y > xmf3ObstMin.y && xmf3CameraPos.y < xmf3ObstMax.y)
-			{
-				xmf3MovePos.y = (xmf3CameraPos.y - xmf3ObstMin.y) < (xmf3ObstMax.y - xmf3CameraPos.y) ? xmf3ObstMin.y : xmf3ObstMax.y;
-			}
-			if (xmf3CameraPos.z > xmf3ObstMin.z && xmf3CameraPos.z < xmf3ObstMax.z)
-			{
-				xmf3MovePos.z = (xmf3CameraPos.z - xmf3ObstMin.z) < (xmf3ObstMax.z - xmf3CameraPos.z) ? xmf3ObstMin.z : xmf3ObstMax.z;
-			}
-
-			xmf3Temp = xmf3MovePos;
-			if (!IsZero(xmf3Temp.x))
-			{
-				float fDistanceX = abs(abs(xmf3PlayerPos.x) - abs(xmf3Temp.x));
-
-				if (!IsZero(xmf3Temp.y))
-				{
-					float fDistanceY = abs(abs(xmf3PlayerPos.y) - abs(xmf3Temp.y));
-
-					if (fDistanceX > fDistanceY)
-					{
-						xmf3MovePos.x = xmf3CameraPos.x;
-
-						if (!IsZero(xmf3Temp.z))
-						{
-							float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
-
-							if (fDistanceY > fDistanceZ)
-							{
-								xmf3MovePos.y = xmf3CameraPos.y;
-							}
-							else
-								xmf3MovePos.z = xmf3CameraPos.z;
-						}
-
-					}
-					else
-					{
-						xmf3MovePos.x = xmf3CameraPos.x;
-
-						if (!IsZero(xmf3Temp.z))
-						{
-							float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
-
-							if (fDistanceY > fDistanceZ)
-							{
-								xmf3MovePos.y = xmf3CameraPos.y;
-							}
-							else
-								xmf3MovePos.z = xmf3CameraPos.z;
-						}
-					}
-				}
-				else if (!IsZero(xmf3MovePos.z))
-				{
-					float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
-
-					if (fDistanceX > fDistanceZ)
-					{
-						xmf3MovePos.x = xmf3CameraPos.x;
-					}
-					else
-						xmf3MovePos.z = xmf3CameraPos.z;
-				}
-			}
-			else if (!IsZero(xmf3MovePos.y))
-			{
-				float fDistanceY = abs(abs(xmf3PlayerPos.y) - abs(xmf3Temp.y));
-
-				if (!IsZero(xmf3Temp.z))
-				{
-					float fDistanceZ = abs(abs(xmf3PlayerPos.z) - abs(xmf3Temp.z));
-
-					if (fDistanceY > fDistanceZ)
-					{
-						xmf3MovePos.y = xmf3CameraPos.y;
-					}
-					else
-						xmf3MovePos.z = xmf3CameraPos.z;
-				}
-			}
-
-			if (xmf3MovePos.x != xmf3CameraPos.x)
-				printf("Move x\n");
-			else if (xmf3MovePos.y != xmf3CameraPos.y)
-				printf("Move y\n");
-			else if (xmf3MovePos.z != xmf3CameraPos.z)
-				printf("Move z\n");
-
-			m_pPlayer->GetCamera()->SetPosition(xmf3MovePos);
-		}
+		m_pPlayer->MoveToCollision(Obstacle);
 	}
 }
 
@@ -614,6 +384,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	if(m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
+
 	for (int i = 0; i < m_nShaders; i++)
 	{
 		if(m_ppShaders[i])

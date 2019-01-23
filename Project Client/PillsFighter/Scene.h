@@ -63,6 +63,8 @@ protected:
 
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
 
+	CShader						*m_pWireShader = NULL;
+
 public:
 	// 충돌 체크를 검사한다.
 	virtual void CheckCollision();

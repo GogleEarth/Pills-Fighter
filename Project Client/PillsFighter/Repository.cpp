@@ -22,7 +22,7 @@ CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLis
 {
 	for (const auto& Model : m_vModels)
 	{
-		if (Model->IsName(pstrName))
+		if (!strcmp(Model->GetFileName(), pstrName))
 		{
 			return Model;
 		}

@@ -469,7 +469,7 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 {
 	m_xmf4x4ToParent = Matrix4x4::Identity();
 
-	m_pstrName = pFileName;
+	m_pstrFileName = pFileName;
 
 	FbxManager *pFbxManager = FbxManager::Create();
 	FbxIOSettings *pFbxIOS = FbxIOSettings::Create(pFbxManager, "IOSetting");

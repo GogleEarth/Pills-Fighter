@@ -134,6 +134,10 @@ protected:
 	XMFLOAT4X4		m_xmf4x4ToParent;
 	XMFLOAT4X4		m_xmf4x4World;
 
+	CModel			*m_pParent = NULL;
+	CModel			*m_pSibling = NULL;
+	CModel			*m_pChild = NULL;
+
 public:
 	void ReleaseUploadBuffers();
 
@@ -144,10 +148,10 @@ public:
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
 
 protected:
-	char			*m_pstrName = NULL;
+	char			*m_pstrFileName = NULL;
 
 public:
-	bool IsName(char *pstrName) { if(!strcmp(m_pstrName, pstrName))	return true; return false; };
+	char* GetFileName() { return m_pstrFileName; };
 
 	// 충돌처리
 public:

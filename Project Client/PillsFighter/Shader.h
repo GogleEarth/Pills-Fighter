@@ -13,15 +13,11 @@ public:
 	virtual ~CShader();
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayoutWire();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
-	virtual D3D12_RASTERIZER_DESC CreateRasterizerStateWire();
 	virtual D3D12_BLEND_DESC CreateBlendState();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateVertexShaderWire(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShaderWire(ID3DBlob **ppd3dShaderBlob);
 	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
@@ -37,13 +33,24 @@ public:
 	virtual void ReleaseUploadBuffers() {};
 
 	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void OnPrepareRenderWire(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
-	ID3D12PipelineState				*m_pd3dPipelineStateWire = NULL;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CWireShader : public CShader
+{
+public:
+	CWireShader() {};
+	virtual ~CWireShader() {};
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
