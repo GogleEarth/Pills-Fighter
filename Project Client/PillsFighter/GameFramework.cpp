@@ -538,6 +538,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pPlayer->SetGravity(m_pScene->m_fGravAcc);
 	m_pPlayer->SetScene(m_pScene);
 	m_pCamera = m_pPlayer->GetCamera();
+	m_pPlayer->SetWeapon(m_pScene->GetWeapon());
 
 	m_pPlayer->m_nAmmo = 30;
 }
