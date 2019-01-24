@@ -596,6 +596,8 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 		}
 		else
 		{
+			if (!m_LButtonDown)
+				m_pPlayer->CheckReload();
 			m_LButtonDown = TRUE;
 		}
 		break;

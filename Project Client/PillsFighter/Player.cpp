@@ -128,6 +128,7 @@ void CPlayer::Update(float fTimeElapsed)
 	ProcessBooster(fTimeElapsed);
 	ProcessOnGround(fTimeElapsed);
 	ProcessHitPoint();
+	ProcessTime(fTimeElapsed);
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
@@ -336,17 +337,46 @@ void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAA
 
 void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_pWeapon) m_pWeapon->Shot(pd3dDevice, pd3dCommandList, this);
+	if (!m_bReloading)
+	{
+		if (m_pWeapon) m_pWeapon->Shot(pd3dDevice, pd3dCommandList, this);
+	}
+}
+
+void CPlayer::CheckReload()
+{
 	if (!m_pWeapon->GetReloadedAmmo())
 	{
 		if (m_nAmmo)
-			m_pWeapon->Reload(m_nAmmo);
+		{
+			Reload();
+		}
 	}
 }
 
 void CPlayer::Reload()
 {
-	if (m_pWeapon) m_pWeapon->Reload(m_nAmmo);
+	if (!m_bReloading)
+	{
+		m_bReloading = true;
+		m_fReloadTime = m_pWeapon->GetReloadTime();
+	}
+}
+
+void CPlayer::ProcessTime(float fTimeElapsed)
+{
+	if (m_bReloading)
+	{
+		m_fReloadTime -= fTimeElapsed;
+
+		if (m_fReloadTime < 0.0f)
+		{
+			if (m_pWeapon) m_pWeapon->Reload(m_nAmmo);
+			m_bReloading = false;
+		}
+	}
+
+	printf("Reload Time : %f, Reload(%d)\n", m_fReloadTime, m_bReloading);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -354,6 +384,7 @@ void CPlayer::Reload()
 
 CWeapon::CWeapon()
 {
+	m_fReloadTime = RELOAD_TIME;
 }
 
 CWeapon::~CWeapon()

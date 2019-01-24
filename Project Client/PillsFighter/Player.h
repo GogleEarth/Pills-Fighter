@@ -18,6 +18,7 @@ class CScene;
 
 #define SHOT_COOLTIME	0.05f
 #define BURST_COOLTIME	0.5f
+#define RELOAD_TIME	3.0f
 
 class CWeapon : public CGameObject
 {
@@ -26,6 +27,9 @@ public:
 	virtual ~CWeapon();
 
 protected:
+	ID3D12Device *m_pd3dDevice = NULL;
+	ID3D12GraphicsCommandList *m_pd3dCommandList = NULL;
+
 	CObjectsShader *m_pBulletShader = NULL;
 	CPlayer	*m_pPlayer = NULL;
 
@@ -34,13 +38,13 @@ protected:
 	bool m_bBurst = false;
 	int m_nShotCount = 0;
 
-	ID3D12Device *m_pd3dDevice = NULL;
-	ID3D12GraphicsCommandList *m_pd3dCommandList = NULL;
-
 	int m_nReloadedAmmo = 0;
 	int m_nMaxReloadAmmo = 30;
 
+	float m_fReloadTime = 0.0f;
+
 public:
+	float GetReloadTime() { return m_fReloadTime; }
 	virtual void Reload(int& nAmmo);
 	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
 	int GetReloadedAmmo() { return m_nReloadedAmmo; }
@@ -149,6 +153,11 @@ protected:
 
 public:
 	int	m_nAmmo = 0;
+	bool m_bReloading = false;
+	float m_fReloadTime;
+
 	void Reload();
+	void CheckReload();
 	CWeapon* GetWeapon() { return m_pWeapon; }
+	void ProcessTime(float fTimeElapsed);
 };
