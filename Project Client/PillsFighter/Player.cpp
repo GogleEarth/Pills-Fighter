@@ -14,7 +14,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pCamera = SetCamera(0.0f);
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
+	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.fbx");
 	SetModel(pModel);
 
 	CUserInterface *pUserInterface = new CUserInterface();

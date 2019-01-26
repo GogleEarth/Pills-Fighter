@@ -13,8 +13,14 @@ CTexture::CTexture(int nTextures, UINT nTextureType, int nSamplers)
 	if (m_nTextures > 0)
 	{
 		m_pRootArgumentInfos = new SRVROOTARGUMENTINFO[m_nTextures];
+		::ZeroMemory(m_pRootArgumentInfos, sizeof(SRVROOTARGUMENTINFO) *m_nTextures);
+
 		m_ppd3dTextureUploadBuffers = new ID3D12Resource*[m_nTextures];
+
+		::ZeroMemory(m_ppd3dTextureUploadBuffers, sizeof(ID3D12Resource*) *m_nTextures);
+
 		m_ppd3dTextures = new ID3D12Resource*[m_nTextures];
+		::ZeroMemory(m_ppd3dTextures, sizeof(ID3D12Resource*) *m_nTextures);
 	}
 
 	m_nSamplers = nSamplers;
@@ -25,7 +31,8 @@ CTexture::~CTexture()
 {
 	if (m_ppd3dTextures)
 	{
-		for (int i = 0; i < m_nTextures; i++) if (m_ppd3dTextures[i]) m_ppd3dTextures[i]->Release();
+		for (int i = 0; i < m_nTextures; i++) 
+			if (m_ppd3dTextures[i]) m_ppd3dTextures[i]->Release();
 		delete[] m_ppd3dTextures;
 	}
 
@@ -109,7 +116,6 @@ std::string GetFilePath(const std::string strFileName)
 		strPathSeparator = "/";
 		nPathpos = 1 + (int)(strFileName.find_last_of(strPathSeparator));
 	}
-	std::cout << nPathpos << std::endl;
 
 	return strFileName.substr(0, nPathpos);
 }
@@ -205,10 +211,8 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 		m_xmf4SpecularColor.x = static_cast<float>(fbxd3Specular.mData[0]);
 		m_xmf4SpecularColor.y = static_cast<float>(fbxd3Specular.mData[1]);
 		m_xmf4SpecularColor.z = static_cast<float>(fbxd3Specular.mData[2]);
-
 		FbxDouble fbxd3SpecularFactor = ((FbxSurfacePhong*)pfbxMaterial)->SpecularFactor;
 		m_xmf4SpecularColor.w = static_cast<float>(fbxd3SpecularFactor);
-
 		printf("Specular(%f, %f, %f, %f)\n", m_xmf4SpecularColor.x, m_xmf4SpecularColor.y, m_xmf4SpecularColor.z, m_xmf4SpecularColor.w);
 
 		FbxDouble3 fbxd3Emissive = ((FbxSurfacePhong*)pfbxMaterial)->Emissive;
@@ -266,7 +270,6 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 	}
 
 	int nTextureIndex;
-
 	FBXSDK_FOR_EACH_TEXTURE(nTextureIndex)
 	{
 		FbxProperty fbxProperty = pfbxMaterial->FindProperty(FbxLayerElement::sTextureChannelNames[nTextureIndex]);
@@ -311,7 +314,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
 							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-							printf("Is Diffuse Map : %s\n", strFileName.c_str());
+							printf("Diffuse Map Name : [%s]\n", strFileName.c_str());
 						}
 						else if (!strcmp(pstrName, "NormalMap"))
 						{
@@ -319,7 +322,7 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
 							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false);
-							printf("Is Normal Map : %s\n", strFileName.c_str());
+							printf("Normal Map Name : [%s]\n", strFileName.c_str());
 						}
 						else if (!strcmp(pstrName, "SpecularMap"))
 						{
@@ -327,11 +330,11 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
 							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false);
-							printf("Is Normal Map : %s\n", strFileName.c_str());
+							printf("Specular Map Name : [%s]\n", strFileName.c_str());
 						}
 						else
 						{
-							printf("Do Not Support This Type[%s]\n", pstrName);
+							printf("Do Not Support %s Map\n", pstrName);
 							delete pTexture;
 
 							continue;
@@ -470,6 +473,7 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 	m_xmf4x4ToParent = Matrix4x4::Identity();
 
 	m_pstrFileName = pFileName;
+	printf("File : %s\n", m_pstrFileName);
 
 	FbxManager *pFbxManager = FbxManager::Create();
 	FbxIOSettings *pFbxIOS = FbxIOSettings::Create(pFbxManager, "IOSetting");
@@ -514,6 +518,7 @@ CModel::CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandL
 			m_ppMaterials[i]->LoadMaterialFromFBX(pd3dDevice, pd3dCommandList, pfbxMaterial, pFileName);
 			m_ppMaterials[i]->SetStandardShader();
 		}
+		printf("\n");
 	}
 	}
 

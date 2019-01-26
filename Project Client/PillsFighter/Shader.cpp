@@ -325,7 +325,7 @@ CGundamShader::~CGundamShader()
 
 void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM2.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.fbx");
 
 	RandomMoveObject *pObject = new RandomMoveObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
@@ -773,7 +773,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	xmf2Center = CalculateCenter(0.417187, 0.456250, 0.257778, -0.257778);
 	xmf2Size = CalculateSize(0.417187, 0.456250, 0.257778, -0.257778);
-	printf("Size : %f\n", xmf2Size.y/ 30.0f);
+
 	m_ppUIRects[3] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
