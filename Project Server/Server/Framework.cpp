@@ -288,7 +288,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
 		{
-
+			std::cout << "플레이어 큐 크기 : " << msg_queue.size() << std::endl;
 			PKT_PLAYER_INFO pkt;
 			if (msg_queue.empty())
 			{
@@ -312,6 +312,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
 			if (pkt.IsShooting == true)
 			{
+				std::cout << "총알생성\n";
 				pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
 				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
@@ -331,7 +332,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		// 아이템 생성 패킷 보내기(10초마다 생성)
 		if(item_cooltime >= ITEM_COOLTIME && !spawn_item)
 		{
-			std::cout << "아이템 생성" << std::endl;
+			std::cout << "아이템 생성\n";
 			PKT_ID pid = PKT_ID_CREATE_OBJECT;
 			PKT_CREATE_OBJECT bulletpkt;
 			bulletpkt.Object_Type = OBJECT_TYPE_ITEM_HEALING;

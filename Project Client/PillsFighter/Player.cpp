@@ -416,6 +416,7 @@ void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
 {
 	if (m_bBurst)
 	{
+#ifndef ON_NETWORKING
 		if (m_fShotCoolTime <= 0.0f)
 		{
 			Bullet *pBullet = NULL;
@@ -435,6 +436,10 @@ void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
 			m_nShotCount++;
 			m_nReloadedAmmo--;
 		}
+#else
+		m_nShotCount++;
+		m_nReloadedAmmo--;
+#endif
 
 		if (m_nShotCount >= 3 || m_nReloadedAmmo == 0)
 		{

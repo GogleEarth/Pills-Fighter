@@ -540,7 +540,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pCamera = m_pPlayer->GetCamera();
 	m_pPlayer->SetWeapon(m_pScene->GetWeapon());
 
-	m_pPlayer->m_nAmmo = 70;
+	m_pPlayer->m_nAmmo = 1000;
 }
 
 void CGameFramework::BuildObjects()
@@ -801,7 +801,7 @@ void CGameFramework::FrameAdvance()
 
 		pktPlayerInfo.ID = m_Client_Info;
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
-		if (m_LButtonDown) 
+		if (m_pPlayer->GetBurst())
 		{
 			pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
 			pktPlayerInfo.IsShooting = 1;
