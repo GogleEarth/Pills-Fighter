@@ -416,9 +416,9 @@ void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
 {
 	if (m_bBurst)
 	{
-#ifndef ON_NETWORKING
 		if (m_fShotCoolTime <= 0.0f)
 		{
+#ifndef ON_NETWORKING
 			Bullet *pBullet = NULL;
 			pBullet = new Bullet();
 
@@ -431,15 +431,14 @@ void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
 			pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
 			m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
+#else
+			m_pPlayer->m_bShot = true;
+#endif
 			SetShotCoolTime();
 
 			m_nShotCount++;
 			m_nReloadedAmmo--;
 		}
-#else
-		m_nShotCount++;
-		m_nReloadedAmmo--;
-#endif
 
 		if (m_nShotCount >= 3 || m_nReloadedAmmo == 0)
 		{

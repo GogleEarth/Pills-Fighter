@@ -801,10 +801,11 @@ void CGameFramework::FrameAdvance()
 
 		pktPlayerInfo.ID = m_Client_Info;
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
-		if (m_pPlayer->GetBurst())
+		if (m_pPlayer->m_bShot)
 		{
 			pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
-			pktPlayerInfo.IsShooting = 1;
+			pktPlayerInfo.IsShooting = TRUE;
+			m_pPlayer->m_bShot = false;
 		}
 		else pktPlayerInfo.IsShooting = 0;
 		PKT_ID pid = PKT_ID_PLAYER_INFO;

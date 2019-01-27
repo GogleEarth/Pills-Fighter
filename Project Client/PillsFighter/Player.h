@@ -48,7 +48,6 @@ public:
 	virtual void Reload(int& nAmmo);
 	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
 	int GetReloadedAmmo() { return m_nReloadedAmmo; }
-	bool GetBurst() { return m_bBurst; }
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 	void SetBullet(CShader *Bullet) { m_pBulletShader = (CObjectsShader*)Bullet; }
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CPlayer *pPlayer);
@@ -121,7 +120,6 @@ protected:
 
 public:
 	int GetBoosterGauge() { return m_nBoosterGauge; }
-	bool GetBurst() { return m_pWeapon->GetBurst(); }
 	void SetGravity(float fGravity) { m_fGravAcc = fGravity; }
 
 	void SetBoosterPower(float fPower) { m_fBoosterPower = fPower; }
@@ -157,6 +155,7 @@ public:
 	int	m_nAmmo = 0;
 	bool m_bReloading = false;
 	float m_fReloadTime;
+	bool m_bShot = false;
 
 	void Reload();
 	void CheckReload();
