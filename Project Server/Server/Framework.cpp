@@ -32,8 +32,6 @@ int Framework::Build()
 
 	m_pScene = new CScene();
 	m_pScene->BuildObjects();
-	m_GameTimer = new CGameTimer();
-	m_GameTimer->Tick(0.0f);
 
 	// 윈속 초기화
 	if (WSAStartup(WS22, &wsa) != 0)
@@ -254,10 +252,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 		WaitForMultipleObjects(playernum, client_Event, TRUE, INFINITE);
 		ResetEvent(Event);
 		
+		m_GameTimer.Tick(60.0f);
+		elapsed_time = m_GameTimer.GetTimeElapsed();
+
 		//서버의 시간을 모든 플레이어에게 보내줌
 		PKT_ID id_time = PKT_ID_TIME_INFO;
 		PKT_TIME_INFO server_time;
-		server_time.elapsedtime = FIXED_FRAME;
+		server_time.elapsedtime = elapsed_time;
 		retval = Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
 		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
 		if (!spawn_item)

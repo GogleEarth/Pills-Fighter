@@ -31,11 +31,12 @@ class Framework
 	CModel PlayerMesh;
 	CModel BulletMesh;
 	CModel HangarMesh;
-	CGameTimer *m_GameTimer;
+	CGameTimer m_GameTimer;
 	int playernum;
 	bool game_start = false;
 	float item_cooltime = 0.0f;
 	bool spawn_item = false;
+	float elapsed_time;
 public:
 	CScene* m_pScene;
 	Framework();
