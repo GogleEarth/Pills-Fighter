@@ -813,66 +813,63 @@ void CGameFramework::FrameAdvance()
 
 		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 		if (retval == SOCKET_ERROR)	err_display("send");
-
-		m_pktElapsedTime = 0.0f;
 	}
 
 	WaitForSingleObject(hEvent, INFINITE);
-	//if (SendComplete)
-	//{
-		m_Mutex.lock();
-		for (const auto& TimeInfo : m_vMsgTimeInfo)
-		{
-			m_fElapsedTime += TimeInfo->ElapsedTime;
-		}
-		m_vMsgTimeInfo.clear();
-		m_Mutex.unlock();
 
-		m_Mutex.lock();
+	m_Mutex.lock();
+	for (const auto& TimeInfo : m_vMsgTimeInfo)
+	{
+		m_fElapsedTime += TimeInfo->ElapsedTime;
+	}
+	m_vMsgTimeInfo.clear();
+	m_Mutex.unlock();
 
-		for (const auto& PlayerInfo : m_vMsgPlayerInfo)
-		{
-			if (PlayerInfo->ID != m_Client_Info)
-				m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
-		}
-		m_vMsgPlayerInfo.clear();
+	m_Mutex.lock();
 
-		for (const auto& PlayerLife : m_vMsgPlayerLife)
-		{
-			if (PlayerLife->ID == m_Client_Info)
-				m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - PlayerLife->HP);
-			else
-				m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
-		}
-		m_vMsgPlayerLife.clear();
+	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
+	{
+		if (PlayerInfo->ID != m_Client_Info)
+			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
+	}
+	m_vMsgPlayerInfo.clear();
 
-		for (const auto& CreateInfo : m_vMsgCreateObject)
-		{
-			CreateObject(*CreateInfo);
-		}
-		m_vMsgCreateObject.clear();
+	for (const auto& PlayerLife : m_vMsgPlayerLife)
+	{
+		if (PlayerLife->ID == m_Client_Info)
+			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - PlayerLife->HP);
+		else
+			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
+	}
+	m_vMsgPlayerLife.clear();
 
-		for (const auto& UpdateInfo : m_vMsgUpdateInfo)
-		{
-			m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)UpdateInfo);
-		}
-		m_vMsgUpdateInfo.clear();
+	for (const auto& CreateInfo : m_vMsgCreateObject)
+	{
+		CreateObject(*CreateInfo);
+	}
+	m_vMsgCreateObject.clear();
 
-		for (const auto& DelteInfo : m_vMsgDeleteObject)
-		{
-			m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
-		}
-		m_vMsgDeleteObject.clear();
+	for (const auto& UpdateInfo : m_vMsgUpdateInfo)
+	{
+		m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)UpdateInfo);
+	}
+	m_vMsgUpdateInfo.clear();
 
-		for (const auto& CreateInfo : m_vMsgCreateEffect)
-		{
-			CreateEffect(*CreateInfo);
-		}
-		m_vMsgCreateEffect.clear();
+	for (const auto& DelteInfo : m_vMsgDeleteObject)
+	{
+		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
+	}
+	m_vMsgDeleteObject.clear();
 
-		m_Mutex.unlock();
-		SendComplete = false;
-	//}
+	for (const auto& CreateInfo : m_vMsgCreateEffect)
+	{
+		CreateEffect(*CreateInfo);
+	}
+	m_vMsgCreateEffect.clear();
+
+	m_Mutex.unlock();
+	SendComplete = false;
+
 	ResetEvent(hEvent);
 #else
 	m_GameTimer.Tick(60.0f);
@@ -880,9 +877,9 @@ void CGameFramework::FrameAdvance()
 #endif
 
 	ProcessInput();
-	
+
 	AnimateObjects(m_fElapsedTime);
-	
+
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
@@ -943,7 +940,7 @@ void CGameFramework::FrameAdvance()
 
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(_countof(ppd3dCommandLists), ppd3dCommandLists);
- 
+
 	WaitForGpuComplete();
 
 	m_pdxgiSwapChain->Present(0, 0);
@@ -955,17 +952,25 @@ void CGameFramework::FrameAdvance()
 	float Screenx = ((2.0f  * ptCursorPos.x) / m_nWndClientWidth) - 1;
 	float Screeny = -((2.0f * ptCursorPos.y) / m_nWndClientHeight) + 1;
 
+#ifdef ON_NETWORKING
+	m_nFramePerSecond++;
+	m_fFPSTimeElapsed += m_fElapsedTime;
+	if (m_fFPSTimeElapsed > 1.0f)
+	{
+		m_fFrameRate = m_nFramePerSecond;
+		m_nFramePerSecond = 0;
+		m_fFPSTimeElapsed = 0.0f;
+	}
+
+	_itow_s(m_fFrameRate, m_pszCaption + strlen(GAME_TITLE), 37, 10);
+	wcscat_s(m_pszCaption + strlen(GAME_TITLE), 37, _T(" FPS)"));
+#else
 	m_GameTimer.GetFrameRate(m_pszCaption + strlen(GAME_TITLE), 37);
+#endif
 	size_t nLength = _tcslen(m_pszCaption);
 	_stprintf(m_pszCaption + nLength, _T("(%f, %f)"), Screenx, Screeny);
 
 	::SetWindowText(m_hWnd, m_pszCaption);
-
-#ifdef ON_NETWORKING
-	auto end = std::chrono::high_resolution_clock::now();
-	auto du = end - start;
-	m_pktElapsedTime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count() / 1000.0f;
-#endif
 }
 
 void CGameFramework::OnResizeBackBuffers()

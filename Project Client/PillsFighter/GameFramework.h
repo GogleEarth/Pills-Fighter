@@ -125,7 +125,6 @@ public: // for Network
 	//Ελ½Ε
 	CLIENTID m_Client_Info;
 	PKT_PLAYER_INFO m_Client_Player_Info;
-	float m_pktElapsedTime = 0.0f;
 	float m_fElapsedTime = 0.0f;
 	HANDLE hEvent;
 	bool SendComplete = false;
@@ -144,4 +143,8 @@ public: // for Network
 	void CreateEffect(PKT_CREATE_EFFECT CreateEffectInfo);
 
 	char *buf;
+
+	float m_fFrameRate = 0.0f;
+	float m_fFPSTimeElapsed = 0.0f;
+	int m_nFramePerSecond = 0;
 };
