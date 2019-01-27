@@ -153,47 +153,41 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 2/*Bullet*/ + 2/*GM*/ + 2/*Hangar*/);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 2/*Bullet*/ + 2/*GM*/ + 2/*Hangar*/ + 3/*Repair Item*/);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	// [0] Building, [1] Bullet, [2] Enemy, [3] Effect
-	m_nShaders = 4;
+	// [0] Building, [1] Bullet, [2] Enemy, [3] Effect, [4] Repair Item
+	m_nShaders = 5;
 	m_ppShaders = new CObjectsShader*[m_nShaders];
 
 	CObstacleShader *pObstacleShader = new CObstacleShader();
 	pObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pObstacleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-
 	m_ppShaders[INDEX_SHADER_OBSTACLE] = pObstacleShader;
-	//m_ppShaders[INDEX_SHADER_OBSTACLE] = NULL;
-
 
 	CGundamShader *pGundamhader = new CGundamShader();
 	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-
 	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
-	//m_ppShaders[INDEX_SHADER_ENEMY] = NULL;
-
 
 	CBulletShader *pBulletShader = new CBulletShader();
 	pBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
-	//m_ppShaders[INDEX_SHADER_BULLET] = NULL;
-
 
 	CEffectShader *pEffectShader = new CEffectShader();
 	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-
 	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
-	//m_ppShaders[INDEX_SHADER_EFFECT] = NULL;
+
+	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
+	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
 
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
@@ -581,10 +575,10 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	case OBJECT_TYPE_ITEM_HEALING:
-		pGameObject = new Bullet();
+		pGameObject = new RotateObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	}
 

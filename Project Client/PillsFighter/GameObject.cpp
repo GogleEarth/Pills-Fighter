@@ -479,6 +479,24 @@ void RandomMoveObject::Animate(float fTimeElapsed, CCamera *pCamera)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+RotateObject::RotateObject() : CGameObject()
+{
+	m_RotateSpeed = 20.0f;
+}
+
+RotateObject::~RotateObject()
+{
+}
+
+void RotateObject::Animate(float fTimeElapsed, CCamera *pCamera)
+{
+	Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
+
+	CGameObject::Animate(fTimeElapsed, pCamera);
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+
 Bullet::Bullet() : CGameObject()
 {
 	m_ElapsedTime = 0;

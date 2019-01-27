@@ -327,17 +327,26 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.fbx");
 
-	RandomMoveObject *pObject = new RandomMoveObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 10.0f));
-	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	//RandomMoveObject *pObject = new RandomMoveObject();
+	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	//pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	//InsertObject(pd3dDevice, pd3dCommandList, pObject);
+}
 
-	pObject = new RandomMoveObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -10.0f));
-	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+////////////////////////////////////////////////////////////
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+CRepairItemShader::CRepairItemShader()
+{
+}
+
+CRepairItemShader::~CRepairItemShader()
+{
+}
+
+void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.fbx");
 }
 
 ////////////////////////////////////////////////////////////
