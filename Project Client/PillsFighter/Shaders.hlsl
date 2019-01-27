@@ -57,9 +57,9 @@ struct VS_TEXTURED_OUTPUT
 	float2 uv : TEXCOORD;
 };
 
-#define MATERIAL_ALBEDO_MAP			0x01
-#define MATERIAL_SPECULAR_MAP		0x02
-#define MATERIAL_NORMAL_MAP			0x04
+#define MATERIAL_ALBEDO_MAP				0x01
+#define MATERIAL_SPECULAR_FACTOR_MAP	0x02
+#define MATERIAL_NORMAL_MAP				0x04
 
 VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 {
@@ -86,12 +86,12 @@ float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
 		f4NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
 
-	float4 f4SpecularColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-	if (gnTexturesMask & MATERIAL_SPECULAR_MAP)
-		f4SpecularColor = gtxtSpecularTexture.Sample(gssWrap, input.uv);
+	float fSpecularFactor = 0.0f;
+	if (gnTexturesMask & MATERIAL_SPECULAR_FACTOR_MAP)
+		fSpecularFactor = gtxtSpecularTexture.Sample(gssWrap, input.uv).x;
 
 	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	float4 cColor = f4AlbedoColor + f4SpecularColor;
+	float4 cColor = f4AlbedoColor;
 
 	float3 normalW = normalize(input.normalW);
 
@@ -102,7 +102,7 @@ float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 		normalW = normalize(mul(vNormal, TBN));
 	}
 
-	cIllumination = Lighting(input.positionW, normalW, gMaterial);
+	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
 
 	return(cColor * cIllumination);
 }

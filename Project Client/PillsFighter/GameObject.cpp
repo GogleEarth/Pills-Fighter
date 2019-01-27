@@ -222,8 +222,6 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 					}
 				}
 
-				printf("%f, %f, %f\n", xmf3Distance.x, xmf3Distance.y, xmf3Distance.z);
-
 				xmf3Temp = xmf3Distance;
 
 				XMFLOAT3 xmf3Position = m_xmf3Position;
@@ -301,8 +299,6 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 						}
 					}
 				}
-
-				printf("%f, %f, %f\n\n", xmf3Distance.x, xmf3Distance.y, xmf3Distance.z);
 
 				SetPosition(Vector3::Add(xmf3Position, xmf3Distance));
 

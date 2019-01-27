@@ -53,13 +53,13 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define MATERIAL_ALBEDO_MAP			0x01
-#define MATERIAL_SPECULAR_MAP		0x02
-#define MATERIAL_NORMAL_MAP			0x04
-#define MATERIAL_METALLIC_MAP		0x08
-#define MATERIAL_EMISSION_MAP		0x10
-#define MATERIAL_DETAIL_ALBEDO_MAP	0x20
-#define MATERIAL_DETAIL_NORMAL_MAP	0x40
+#define MATERIAL_ALBEDO_MAP				0x01
+#define MATERIAL_SPECULAR_FACTOR_MAP	0x02
+#define MATERIAL_NORMAL_MAP				0x04
+#define MATERIAL_METALLIC_MAP			0x08
+#define MATERIAL_EMISSION_MAP			0x10
+#define MATERIAL_DETAIL_ALBEDO_MAP		0x20
+#define MATERIAL_DETAIL_NORMAL_MAP		0x40
 
 struct CB_GAMEOBJECT_INFO;
 

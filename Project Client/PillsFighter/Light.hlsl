@@ -32,64 +32,56 @@ cbuffer cbLights : register(b3)
 	float4				gcGlobalAmbientLight;
 };
 
-float4 DirectionalLight(int nIndex, float3 vNormal, float3 vToCamera, MATERIAL material)
+float4 DirectionalLight(int nIndex, float3 vNormal, float3 vToCamera, MATERIAL material, float fSpecularFactor)
 {
 	float3 vToLight = -gLights[nIndex].m_vDirection;
 	float fDiffuseFactor = dot(vToLight, vNormal);
-	float fSpecularFactor = 0.0f;
 	if (fDiffuseFactor > 0.0f)
 	{
-		//if (gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a != 0.0f)
-		if (material.m_cSpecular.a != 0.0f)
+		if (fSpecularFactor != 0.0f)
 		{
 #ifdef _WITH_REFLECT
 			float3 vReflect = reflect(-vToLight, vNormal);
-			//fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a);
-			fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), material.m_cSpecular.a);
+			fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), fSpecularFactor);
 #else
 #ifdef _WITH_LOCAL_VIEWER_HIGHLIGHTING
 			float3 vHalf = normalize(vToCamera + vToLight);
 #else
 			float3 vHalf = float3(0.0f, 1.0f, 0.0f);
 #endif
-			//fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a);
-			fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), material.m_cSpecular.a);
+			fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), fSpecularFactor);
 #endif
 		}
 	}
 
-	//return((gLights[nIndex].m_cAmbient * gMaterials[gcbGameObjectInfo.nMaterial].m_cAmbient) + (gLights[nIndex].m_cDiffuse * fDiffuseFactor * gMaterials[gcbGameObjectInfo.nMaterial].m_cDiffuse) + (gLights[nIndex].m_cSpecular * fSpecularFactor * gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular));
 	return((gLights[nIndex].m_cAmbient * material.m_cAmbient) +
 		(gLights[nIndex].m_cDiffuse * fDiffuseFactor * material.m_cDiffuse) +
 		(gLights[nIndex].m_cSpecular * fSpecularFactor * material.m_cSpecular));
 }
 
-float4 PointLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera, MATERIAL material)
+float4 PointLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera, MATERIAL material, float fSpecularFactor)
 {
 	float3 vToLight = gLights[nIndex].m_vPosition - vPosition;
 	float fDistance = length(vToLight);
 	if (fDistance <= gLights[nIndex].m_fRange)
 	{
-		float fSpecularFactor = 0.0f;
 		vToLight /= fDistance;
 		float fDiffuseFactor = dot(vToLight, vNormal);
 		if (fDiffuseFactor > 0.0f)
 		{
 			//if (gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a != 0.0f)
-			if (material.m_cSpecular.a != 0.0f)
+			if (fSpecularFactor != 0.0f)
 			{
 #ifdef _WITH_REFLECT
 				float3 vReflect = reflect(-vToLight, vNormal);
-				f//SpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a);
-				fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), material.m_cSpecular.a);
+				fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), fSpecularFactor);
 #else
 #ifdef _WITH_LOCAL_VIEWER_HIGHLIGHTING
 				float3 vHalf = normalize(vToCamera + vToLight);
 #else
 				float3 vHalf = float3(0.0f, 1.0f, 0.0f);
 #endif
-				//fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a);
-				fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), material.m_cSpecular.a);
+				fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), fSpecularFactor);
 #endif
 			}
 		}
@@ -103,32 +95,28 @@ float4 PointLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera
 	return(float4(0.0f, 0.0f, 0.0f, 0.0f));
 }
 
-float4 SpotLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera, MATERIAL material)
+float4 SpotLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera, MATERIAL material, float fSpecularFactor)
 {
 	float3 vToLight = gLights[nIndex].m_vPosition - vPosition;
 	float fDistance = length(vToLight);
 	if (fDistance <= gLights[nIndex].m_fRange)
 	{
-		float fSpecularFactor = 0.0f;
 		vToLight /= fDistance;
 		float fDiffuseFactor = dot(vToLight, vNormal);
 		if (fDiffuseFactor > 0.0f)
 		{
-			//if (gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a != 0.0f)
-			if (material.m_cSpecular.a != 0.0f)
+			if (fSpecularFactor != 0.0f)
 			{
 #ifdef _WITH_REFLECT
 				float3 vReflect = reflect(-vToLight, vNormal);
-				//fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a);
-				fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), material.m_cSpecular.a);
+				fSpecularFactor = pow(max(dot(vReflect, vToCamera), 0.0f), fSpecularFactor);
 #else
 #ifdef _WITH_LOCAL_VIEWER_HIGHLIGHTING
 				float3 vHalf = normalize(vToCamera + vToLight);
 #else
 				float3 vHalf = float3(0.0f, 1.0f, 0.0f);
 #endif
-				//fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular.a);
-				fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), material.m_cSpecular.a);
+				fSpecularFactor = pow(max(dot(vHalf, vNormal), 0.0f), fSpecularFactor);
 #endif
 			}
 		}
@@ -140,7 +128,6 @@ float4 SpotLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera,
 #endif
 		float fAttenuationFactor = 1.0f / dot(gLights[nIndex].m_vAttenuation, float3(1.0f, fDistance, fDistance*fDistance));
 
-		//return(((gLights[nIndex].m_cAmbient * gMaterials[gcbGameObjectInfo.nMaterial].m_cAmbient) + (gLights[nIndex].m_cDiffuse * fDiffuseFactor * gMaterials[gcbGameObjectInfo.nMaterial].m_cDiffuse) + (gLights[nIndex].m_cSpecular * fSpecularFactor * gMaterials[gcbGameObjectInfo.nMaterial].m_cSpecular)) * fAttenuationFactor * fSpotFactor);
 		return(((gLights[nIndex].m_cAmbient * material.m_cAmbient) +
 			(gLights[nIndex].m_cDiffuse * fDiffuseFactor * material.m_cDiffuse) +
 			(gLights[nIndex].m_cSpecular * fSpecularFactor * material.m_cSpecular)) * fAttenuationFactor * fSpotFactor);
@@ -148,9 +135,8 @@ float4 SpotLight(int nIndex, float3 vPosition, float3 vNormal, float3 vToCamera,
 	return(float4(0.0f, 0.0f, 0.0f, 0.0f));
 }
 
-float4 Lighting(float3 vPosition, float3 vNormal, MATERIAL material)
+float4 Lighting(float3 vPosition, float3 vNormal, MATERIAL material, float fSpecularFactor)
 {
-	//float3 vCameraPosition = float3(gcbCameraInfo.vCameraPosition.x, gcbCameraInfo.vCameraPosition.y, gcbCameraInfo.vCameraPosition.z);
 	float3 vCameraPosition = float3(gvCameraPosition.x, gvCameraPosition.y, gvCameraPosition.z);
 	float3 vToCamera = normalize(vCameraPosition - vPosition);
 
@@ -161,20 +147,18 @@ float4 Lighting(float3 vPosition, float3 vNormal, MATERIAL material)
 		{
 			if (gLights[i].m_nType == DIRECTIONAL_LIGHT)
 			{
-				cColor += DirectionalLight(i, vNormal, vToCamera, material);
+				cColor += DirectionalLight(i, vNormal, vToCamera, material, fSpecularFactor);
 			}
 			else if (gLights[i].m_nType == POINT_LIGHT)
 			{
-				cColor += PointLight(i, vPosition, vNormal, vToCamera, material);
+				cColor += PointLight(i, vPosition, vNormal, vToCamera, material, fSpecularFactor);
 			}
 			else if (gLights[i].m_nType == SPOT_LIGHT)
 			{
-				cColor += SpotLight(i, vPosition, vNormal, vToCamera, material);
+				cColor += SpotLight(i, vPosition, vNormal, vToCamera, material, fSpecularFactor);
 			}
 		}
 	}
-	//cColor += (gcGlobalAmbientLight * gMaterials[gcbGameObjectInfo.nMaterial].m_cAmbient);
-	//cColor.a = gMaterials[gcbGameObjectInfo.nMaterial].m_cDiffuse.a;	
 	cColor += (gcGlobalAmbientLight * material.m_cAmbient);
 	cColor.a = material.m_cDiffuse.a;
 

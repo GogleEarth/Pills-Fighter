@@ -772,16 +772,16 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	XMFLOAT2 xmf2Size = CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
 	m_ppUIRects[0] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = CalculateCenter(-0.375000, -0.332812, 0.257778, -0.257778);
-	xmf2Size = CalculateSize(-0.375000, -0.332812, 0.257778, -0.257778);
+	xmf2Center = CalculateCenter(-0.375000f, -0.332812f, 0.257778f, -0.257778f);
+	xmf2Size = CalculateSize(-0.375000f, -0.332812f, 0.257778f, -0.257778f);
 	m_ppUIRects[1] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = CalculateCenter(0.375000, 0.417287, 0.257778, -0.257778);
-	xmf2Size = CalculateSize(0.375000, 0.417287, 0.257778, -0.257778);
+	xmf2Center = CalculateCenter(0.375000f, 0.417287f, 0.257778f, -0.257778f);
+	xmf2Size = CalculateSize(0.375000f, 0.417287f, 0.257778f, -0.257778f);
 	m_ppUIRects[2] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = CalculateCenter(0.417187, 0.456250, 0.257778, -0.257778);
-	xmf2Size = CalculateSize(0.417187, 0.456250, 0.257778, -0.257778);
+	xmf2Center = CalculateCenter(0.417187f, 0.456250f, 0.257778f, -0.257778f);
+	xmf2Size = CalculateSize(0.417187f, 0.456250f, 0.257778f, -0.257778f);
 
 	m_ppUIRects[3] = new CUIRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }

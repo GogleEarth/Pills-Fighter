@@ -307,7 +307,6 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 						CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 
 						const char *pstrName = fbxProperty.GetNameAsCStr();
-
 						if (!strcmp(pstrName, "DiffuseColor"))
 						{
 							m_nType |= MATERIAL_ALBEDO_MAP;
@@ -324,13 +323,13 @@ void CMaterial::LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false);
 							printf("Normal Map Name : [%s]\n", strFileName.c_str());
 						}
-						else if (!strcmp(pstrName, "SpecularMap"))
+						else if (!strcmp(pstrName, "SpecularFactor"))
 						{
-							m_nType |= MATERIAL_SPECULAR_MAP;
+							m_nType |= MATERIAL_SPECULAR_FACTOR_MAP;
 
 							pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pstrFileName, 0);
 							CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false);
-							printf("Specular Map Name : [%s]\n", strFileName.c_str());
+							printf("Specular Factor Map Name : [%s]\n", strFileName.c_str());
 						}
 						else
 						{

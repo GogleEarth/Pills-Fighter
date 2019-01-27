@@ -153,7 +153,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 2/*Bullet*/ + 2/*GM*/ + 2/*Hangar*/ + 3/*Repair Item*/);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
