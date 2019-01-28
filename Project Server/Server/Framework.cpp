@@ -547,7 +547,7 @@ void Framework::CheckCollision(CScene* pScene)
 						//std::cout << "장애물 : 플1 총알 충돌" << std::endl;
 						//std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
 						XMFLOAT3 position = Bullet->GetPosition();
-						position.y += 10.0f;
+						//position.y += 10.0f;
 						pktCE.efType = EFFECT_TYPE_ONE;
 						pktCE.xmf3Position = position;
 						effect_msg_queue.push(pktCE);
