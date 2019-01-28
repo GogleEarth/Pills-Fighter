@@ -106,28 +106,6 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class RandomMoveObject : public CGameObject
-{
-public:
-	RandomMoveObject();
-	virtual ~RandomMoveObject();
-
-	void InitRandomRotate();
-	virtual void Animate(float fTimeElapsed);
-
-private:
-	// 고정값
-	float m_Time; // 시간되면 방향 바꾸는 시간 
-	float m_ElapsedTime; // 행동한 시간
-	float m_Angle; // 회전한 각도
-
-	// 랜덤값
-	float m_RotateSpeed; // 회전 속도 ( 초당 회전할 각도 Angle )
-	float m_RotateAngle; // 회전해야할 각도
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 class Bullet : public CGameObject
 {
 public:

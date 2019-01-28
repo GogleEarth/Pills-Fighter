@@ -559,8 +559,9 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CTexture *pTerrainTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 0);
+	CTexture *pTerrainTexture = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Base.dds", 0);
+	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 1);
 
 	CShader *pShader = new CTerrainShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);

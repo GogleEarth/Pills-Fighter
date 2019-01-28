@@ -277,9 +277,9 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 {
 	// 지형 텍스처 배열 인덱스 0 = Base, 1 = Detail
 	float4 cBaseTexColor = gtxtTexture[0].Sample(gssWrap, input.uv0);
-	float4 cDetailTexColor = gtxtTexture[0].Sample(gssWrap, input.uv1);
+	float4 cDetailTexColor = gtxtTexture[1].Sample(gssWrap, input.uv1);
 
-	float4 cColor = input.color * saturate( (cBaseTexColor * 0.5f) + (cDetailTexColor * 0.2f));
+	float4 cColor = input.color * saturate( (cBaseTexColor * 0.1f) + (cDetailTexColor * 0.5f));
 
 	return(cColor);
 }

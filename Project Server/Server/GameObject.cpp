@@ -25,8 +25,8 @@ CGameObject::CGameObject()
 	m_fPrepareYaw = 0.0f;
 
 	m_ElapsedTime = 0;
-	m_DurationTime = 3.0f;
-	m_MovingSpeed = 500.0f;
+	m_DurationTime = 1.5f;
+	m_MovingSpeed = 750.0f;
 	m_RotationSpeed = 1440.0f;
 }
 
@@ -192,52 +192,6 @@ void CGameObject::Move(XMFLOAT3 xmf3Direction, float fDistance)
 	XMFLOAT3 xmf3Position = GetPosition();
 	xmf3Position = Vector3::Add(xmf3Position, xmf3Direction, fDistance);
 	CGameObject::SetPosition(xmf3Position);
-}
-///////////////////////////////////////////////////////////////////////////////////
-
-RandomMoveObject::RandomMoveObject() : CGameObject()
-{
-	InitRandomRotate();
-
-	m_Time = 5.0f;
-	m_MovingSpeed = 10.0f;
-}
-
-RandomMoveObject::~RandomMoveObject()
-{
-}
-
-void RandomMoveObject::InitRandomRotate()
-{
-	m_RotateAngle = (rand() % 360) + 45.0f;
-	m_RotateSpeed = m_RotateAngle / ((float)(rand() % 2) + 1.0f);
-
-	m_Angle = 0.0f;
-	m_ElapsedTime = 0.0f;
-}
-
-void RandomMoveObject::Animate(float fTimeElapsed)
-{
-	if (m_ElapsedTime >= m_Time)
-	{
-		InitRandomRotate();
-	}
-	else
-	{
-		if (m_Angle < m_RotateAngle)
-		{
-			m_Angle += m_RotateSpeed * fTimeElapsed;
-
-			if (m_Angle > m_RotateAngle) m_Angle = m_RotateAngle;
-			else Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
-		}
-		else
-			m_ElapsedTime += fTimeElapsed;
-	}
-
-	MoveForward(m_MovingSpeed * fTimeElapsed);
-
-	CGameObject::Animate(fTimeElapsed);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
