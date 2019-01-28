@@ -88,7 +88,6 @@ void CGameObject::Animate(float fTimeElapsed)
 {
 	if (m_Object_Type == OBJECT_TYPE_BULLET)
 	{
-		//std::cout << index << " bullet position.y : " << m_xmf3Position.y << std::endl;
 		if (m_ElapsedTime >= m_DurationTime)
 		{
 			Delete();

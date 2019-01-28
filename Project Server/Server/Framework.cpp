@@ -19,14 +19,6 @@ int Framework::Build()
 	int retval;
 
 	Event = CreateEvent(NULL, TRUE, FALSE, NULL);
-	
-	//std::cout << "입장 가능한 플레이어수(1~8) : ";
-	//std::cin >> playernum;
-
-	//if (playernum <= 0)
-	//	playernum = 1;
-	//else if (playernum > 8)
-	//	playernum = 8;
 
 	game_start = false;
 
@@ -263,7 +255,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
 		if (!spawn_item)
 			item_cooltime += server_time.elapsedtime;
-		//std::cout << server_time.elapsedtime << std::endl;
 
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
@@ -302,13 +293,11 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
-			//std::cout << pkt.ID << " 번 플레이어 : " << p_position.x << ", " << p_position.y << ", " << p_position.z << std::endl;
 
 			// 플레이어의 정보 전송
 			PKT_ID pid = PKT_ID_PLAYER_INFO;
 			retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 			retval = Send_msg((char*)&pkt, sizeof(pkt), 0);
-			//std::cout << "플레이어 패킷 전송\n";
 
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
 			if (pkt.IsShooting == true)
@@ -397,7 +386,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			pkt_l = life_msg_queue.front();
 			life_msg_queue.pop();
-			//std::cout << pkt_l.ID << " : " << pkt_l.HP << std::endl;
 
 			PKT_ID pid_l = PKT_ID_PLAYER_LIFE;
 			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
@@ -415,7 +403,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			pkt_ce = effect_msg_queue.front();
 			effect_msg_queue.pop();
-			//std::cout << pkt_l.ID << " : " << pkt_l.HP << std::endl;
 
 			PKT_ID pid_l = PKT_ID_CREATE_EFFECT;
 			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
@@ -426,8 +413,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 		PKT_ID pid_cpl = PKT_ID_SEND_COMPLETE;
 		retval = Send_msg((char*)&pid_cpl, sizeof(PKT_ID), 0);
 		//std::cout << "패킷 전송 완료\n";
-
-		//std::cout << m_GameTimer->GetTimeElapsed() << std::endl;
 
 		SetEvent(Event);
 	}
@@ -465,12 +450,10 @@ DWORD Framework::client_process(SOCKET arg)
 
 		if (iPktID != PKT_ID_GAME_STATE)
 		{
-			//PKT_PLAYER_INFO p_info;
 			buf = new char[nPktSize];
 			retval = recvn(client_socket, buf, nPktSize, 0);
 			if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 			
-			//memcpy(&p_info, &buf, sizeof(PKT_PLAYER_INFO));
 			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting, ((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix });
 
 			SetEvent(client_Event[((PKT_PLAYER_INFO*)buf)->ID]);
@@ -513,10 +496,7 @@ void Framework::CheckCollision(CScene* pScene)
 					{
 						if (Bullet->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
 						{
-							//std::cout << "플1 : 플2총알 충돌" << std::endl;
-							//std::cout << "0 : " << i << std::endl;
 							XMFLOAT3 position = Bullet->GetPosition();
-							//position.y += 10.0f;
 							pktCE.efType = EFFECT_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
@@ -544,10 +524,7 @@ void Framework::CheckCollision(CScene* pScene)
 				{
 					if (Bullet->GetAABB().Intersects(pScene->m_pObstacles[k]->GetAABB()))
 					{
-						//std::cout << "장애물 : 플1 총알 충돌" << std::endl;
-						//std::cout << pScene->m_pObstacles[k]->index << " : " << Bullet->index << std::endl;
 						XMFLOAT3 position = Bullet->GetPosition();
-						//position.y += 10.0f;
 						pktCE.efType = EFFECT_TYPE_ONE;
 						pktCE.xmf3Position = position;
 						effect_msg_queue.push(pktCE);
