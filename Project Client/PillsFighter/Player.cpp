@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "Repository.h"
 #include "Scene.h"
+#include "Animation.h"
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
@@ -12,10 +13,15 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
 
 	m_pCamera = SetCamera(0.0f);
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.fbx");
+	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.txt", true);
+	//CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Player/Angrybot.txt", true);
+	m_pAnimationController = new CAnimationController(1, pModel->GetAnimationSet());
+	m_pAnimationController->SetTrackAnimation(0, 0);
+
 	SetModel(pModel);
+	
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -28,6 +34,9 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	SetPlayerUpdatedContext(pTerrain);
 	SetCameraUpdatedContext(pTerrain);
+
+	//m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
+	//if(m_pRightHand) m_pRightHand->SetMesh(m_pModel->GetMesh(), NULL);
 }
 
 CPlayer::~CPlayer()
@@ -133,6 +142,8 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
+	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
+	m_pCamera->SetLookAt(xmf3LookAt);
 
 	CGameObject::Animate(fTimeElapsed);
 }

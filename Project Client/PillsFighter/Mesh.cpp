@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Mesh.h"
+#include "Model.h"
 
 CMesh::CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
@@ -14,8 +15,6 @@ CMesh::~CMesh()
 	if (m_pd3dBinormalBuffer) m_pd3dBinormalBuffer->Release();
 	if (m_pd3dTextureCoord0Buffer) m_pd3dTextureCoord0Buffer->Release();
 	if (m_pd3dTextureCoord1Buffer) m_pd3dTextureCoord1Buffer->Release();
-	if (m_pd3dMaterialIndexBuffer) m_pd3dMaterialIndexBuffer->Release();
-	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
 
 	if (m_pxmf3Positions) delete[] m_pxmf3Positions;
 	if (m_pxmf4Colors) delete[] m_pxmf4Colors;
@@ -24,8 +23,20 @@ CMesh::~CMesh()
 	if (m_pxmf3Binormals) delete[] m_pxmf3Binormals;
 	if (m_pxmf2TextureCoords0) delete[] m_pxmf2TextureCoords0;
 	if (m_pxmf2TextureCoords1) delete[] m_pxmf2TextureCoords1;
-	if (m_pnMaterialIndices) delete[] m_pnMaterialIndices;
-	if (m_pnIndices) delete[] m_pnIndices;
+
+	if (m_nSubMeshes > 0)
+	{
+		for (int i = 0; i < m_nSubMeshes; i++)
+		{
+			if (m_ppd3dSubSetIndexBuffers[i]) m_ppd3dSubSetIndexBuffers[i]->Release();
+			if (m_ppnSubSetIndices[i]) delete[] m_ppnSubSetIndices[i];
+		}
+		if (m_ppd3dSubSetIndexBuffers) delete[] m_ppd3dSubSetIndexBuffers;
+		if (m_pd3dSubSetIndexBufferViews) delete[] m_pd3dSubSetIndexBufferViews;
+
+		if (m_pnSubSetIndices) delete[] m_pnSubSetIndices;
+		if (m_ppnSubSetIndices) delete[] m_ppnSubSetIndices;
+	}
 }
 
 void CMesh::ReleaseUploadBuffers()
@@ -51,20 +62,34 @@ void CMesh::ReleaseUploadBuffers()
 	if (m_pd3dTextureCoord1UploadBuffer) m_pd3dTextureCoord1UploadBuffer->Release();
 	m_pd3dTextureCoord1UploadBuffer = NULL;
 
-	if (m_pd3dMaterialIndexUploadBuffer) m_pd3dMaterialIndexUploadBuffer->Release();
-	m_pd3dMaterialIndexUploadBuffer = NULL;
-
-	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
-	m_pd3dIndexUploadBuffer = NULL;
+	if ((m_nSubMeshes > 0) && m_ppd3dSubSetIndexUploadBuffers)
+	{
+		for (int i = 0; i < m_nSubMeshes; i++)
+		{
+			if (m_ppd3dSubSetIndexUploadBuffers[i]) m_ppd3dSubSetIndexUploadBuffers[i]->Release();
+		}
+		if (m_ppd3dSubSetIndexUploadBuffers) delete[] m_ppd3dSubSetIndexUploadBuffers;
+		m_ppd3dSubSetIndexUploadBuffers = NULL;
+	}
 };
 
-void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_pd3dIndexBuffer)
-	{
-		pd3dCommandList->IASetIndexBuffer(&m_d3dIndexBufferView);
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
+}
 
-		pd3dCommandList->DrawIndexedInstanced(m_nIndices, 1, 0, 0, 0);
+void CMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet)
+{
+	UpdateShaderVariables(pd3dCommandList);
+
+	OnPreRender(pd3dCommandList);
+
+	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
+
+	if ((m_nSubMeshes > 0) && (nSubSet < m_nSubMeshes))
+	{
+		pd3dCommandList->IASetIndexBuffer(&(m_pd3dSubSetIndexBufferViews[nSubSet]));
+		pd3dCommandList->DrawIndexedInstanced(m_pnSubSetIndices[nSubSet], 1, 0, 0, 0);
 	}
 	else
 	{
@@ -99,40 +124,44 @@ CCubeMesh::CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 	m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
 	m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
 
-	m_nIndices = 36;
-	UINT pnIndices[36];
+	m_nSubMeshes = 1;
+	m_pnSubSetIndices = new int[m_nSubMeshes];
+	m_ppnSubSetIndices = new UINT*[m_nSubMeshes];
 
-	pnIndices[0] = 3; pnIndices[1] = 1; pnIndices[2] = 0;
-	pnIndices[3] = 2; pnIndices[4] = 1; pnIndices[5] = 3;
-	pnIndices[6] = 0; pnIndices[7] = 5; pnIndices[8] = 4;
-	pnIndices[9] = 1; pnIndices[10] = 5; pnIndices[11] = 0;
-	pnIndices[12] = 3; pnIndices[13] = 4; pnIndices[14] = 7;
-	pnIndices[15] = 0; pnIndices[16] = 4; pnIndices[17] = 3;
-	pnIndices[18] = 1; pnIndices[19] = 6; pnIndices[20] = 5;
-	pnIndices[21] = 2; pnIndices[22] = 6; pnIndices[23] = 1;
-	pnIndices[24] = 2; pnIndices[25] = 7; pnIndices[26] = 6;
-	pnIndices[27] = 3; pnIndices[28] = 7; pnIndices[29] = 2;
-	pnIndices[30] = 6; pnIndices[31] = 4; pnIndices[32] = 5;
-	pnIndices[33] = 7; pnIndices[34] = 4; pnIndices[35] = 6;
+	m_ppd3dSubSetIndexBuffers = new ID3D12Resource*[m_nSubMeshes];
+	m_ppd3dSubSetIndexUploadBuffers = new ID3D12Resource*[m_nSubMeshes];
+	m_pd3dSubSetIndexBufferViews = new D3D12_INDEX_BUFFER_VIEW[m_nSubMeshes];
 
-	m_pd3dIndexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
+	m_pnSubSetIndices[0] = 36;
+	m_ppnSubSetIndices[0] = new UINT[m_pnSubSetIndices[0]];
 
-	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
-	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+	m_ppnSubSetIndices[0][0] = 3; m_ppnSubSetIndices[0][1] = 1; m_ppnSubSetIndices[0][2] = 0;
+	m_ppnSubSetIndices[0][3] = 2; m_ppnSubSetIndices[0][4] = 1; m_ppnSubSetIndices[0][5] = 3;
+	m_ppnSubSetIndices[0][6] = 0; m_ppnSubSetIndices[0][7] = 5; m_ppnSubSetIndices[0][8] = 4;
+	m_ppnSubSetIndices[0][9] = 1; m_ppnSubSetIndices[0][10] = 5; m_ppnSubSetIndices[0][11] = 0;
+	m_ppnSubSetIndices[0][12] = 3; m_ppnSubSetIndices[0][13] = 4; m_ppnSubSetIndices[0][14] = 7;
+	m_ppnSubSetIndices[0][15] = 0; m_ppnSubSetIndices[0][16] = 4; m_ppnSubSetIndices[0][17] = 3;
+	m_ppnSubSetIndices[0][18] = 1; m_ppnSubSetIndices[0][19] = 6; m_ppnSubSetIndices[0][20] = 5;
+	m_ppnSubSetIndices[0][21] = 2; m_ppnSubSetIndices[0][22] = 6; m_ppnSubSetIndices[0][23] = 1;
+	m_ppnSubSetIndices[0][24] = 2; m_ppnSubSetIndices[0][25] = 7; m_ppnSubSetIndices[0][26] = 6;
+	m_ppnSubSetIndices[0][27] = 3; m_ppnSubSetIndices[0][28] = 7; m_ppnSubSetIndices[0][29] = 2;
+	m_ppnSubSetIndices[0][30] = 6; m_ppnSubSetIndices[0][31] = 4; m_ppnSubSetIndices[0][32] = 5;
+	m_ppnSubSetIndices[0][33] = 7; m_ppnSubSetIndices[0][34] = 4; m_ppnSubSetIndices[0][35] = 6;
+
+	m_ppd3dSubSetIndexBuffers[0] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_ppnSubSetIndices[0], sizeof(UINT) * m_pnSubSetIndices[0], D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_ppd3dSubSetIndexUploadBuffers[0]);
+
+	m_pd3dSubSetIndexBufferViews[0].BufferLocation = m_ppd3dSubSetIndexBuffers[0]->GetGPUVirtualAddress();
+	m_pd3dSubSetIndexBufferViews[0].Format = DXGI_FORMAT_R32_UINT;
+	m_pd3dSubSetIndexBufferViews[0].SizeInBytes = sizeof(UINT) * m_pnSubSetIndices[0];
 }
 
 CCubeMesh::~CCubeMesh()
 {
 }
 
-void CCubeMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CCubeMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
-
-	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -170,264 +199,292 @@ CStandardMesh::~CStandardMesh()
 {
 }
 
-void CStandardMesh::LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxMesh *pfbxMesh)
+void CStandardMesh::LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile)
 {
-	int nPolygon = pfbxMesh->GetPolygonCount();
-	int nVertices = nPolygon * 3;
+	char pstrToken[64] = { 0 };
 
-	m_nVertices = nVertices;
-	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
+	m_nType |= TYPE_STANDARD_MESH;
 
-	FbxGeometryElementNormal *pFbxGeoElemNorm = pfbxMesh->GetElementNormal();
-	if(pFbxGeoElemNorm)
-		m_pxmf3Normals = new XMFLOAT3[m_nVertices];
+	fscanf_s(pFile, "%d", &m_nVertices);
+	fscanf_s(pFile, "%s", m_pstrName, (int)sizeof(m_pstrName));
 
-	FbxGeometryElementUV *pFbxGeoElemUV = pfbxMesh->GetElementUV();
-	if (pFbxGeoElemUV)
+	while (true)
 	{
-		m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
-		m_pnMaterialIndices = new int[m_nVertices];
-	}
+		char pstrToken[64] = { 0 };
+		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
 
-	FbxGeometryElementBinormal *pFbxGeoElemBinormal = pfbxMesh->GetElementBinormal();
-	if(pFbxGeoElemBinormal)
-		m_pxmf3Binormals = new XMFLOAT3[m_nVertices];
-
-	FbxGeometryElementTangent *pFbxGeoElemTangent = pfbxMesh->GetElementTangent();
-	if (pFbxGeoElemTangent)
-		m_pxmf3Tangents = new XMFLOAT3[m_nVertices];
-
-	int nIndex = 0;
-
-	for (int i = 0; i < nPolygon; i++)
-	{
-		for (int j = 0; j < 3; j++)
+		if (!strcmp(pstrToken, "<Bounds>:"))
 		{
-			int nCtrlPointIndex = pfbxMesh->GetPolygonVertex(i, j);
-			int nTextureUVIndex = pfbxMesh->GetTextureUVIndex(i, j);
-			int nIndexByCtrlPoint = pFbxGeoElemNorm->GetIndexArray().GetAt(nCtrlPointIndex);
-			int nIndexByIndex = pFbxGeoElemNorm->GetIndexArray().GetAt(nIndex);
+			BoundingBox xmAABB;
+			fscanf_s(pFile, "%f %f %f %f %f %f", &xmAABB.Center.x, &xmAABB.Center.y, &xmAABB.Center.z, &xmAABB.Extents.x, &xmAABB.Extents.y, &xmAABB.Extents.z);
+			SetAABB(xmAABB);
+		}
+		else if (!strcmp(pstrToken, "<Positions>:"))
+		{
+			m_pxmf3Positions = new XMFLOAT3[m_nVertices];
 
-			FbxVector4 fv4CtrlPoint = pfbxMesh->GetControlPointAt(nCtrlPointIndex);
-			m_pxmf3Positions[i * 3 + j] = XMFLOAT3(
-				static_cast<float>(fv4CtrlPoint.mData[0]),
-				static_cast<float>(fv4CtrlPoint.mData[1]),
-				static_cast<float>(fv4CtrlPoint.mData[2]));
+			for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%f %f %f", &m_pxmf3Positions[i].x, &m_pxmf3Positions[i].y, &m_pxmf3Positions[i].z);
 
-			auto fbxElemRefMode = pFbxGeoElemNorm->GetReferenceMode();
+			m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Positions, sizeof(XMFLOAT3) * m_nVertices,
+				D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dPositionUploadBuffer);
 
-			switch (pFbxGeoElemNorm->GetMappingMode())
+			m_d3dPositionBufferView.BufferLocation = m_pd3dPositionBuffer->GetGPUVirtualAddress();
+			m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
+			m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+		}
+		else if (!strcmp(pstrToken, "<TextureCoords>:"))
+		{
+			m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
+
+			for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%f %f", &m_pxmf2TextureCoords0[i].x, &m_pxmf2TextureCoords0[i].y);
+
+			m_pd3dTextureCoord0Buffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2TextureCoords0, sizeof(XMFLOAT2) * m_nVertices,
+				D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTextureCoord0UploadBuffer);
+
+			m_d3dTextureCoord0BufferView.BufferLocation = m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
+			m_d3dTextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
+			m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;
+		}
+		else if (!strcmp(pstrToken, "<Normals>:"))
+		{
+			m_pxmf3Normals = new XMFLOAT3[m_nVertices];
+
+			for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%f %f %f", &m_pxmf3Normals[i].x, &m_pxmf3Normals[i].y, &m_pxmf3Normals[i].z);
+
+			m_pd3dNormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Normals, sizeof(XMFLOAT3) * m_nVertices,
+				D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dNormalUploadBuffer);
+
+			m_d3dNormalBufferView.BufferLocation = m_pd3dNormalBuffer->GetGPUVirtualAddress();
+			m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+			m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+		}
+		else if (!strcmp(pstrToken, "<Binormals>:"))
+		{
+			m_pxmf3Binormals = new XMFLOAT3[m_nVertices];
+
+			for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%f %f %f", &m_pxmf3Binormals[i].x, &m_pxmf3Binormals[i].y, &m_pxmf3Binormals[i].z);
+
+			m_pd3dBinormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Binormals, sizeof(XMFLOAT3) * m_nVertices,
+				D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dBinormalUploadBuffer);
+
+			m_d3dBinormalBufferView.BufferLocation = m_pd3dBinormalBuffer->GetGPUVirtualAddress();
+			m_d3dBinormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+			m_d3dBinormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+		}
+		else if (!strcmp(pstrToken, "<Tangents>:"))
+		{
+			m_pxmf3Tangents = new XMFLOAT3[m_nVertices];
+
+			for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%f %f %f", &m_pxmf3Tangents[i].x, &m_pxmf3Tangents[i].y, &m_pxmf3Tangents[i].z);
+
+			m_pd3dTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Tangents, sizeof(XMFLOAT3) * m_nVertices,
+				D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTangentUploadBuffer);
+
+			m_d3dTangentBufferView.BufferLocation = m_pd3dTangentBuffer->GetGPUVirtualAddress();
+			m_d3dTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+			m_d3dTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+		}
+		else if (!strcmp(pstrToken, "<SubMeshes>:"))
+		{
+			fscanf_s(pFile, "%d", &m_nSubMeshes);
+			if (m_nSubMeshes > 0)
 			{
-			case FbxGeometryElement::eByControlPoint:
-				switch (fbxElemRefMode)
+				m_pnSubSetIndices = new int[m_nSubMeshes];
+				m_ppnSubSetIndices = new UINT*[m_nSubMeshes];
+
+				m_ppd3dSubSetIndexBuffers = new ID3D12Resource*[m_nSubMeshes];
+				m_ppd3dSubSetIndexUploadBuffers = new ID3D12Resource*[m_nSubMeshes];
+				m_pd3dSubSetIndexBufferViews = new D3D12_INDEX_BUFFER_VIEW[m_nSubMeshes];
+
+				for (int i = 0; i < m_nSubMeshes; i++)
 				{
-				case FbxGeometryElement::eDirect:
-				{
-					if (pFbxGeoElemNorm)
-						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]));
+					fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
 
-					if (pFbxGeoElemBinormal)
-						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]));
+					if (!strcmp(pstrToken, "<SubMesh>:"))
+					{
+						int nIndex = 0;
+						fscanf_s(pFile, "%d", &nIndex);
+						fscanf_s(pFile, "%d", &m_pnSubSetIndices[i]);
 
-					if (pFbxGeoElemTangent)
-						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nCtrlPointIndex).mData[2]));
+						if (m_pnSubSetIndices[i] > 0)
+						{
+							m_ppnSubSetIndices[i] = new UINT[m_pnSubSetIndices[i]];
 
-					if (pFbxGeoElemUV)
-						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[0]),
-							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nCtrlPointIndex).mData[1]));
+							for (int j = 0; j < m_pnSubSetIndices[nIndex]; j++)	fscanf_s(pFile, "%d", &m_ppnSubSetIndices[i][j]);
+
+							m_ppd3dSubSetIndexBuffers[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_ppnSubSetIndices[i], sizeof(UINT) * m_pnSubSetIndices[i], D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_ppd3dSubSetIndexUploadBuffers[i]);
+
+							m_pd3dSubSetIndexBufferViews[i].BufferLocation = m_ppd3dSubSetIndexBuffers[i]->GetGPUVirtualAddress();
+							m_pd3dSubSetIndexBufferViews[i].Format = DXGI_FORMAT_R32_UINT;
+							m_pd3dSubSetIndexBufferViews[i].SizeInBytes = sizeof(UINT) * m_pnSubSetIndices[i];
+						}
+					}
 				}
-				break;
-				case FbxGeometryElement::eIndexToDirect:
-				{
-					if (pFbxGeoElemNorm)
-						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]));
-
-					if (pFbxGeoElemBinormal)
-						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]));
-
-					if (pFbxGeoElemTangent)
-						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[2]));
-
-					if (pFbxGeoElemUV)
-						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[0]),
-							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nIndexByCtrlPoint).mData[1]));
-				}
-				break;
-				}
-				break;
-			case FbxGeometryElement::eByPolygonVertex:
-				switch (fbxElemRefMode)
-				{
-				case FbxGeometryElement::eDirect:
-				{
-					if (pFbxGeoElemNorm)
-						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndex).mData[2]));
-
-					if (pFbxGeoElemBinormal)
-						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndex).mData[2]));
-
-					if (pFbxGeoElemTangent)
-						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndex).mData[2]));
-
-					if (pFbxGeoElemUV)
-						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0]),
-							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]));
-				}
-				break;
-				case FbxGeometryElement::eIndexToDirect:
-				{
-					if (pFbxGeoElemNorm)
-						m_pxmf3Normals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemNorm->GetDirectArray().GetAt(nIndexByIndex).mData[2]));
-
-					if (pFbxGeoElemBinormal)
-						m_pxmf3Binormals[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemBinormal->GetDirectArray().GetAt(nIndexByIndex).mData[2]));
-
-					if (pFbxGeoElemTangent)
-						m_pxmf3Tangents[i * 3 + j] = XMFLOAT3(
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[0]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[1]),
-							static_cast<float>(pFbxGeoElemTangent->GetDirectArray().GetAt(nIndexByIndex).mData[2]));
-
-					if (pFbxGeoElemUV)
-						m_pxmf2TextureCoords0[i * 3 + j] = XMFLOAT2(
-							static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[0]),
-							1.0f - static_cast<float>(pFbxGeoElemUV->GetDirectArray().GetAt(nTextureUVIndex).mData[1]));
-				}
-				break;
-				}
-				break;
 			}
-
-			if (!pfbxMesh->GetElementMaterial())
-			{
-				if (!pfbxMesh->GetElementMaterial(1))
-					printf("Not Found Material\n");
-			}
-
-			auto fbxMaterialIndex = &(pfbxMesh->GetElementMaterial()->GetIndexArray());
-			auto fbxMaterialMappingMode = pfbxMesh->GetElementMaterial()->GetMappingMode();
-
-			switch (fbxMaterialMappingMode)
-			{
-			case FbxGeometryElement::eByPolygon:
-			{
-				m_pnMaterialIndices[i * 3 + j] = fbxMaterialIndex->GetAt(i);
-			}
+		}
+		else if (!strcmp(pstrToken, "</Mesh>"))
+		{
 			break;
-			case FbxGeometryElement::eAllSame:
-			{
-				m_pnMaterialIndices[i * 3 + j] = fbxMaterialIndex->GetAt(0);
-			}
-			break;
-			}
+		}
+	}
+}
 
-			nIndex++;
+void CStandardMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[5] = { m_d3dPositionBufferView, m_d3dNormalBufferView, m_d3dBinormalBufferView, m_d3dTangentBufferView, m_d3dTextureCoord0BufferView };
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 5, pVertexBufferViews);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+CSkinnedMesh::CSkinnedMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) : CStandardMesh(pd3dDevice, pd3dCommandList)
+{
+}
+
+CSkinnedMesh::~CSkinnedMesh()
+{
+	if (m_pxmu4BoneIndices) delete[] m_pxmu4BoneIndices;
+	if (m_pxmf4BoneWeights) delete[] m_pxmf4BoneWeights;
+
+	if (m_pxmf4x4BindPoseBoneOffsets) delete[] m_pxmf4x4BindPoseBoneOffsets;
+	if (m_ppstrSkinningBoneNames) delete[] m_ppstrSkinningBoneNames;
+
+	if (m_pd3dBoneIndexBuffer) m_pd3dBoneIndexBuffer->Release();
+	if (m_pd3dBoneWeightBuffer) m_pd3dBoneWeightBuffer->Release();
+
+	ReleaseShaderVariables();
+}
+
+void CSkinnedMesh::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = (((sizeof(XMFLOAT4X4) * SKINNED_ANIMATION_BONES) + 255) & ~255); //256의 배수
+	m_pd3dcbBoneOffsets = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+	m_pd3dcbBoneOffsets->Map(0, NULL, (void **)&m_pcbxmf4x4BoneOffsets);
+}
+
+void CSkinnedMesh::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pd3dcbBoneOffsets)
+	{
+		D3D12_GPU_VIRTUAL_ADDRESS d3dcbBoneOffsetsGpuVirtualAddress = m_pd3dcbBoneOffsets->GetGPUVirtualAddress();
+		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_BONE_OFFSETS, d3dcbBoneOffsetsGpuVirtualAddress); //Skinned Bone Offsets
+
+		for (int i = 0; i < m_nSkinningBones; i++)
+		{
+			XMStoreFloat4x4(&m_pcbxmf4x4BoneOffsets[i], XMMatrixTranspose(XMLoadFloat4x4(&m_pxmf4x4BindPoseBoneOffsets[i])));
 		}
 	}
 
-	// 정점 버퍼 생성( 위치 )
-	m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Positions, sizeof(XMFLOAT3) * m_nVertices,
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dPositionUploadBuffer);
-
-	m_d3dPositionBufferView.BufferLocation = m_pd3dPositionBuffer->GetGPUVirtualAddress();
-	m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
-	m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
-
-	// 정점 버퍼 생성( 법선 벡터 )
-	if (pFbxGeoElemNorm)
+	if (m_pd3dcbBoneTransforms)
 	{
-		m_pd3dNormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Normals, sizeof(XMFLOAT3) * m_nVertices,
-			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dNormalUploadBuffer);
+		D3D12_GPU_VIRTUAL_ADDRESS d3dcbBoneTransformsGpuVirtualAddress = m_pd3dcbBoneTransforms->GetGPUVirtualAddress();
+		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_BONE_TRANSFORMS, d3dcbBoneTransformsGpuVirtualAddress); //Skinned Bone Transforms
 
-		m_d3dNormalBufferView.BufferLocation = m_pd3dNormalBuffer->GetGPUVirtualAddress();
-		m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
-		m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
+		for (int i = 0; i < m_nSkinningBones; i++)
+		{
+			XMStoreFloat4x4(&m_pcbxmf4x4BoneTransforms[i], XMMatrixTranspose(XMLoadFloat4x4(&m_ppSkinningBoneFrameCaches[i]->GetWorldTransf())));
+			//memcpy(&m_pcbxmf4x4BoneTransforms[i], &m_ppSkinningBoneFrameCaches[i]->GetWorldTransf(), sizeof(XMFLOAT4X4));
+		}
 	}
-
-	// 정점 버퍼 생성( 종법선 벡터 )
-	if (pFbxGeoElemBinormal)
-	{
-		m_pd3dBinormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Binormals, sizeof(XMFLOAT3) * m_nVertices,
-			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dBinormalUploadBuffer);
-
-		m_d3dBinormalBufferView.BufferLocation = m_pd3dBinormalBuffer->GetGPUVirtualAddress();
-		m_d3dBinormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
-		m_d3dBinormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
-	}
-
-	// 정점 버퍼 생성( 접선 벡터 )
-	if (pFbxGeoElemTangent)
-	{
-		m_pd3dTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Tangents, sizeof(XMFLOAT3) * m_nVertices,
-			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTangentUploadBuffer);
-
-		m_d3dTangentBufferView.BufferLocation = m_pd3dTangentBuffer->GetGPUVirtualAddress();
-		m_d3dTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
-		m_d3dTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
-	}
-
-	// 정점 버퍼 생성( 텍스쳐 좌표 )
-	if (pFbxGeoElemUV)
-	{
-		m_pd3dTextureCoord0Buffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2TextureCoords0, sizeof(XMFLOAT2) * m_nVertices,
-			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTextureCoord0UploadBuffer);
-
-		m_d3dTextureCoord0BufferView.BufferLocation = m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
-		m_d3dTextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
-		m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;
-	}
-
-	XMFLOAT3 xmf3Center, xmf3Extents;
-	FindXYZ(m_pxmf3Positions, m_nVertices, xmf3Center, xmf3Extents);
-
-	SetAABB(xmf3Center, xmf3Extents);
 }
 
-void CStandardMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CSkinnedMesh::ReleaseShaderVariables()
 {
-	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-
-	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[5] = { m_d3dPositionBufferView, m_d3dNormalBufferView, m_d3dBinormalBufferView, m_d3dTangentBufferView, m_d3dTextureCoord0BufferView };
-	pd3dCommandList->IASetVertexBuffers(m_nSlot, 5, pVertexBufferViews);
-
-	CMesh::Render(pd3dCommandList);
+	if (m_pd3dcbBoneOffsets) m_pd3dcbBoneOffsets->Release();
 }
+
+void CSkinnedMesh::ReleaseUploadBuffers()
+{
+	CStandardMesh::ReleaseUploadBuffers();
+
+	if (m_pd3dBoneIndexUploadBuffer) m_pd3dBoneIndexUploadBuffer->Release();
+	m_pd3dBoneIndexUploadBuffer = NULL;
+
+	if (m_pd3dBoneWeightUploadBuffer) m_pd3dBoneWeightUploadBuffer->Release();
+	m_pd3dBoneWeightUploadBuffer = NULL;
+}
+
+void CSkinnedMesh::LoadSkinInfoFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile)
+{
+	char pstrToken[64] = { 0 };
+
+	m_nType |= TYPE_SKINNED_MESH;
+
+	fscanf_s(pFile, "%d %d", &m_nSkinningBones, &m_nVertices);
+	fscanf_s(pFile, "%s", m_pstrSkinnedMeshName, (int)sizeof(m_pstrSkinnedMeshName));
+
+	while(true)
+	{
+		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
+
+		if (!strcmp(pstrToken, "<BoneNames>:"))
+		{
+			if (m_nSkinningBones > 0)
+			{
+				m_ppstrSkinningBoneNames = new char[m_nSkinningBones][64];
+				m_ppSkinningBoneFrameCaches = new CModel*[m_nSkinningBones];
+				for (int i = 0; i < m_nSkinningBones; i++)
+				{
+					fscanf_s(pFile, "%s", m_ppstrSkinningBoneNames[i], (int)sizeof(m_ppstrSkinningBoneNames[i]));
+
+					m_ppSkinningBoneFrameCaches[i] = NULL;
+				}
+			}
+		}
+		else if (!strcmp(pstrToken, "<BoneOffsets>:"))
+		{
+			if (m_nSkinningBones > 0)
+			{
+				m_pxmf4x4BindPoseBoneOffsets = new XMFLOAT4X4[m_nSkinningBones];
+				for (int i = 0; i < m_nSkinningBones; i++)
+				{
+					fscanf_s(pFile, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+						&m_pxmf4x4BindPoseBoneOffsets[i]._11, &m_pxmf4x4BindPoseBoneOffsets[i]._12, &m_pxmf4x4BindPoseBoneOffsets[i]._13, &m_pxmf4x4BindPoseBoneOffsets[i]._14,
+						&m_pxmf4x4BindPoseBoneOffsets[i]._21, &m_pxmf4x4BindPoseBoneOffsets[i]._22, &m_pxmf4x4BindPoseBoneOffsets[i]._23, &m_pxmf4x4BindPoseBoneOffsets[i]._24,
+						&m_pxmf4x4BindPoseBoneOffsets[i]._31, &m_pxmf4x4BindPoseBoneOffsets[i]._32, &m_pxmf4x4BindPoseBoneOffsets[i]._33, &m_pxmf4x4BindPoseBoneOffsets[i]._34,
+						&m_pxmf4x4BindPoseBoneOffsets[i]._41, &m_pxmf4x4BindPoseBoneOffsets[i]._42, &m_pxmf4x4BindPoseBoneOffsets[i]._43, &m_pxmf4x4BindPoseBoneOffsets[i]._44);
+				}
+			}
+		}
+		else if (!strcmp(pstrToken, "<BoneIndices>:"))
+		{
+			if (m_nVertices > 0)
+			{
+				m_pxmu4BoneIndices = new XMUINT4[m_nVertices];
+				for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%d %d %d %d", &m_pxmu4BoneIndices[i].x, &m_pxmu4BoneIndices[i].y, &m_pxmu4BoneIndices[i].z, &m_pxmu4BoneIndices[i].w);
+				m_pd3dBoneIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmu4BoneIndices, sizeof(XMUINT4) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dBoneIndexUploadBuffer);
+
+				m_d3dBoneIndexBufferView.BufferLocation = m_pd3dBoneIndexBuffer->GetGPUVirtualAddress();
+				m_d3dBoneIndexBufferView.StrideInBytes = sizeof(XMUINT4);
+				m_d3dBoneIndexBufferView.SizeInBytes = sizeof(XMUINT4) * m_nVertices;
+			}
+		}
+		else if (!strcmp(pstrToken, "<BoneWeights>:"))
+		{
+			if (m_nVertices > 0)
+			{
+				m_pxmf4BoneWeights = new XMFLOAT4[m_nVertices];
+				for (int i = 0; i < m_nVertices; i++) fscanf_s(pFile, "%f %f %f %f", &m_pxmf4BoneWeights[i].x, &m_pxmf4BoneWeights[i].y, &m_pxmf4BoneWeights[i].z, &m_pxmf4BoneWeights[i].w);
+				m_pd3dBoneWeightBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf4BoneWeights, sizeof(XMFLOAT4) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dBoneWeightUploadBuffer);
+
+				m_d3dBoneWeightBufferView.BufferLocation = m_pd3dBoneWeightBuffer->GetGPUVirtualAddress();
+				m_d3dBoneWeightBufferView.StrideInBytes = sizeof(XMFLOAT4);
+				m_d3dBoneWeightBufferView.SizeInBytes = sizeof(XMFLOAT4) * m_nVertices;
+			}
+		}
+		else if (!strcmp(pstrToken, "</SkinningInfo>"))
+		{
+			break;
+		}
+	}
+}
+
+void CSkinnedMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[7] = { m_d3dPositionBufferView, m_d3dNormalBufferView, m_d3dBinormalBufferView, m_d3dTangentBufferView, m_d3dTextureCoord0BufferView, m_d3dBoneIndexBufferView, m_d3dBoneWeightBufferView };
+	pd3dCommandList->IASetVertexBuffers(m_nSlot, 7, pVertexBufferViews);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -473,14 +530,10 @@ void CUIRect::ReleaseUploadBuffers()
 	CMesh::ReleaseUploadBuffers();
 }
 
-void CUIRect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CUIRect::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[2] = { m_d3dPositionBufferView, m_d3dSizeBufferView };
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 2, pVertexBufferViews);
-
-	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -596,10 +649,8 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pxmf3Positions = new XMFLOAT3[m_nVertices];
 	m_pxmf4Colors = new XMFLOAT4[m_nVertices];
-	//m_pxmf3Normals = new XMFLOAT3[m_nVertices];
 	m_pxmf2TextureCoords0 = new XMFLOAT2[m_nVertices];
 	m_pxmf2TextureCoords1 = new XMFLOAT2[m_nVertices];
-	//m_pnTextureNumbers = new UINT[m_nVertices];
 
 	float fHeight = 0.0f, fMinHeight = +FLT_MAX, fMaxHeight = -FLT_MAX;
 	for (int i = 0, z = zStart; z < (zStart + nLength); z++)
@@ -633,12 +684,6 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_d3dColorBufferView.StrideInBytes = sizeof(XMFLOAT4);
 	m_d3dColorBufferView.SizeInBytes = sizeof(XMFLOAT4) * m_nVertices;
 
-	//m_pd3dNormalBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf3Normals, sizeof(XMFLOAT3) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dNormalUploadBuffer);
-
-	//m_d3dNormalBufferView.BufferLocation = m_pd3dNormalBuffer->GetGPUVirtualAddress();
-	//m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
-	//m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * m_nVertices;
-
 	m_pd3dTextureCoord0Buffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pxmf2TextureCoords0, sizeof(XMFLOAT2) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTextureCoord0UploadBuffer);
 
 	m_d3dTextureCoord0BufferView.BufferLocation = m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
@@ -651,14 +696,16 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_d3dTextureCoord1BufferView.StrideInBytes = sizeof(XMFLOAT2);
 	m_d3dTextureCoord1BufferView.SizeInBytes = sizeof(XMFLOAT2) * m_nVertices;
 
-	//m_pd3TextureNumberBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnTextureNumbers, sizeof(UINT) * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dTextureNumberUploadBuffer);
+	m_nSubMeshes = 1;
+	m_pnSubSetIndices = new int[m_nSubMeshes];
+	m_ppnSubSetIndices = new UINT*[m_nSubMeshes];
 
-	//m_d3dTextureNumberBufferView.BufferLocation = m_pd3TextureNumberBuffer->GetGPUVirtualAddress();
-	//m_d3dTextureNumberBufferView.StrideInBytes = sizeof(UINT);
-	//m_d3dTextureNumberBufferView.SizeInBytes = sizeof(UINT) * m_nVertices;
+	m_ppd3dSubSetIndexBuffers = new ID3D12Resource*[m_nSubMeshes];
+	m_ppd3dSubSetIndexUploadBuffers = new ID3D12Resource*[m_nSubMeshes];
+	m_pd3dSubSetIndexBufferViews = new D3D12_INDEX_BUFFER_VIEW[m_nSubMeshes];
 
-	m_nIndices = ((nWidth * 2)*(nLength - 1)) + ((nLength - 1) - 1);
-	m_pnIndices = new UINT[m_nIndices];
+	m_pnSubSetIndices[0] = ((nWidth * 2)*(nLength - 1)) + ((nLength - 1) - 1);
+	m_ppnSubSetIndices[0] = new UINT[m_pnSubSetIndices[0]];
 
 	for (int j = 0, z = 0; z < nLength - 1; z++)
 	{
@@ -666,27 +713,27 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		{
 			for (int x = 0; x < nWidth; x++)
 			{
-				if ((x == 0) && (z > 0)) m_pnIndices[j++] = (UINT)(x + (z * nWidth));
-				m_pnIndices[j++] = (UINT)(x + (z * nWidth));
-				m_pnIndices[j++] = (UINT)((x + (z * nWidth)) + nWidth);
+				if ((x == 0) && (z > 0)) m_ppnSubSetIndices[0][j++] = (UINT)(x + (z * nWidth));
+				m_ppnSubSetIndices[0][j++] = (UINT)(x + (z * nWidth));
+				m_ppnSubSetIndices[0][j++] = (UINT)((x + (z * nWidth)) + nWidth);
 			}
 		}
 		else
 		{
 			for (int x = nWidth - 1; x >= 0; x--)
 			{
-				if (x == (nWidth - 1)) m_pnIndices[j++] = (UINT)(x + (z * nWidth));
-				m_pnIndices[j++] = (UINT)(x + (z * nWidth));
-				m_pnIndices[j++] = (UINT)((x + (z * nWidth)) + nWidth);
+				if (x == (nWidth - 1)) m_ppnSubSetIndices[0][j++] = (UINT)(x + (z * nWidth));
+				m_ppnSubSetIndices[0][j++] = (UINT)(x + (z * nWidth));
+				m_ppnSubSetIndices[0][j++] = (UINT)((x + (z * nWidth)) + nWidth);
 			}
 		}
 	}
 
-	m_pd3dIndexBuffer = CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
+	m_ppd3dSubSetIndexBuffers[0] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_ppnSubSetIndices[0], sizeof(UINT) * m_pnSubSetIndices[0], D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_ppd3dSubSetIndexUploadBuffers[0]);
 
-	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
-	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+	m_pd3dSubSetIndexBufferViews[0].BufferLocation = m_ppd3dSubSetIndexBuffers[0]->GetGPUVirtualAddress();
+	m_pd3dSubSetIndexBufferViews[0].Format = DXGI_FORMAT_R32_UINT;
+	m_pd3dSubSetIndexBufferViews[0].SizeInBytes = sizeof(UINT) * m_pnSubSetIndices[0];
 
 	XMFLOAT3 xmf3Center;
 	XMFLOAT3 xmf3Extents;
@@ -738,15 +785,11 @@ void CHeightMapGridMesh::ReleaseUploadBuffers()
 	m_pd3dTextureNumberUploadBuffer = NULL;
 }
 
-void CHeightMapGridMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CHeightMapGridMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-
 	//D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[5] = { m_d3dPositionBufferView, m_d3dColorBufferView, m_d3dNormalBufferView, m_d3dTextureCoord0BufferView, m_d3dTextureCoord1BufferView};
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[4] = { m_d3dPositionBufferView, m_d3dColorBufferView, m_d3dTextureCoord0BufferView, m_d3dTextureCoord1BufferView};
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 4, pVertexBufferViews);
-
-	CMesh::Render(pd3dCommandList);
 }
 
 
@@ -814,13 +857,9 @@ CSkyBoxMesh::~CSkyBoxMesh()
 {
 }
 
-void CSkyBoxMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CSkyBoxMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
-
-	CMesh::Render(pd3dCommandList);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -867,12 +906,8 @@ CRectMesh::~CRectMesh()
 
 }
 
-void CRectMesh::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CRectMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	pd3dCommandList->IASetPrimitiveTopology(m_d3dPrimitiveTopology);
-
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[2] = { m_d3dPositionBufferView, m_d3dTextureCoord0BufferView };
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 2, pVertexBufferViews);
-
-	pd3dCommandList->DrawInstanced(m_nVertices, 1, m_nOffset, 0);
 }

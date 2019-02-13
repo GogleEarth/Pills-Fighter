@@ -4,6 +4,7 @@
 
 class CCamera;
 class CShader;
+class CAnimationSet;
 
 #define RESOURCE_TEXTURE2D			0x01
 #define RESOURCE_TEXTURE2D_ARRAY	0x02	//[]
@@ -70,14 +71,18 @@ public:
 	virtual ~CMaterial();
 
 protected:
-	XMFLOAT4						m_xmf4AlbedoColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4						m_xmf4DiffuseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	XMFLOAT4						m_xmf4EmissiveColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4						m_xmf4ReflectionColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	UINT							m_nType = 0x00;
 
-	float							m_fGlossiness = 0.0f;
+	float							m_fShininess = 0.0f;
+	float							m_fTransparency = 0.0f;
+
+
 	float							m_fSmoothness = 0.0f;
 	float							m_fSpecularHighlight = 0.0f;
 	float							m_fMetallic = 0.0f;
@@ -96,7 +101,7 @@ public:
 	void ReleaseUploadBuffers();
 
 public:
-	void LoadMaterialFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxSurfaceMaterial *pfbxMaterial, const char *pstrFilePath);
+	void LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFilePath);
 
 public:
 	CShader							*m_pShader = NULL;
@@ -119,7 +124,6 @@ class CModel
 {
 public:
 	CModel();
-	CModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pFileName);
 	virtual ~CModel();
 
 protected:
@@ -129,8 +133,6 @@ protected:
 	int				m_nMaterials;
 	CMaterial		**m_ppMaterials = NULL;
 
-	bool			m_bHasAnimation = false;
-
 	XMFLOAT4X4		m_xmf4x4ToParent;
 	XMFLOAT4X4		m_xmf4x4World;
 
@@ -138,27 +140,60 @@ protected:
 	CModel			*m_pSibling = NULL;
 	CModel			*m_pChild = NULL;
 
-	int				m_nMeshes = 0;
+	char			m_pstrModelName[64] = { 0 };
+
+	CAnimationSet	*m_pAnimationSet = NULL;
 
 public:
 	void ReleaseUploadBuffers();
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcbGameObject, CB_GAMEOBJECT_INFO *pcbMappedGameObject);
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, ID3D12Resource **ppd3dcbGameObject, CB_GAMEOBJECT_INFO** ppcbMappedGameObject, int *pnIndex);
 
-	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
+	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
+	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
+	CAnimationSet* GetAnimationSet() { return m_pAnimationSet; }
 
-protected:
-	char			*m_pstrFileName = NULL;
+	CMesh* GetMesh() { return m_pMesh; }
 
 public:
-	char* GetFileName() { return m_pstrFileName; };
+	void SetChild(CModel *pChild);
+	void SetToParent(XMFLOAT4X4 xmf4x4ToParent) { m_xmf4x4ToParent = xmf4x4ToParent; }
+	const char* GetModelName() { return m_pstrModelName; };
 
-	// 충돌처리
+	XMFLOAT4X4 GetToParent() { return m_xmf4x4ToParent; }
+
 public:
 	void UpdateCollisionBox(BoundingBox *pxmAABB, int *pnIndex);
 	void UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent);
 
-	int GetMeshes() { return m_nMeshes; }
+	void GetMeshes(int *pnStandardMeshes, int *pnSkinnedMeshes);
+	void GetSkinnedMeshes(CSkinnedMesh **pMesh, int *nIndex);
+
+public:
+	CModel* FindFrame(const char *pstrFrame);
+	void CacheSkinningBoneFrames(CModel *pRootModel);
+
+	
+public: // Root Model
+	const char* GetFileName() { return m_pstrFileName; };
+	void SetModelMeshCount(int nStandardMeshes, int nSkinnedMeshes) { m_nStandardMeshes = nStandardMeshes; m_nSkinnedMeshes = nSkinnedMeshes; }
+	void SetFileName(const char *pstrFileName) { m_pstrFileName = pstrFileName; }
+
+	int GetStandardMeshes() { return m_nStandardMeshes; }
+	int GetSkinnedMeshes() { return m_nSkinnedMeshes; }
+	
+protected:
+	// Root Model = Total
+	int				m_nStandardMeshes = 0;
+	int				m_nSkinnedMeshes = 0;
+
+	const char		*m_pstrFileName = NULL;
+
+public:
+	static CModel* LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation);
+	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFileName, const char *pstrFilePath);
+	static CAnimationSet* LoadAnimationFromFile(FILE *pFile, CModel *pModel);
 };

@@ -529,7 +529,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	}
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
-	pPlayer->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	pPlayer->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
 

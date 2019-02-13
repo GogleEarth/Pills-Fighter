@@ -1,5 +1,9 @@
 #pragma once
-#include"fbxsdk.h"
+
+#define TYPE_STANDARD_MESH	0x01
+#define	TYPE_SKINNED_MESH	0x02
+
+class CModel;
 
 class CMesh
 {
@@ -18,7 +22,6 @@ protected:
 	XMFLOAT3						*m_pxmf3Binormals = NULL;
 	XMFLOAT2						*m_pxmf2TextureCoords0 = NULL;
 	XMFLOAT2						*m_pxmf2TextureCoords1 = NULL;
-	int								*m_pnMaterialIndices = NULL;
 
 	ID3D12Resource					*m_pd3dPositionBuffer = NULL;
 	ID3D12Resource					*m_pd3dPositionUploadBuffer = NULL;
@@ -48,29 +51,36 @@ protected:
 	ID3D12Resource					*m_pd3dTextureCoord1UploadBuffer = NULL;
 	D3D12_VERTEX_BUFFER_VIEW		m_d3dTextureCoord1BufferView;
 
-	ID3D12Resource					*m_pd3dMaterialIndexBuffer = NULL;
-	ID3D12Resource					*m_pd3dMaterialIndexUploadBuffer = NULL;
-	D3D12_VERTEX_BUFFER_VIEW		m_d3dMaterialIndexBufferView;
+	int								m_nSubMeshes = 0;
+	int								*m_pnSubSetIndices = NULL;
+	UINT							**m_ppnSubSetIndices = NULL;
 
-	UINT							m_nIndices = 0;
-	UINT							*m_pnIndices = NULL;
+	ID3D12Resource					**m_ppd3dSubSetIndexBuffers = NULL;
+	ID3D12Resource					**m_ppd3dSubSetIndexUploadBuffers = NULL;
+	D3D12_INDEX_BUFFER_VIEW			*m_pd3dSubSetIndexBufferViews = NULL;
 
-	ID3D12Resource					*m_pd3dIndexBuffer = NULL;
-	ID3D12Resource					*m_pd3dIndexUploadBuffer = NULL;
-	D3D12_INDEX_BUFFER_VIEW			m_d3dIndexBufferView;
+	char							m_pstrName[64] = { 0 };
+	int								m_nType = 0x00;
 
 public:
 	CMesh() {};
 	CMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CMesh();
 
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) { }
+	virtual void ReleaseShaderVariables() { }
+
 	virtual void ReleaseUploadBuffers();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet);
 
 	BoundingBox m_xmAABB;
 	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
+	void SetAABB(BoundingBox xmAABB) { m_xmAABB = xmAABB; }
 	XMFLOAT3& GetExtents() { return m_xmAABB.Extents; }
 	XMFLOAT3& GetCenter() { return m_xmAABB.Center; }
+	int GetMeshType() { return m_nType; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +91,7 @@ public:
 	CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, XMFLOAT3 xmf3Extents);
 	virtual ~CCubeMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,8 +103,61 @@ public:
 	CStandardMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CStandardMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
-	void LoadMeshFromFBX(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FbxMesh *pfbxMesh);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	void LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define SKINNED_ANIMATION_BONES		128
+
+class CSkinnedMesh : public CStandardMesh
+{
+public:
+	CSkinnedMesh() {}
+	CSkinnedMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual ~CSkinnedMesh();
+
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	void LoadSkinInfoFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile);
+
+protected:
+	char						m_pstrSkinnedMeshName[64] = { 0 };
+
+	int							m_nBonesPerVertex = 4;
+
+	XMUINT4						*m_pxmu4BoneIndices = NULL;
+	XMFLOAT4					*m_pxmf4BoneWeights = NULL;
+
+	ID3D12Resource				*m_pd3dBoneIndexBuffer = NULL;
+	ID3D12Resource				*m_pd3dBoneIndexUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW	m_d3dBoneIndexBufferView;
+
+	ID3D12Resource				*m_pd3dBoneWeightBuffer = NULL;
+	ID3D12Resource				*m_pd3dBoneWeightUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW	m_d3dBoneWeightBufferView;
+
+public:
+	int							m_nSkinningBones = 0;
+
+	char						(*m_ppstrSkinningBoneNames)[64];
+	XMFLOAT4X4					*m_pxmf4x4BindPoseBoneOffsets = NULL;
+
+	CModel						**m_ppSkinningBoneFrameCaches = NULL;
+
+	ID3D12Resource				*m_pd3dcbBoneOffsets = NULL;
+	XMFLOAT4X4					*m_pcbxmf4x4BoneOffsets = NULL;
+
+	ID3D12Resource				*m_pd3dcbBoneTransforms = NULL;
+	XMFLOAT4X4					*m_pcbxmf4x4BoneTransforms = NULL;
+
+public:
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void ReleaseUploadBuffers();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +178,7 @@ public:
 	virtual ~CUIRect();
 
 	void ReleaseUploadBuffers();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 
@@ -169,7 +232,7 @@ public:
 	virtual XMFLOAT4 OnGetColor(int x, int z, void *pContext);
 
 	virtual void ReleaseUploadBuffers();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +243,7 @@ public:
 	CSkyBoxMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth = 20.0f, float fHeight = 20.0f, float fDepth = 20.0f);
 	virtual ~CSkyBoxMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,5 +255,5 @@ public:
 	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight);
 	virtual ~CRectMesh();
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };

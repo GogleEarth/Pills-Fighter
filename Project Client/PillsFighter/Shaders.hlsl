@@ -20,11 +20,11 @@ cbuffer cbCameraInfo : register(b1)
 	float3		gvCameraPosition : packoffset(c8);
 };
 
-cbuffer cbTextureSprite : register(b5)
+cbuffer cbTextureSprite : register(b4)
 {
 	float4	gfTextureSpriteInfo : packoffset(c0);
 };
-
+// b0 ~ b6
 #include "Light.hlsl"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,22 +38,22 @@ TextureCube gtxtSkyCubeTexture : register(t6);
 SamplerState gssWrap : register(s0);
 SamplerState gssClamp : register(s1);
 
-struct VS_TEXTURED_INPUT
+struct VS_STANDARD_INPUT
 {
 	float3 position : POSITION;
 	float3 normal : NORMAL;
 	float3 binormal : BINORMAL;
-	float3 tangen : TANGENT;
+	float3 tangent : TANGENT;
 	float2 uv : TEXCOORD;
 };
 
-struct VS_TEXTURED_OUTPUT
+struct VS_STANDARD_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float3 positionW : POSITION;
 	float3 normalW : NORMAL;
 	float3 binormalW : BINORMAL;
-	float3 tangenW : TANGENT;
+	float3 tangentW : TANGENT;
 	float2 uv : TEXCOORD;
 };
 
@@ -61,13 +61,13 @@ struct VS_TEXTURED_OUTPUT
 #define MATERIAL_SPECULAR_FACTOR_MAP	0x02
 #define MATERIAL_NORMAL_MAP				0x04
 
-VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
+VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 {
-	VS_TEXTURED_OUTPUT output;
+	VS_STANDARD_OUTPUT output;
 	
 	output.normalW = mul(input.normal, (float3x3)gmtxGameObject);
 	output.binormalW = mul(input.binormal, (float3x3)gmtxGameObject);
-	output.tangenW = mul(input.tangen, (float3x3)gmtxGameObject);
+	output.tangentW = mul(input.tangent, (float3x3)gmtxGameObject);
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gmtxGameObject);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
@@ -75,7 +75,7 @@ VS_TEXTURED_OUTPUT VSTextured(VS_TEXTURED_INPUT input)
 	return(output);
 }
 
-float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
+float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
 	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -97,7 +97,7 @@ float4 PSTextured(VS_TEXTURED_OUTPUT input) : SV_TARGET
 
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
 	{
-		float3x3 TBN = float3x3(normalize(input.tangenW), normalize(input.binormalW), normalW);
+		float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.binormalW), normalW);
 		float3 vNormal = normalize(f4NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
 		normalW = normalize(mul(vNormal, TBN));
 	}
@@ -136,7 +136,65 @@ float4 PSWire(VS_WIRE_OUTPUT input) : SV_TARGET
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-cbuffer cbUIInfo : register(b4)
+#define MAX_VERTEX_INFLUENCES			4
+#define SKINNED_ANIMATION_BONES			128
+
+cbuffer cbBoneOffsets : register(b5)
+{
+	float4x4 gpmtxBoneOffsets[SKINNED_ANIMATION_BONES];
+};
+
+cbuffer cbBoneTransforms : register(b6)
+{
+	float4x4 gpmtxBoneTransforms[SKINNED_ANIMATION_BONES];
+};
+
+struct VS_SKINNED_STANDARD_INPUT
+{
+	float3 position : POSITION;
+	float3 normal : NORMAL;
+	float3 binormal : BINORMAL;
+	float3 tangent : TANGENT;
+	float2 uv : TEXCOORD;
+	uint4 indices : BONEINDEX;
+	float4 weights : BONEWEIGHT;
+};
+
+VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
+{
+	VS_STANDARD_OUTPUT output;
+
+	output.positionW = float3(0.0f, 0.0f, 0.0f);
+	output.normalW = float3(0.0f, 0.0f, 0.0f);
+	output.tangentW = float3(0.0f, 0.0f, 0.0f);
+	output.binormalW = float3(0.0f, 0.0f, 0.0f);
+
+	matrix mtxVertexToBoneWorld;
+
+	for (int i = 0; i < MAX_VERTEX_INFLUENCES; i++)
+	{
+		if (input.weights[i] < 0.00000001)
+			continue;
+
+		mtxVertexToBoneWorld = mul(gpmtxBoneOffsets[input.indices[i]], gpmtxBoneTransforms[input.indices[i]]);
+		//mtxVertexToBoneWorld = gpmtxBoneOffsets[input.indices[i]];
+		//mtxVertexToBoneWorld = gpmtxBoneTransforms[input.indices[i]];
+		output.positionW += input.weights[i] * mul(float4(input.position, 1.0f), mtxVertexToBoneWorld).xyz;
+		output.normalW += input.weights[i] * mul(input.normal, (float3x3)mtxVertexToBoneWorld);
+		output.tangentW += input.weights[i] * mul(input.tangent, (float3x3)mtxVertexToBoneWorld);
+		output.binormalW += input.weights[i] * mul(input.binormal, (float3x3)mtxVertexToBoneWorld);
+	}
+
+	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
+	output.uv = input.uv;
+
+	return(output);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+cbuffer cbUIInfo : register(b3)
 {
 	int		giMaxValue;// : packoffset(c0.x);
 	int		giValue; //: packoffset(c0.y);
@@ -279,7 +337,7 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	float4 cBaseTexColor = gtxtTexture[0].Sample(gssWrap, input.uv0);
 	float4 cDetailTexColor = gtxtTexture[1].Sample(gssWrap, input.uv1);
 
-	float4 cColor = input.color * saturate( (cBaseTexColor * 0.1f) + (cDetailTexColor * 0.5f));
+	float4 cColor = input.color * saturate( (cBaseTexColor * 0.5f) + (cDetailTexColor * 0.5f));
 
 	return(cColor);
 }

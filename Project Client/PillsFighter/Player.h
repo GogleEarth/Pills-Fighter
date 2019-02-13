@@ -118,6 +118,8 @@ protected:
 	float				m_fBoosterPower = 0.0f;
 	float				m_fGravity = 0.0f;
 
+	CModel				*m_pRightHand = NULL;
+
 public:
 	int GetBoosterGauge() { return m_nBoosterGauge; }
 	void SetGravity(float fGravity) { m_fGravAcc = fGravity; }

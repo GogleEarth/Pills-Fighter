@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Repository.h"
 
-
 CRepository::CRepository()
 {
 }
@@ -18,17 +17,17 @@ CRepository::~CRepository()
 	}
 }
 
-CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrName)
+CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation)
 {
 	for (const auto& Model : m_vModels)
 	{
-		if (!strcmp(Model->GetFileName(), pstrName))
+		if (!strcmp(Model->GetFileName(), pstrFileName))
 		{
 			return Model;
 		}
 	}
 
-	CModel *pModel = new CModel(pd3dDevice, pd3dCommandList, pstrName);
+	CModel *pModel = CModel::LoadGeometryAndAnimationFromFile(pd3dDevice, pd3dCommandList, pstrFileName, bHasAnimation);
 	m_vModels.emplace_back(pModel);
 
 	return pModel;

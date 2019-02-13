@@ -3,6 +3,7 @@
 #include "DDSTextureLoader12.h"
 #include "Repository.h"
 #include "Scene.h"
+#include "Animation.h"
 
 CShader::CShader()
 {
@@ -163,6 +164,41 @@ void CShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+CSkinnedAnimationShader::CSkinnedAnimationShader()
+{
+}
+
+CSkinnedAnimationShader::~CSkinnedAnimationShader()
+{
+}
+
+D3D12_INPUT_LAYOUT_DESC CSkinnedAnimationShader::CreateInputLayout()
+{
+	UINT nInputElementDescs = 7;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "NORMAL", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "BINORMAL", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "TANGENT", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "TEXCOORD", 0,		DXGI_FORMAT_R32G32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[5] = { "BONEINDEX", 0,	DXGI_FORMAT_R32G32B32A32_UINT, 5, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[6] = { "BONEWEIGHT", 0,	DXGI_FORMAT_R32G32B32A32_FLOAT, 6, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_SHADER_BYTECODE CSkinnedAnimationShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 
 D3D12_RASTERIZER_DESC CWireShader::CreateRasterizerState() 
 { 
@@ -274,8 +310,8 @@ void CObjectsShader::CheckDeleteObjects()
 
 void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
 {
-	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pObject->SetModel(m_pModel);
+	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	m_vObjects.emplace_back(pObject);
 }
@@ -298,6 +334,97 @@ void CObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCam
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CSkinnedObjectsShader::CSkinnedObjectsShader()
+{
+
+}
+
+CSkinnedObjectsShader::~CSkinnedObjectsShader()
+{
+}
+
+void CSkinnedObjectsShader::ReleaseShaderVariables()
+{
+	for (const auto& Object : m_vObjects)
+	{
+		Object->ReleaseShaderVariables();
+	}
+
+	CSkinnedAnimationShader::ReleaseShaderVariables();
+}
+
+void CSkinnedObjectsShader::ReleaseObjects()
+{
+	if (m_vObjects.size())
+	{
+		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
+		{
+			(*Object)->SetModel(NULL);
+			delete *Object;
+			Object = m_vObjects.erase(Object);
+		}
+	}
+}
+
+void CSkinnedObjectsShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
+{
+	CheckDeleteObjects();
+
+	for (const auto& Object : m_vObjects)
+	{
+		Object->Animate(fTimeElapsed, pCamera);
+	}
+}
+
+void CSkinnedObjectsShader::CheckDeleteObjects()
+{
+	if (m_vObjects.size())
+	{
+		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
+		{
+			if ((*Object)->IsDelete())
+			{
+				(*Object)->SetModel(NULL);
+				(*Object)->ReleaseShaderVariables();
+				delete *Object;
+
+				Object = m_vObjects.erase(Object);
+			}
+			else
+				Object++;
+		}
+	}
+}
+
+void CSkinnedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+{
+	pObject->SetModel(m_pModel);
+	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_vObjects.emplace_back(pObject);
+}
+
+void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CSkinnedAnimationShader::Render(pd3dCommandList, pCamera);
+
+	for (const auto& Object : m_vObjects)
+	{
+		Object->Render(pd3dCommandList, pCamera);
+	}
+}
+
+void CSkinnedObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	for (const auto& Object : m_vObjects)
+	{
+		Object->RenderWire(pd3dCommandList, pCamera);
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 CBulletShader::CBulletShader()
@@ -310,7 +437,7 @@ CBulletShader::~CBulletShader()
 
 void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.txt", false);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -325,13 +452,22 @@ CGundamShader::~CGundamShader()
 
 void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.txt", true);
 
-	//RandomMoveObject *pObject = new RandomMoveObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	RandomMoveObject *pObject = new RandomMoveObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 	//pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+}
+
+void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+{
+	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, pContext);
+
+	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
+	pAnimationController->SetTrackAnimation(0, 0);
+	pObject->SetAnimationController(pAnimationController);
 }
 
 ////////////////////////////////////////////////////////////
@@ -346,13 +482,13 @@ CRepairItemShader::~CRepairItemShader()
 
 void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.txt", false);
 
-	//RotateObject *pObject = new RotateObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
-	//pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
-	//
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	RotateObject *pObject = new RotateObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
+	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	
+	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
 ////////////////////////////////////////////////////////////
@@ -367,7 +503,7 @@ CObstacleShader::~CObstacleShader()
 
 void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Hangar/Hangar.fbx");
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Hangar/Hangar.txt", false);
 
 	CGameObject *pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(-200.0f, 0.0f, 0.0f));
@@ -480,7 +616,7 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	CMesh *pMesh = new CRectMesh(pd3dDevice, pd3dCommandList, 20.0f, 20.0f);
 
 	m_pModel = new CModel();
-	m_pModel->SetMesh(pMesh, NULL);
+	m_pModel->SetMesh(pMesh, NULL, false);
 	m_pModel->SetMaterial(ppMaterials, nMaterials);
 
 	CEffect *pEffect = new CEffect();
@@ -798,22 +934,22 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	if (m_pd3dPipelineStateBar) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBar);
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerHP, m_pcbMappedPlayerHP, m_pPlayer->GetMaxHitPoint(), m_pPlayer->GetHitPoint());
 	if (m_ppTextures[1]) m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[1]->Render(pd3dCommandList);
+	m_ppUIRects[1]->Render(pd3dCommandList, 0);
 
 	// Draw Booster Gauge BAR
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerBooster, m_pcbMappedPlayerBooster, 100, m_pPlayer->GetBoosterGauge());
 	if (m_ppTextures[2]) m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[2]->Render(pd3dCommandList);
+	m_ppUIRects[2]->Render(pd3dCommandList, 0);
 
 	// Draw Ammo
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, m_pPlayer->GetWeapon()->GetMaxReloadAmmo(), m_pPlayer->GetWeapon()->GetReloadedAmmo());
 	if (m_ppTextures[3]) m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[3]->Render(pd3dCommandList);
+	m_ppUIRects[3]->Render(pd3dCommandList, 0);
 	
 	// Draw Base UI
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[0]->Render(pd3dCommandList);
+	m_ppUIRects[0]->Render(pd3dCommandList, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

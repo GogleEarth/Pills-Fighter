@@ -66,7 +66,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHTS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHTS].Descriptor.ShaderRegister = 3; //Lights
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHTS].Descriptor.ShaderRegister = 2; //Lights
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHTS].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHTS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
@@ -91,15 +91,25 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_CUBE].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.ShaderRegister = 4; //HP
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.ShaderRegister = 3; //HP
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.Num32BitValues = 4;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.ShaderRegister = 5; //TextureSprite
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.ShaderRegister = 4; //TextureSprite
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].Descriptor.ShaderRegister = 5; //Offset
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].Descriptor.ShaderRegister = 6; //Transforms
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
@@ -153,7 +163,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 1/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/+4);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
@@ -162,7 +172,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	// [0] Building, [1] Bullet, [2] Enemy, [3] Effect, [4] Repair Item
 	m_nShaders = 5;
-	m_ppShaders = new CObjectsShader*[m_nShaders];
+	m_ppShaders = new CShader*[m_nShaders];
 
 	CObstacleShader *pObstacleShader = new CObstacleShader();
 	pObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -262,7 +272,7 @@ bool CScene::ProcessInput(UCHAR *pKeysBuffer)
 void CScene::CheckCollisionPlayer()
 {
 	std::vector<CGameObject*> *vObstacles;
-	vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
+	vObstacles = static_cast<CRepairItemShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
 
 	for (const auto& Obstacle : *vObstacles)
 	{
@@ -275,8 +285,8 @@ void CScene::CheckCollision()
 	std::vector<CGameObject*> *vEnemys;
 	std::vector<CGameObject*> *vBullets;
 
-	vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
-	vBullets = m_ppShaders[INDEX_SHADER_BULLET]->GetObjects();
+	vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
+	vBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_BULLET])->GetObjects();
 
 	for (const auto& Enemy : *vEnemys)
 	{
@@ -313,8 +323,8 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 float CScene::FindAimToTargetDistance()
 {
-	std::vector<CGameObject*> *vEnemys = m_ppShaders[INDEX_SHADER_ENEMY]->GetObjects();
-	std::vector<CGameObject*> *vObstacles = m_ppShaders[INDEX_SHADER_OBSTACLE]->GetObjects();
+	std::vector<CGameObject*> *vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
+	std::vector<CGameObject*> *vObstacles = static_cast<CRepairItemShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -609,7 +619,7 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	{
 	case PKT_ID_PLAYER_INFO:
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+		//m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		break;
 	case PKT_ID_PLAYER_LIFE:
 		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);

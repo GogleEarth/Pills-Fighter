@@ -56,7 +56,7 @@ protected:
 	CPlayer						*m_pPlayer = NULL;
 
 	int							m_nShaders = 0;
-	CObjectsShader				**m_ppShaders = NULL;
+	CShader						**m_ppShaders = NULL;
 
 	CHeightMapTerrain			*m_pTerrain = NULL;
 	CSkyBox						*m_pSkyBox = NULL;

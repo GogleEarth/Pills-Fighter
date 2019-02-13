@@ -7,6 +7,7 @@
 
 class CShader;
 class CModel;
+class CAnimationController;
 
 struct MATERIAL
 {
@@ -49,17 +50,7 @@ public:
 
 	// 이동 속력
 	float m_MovingSpeed;
-
-protected:
-	CModel							*m_pModel = NULL;
-
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
-
-	ID3D12Resource					*m_pd3dcbGameObject = NULL;
-	CB_GAMEOBJECT_INFO				*m_pcbMappedGameObject = NULL;
-
-	bool							 m_Delete = FALSE;
-
+	
 public:
 	CGameObject();
 	virtual ~CGameObject();
@@ -70,7 +61,7 @@ public:
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void OnPrepareRender();
@@ -113,6 +104,12 @@ public:
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
 
 protected:
+	CModel							*m_pModel = NULL;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
+
+	bool							 m_Delete = FALSE;
+
 	int			m_nHitPoint;
 	int			m_nMaxHitPoint;
 	XMFLOAT3	serverPosition;
@@ -124,17 +121,31 @@ public:
 	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nMaxHitPoint < m_nHitPoint) m_nHitPoint = m_nMaxHitPoint; }
 
 public:
-	int				m_nxmAABB = 0;
-	BoundingBox		*m_pxmAABB = NULL;
+	int								m_nMeshes = 0;
+
+	BoundingBox						*m_pxmAABB = NULL;
+	ID3D12Resource					**m_ppd3dcbGameObject = NULL;
+	CB_GAMEOBJECT_INFO				**m_ppcbMappedGameObject = NULL;
+
+	int								m_nSkinnedMeshes = 0;
+	CSkinnedMesh					**m_ppSkinnedMeshes = NULL;
+
+	ID3D12Resource					**m_ppd3dcbBoneTransforms = NULL;
+	XMFLOAT4X4						**m_ppcbxmf4x4BoneTransforms = NULL;
+
+	CAnimationController			*m_pAnimationController = NULL;
+
+	void SetSkinnedMeshBoneTransformConstantBuffer();
 
 	void UpdateWorldTransform();
 	CModel *GetModel() { return m_pModel; }
 	BoundingBox* GetAABB() { return m_pxmAABB; }
-	int GetNumAABB() { return m_nxmAABB; }
+	int GetNumAABB() { return m_nMeshes; }
 	bool CollisionCheck(CGameObject *pObject);
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
+	void SetAnimationController(CAnimationController *pController) { m_pAnimationController = pController; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,4 +269,16 @@ private:
 	int			m_nMaxSpriteX;
 	int			m_nMaxSpriteY;
 	int			m_nMaxSprite;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CAnimationObject : public CGameObject
+{
+public:
+	CAnimationObject();
+	virtual ~CAnimationObject();
+
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 };
