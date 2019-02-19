@@ -30,6 +30,49 @@ CGameObject::CGameObject()
 	m_RotationSpeed = 1440.0f;
 }
 
+CGameObject::CGameObject(BULLET_TYPE Bullet_Type)
+{
+	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
+	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_xmf3PrevPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+
+	serverPosition = XMFLOAT3(0, 0, 0);
+
+	m_fPitch = 0.0f;
+	m_fRoll = 0.0f;
+	m_fYaw = 0.0f;
+
+	m_fPreparePitch = 0.0f;
+	m_fPrepareRoll = 0.0f;
+	m_fPrepareYaw = 0.0f;
+
+	m_Bullet_Type = Bullet_Type;
+	if (m_Bullet_Type == BULLET_TYPE_MACHINE_GUN)
+	{
+		m_ElapsedTime = 0;
+		m_DurationTime = 1.5f;
+		m_MovingSpeed = 750.0f;
+		m_RotationSpeed = 1440.0f;
+	}
+	else if (m_Bullet_Type == BULLET_TYPE_BAZOOKA)
+	{
+		m_ElapsedTime = 0;
+		m_DurationTime = 2.5f;
+		m_MovingSpeed = 450.0f;
+		m_RotationSpeed = 1440.0f;
+	}
+	else if (m_Bullet_Type == BULLET_TYPE_BEAM_RIFLE)
+	{
+		m_ElapsedTime = 0;
+		m_DurationTime = 0.75f;
+		m_MovingSpeed = 1500.0f;
+		m_RotationSpeed = 1440.0f;
+	}
+}
+
 CGameObject::~CGameObject()
 {
 	if (m_pModel)

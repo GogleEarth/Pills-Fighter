@@ -26,6 +26,7 @@ public:
 
 
 	OBJECT_TYPE	m_Object_Type;
+	BULLET_TYPE m_Bullet_Type;
 	int m_iId;
 	int index;
 
@@ -51,6 +52,7 @@ protected:
 
 public:
 	CGameObject();
+	CGameObject(BULLET_TYPE Bullet_Type);
 	virtual ~CGameObject();
 
 	void SetModel(CModel *pModel) { m_pModel = pModel; }

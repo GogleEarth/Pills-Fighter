@@ -311,7 +311,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
 
-				CGameObject* bullet = new CGameObject;
+				CGameObject* bullet;
+				if(pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
+					bullet = new CGameObject(BULLET_TYPE_MACHINE_GUN);
+				else if (pkt.Player_Weapon == WEAPON_TYPE_BAZOOKA)
+					bullet = new CGameObject(BULLET_TYPE_BAZOOKA);
+				else if (pkt.Player_Weapon == WEAPON_TYPE_BEAM_RIFLE)
+					bullet = new CGameObject(BULLET_TYPE_BEAM_RIFLE);
 				bullet->m_Object_Type = OBJECT_TYPE_BULLET;
 				bullet->m_iId = pkt.ID;
 				bullet->SetWorldTransf(pkt.BulletWorldMatrix);
