@@ -10,7 +10,6 @@ CGameObject::CGameObject()
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_xmf3PrevPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
@@ -20,54 +19,34 @@ CGameObject::CGameObject()
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
-
-	m_fPreparePitch = 0.0f;
-	m_fPrepareRoll = 0.0f;
-	m_fPrepareYaw = 0.0f;
+	SetPrepareRotate(0.0f, 0.0f, 0.0f);
 }
 
 CGameObject::~CGameObject()
 {
 	ReleaseShaderVariables();
 
-	if (m_pModel) delete m_pModel;
-	if (m_pxmAABB) delete[] m_pxmAABB;
-	if (m_ppSkinnedMeshes) delete[] m_ppSkinnedMeshes;
+	if (m_pModel) m_pModel->Release();
 }
 
 void CGameObject::SetModel(CModel *pModel)
 {
-	m_pModel = pModel;
+	if(m_pModel) m_pModel->Release();
 
-	if (m_pxmAABB)
-	{
-		delete[] m_pxmAABB;
-		m_pxmAABB = NULL;
-	}
-	
 	if (pModel)
 	{
+		m_pModel = pModel;
+		m_pModel->AddRef();
+
+		m_vxmAABB.empty();
+
+		m_pModel->GetSkinnedMeshes(m_vSkinnedMeshes);
+
 		int nStandardMeshes = pModel->GetStandardMeshes();
 		m_nSkinnedMeshes = pModel->GetSkinnedMeshes();
 		m_nMeshes = nStandardMeshes + m_nSkinnedMeshes;
 
-		if(m_nMeshes > 0) 
-		{
-			m_pxmAABB = new BoundingBox[m_nMeshes];
-
-			m_ppd3dcbGameObject = new ID3D12Resource*[m_nMeshes];
-			m_ppcbMappedGameObject = new CB_GAMEOBJECT_INFO*[m_nMeshes];
-		}
-
-		if (m_nSkinnedMeshes > 0)
-		{
-			int nIndex = 0;
-			m_ppSkinnedMeshes = new CSkinnedMesh*[m_nSkinnedMeshes];
-			m_pModel->GetSkinnedMeshes(m_ppSkinnedMeshes, &nIndex);
-
-			m_ppd3dcbBoneTransforms = new ID3D12Resource*[m_nSkinnedMeshes];
-			m_ppcbxmf4x4BoneTransforms = new XMFLOAT4X4*[m_nSkinnedMeshes];
-		}
+		OnPrepareAnimate();
 	}
 }
 
@@ -119,61 +98,47 @@ void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphics
 
 	for (int i = 0; i < m_nMeshes; i++)
 	{
-		m_ppd3dcbGameObject[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		ID3D12Resource* pd3dcbGameObject = NULL;
+		CB_GAMEOBJECT_INFO* pcbMappedGameObject = NULL;
+
+		pd3dcbGameObject = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 			D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 
-		m_ppd3dcbGameObject[i]->Map(0, NULL, (void **)&m_ppcbMappedGameObject[i]);
+		pd3dcbGameObject->Map(0, NULL, (void **)&pcbMappedGameObject);
+
+		m_vd3dcbGameObject.emplace_back(pd3dcbGameObject);
+		m_vcbMappedGameObjec.emplace_back(pcbMappedGameObject);
 	}
 
 	ncbElementBytes = (((sizeof(XMFLOAT4X4) * SKINNED_ANIMATION_BONES) + 255) & ~255); //256ÀÇ ¹è¼ö
 
 	for (int i = 0; i < m_nSkinnedMeshes; i++)
 	{
-		m_ppd3dcbBoneTransforms[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		ID3D12Resource* pd3dcbBoneTransforms = NULL;
+		XMFLOAT4X4* pcbMappedBoneTransform = NULL;
+
+		pd3dcbBoneTransforms = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 			D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 
-		m_ppd3dcbBoneTransforms[i]->Map(0, NULL, (void **)&m_ppcbxmf4x4BoneTransforms[i]);
+		pd3dcbBoneTransforms->Map(0, NULL, (void **)&pcbMappedBoneTransform);
+
+		m_vd3dcbBoneTransforms.emplace_back(pd3dcbBoneTransforms);
+		m_vcbxmf4x4BoneTransforms.emplace_back(pcbMappedBoneTransform);
 	}
 }
 
 void CGameObject::ReleaseShaderVariables()
 {
-	if (m_ppd3dcbGameObject)
+	for (ID3D12Resource *pd3dcbGameObject : m_vd3dcbGameObject)
 	{
-		for (int i = 0; i < m_nMeshes; i++)
-		{
-			if (m_ppd3dcbGameObject[i])
-			{
-				m_ppd3dcbGameObject[i]->Unmap(0, NULL);
-				m_ppd3dcbGameObject[i]->Release();
-				m_ppd3dcbGameObject[i] = NULL;
-			}
-		}
-
-		delete[] m_ppd3dcbGameObject;
-		m_ppd3dcbGameObject = NULL;
-
-		delete[] m_ppcbMappedGameObject;
-		m_ppcbMappedGameObject = NULL;
+		pd3dcbGameObject->Unmap(0, NULL);
+		pd3dcbGameObject->Release();
 	}
 
-	if (m_ppd3dcbBoneTransforms)
+	for (ID3D12Resource *pd3dcbBoneTransforms : m_vd3dcbBoneTransforms)
 	{
-		for (int i = 0; i < m_nSkinnedMeshes; i++)
-		{
-			if (m_ppd3dcbBoneTransforms[i])
-			{
-				m_ppd3dcbBoneTransforms[i]->Unmap(0, NULL);
-				m_ppd3dcbBoneTransforms[i]->Release();
-				m_ppd3dcbBoneTransforms[i] = NULL;
-			}
-		}
-
-		delete[] m_ppd3dcbBoneTransforms;
-		m_ppd3dcbBoneTransforms = NULL;
-
-		delete[] m_ppcbxmf4x4BoneTransforms;
-		m_ppcbxmf4x4BoneTransforms = NULL;
+		pd3dcbBoneTransforms->Unmap(0, NULL);
+		pd3dcbBoneTransforms->Release();
 	}
 }
 
@@ -203,13 +168,13 @@ void CGameObject::UpdateWorldTransform()
 
 bool CGameObject::CollisionCheck(CGameObject *pObject)
 {
-	BoundingBox *pxmAABB = pObject->GetAABB();
+	std::vector<BoundingBox> vxmAABB = pObject->GetAABB();
 
-	for (int i = 0; i < m_nMeshes; i++)
+	for(BoundingBox m_xmAABB : m_vxmAABB)
 	{
-		for (int j = 0; j < pObject->GetNumAABB(); j++)
+		for (BoundingBox xmAABB : vxmAABB)
 		{
-			if (m_pxmAABB[i].Intersects(pxmAABB[j]))
+			if (m_xmAABB.Intersects(xmAABB))
 				return true;
 		}
 	}
@@ -223,9 +188,9 @@ bool CGameObject::CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, flo
 	float fMinDistance = 1000.0f;
 	float fDistance = 0.0f;
 
-	for (int i = 0; i < m_nMeshes; i++)
+	for (BoundingBox m_xmAABB : m_vxmAABB)
 	{
-		if (m_pxmAABB[i].Intersects(*pxmf4Origin, *pxmf4Look, fDistance))
+		if (m_xmAABB.Intersects(*pxmf4Origin, *pxmf4Look, fDistance))
 		{
 			if (fMinDistance > fDistance) fMinDistance = fDistance;
 			bCollision = true;
@@ -240,19 +205,19 @@ bool CGameObject::CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, flo
 
 void CGameObject::MoveToCollision(CGameObject *pObject)
 {
-	BoundingBox *pxmObjAABB = pObject->GetAABB();
+	std::vector<BoundingBox> vxmAABB = pObject->GetAABB();
 
-	for (int i = 0; i < m_nMeshes; i++)
+	for (BoundingBox m_xmAABB : m_vxmAABB)
 	{
-		for (int j = 0; j < pObject->GetNumAABB(); j++)
+		for (BoundingBox xmAABB : vxmAABB)
 		{
-			if (m_pxmAABB[i].Intersects(pxmObjAABB[j]))
+			if (m_xmAABB.Intersects(xmAABB))
 			{
-				XMFLOAT3 xmf3Min = Vector3::Subtract(m_pxmAABB[i].Center, m_pxmAABB[i].Extents);
-				XMFLOAT3 xmf3Max = Vector3::Add(m_pxmAABB[i].Center, m_pxmAABB[i].Extents);
+				XMFLOAT3 xmf3Min = Vector3::Subtract(m_xmAABB.Center, m_xmAABB.Extents);
+				XMFLOAT3 xmf3Max = Vector3::Add(m_xmAABB.Center, m_xmAABB.Extents);
 
-				XMFLOAT3 xmf3ObjMin = Vector3::Subtract(pxmObjAABB[j].Center, pxmObjAABB[j].Extents);
-				XMFLOAT3 xmf3ObjMax = Vector3::Add(pxmObjAABB[j].Center, pxmObjAABB[j].Extents);
+				XMFLOAT3 xmf3ObjMin = Vector3::Subtract(xmAABB.Center, xmAABB.Extents);
+				XMFLOAT3 xmf3ObjMax = Vector3::Add(xmAABB.Center, xmAABB.Extents);
 
 				XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
 				XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -360,7 +325,7 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 
 				SetPosition(Vector3::Add(xmf3Position, xmf3Distance));
 
-				ProcessMoveToCollision(&m_pxmAABB[i], &pxmObjAABB[j]);
+				ProcessMoveToCollision(&m_xmAABB, &xmAABB);
 			}
 		}
 	}
@@ -377,16 +342,16 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		UpdateWorldTransform();
 
 		int i = 0;
-		m_pModel->UpdateCollisionBox(m_pxmAABB, &i);
+		m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
 	}
 }
 
 void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
 {
-	for (int i = 0; i < m_nSkinnedMeshes; i++)
+	for(int i = 0; i < m_vd3dcbBoneTransforms.size(); i++)
 	{
-		m_ppSkinnedMeshes[i]->m_pd3dcbBoneTransforms = m_ppd3dcbBoneTransforms[i];
-		m_ppSkinnedMeshes[i]->m_pcbxmf4x4BoneTransforms = m_ppcbxmf4x4BoneTransforms[i];
+		m_vSkinnedMeshes[i]->m_pd3dcbBoneTransforms = m_vd3dcbBoneTransforms[i];
+		m_vSkinnedMeshes[i]->m_pcbxmf4x4BoneTransforms = m_vcbxmf4x4BoneTransforms[i];
 	}
 }
 
@@ -406,7 +371,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
-		m_pModel->Render(pd3dCommandList, pCamera, m_ppd3dcbGameObject, m_ppcbMappedGameObject, &i);
+		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObjec, &i);
 	}
 }
 
@@ -455,10 +420,6 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 
 void CGameObject::SetPosition(float x, float y, float z)
 {
-	m_xmf3PrevPosition.x = m_xmf3Position.x;
-	m_xmf3PrevPosition.y = m_xmf3Position.y;
-	m_xmf3PrevPosition.z = m_xmf3Position.z;
-
 	m_xmf3Position.x = x;
 	m_xmf3Position.y = y;
 	m_xmf3Position.z = z;
@@ -668,8 +629,8 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0);
-	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_0.dds", 0);
-	//pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
+	//pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_0.dds", 0);
+	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
 
 	CShader *pShader = new CSkyBoxShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -768,4 +729,26 @@ CAnimationObject::~CAnimationObject()
 void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
 {
 	CGameObject::Animate(ElapsedTime);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////
+
+CEquipmentableObject::CEquipmentableObject() : CGameObject()
+{
+
+}
+
+CEquipmentableObject::~CEquipmentableObject()
+{
+	m_pRightHand = NULL;
+	m_pLeftHand = NULL;
+}
+
+void CEquipmentableObject::OnPrepareAnimate()
+{
+	//m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
+	//m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
+
+	//m_nMeshes += 2;
 }

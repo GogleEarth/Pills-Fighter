@@ -126,6 +126,13 @@ public:
 	CModel();
 	virtual ~CModel();
 
+public:
+	void AddRef();
+	void Release();
+
+protected:
+	int				m_nReferences = 0;
+
 protected:
 	CMesh			*m_pMesh = NULL;
 	CCubeMesh		*m_pCubeMesh = NULL;
@@ -146,10 +153,10 @@ protected:
 
 public:
 	void ReleaseUploadBuffers();
-	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcbGameObject, CB_GAMEOBJECT_INFO *pcbMappedGameObject);
+	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* vd3dcbGameObject, CB_GAMEOBJECT_INFO* vcbMappedGameObject);
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, ID3D12Resource **ppd3dcbGameObject, CB_GAMEOBJECT_INFO** ppcbMappedGameObject, int *pnIndex);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex);
 
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
@@ -159,24 +166,23 @@ public:
 	CMesh* GetMesh() { return m_pMesh; }
 
 public:
-	void SetChild(CModel *pChild);
+	void SetChild(CModel *pChild, bool bAddReference = false);
 	void SetToParent(XMFLOAT4X4 xmf4x4ToParent) { m_xmf4x4ToParent = xmf4x4ToParent; }
 	const char* GetModelName() { return m_pstrModelName; };
 
 	XMFLOAT4X4 GetToParent() { return m_xmf4x4ToParent; }
 
 public:
-	void UpdateCollisionBox(BoundingBox *pxmAABB, int *pnIndex);
+	void UpdateCollisionBox(std::vector<BoundingBox> vxmAABB, int *pnIndex);
 	void UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent);
 
 	void GetMeshes(int *pnStandardMeshes, int *pnSkinnedMeshes);
-	void GetSkinnedMeshes(CSkinnedMesh **pMesh, int *nIndex);
+	void GetSkinnedMeshes(std::vector<CSkinnedMesh*>& vMeshes);
 
 public:
 	CModel* FindFrame(const char *pstrFrame);
 	void CacheSkinningBoneFrames(CModel *pRootModel);
 
-	
 public: // Root Model
 	const char* GetFileName() { return m_pstrFileName; };
 	void SetModelMeshCount(int nStandardMeshes, int nSkinnedMeshes) { m_nStandardMeshes = nStandardMeshes; m_nSkinnedMeshes = nSkinnedMeshes; }

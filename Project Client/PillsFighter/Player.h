@@ -20,7 +20,7 @@ class CScene;
 #define BURST_COOLTIME	0.5f
 #define RELOAD_TIME	3.0f
 
-class CWeapon : public CGameObject
+class CWeapon : public CGameObject//CEquipment
 {
 public:
 	CWeapon();
@@ -61,7 +61,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CPlayer : public CGameObject
+class CPlayer : public CEquipmentableObject
 {
 protected:
 	LPVOID m_pPlayerUpdatedContext = NULL;
@@ -118,8 +118,6 @@ protected:
 	float				m_fBoosterPower = 0.0f;
 	float				m_fGravity = 0.0f;
 
-	CModel				*m_pRightHand = NULL;
-
 public:
 	int GetBoosterGauge() { return m_nBoosterGauge; }
 	void SetGravity(float fGravity) { m_fGravAcc = fGravity; }
@@ -148,7 +146,13 @@ public:
 
 public:
 	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	void SetWeapon(CWeapon *pWeapon) { m_pWeapon = pWeapon; pWeapon->SetPlayer(this); }
+
+	void SetWeapon(CWeapon *pWeapon) 
+	{
+		m_pWeapon = pWeapon;
+		pWeapon->SetPlayer(this);
+		//EquipOnRightHand(pWeapon->GetModel());
+	}
 
 protected:
 	CWeapon *m_pWeapon = NULL;

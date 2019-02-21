@@ -206,12 +206,15 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	m_pWeapon = new CWeapon();
+	//CModel *pWeapon = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.txt", false);
+	CModel *pWeapon = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.txt", false);
+	m_pWeapon->SetModel(pWeapon);
 	m_pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	m_pWeapon->SetBullet(m_ppShaders[INDEX_SHADER_BULLET]);
 	m_pWeapon->SetForCreateBullet(pd3dDevice, pd3dCommandList);
 
-	m_pWireShader = new CWireShader();
-	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	//m_pWireShader = new CWireShader();
+	//m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 }
 
 void CScene::ReleaseObjects()
@@ -240,7 +243,6 @@ void CScene::ReleaseObjects()
 		}
 		delete[] m_ppShaders;
 	}
-
 
 	ReleaseShaderVariables();
 }

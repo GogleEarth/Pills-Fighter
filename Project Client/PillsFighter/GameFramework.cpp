@@ -529,7 +529,6 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	}
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
-	pPlayer->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
 
@@ -728,7 +727,6 @@ void CGameFramework::ProcessInput()
 		if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
 		if (pKeyBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
 		if (pKeyBuffer['V'] & 0xF0) dwDirection |= DIR_DOWN;
-
 		if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload();
 	}
 

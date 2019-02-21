@@ -73,9 +73,7 @@ class CObjectsShader : public CShader
 public:
 	CObjectsShader();
 	virtual ~CObjectsShader();
-
-	virtual void ReleaseShaderVariables();
-
+	
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();
 
@@ -157,8 +155,6 @@ class CSkinnedObjectsShader : public CSkinnedAnimationShader
 public:
 	CSkinnedObjectsShader();
 	virtual ~CSkinnedObjectsShader();
-
-	virtual void ReleaseShaderVariables();
 
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();

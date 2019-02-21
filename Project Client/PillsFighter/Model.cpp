@@ -307,14 +307,28 @@ CModel::~CModel()
 	}
 
 	if (m_pAnimationSet) delete m_pAnimationSet;
-
-	if (m_pSibling) delete m_pSibling;
-	if (m_pChild) delete m_pChild;
 }
 
-void CModel::SetChild(CModel *pChild)
+void CModel::AddRef()
+{
+	m_nReferences++;
+
+	if (m_pSibling) m_pSibling->AddRef();
+	if (m_pChild) m_pChild->AddRef();
+}
+
+void CModel::Release()
+{
+	if (m_pSibling) m_pSibling->Release();
+	if (m_pChild) m_pChild->Release();
+
+	if (--m_nReferences <= 0) delete this;
+}
+
+void CModel::SetChild(CModel *pChild, bool bAddReference)
 {
 	pChild->m_pParent = this;
+	if (bAddReference) pChild->AddRef();
 
 	if (m_pChild)
 	{
@@ -366,13 +380,13 @@ void CModel::GetMeshes(int *pnStandardMeshes, int *pnSkinnedMeshes)
 	if (m_pChild) m_pChild->GetMeshes(pnStandardMeshes, pnSkinnedMeshes);
 }
 
-void CModel::GetSkinnedMeshes(CSkinnedMesh **pMesh, int *nIndex)
+void CModel::GetSkinnedMeshes(std::vector<CSkinnedMesh*>& vMeshes)
 {
 	if (m_pMesh && (m_pMesh->GetMeshType() & TYPE_SKINNED_MESH))
-		pMesh[(*nIndex)++] = (CSkinnedMesh*)m_pMesh;
+		vMeshes.emplace_back((CSkinnedMesh*)m_pMesh);
 
-	if (m_pSibling) m_pSibling->GetSkinnedMeshes(pMesh, nIndex);
-	if (m_pChild) m_pChild->GetSkinnedMeshes(pMesh, nIndex);
+	if (m_pSibling) m_pSibling->GetSkinnedMeshes(vMeshes);
+	if (m_pChild) m_pChild->GetSkinnedMeshes(vMeshes);
 }
 
 CModel* CModel::FindFrame(const char *pstrFrame)
@@ -396,15 +410,20 @@ void CModel::UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent)
 	if (m_pChild) m_pChild->UpdateWorldTransform(&m_xmf4x4World);
 }
 
-void CModel::UpdateCollisionBox(BoundingBox *pxmAABB, int *pnIndex)
+void CModel::UpdateCollisionBox(std::vector<BoundingBox> vxmAABB, int *pnIndex)
 {
+	if ((*pnIndex) == vxmAABB.size())
+		return;
+
 	if (m_pMesh)
 	{
-		m_pMesh->m_xmAABB.Transform(pxmAABB[(*pnIndex)++], XMLoadFloat4x4(&m_xmf4x4World));
+		m_pMesh->m_xmAABB.Transform(vxmAABB[*pnIndex], XMLoadFloat4x4(&m_xmf4x4World));
 	}
 
-	if (m_pSibling) m_pSibling->UpdateCollisionBox(pxmAABB, pnIndex);
-	if (m_pChild) m_pChild->UpdateCollisionBox(pxmAABB, pnIndex);
+	(*pnIndex)++;
+
+	if (m_pSibling) m_pSibling->UpdateCollisionBox(vxmAABB, pnIndex);
+	if (m_pChild) m_pChild->UpdateCollisionBox(vxmAABB, pnIndex);
 }
 
 void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
@@ -415,7 +434,7 @@ void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCa
 	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera);
 }
 
-void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcbGameObject, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
+void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* pd3dcbGameObject, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
 {
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = pd3dcbGameObject->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_OBJECT, d3dGpuVirtualAddress);
@@ -423,11 +442,14 @@ void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, I
 	XMStoreFloat4x4(&pcbMappedGameObject->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
 }
 
-void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, ID3D12Resource **ppd3dcbGameObject, CB_GAMEOBJECT_INFO** ppcbMappedGameObject, int *pnIndex)
+void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex)
 {
+	if ((*pnIndex) == vd3dcbGameObject.size())
+		return;
+
 	if (m_pMesh)
 	{
-		if(m_nStandardMeshes > 0) UpdateShaderVariables(pd3dCommandList, ppd3dcbGameObject[*pnIndex], ppcbMappedGameObject[*pnIndex]);
+		if(m_nStandardMeshes > 0) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
 
 		if (m_nMaterials > 0)
 		{
@@ -436,7 +458,7 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 				if (m_ppMaterials[i])
 				{
 					if (m_ppMaterials[i]->m_pShader) m_ppMaterials[i]->m_pShader->Render(pd3dCommandList, pCamera);
-					m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, ppcbMappedGameObject[*pnIndex]);
+					m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, vcbMappedGameObject[*pnIndex]);
 					m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
 				}
 
@@ -444,11 +466,12 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 			}
 		}
 
-		++(*pnIndex);
+		(*pnIndex)++;
 	}
 
-	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, ppd3dcbGameObject, ppcbMappedGameObject, pnIndex);
-	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, ppd3dcbGameObject, ppcbMappedGameObject, pnIndex);
+
+	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
+	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
 }
 
 CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation)

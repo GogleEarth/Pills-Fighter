@@ -27,18 +27,18 @@ struct CB_GAMEOBJECT_INFO
 class CGameObject
 {
 public:
-	XMFLOAT4X4 m_xmf4x4World;
+	CGameObject();
+	virtual ~CGameObject();
 
 protected:
+	XMFLOAT4X4 m_xmf4x4World;
 
 	XMFLOAT3 m_xmf3Position;
-	XMFLOAT3 m_xmf3PrevPosition;
 	XMFLOAT3 m_xmf3Right;
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;
 
-
-public:
+protected:
 	float m_fPitch;
 	float m_fYaw;
 	float m_fRoll;
@@ -52,9 +52,6 @@ public:
 	float m_MovingSpeed;
 	
 public:
-	CGameObject();
-	virtual ~CGameObject();
-
 	void SetModel(CModel *pModel);
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials);
@@ -101,45 +98,43 @@ public:
 	
 	void Delete() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
-	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
 
 protected:
 	CModel							*m_pModel = NULL;
 
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dCbvGPUDescriptorHandle;
-
 	bool							 m_Delete = FALSE;
 
-	int			m_nHitPoint;
-	int			m_nMaxHitPoint;
-	XMFLOAT3	serverPosition;
+	int								m_nHitPoint;
+	int								m_nMaxHitPoint;
+	XMFLOAT3						serverPosition;
 
 public:
 	int GetHitPoint() { return m_nHitPoint; }
 	int GetMaxHitPoint() { return m_nMaxHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
 	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nMaxHitPoint < m_nHitPoint) m_nHitPoint = m_nMaxHitPoint; }
+	virtual void OnPrepareAnimate() {};
 
 public:
-	int								m_nMeshes = 0;
+	int									m_nMeshes = 0;
+	int									m_nSkinnedMeshes = 0;
 
-	BoundingBox						*m_pxmAABB = NULL;
-	ID3D12Resource					**m_ppd3dcbGameObject = NULL;
-	CB_GAMEOBJECT_INFO				**m_ppcbMappedGameObject = NULL;
+	std::vector<BoundingBox>			m_vxmAABB;
+	std::vector<ID3D12Resource*>		m_vd3dcbGameObject;
+	std::vector<CB_GAMEOBJECT_INFO*>	m_vcbMappedGameObjec;
 
-	int								m_nSkinnedMeshes = 0;
-	CSkinnedMesh					**m_ppSkinnedMeshes = NULL;
+	std::vector<CSkinnedMesh*>			m_vSkinnedMeshes;
 
-	ID3D12Resource					**m_ppd3dcbBoneTransforms = NULL;
-	XMFLOAT4X4						**m_ppcbxmf4x4BoneTransforms = NULL;
+	std::vector<ID3D12Resource*>		m_vd3dcbBoneTransforms;
+	std::vector<XMFLOAT4X4*>			m_vcbxmf4x4BoneTransforms;
 
-	CAnimationController			*m_pAnimationController = NULL;
+	CAnimationController				*m_pAnimationController = NULL;
 
 	void SetSkinnedMeshBoneTransformConstantBuffer();
 
 	void UpdateWorldTransform();
 	CModel *GetModel() { return m_pModel; }
-	BoundingBox* GetAABB() { return m_pxmAABB; }
+	std::vector<BoundingBox>& GetAABB() { return m_vxmAABB; }
 	int GetNumAABB() { return m_nMeshes; }
 	bool CollisionCheck(CGameObject *pObject);
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
@@ -281,4 +276,25 @@ public:
 	virtual ~CAnimationObject();
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CEquipmentableObject : public CGameObject
+{
+public:
+	CEquipmentableObject();
+	virtual ~CEquipmentableObject();
+
+	virtual void OnPrepareAnimate();
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL) {};
+
+	virtual void EquipOnRightHand(CModel *pModel) { m_pRightHand->SetChild(pModel, true); };
+	virtual void EquipOnLeftHand(CModel *pModel) { m_pLeftHand->SetChild(pModel, true); };
+
+protected:
+	CModel *m_pLeftHand;
+	CModel *m_pRightHand;
+
 };

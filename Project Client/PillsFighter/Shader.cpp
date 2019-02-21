@@ -255,23 +255,12 @@ CObjectsShader::~CObjectsShader()
 {
 }
 
-void CObjectsShader::ReleaseShaderVariables()
-{
-	for (const auto& Object : m_vObjects)
-	{
-		Object->ReleaseShaderVariables();
-	}
-
-	CShader::ReleaseShaderVariables();
-}
-
 void CObjectsShader::ReleaseObjects()
 {
 	if (m_vObjects.size())
 	{
 		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
 		{
-			(*Object)->SetModel(NULL);
 			delete *Object;
 			Object = m_vObjects.erase(Object);
 		}
@@ -296,8 +285,6 @@ void CObjectsShader::CheckDeleteObjects()
 		{
 			if ((*Object)->IsDelete())
 			{
-				(*Object)->SetModel(NULL);
-				(*Object)->ReleaseShaderVariables();
 				delete *Object;
 
 				Object = m_vObjects.erase(Object);
@@ -346,23 +333,12 @@ CSkinnedObjectsShader::~CSkinnedObjectsShader()
 {
 }
 
-void CSkinnedObjectsShader::ReleaseShaderVariables()
-{
-	for (const auto& Object : m_vObjects)
-	{
-		Object->ReleaseShaderVariables();
-	}
-
-	CSkinnedAnimationShader::ReleaseShaderVariables();
-}
-
 void CSkinnedObjectsShader::ReleaseObjects()
 {
 	if (m_vObjects.size())
 	{
 		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
 		{
-			(*Object)->SetModel(NULL);
 			delete *Object;
 			Object = m_vObjects.erase(Object);
 		}
@@ -387,7 +363,6 @@ void CSkinnedObjectsShader::CheckDeleteObjects()
 		{
 			if ((*Object)->IsDelete())
 			{
-				(*Object)->SetModel(NULL);
 				(*Object)->ReleaseShaderVariables();
 				delete *Object;
 
@@ -427,21 +402,6 @@ void CSkinnedObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandLis
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-CBulletShader::CBulletShader()
-{
-}
-
-CBulletShader::~CBulletShader()
-{
-}
-
-void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.txt", false);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
 CGundamShader::CGundamShader()
 {
 }
@@ -456,7 +416,6 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 	RandomMoveObject *pObject = new RandomMoveObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	//pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
@@ -468,6 +427,21 @@ void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
 	pAnimationController->SetTrackAnimation(0, 0);
 	pObject->SetAnimationController(pAnimationController);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+CBulletShader::CBulletShader()
+{
+}
+
+CBulletShader::~CBulletShader()
+{
+}
+
+void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.txt", false);
 }
 
 ////////////////////////////////////////////////////////////
@@ -483,10 +457,10 @@ CRepairItemShader::~CRepairItemShader()
 void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.txt", false);
+	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.txt", false);
 
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
-	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 	
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
@@ -507,22 +481,22 @@ void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	CGameObject *pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(-200.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(-90.0f, 90.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, 90.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(200.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(-90.0f, -90.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, -90.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 200.0f));
-	pObject->SetPrepareRotate(-90.0f, 180.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, 180.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -200.0f));
-	pObject->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
@@ -533,8 +507,6 @@ CEffectShader::CEffectShader()
 
 CEffectShader::~CEffectShader()
 {
-	if (m_pModel)
-		delete m_pModel;
 }
 
 D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
@@ -618,6 +590,7 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pModel = new CModel();
 	m_pModel->SetMesh(pMesh, NULL, false);
 	m_pModel->SetMaterial(ppMaterials, nMaterials);
+	//m_pModel->AddRef();
 
 	CEffect *pEffect = new CEffect();
 	pEffect->SetPosition(0.0f, 20.0f, 0.0f);

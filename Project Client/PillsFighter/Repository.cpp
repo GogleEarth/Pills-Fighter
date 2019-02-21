@@ -11,7 +11,7 @@ CRepository::~CRepository()
 	{
 		for (auto& Model = m_vModels.begin(); Model != m_vModels.end();)
 		{
-			delete *Model;
+			(*Model)->Release();
 			Model = m_vModels.erase(Model);
 		}
 	}
@@ -28,8 +28,9 @@ CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLis
 	}
 
 	CModel *pModel = CModel::LoadGeometryAndAnimationFromFile(pd3dDevice, pd3dCommandList, pstrFileName, bHasAnimation);
+	pModel->AddRef();
 	m_vModels.emplace_back(pModel);
-
+	
 	return pModel;
 }
 

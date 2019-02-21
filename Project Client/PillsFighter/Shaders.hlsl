@@ -55,6 +55,7 @@ struct VS_STANDARD_OUTPUT
 	float3 binormalW : BINORMAL;
 	float3 tangentW : TANGENT;
 	float2 uv : TEXCOORD;
+	//float3 reflection : REFLECTION;
 };
 
 #define MATERIAL_ALBEDO_MAP				0x01
@@ -71,12 +72,15 @@ VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gmtxGameObject);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
+	//output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
 	return(output);
 }
 
 float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
+	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
+
 	// 임시 텍스처 배열 인덱스는 0
 	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	if(gnTexturesMask & MATERIAL_ALBEDO_MAP)
@@ -92,6 +96,7 @@ float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	float4 cColor = f4AlbedoColor;
+	//float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.7);
 
 	float3 normalW = normalize(input.normalW);
 
@@ -104,7 +109,7 @@ float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
 
-	return(cColor * cIllumination);
+	return(lerp(cColor, cIllumination, 0.4f));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,6 +192,7 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
+	//output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
 	return(output);
 }

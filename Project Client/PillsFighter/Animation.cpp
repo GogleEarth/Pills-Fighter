@@ -54,8 +54,7 @@ void CAnimation::LoadAnimationFromFile(FILE *pFile, int nFrames)
 {
 	char pstrToken[64] = { 0 };
 
-	int nIndex;
-	fscanf_s(pFile, "%d %s %f %d %d", &nIndex, m_pstrAnimationName, (int)sizeof(m_pstrAnimationName), &m_fAnimationLength, &m_nAnimationFPS, &m_nKeyFrameTransforms);
+	fscanf_s(pFile, "%s %f %d", m_pstrAnimationName, (int)sizeof(m_pstrAnimationName), &m_fAnimationLength, &m_nKeyFrameTransforms);
 
 	m_pfKeyFrameTransformTimes = new float[m_nKeyFrameTransforms];
 	m_ppxmf4x4KeyFrameTransforms = new XMFLOAT4X4*[m_nKeyFrameTransforms];
@@ -65,7 +64,7 @@ void CAnimation::LoadAnimationFromFile(FILE *pFile, int nFrames)
 
 		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken)); // <Transforms>:
 
-		fscanf_s(pFile, "%d %f", &nIndex, &m_pfKeyFrameTransformTimes[i]);
+		fscanf_s(pFile, "%f", &m_pfKeyFrameTransformTimes[i]);
 
 		m_ppxmf4x4KeyFrameTransforms[i] = new XMFLOAT4X4[nFrames];
 

@@ -7,10 +7,11 @@
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CGameObject()
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CEquipmentableObject()
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
+	//SetPrepareRotate(-90,0,0);
 
 	m_pCamera = SetCamera(0.0f);
 
@@ -34,20 +35,14 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	SetPlayerUpdatedContext(pTerrain);
 	SetCameraUpdatedContext(pTerrain);
-
-	//m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
-	//if(m_pRightHand) m_pRightHand->SetMesh(m_pModel->GetMesh(), NULL);
 }
 
 CPlayer::~CPlayer()
 {
-	m_pModel = NULL;
-
 	ReleaseShaderVariables();
 
-	if (m_pUserInterface) delete m_pUserInterface;
-
 	if (m_pCamera) delete m_pCamera;
+	if (m_pUserInterface) delete m_pUserInterface;
 
 }
 
@@ -60,10 +55,8 @@ void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 void CPlayer::ReleaseShaderVariables()
 {
-	if (m_pCamera) m_pCamera->ReleaseShaderVariables();\
+	if (m_pCamera) m_pCamera->ReleaseShaderVariables();
 	if (m_pUserInterface) m_pUserInterface->ReleaseShaderVariables();
-
-	CGameObject::ReleaseShaderVariables();
 }
 
 void CPlayer::ReleaseUploadBuffers()
@@ -85,7 +78,7 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 	m_pCamera->SetTimeLag(0.0f);
 	m_pCamera->SetOffset(CAMERA_POSITION);
-	m_pCamera->GenerateProjectionMatrix(1.0f, 5000.0f, ASPECT_RATIO, 60.0f);
+	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 	m_pCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
 	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
@@ -98,6 +91,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (dwDirection)
 	{
+		m_pAnimationController->SetTrackAnimation(0, 1);
+
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 
 		if (dwDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
@@ -117,6 +112,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 				SetBoosterPower(1.0f);
 			}
 		}
+
 		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )	SetBoosterPower(-1.0f);
 
 		Move(xmf3Shift);
@@ -125,7 +121,6 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 {
-	m_xmf3PrevPosition = m_xmf3Position;
 	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
 
 	m_pCamera->Move(xmf3Shift);
@@ -439,7 +434,6 @@ void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
 			pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
 			pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
 			pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
-			pBullet->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
 			m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
 #else

@@ -16,7 +16,6 @@ protected:
 	char			m_pstrAnimationName[64] = { 0 };
 
 	float			m_fAnimationLength = 0.0f;
-	int				m_nAnimationFPS = 0; //m_fTicksPerSecond
 
 	int				m_nKeyFrameTransforms = 0; 
 
