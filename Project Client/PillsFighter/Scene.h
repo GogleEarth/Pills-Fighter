@@ -69,7 +69,7 @@ public:
 	// 충돌 체크를 검사한다.
 	virtual void CheckCollision();
 	virtual void CheckCollisionPlayer();
-	virtual float FindAimToTargetDistance();
+	virtual void FindAimToTargetDistance();
 
 	void SetPlayer(CPlayer* pPlayer);
 
@@ -103,6 +103,7 @@ public: // For Network
 	void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
 	void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 
+	//////
 public:
 	float		m_fGravAcc = 9.8f;
 
@@ -121,4 +122,11 @@ protected:
 
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
+
+
+public:
+	float GetToTargetDistance() { return m_fCameraToTarget; }
+
+protected:
+	float m_fCameraToTarget = 0.0f;
 };

@@ -121,7 +121,7 @@ public:
 
 	std::vector<BoundingBox>			m_vxmAABB;
 	std::vector<ID3D12Resource*>		m_vd3dcbGameObject;
-	std::vector<CB_GAMEOBJECT_INFO*>	m_vcbMappedGameObjec;
+	std::vector<CB_GAMEOBJECT_INFO*>	m_vcbMappedGameObject;
 
 	std::vector<CSkinnedMesh*>			m_vSkinnedMeshes;
 
@@ -141,6 +141,18 @@ public:
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 	void SetAnimationController(CAnimationController *pController) { m_pAnimationController = pController; }
+
+public:
+	void PrintAABB()
+	{
+		for(auto xmAABB : m_vxmAABB)
+		{
+			XMFLOAT3 a = xmAABB.Center;
+			XMFLOAT3 b = xmAABB.Extents;
+
+			printf("[C : %f, %f, %f] [E : %f, %f, %f]\n", a.x, a.y, a.z, b.x, b.y, b.z);
+		}
+	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

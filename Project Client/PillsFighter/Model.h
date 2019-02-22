@@ -155,7 +155,7 @@ public:
 	void ReleaseUploadBuffers();
 	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* vd3dcbGameObject, CB_GAMEOBJECT_INFO* vcbMappedGameObject);
 
-	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex);
 
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned);
@@ -173,7 +173,7 @@ public:
 	XMFLOAT4X4 GetToParent() { return m_xmf4x4ToParent; }
 
 public:
-	void UpdateCollisionBox(std::vector<BoundingBox> vxmAABB, int *pnIndex);
+	void UpdateCollisionBox(std::vector<BoundingBox>& vxmAABB, int *pnIndex);
 	void UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent);
 
 	void GetMeshes(int *pnStandardMeshes, int *pnSkinnedMeshes);
@@ -185,15 +185,15 @@ public:
 
 public: // Root Model
 	const char* GetFileName() { return m_pstrFileName; };
-	void SetModelMeshCount(int nStandardMeshes, int nSkinnedMeshes) { m_nStandardMeshes = nStandardMeshes; m_nSkinnedMeshes = nSkinnedMeshes; }
+	void SetModelMeshCount(int nMeshes, int nSkinnedMeshes) { m_nMeshes = nMeshes; m_nSkinnedMeshes = nSkinnedMeshes; }
 	void SetFileName(const char *pstrFileName) { m_pstrFileName = pstrFileName; }
 
-	int GetStandardMeshes() { return m_nStandardMeshes; }
+	int GetMeshes() { return m_nMeshes; }
 	int GetSkinnedMeshes() { return m_nSkinnedMeshes; }
 	
 protected:
 	// Root Model = Total
-	int				m_nStandardMeshes = 0;
+	int				m_nMeshes = 0;
 	int				m_nSkinnedMeshes = 0;
 
 	const char		*m_pstrFileName = NULL;
@@ -202,4 +202,5 @@ public:
 	static CModel* LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation);
 	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFileName, const char *pstrFilePath);
 	static CAnimationSet* LoadAnimationFromFile(FILE *pFile, CModel *pModel);
+
 };

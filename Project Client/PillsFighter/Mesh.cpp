@@ -159,11 +159,6 @@ CCubeMesh::~CCubeMesh()
 {
 }
 
-void CCubeMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	pd3dCommandList->IASetVertexBuffers(m_nSlot, 1, &m_d3dPositionBufferView);
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 void FindXYZ(XMFLOAT3* pPositions, UINT nVertices, XMFLOAT3& Center, XMFLOAT3& Extents)
@@ -217,7 +212,7 @@ void CStandardMesh::LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		{
 			BoundingBox xmAABB;
 			fscanf_s(pFile, "%f %f %f %f %f %f", &xmAABB.Center.x, &xmAABB.Center.y, &xmAABB.Center.z, &xmAABB.Extents.x, &xmAABB.Extents.y, &xmAABB.Extents.z);
-			SetAABB(xmAABB);
+			//SetAABB(xmAABB);
 		}
 		else if (!strcmp(pstrToken, "<Positions>:"))
 		{
@@ -327,6 +322,11 @@ void CStandardMesh::LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			break;
 		}
 	}
+
+	XMFLOAT3 xmf3Center;
+	XMFLOAT3 xmf3Extents;
+	FindXYZ(m_pxmf3Positions, m_nVertices, xmf3Center, xmf3Extents);
+	SetAABB(xmf3Center, xmf3Extents);
 }
 
 void CStandardMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)

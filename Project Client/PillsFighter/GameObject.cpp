@@ -42,9 +42,11 @@ void CGameObject::SetModel(CModel *pModel)
 
 		m_pModel->GetSkinnedMeshes(m_vSkinnedMeshes);
 
-		int nStandardMeshes = pModel->GetStandardMeshes();
+		int nStandardMeshes = pModel->GetMeshes();
 		m_nSkinnedMeshes = pModel->GetSkinnedMeshes();
 		m_nMeshes = nStandardMeshes + m_nSkinnedMeshes;
+
+		for (int i = 0; i < m_nMeshes; i++) m_vxmAABB.emplace_back(BoundingBox());
 
 		OnPrepareAnimate();
 	}
@@ -107,7 +109,7 @@ void CGameObject::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphics
 		pd3dcbGameObject->Map(0, NULL, (void **)&pcbMappedGameObject);
 
 		m_vd3dcbGameObject.emplace_back(pd3dcbGameObject);
-		m_vcbMappedGameObjec.emplace_back(pcbMappedGameObject);
+		m_vcbMappedGameObject.emplace_back(pcbMappedGameObject);
 	}
 
 	ncbElementBytes = (((sizeof(XMFLOAT4X4) * SKINNED_ANIMATION_BONES) + 255) & ~255); //256ÀÇ ¹è¼ö
@@ -335,9 +337,9 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_pModel)
 	{
-		if (m_pAnimationController) m_pAnimationController->AdvanceTime(fTimeElapsed);
-
 		OnPrepareRender();
+
+		if (m_pAnimationController) m_pAnimationController->AdvanceTime(fTimeElapsed);
 
 		UpdateWorldTransform();
 
@@ -371,7 +373,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
-		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObjec, &i);
+		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
 	}
 }
 
@@ -379,9 +381,12 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 {
 	OnPrepareRender();
 
+	UpdateWorldTransform();
+
 	UpdateShaderVariables(pd3dCommandList);
 
-	if(m_pModel) m_pModel->RenderWire(pd3dCommandList, pCamera);
+	int i = 0;
+	if(m_pModel) m_pModel->RenderWire(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
 }
 
 void CGameObject::ReleaseUploadBuffers()
@@ -525,7 +530,7 @@ RotateObject::~RotateObject()
 
 void RotateObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-	Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
+//	Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
 
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }

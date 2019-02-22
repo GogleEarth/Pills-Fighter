@@ -343,7 +343,7 @@ void CModel::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned)
 	if (!m_pMesh)
 	{
 		if(bIsSkinned) m_nSkinnedMeshes++;
-		else m_nStandardMeshes++;
+		else m_nMeshes++;
 	}
 
 	m_pMesh = pMesh; 
@@ -371,13 +371,13 @@ void CModel::ReleaseUploadBuffers()
 	if (m_pChild) m_pChild->ReleaseUploadBuffers();
 }
 
-void CModel::GetMeshes(int *pnStandardMeshes, int *pnSkinnedMeshes)
+void CModel::GetMeshes(int *pnMeshes, int *pnSkinnedMeshes)
 {
-	(*pnStandardMeshes) += m_nStandardMeshes;
+	(*pnMeshes) += m_nMeshes;
 	(*pnSkinnedMeshes) += m_nSkinnedMeshes;
 
-	if (m_pSibling) m_pSibling->GetMeshes(pnStandardMeshes, pnSkinnedMeshes);
-	if (m_pChild) m_pChild->GetMeshes(pnStandardMeshes, pnSkinnedMeshes);
+	if (m_pSibling) m_pSibling->GetMeshes(pnMeshes, pnSkinnedMeshes);
+	if (m_pChild) m_pChild->GetMeshes(pnMeshes, pnSkinnedMeshes);
 }
 
 void CModel::GetSkinnedMeshes(std::vector<CSkinnedMesh*>& vMeshes)
@@ -410,28 +410,37 @@ void CModel::UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent)
 	if (m_pChild) m_pChild->UpdateWorldTransform(&m_xmf4x4World);
 }
 
-void CModel::UpdateCollisionBox(std::vector<BoundingBox> vxmAABB, int *pnIndex)
+void CModel::UpdateCollisionBox(std::vector<BoundingBox>& vxmAABB, int *pnIndex)
 {
 	if ((*pnIndex) == vxmAABB.size())
 		return;
 
 	if (m_pMesh)
 	{
-		m_pMesh->m_xmAABB.Transform(vxmAABB[*pnIndex], XMLoadFloat4x4(&m_xmf4x4World));
+		m_pMesh->m_xmAABB.Transform(vxmAABB[(*pnIndex)++], XMLoadFloat4x4(&m_xmf4x4World));
 	}
 
-	(*pnIndex)++;
 
 	if (m_pSibling) m_pSibling->UpdateCollisionBox(vxmAABB, pnIndex);
 	if (m_pChild) m_pChild->UpdateCollisionBox(vxmAABB, pnIndex);
 }
 
-void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex)
 {
-	if (m_pCubeMesh) m_pCubeMesh->Render(pd3dCommandList, 0);
+	if ((*pnIndex) == vd3dcbGameObject.size())
+		return;
 
-	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera);
-	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera);
+	if (m_pCubeMesh)
+	{
+		if (m_nMeshes > 0) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
+
+		m_pCubeMesh->Render(pd3dCommandList, 0);
+
+		(*pnIndex)++;
+	}
+
+	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
+	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
 }
 
 void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* pd3dcbGameObject, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
@@ -449,7 +458,7 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 
 	if (m_pMesh)
 	{
-		if(m_nStandardMeshes > 0) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
+		if(m_nMeshes > 0) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
 
 		if (m_nMaterials > 0)
 		{
@@ -469,7 +478,6 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 		(*pnIndex)++;
 	}
 
-
 	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
 }
@@ -484,9 +492,9 @@ CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D1
 	printf("File Path : %s\n", pstrFilePath.c_str());
 
 	CModel *pModel = CModel::LoadModelFromFile(pd3dDevice, pd3dCommandList, pFile, pstrFileName, pstrFilePath.c_str());
-	int nStandardMeshes = 0, nSkinnedMeshes = 0;
-	pModel->GetMeshes(&nStandardMeshes, &nSkinnedMeshes);
-	pModel->SetModelMeshCount(nStandardMeshes, nSkinnedMeshes);
+	int nMeshes = 0, nSkinnedMeshes = 0;
+	pModel->GetMeshes(&nMeshes, &nSkinnedMeshes);
+	pModel->SetModelMeshCount(nMeshes, nSkinnedMeshes);
 	if (bHasAnimation) pModel->m_pAnimationSet = ::CModel::LoadAnimationFromFile(pFile, pModel);
 	pModel->CacheSkinningBoneFrames(pModel);
 

@@ -11,7 +11,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
-	//SetPrepareRotate(-90,0,0);
+	SetPrepareRotate(0, 180, 0);
 
 	m_pCamera = SetCamera(0.0f);
 
@@ -172,7 +172,8 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 XMFLOAT4X4 CPlayer::GetToTarget()
 {
-	float fDistance = m_pScene->FindAimToTargetDistance();
+	float fDistance = m_pScene->GetToTargetDistance();
+
 	XMFLOAT3 xmf3CameraPos = m_pCamera->GetPosition();
 	XMFLOAT3 xmf3CameraLook = m_pCamera->GetLookVector();
 	XMFLOAT3 xmf3DestPos = XMFLOAT3(xmf3CameraPos.x + xmf3CameraLook.x * fDistance,
@@ -193,7 +194,7 @@ XMFLOAT4X4 CPlayer::GetToTarget()
 
 void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 {
-	if(m_pScene) m_pScene->CheckCollisionPlayer();
+	//if(m_pScene) m_pScene->CheckCollisionPlayer();
 
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)m_pPlayerUpdatedContext;
 	XMFLOAT3 xmf3Scale = pTerrain->GetScale();

@@ -90,8 +90,6 @@ class CCubeMesh : public CMesh
 public:
 	CCubeMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Center, XMFLOAT3 xmf3Extents);
 	virtual ~CCubeMesh();
-
-	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

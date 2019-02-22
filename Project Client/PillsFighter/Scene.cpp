@@ -199,6 +199,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
 
+	m_pWireShader = new CWireShader();
+	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
 
@@ -292,8 +295,16 @@ void CScene::CheckCollision()
 
 	for (const auto& Enemy : *vEnemys)
 	{
-		if(m_pPlayer->CollisionCheck(Enemy))
-			std::cout << "Collision Player By Enemy\n" << std::endl;
+		if (m_pPlayer->CollisionCheck(Enemy))
+		{
+			//std::cout << "Collision Player By Enemy\n" << std::endl;
+			printf("\n-[Player]-\n");
+			m_pPlayer->PrintAABB();
+
+			printf("\n-[Enemy]-\n");
+			Enemy->PrintAABB();
+			printf("\n");
+		}
 
 		for (const auto& Bullet : *vBullets)
 		{
@@ -301,6 +312,8 @@ void CScene::CheckCollision()
 				std::cout << "Collision Enemy By Bullet\n" << std::endl;
 		}
 	}
+
+	FindAimToTargetDistance();
 }
 
 void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
@@ -311,7 +324,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 			m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
 	}
 
-	if(m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
+	if (m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
 	if (m_pWeapon) m_pWeapon->Animate(fTimeElapsed, pCamera);
 
 	if (m_pLights)
@@ -323,7 +336,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	CheckCollision();
 }
 
-float CScene::FindAimToTargetDistance()
+void CScene::FindAimToTargetDistance()
 {
 	std::vector<CGameObject*> *vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
 	std::vector<CGameObject*> *vObstacles = static_cast<CRepairItemShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
@@ -373,7 +386,7 @@ float CScene::FindAimToTargetDistance()
 		if (fDistance > fTemp) fDistance = fTemp;
 	}
 
-	return fDistance;
+	m_fCameraToTarget = fDistance;
 }
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
