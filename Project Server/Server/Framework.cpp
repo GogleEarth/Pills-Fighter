@@ -509,7 +509,7 @@ void Framework::CheckCollision(CScene* pScene)
 							pktDO.Object_Index = Bullet->index;
 							delete_msg_queue.push(pktDO);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
-							pktLF.HP = 1;
+							pktLF.HP = Bullet->hp;
 							life_msg_queue.push(pktLF);
 							Bullet->Delete();
 						}

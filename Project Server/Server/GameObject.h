@@ -29,6 +29,7 @@ public:
 	BULLET_TYPE m_Bullet_Type;
 	int m_iId;
 	int index;
+	int hp;
 
 	float m_fPitch;
 	float m_fYaw;
