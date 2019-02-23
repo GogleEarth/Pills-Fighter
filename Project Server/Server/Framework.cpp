@@ -280,7 +280,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		// 플레이어 정보를 기반으로 패킷 보내기
 		while (true)
 		{
-			std::cout << "플레이어 큐 크기 : " << msg_queue.size() << std::endl;
+			//std::cout << "플레이어 큐 크기 : " << msg_queue.size() << std::endl;
 			PKT_PLAYER_INFO pkt;
 			if (msg_queue.empty())
 			{
@@ -290,6 +290,10 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt = msg_queue.front();
 			msg_queue.pop();
 
+			std::cout << "Player_id : " << pkt.ID << std::endl;
+			std::cout << "Player_position : " << pkt.WorldMatrix._41 << " " << pkt.WorldMatrix._42 << " " << pkt.WorldMatrix._43 << std::endl;
+			std::cout << "Player_Weapon : " << pkt.Player_Weapon << std::endl;
+			std::cout << "Player_Frame : " << pkt.Current_Frame << std::endl;
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
@@ -302,7 +306,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
 			if (pkt.IsShooting == true)
 			{
-				std::cout << "총알생성\n";
+				//std::cout << "총알생성\n";
 				pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
 				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
@@ -460,7 +464,10 @@ DWORD Framework::client_process(SOCKET arg)
 			retval = recvn(client_socket, buf, nPktSize, 0);
 			if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 			
-			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting, ((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix });
+			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID,
+				((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting,
+				((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
+				((PKT_PLAYER_INFO*)buf)->Player_Animation, ((PKT_PLAYER_INFO*)buf)->Current_Frame});
 
 			SetEvent(client_Event[((PKT_PLAYER_INFO*)buf)->ID]);
 			WaitForSingleObject(Event, INFINITE);
