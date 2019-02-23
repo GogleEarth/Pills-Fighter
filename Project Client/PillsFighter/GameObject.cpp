@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "Shader.h"
 #include "Scene.h"
+#include "Weapon.h"
 #include "Animation.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,9 +43,8 @@ void CGameObject::SetModel(CModel *pModel)
 
 		m_pModel->GetSkinnedMeshes(m_vSkinnedMeshes);
 
-		int nStandardMeshes = pModel->GetMeshes();
 		m_nSkinnedMeshes = pModel->GetSkinnedMeshes();
-		m_nMeshes = nStandardMeshes + m_nSkinnedMeshes;
+		m_nMeshes = pModel->GetMeshes();
 
 		for (int i = 0; i < m_nMeshes; i++) m_vxmAABB.emplace_back(BoundingBox());
 
@@ -530,7 +530,7 @@ RotateObject::~RotateObject()
 
 void RotateObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-//	Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
+	//Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
 
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }
@@ -739,21 +739,92 @@ void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-CEquipmentableObject::CEquipmentableObject() : CGameObject()
+CRobotObject::CRobotObject() : CAnimationObject()
 {
 
 }
 
-CEquipmentableObject::~CEquipmentableObject()
+CRobotObject::~CRobotObject()
 {
-	m_pRightHand = NULL;
-	m_pLeftHand = NULL;
+	for (CWeapon *pWeapon : m_vpWeapon)
+	{
+		delete pWeapon;
+	}
 }
 
-void CEquipmentableObject::OnPrepareAnimate()
+void CRobotObject::OnPrepareAnimate()
 {
-	//m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
-	//m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
+	m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
+	m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
+}
 
-	//m_nMeshes += 2;
+void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
+{
+	m_pRHWeapon = pWeapon;
+	m_pRHWeapon->SetOwner(this);
+	m_pRHWeapon->SetParentModel(m_pRightHand);
+}
+
+void CRobotObject::EquipOnLeftHand(CWeapon *pWeapon)
+{
+	m_pLHWeapon = pWeapon;
+	m_pLHWeapon->SetOwner(this);
+	m_pLHWeapon->SetParentModel(m_pLeftHand);
+}
+
+void CRobotObject::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext)
+{
+	CWeapon *pWeapon = NULL;
+
+	switch (nType)
+	{
+	case WEAPON_TYPE_OF_GIM_GUN:
+		pWeapon = new CGimGun();
+		((CGimGun*)pWeapon)->SetBullet((CShader*)pContext);
+		break;
+	case WEAPON_TYPE_OF_BAZOOKA:
+		pWeapon = new CBazooka();
+		((CBazooka*)pWeapon)->SetBullet((CShader*)pContext);
+		break;
+	case WEAPON_TYPE_OF_MACHINEGUN:
+		pWeapon = new CMachineGun();
+		((CMachineGun*)pWeapon)->SetBullet((CShader*)pContext);
+		break;
+	default:
+		exit(1);
+		break;
+	}
+
+	pWeapon->SetModel(pWeaponModel);
+	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pWeapon->Initialize();
+	pWeapon->SetForCreate(pd3dDevice, pd3dCommandList);
+
+	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
+
+	m_vpWeapon.emplace_back(pWeapon);
+}
+
+void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
+{
+	CGameObject::Animate(fTimeElapsed, pCamera);
+
+	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
+	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
+}
+
+void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CGameObject::Render(pd3dCommandList, pCamera);
+
+	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera);
+	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera);
+}
+
+void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CGameObject::RenderWire(pd3dCommandList, pCamera);
+
+	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
+	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
 }

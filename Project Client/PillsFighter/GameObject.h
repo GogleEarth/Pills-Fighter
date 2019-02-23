@@ -6,8 +6,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 class CShader;
-class CModel;
 class CAnimationController;
+class CWeapon;
 
 struct MATERIAL
 {
@@ -141,18 +141,6 @@ public:
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 	void SetAnimationController(CAnimationController *pController) { m_pAnimationController = pController; }
-
-public:
-	void PrintAABB()
-	{
-		for(auto xmAABB : m_vxmAABB)
-		{
-			XMFLOAT3 a = xmAABB.Center;
-			XMFLOAT3 b = xmAABB.Extents;
-
-			printf("[C : %f, %f, %f] [E : %f, %f, %f]\n", a.x, a.y, a.z, b.x, b.y, b.z);
-		}
-	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,7 +180,6 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 class Bullet : public CGameObject
 {
@@ -293,20 +280,34 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CEquipmentableObject : public CGameObject
+class CRobotObject : public CAnimationObject
 {
 public:
-	CEquipmentableObject();
-	virtual ~CEquipmentableObject();
+	CRobotObject();
+	virtual ~CRobotObject();
 
 	virtual void OnPrepareAnimate();
-	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL) {};
 
-	virtual void EquipOnRightHand(CModel *pModel) { m_pRightHand->SetChild(pModel, true); };
-	virtual void EquipOnLeftHand(CModel *pModel) { m_pLeftHand->SetChild(pModel, true); };
+	virtual void EquipOnRightHand(CWeapon *pWeapon);
+	virtual void EquipOnLeftHand(CWeapon *pWeapon);
+
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+
+	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext);
+	CWeapon* GetWeapon(int nIndex) { return m_vpWeapon[nIndex]; }
 
 protected:
-	CModel *m_pLeftHand;
-	CModel *m_pRightHand;
+	CModel *m_pLeftHand = NULL;
+	CModel *m_pRightHand = NULL;
 
+	CWeapon *m_pRHWeapon = NULL;
+	CWeapon *m_pLHWeapon = NULL;
+
+	std::vector<CWeapon*> m_vpWeapon;
+
+public:
+	CWeapon* GetRHWeapon() { return m_pRHWeapon; }
+	CWeapon* GetLHWeapon() { return m_pLHWeapon; }
 };

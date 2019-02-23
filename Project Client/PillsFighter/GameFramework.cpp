@@ -520,7 +520,6 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 			break;
 		}
-
 	}
 	else
 	{
@@ -537,9 +536,11 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pPlayer->SetGravity(m_pScene->m_fGravAcc);
 	m_pPlayer->SetScene(m_pScene);
 	m_pCamera = m_pPlayer->GetCamera();
-	m_pPlayer->SetWeapon(m_pScene->GetWeapon());
 
-	m_pPlayer->m_nAmmo = 1000;
+	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGimGun(), WEAPON_TYPE_OF_GIM_GUN, m_pScene->GetGimGunBullet());
+	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetBazooka(), WEAPON_TYPE_OF_BAZOOKA, m_pScene->GetBazookaBullet());
+	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetMachineGun(), WEAPON_TYPE_OF_MACHINEGUN, m_pScene->GetMachineGunBullet());
+	m_pPlayer->PickUpAmmo(1000);
 }
 
 void CGameFramework::BuildObjects()
@@ -595,8 +596,8 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 		}
 		else
 		{
-			if (!m_LButtonDown)
-				m_pPlayer->CheckReload();
+			if (!m_LButtonDown) m_pPlayer->PrepareAttack(m_pPlayer->GetRHWeapon());
+
 			m_LButtonDown = TRUE;
 		}
 		break;
@@ -661,7 +662,13 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			}
 			break;
 		case '1':
-			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - 5);
+			m_pPlayer->EquipOnRightHand(m_pPlayer->GetWeapon(0));
+			break;
+		case '2':
+			m_pPlayer->EquipOnRightHand(m_pPlayer->GetWeapon(1));
+			break;
+		case '3':
+			m_pPlayer->EquipOnRightHand(m_pPlayer->GetWeapon(2));
 			break;
 		default:
 			break;
@@ -727,7 +734,7 @@ void CGameFramework::ProcessInput()
 		if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
 		if (pKeyBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
 		if (pKeyBuffer['V'] & 0xF0) dwDirection |= DIR_DOWN;
-		if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload();
+		if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 	}
 
 	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
@@ -755,10 +762,9 @@ void CGameFramework::ProcessInput()
 		}
 	}
 
-
 	if (m_LButtonDown)
 	{
-		m_pPlayer->Shot(m_pd3dDevice, m_pd3dCommandList);
+		m_pPlayer->Attack(m_pPlayer->GetRHWeapon());
 	}
 
 	m_pPlayer->Update(m_fElapsedTime);
@@ -799,13 +805,15 @@ void CGameFramework::FrameAdvance()
 
 		pktPlayerInfo.ID = m_Client_Info;
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
-		if (m_pPlayer->m_bShot)
+		if (m_pPlayer->IsShotable())
 		{
 			pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
 			pktPlayerInfo.IsShooting = TRUE;
-			m_pPlayer->m_bShot = false;
+			pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
+			m_pPlayer->IsShotable(false);
 		}
 		else pktPlayerInfo.IsShooting = 0;
+
 		PKT_ID pid = PKT_ID_PLAYER_INFO;
 		retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
 

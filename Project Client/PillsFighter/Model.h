@@ -193,8 +193,8 @@ public: // Root Model
 	
 protected:
 	// Root Model = Total
-	int				m_nMeshes = 0;
-	int				m_nSkinnedMeshes = 0;
+	int				m_nMeshes = 0; // All Mesh
+	int				m_nSkinnedMeshes = 0; // Only Skinning Mesh
 
 	const char		*m_pstrFileName = NULL;
 

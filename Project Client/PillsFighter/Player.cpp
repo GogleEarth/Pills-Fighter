@@ -4,10 +4,11 @@
 #include "Repository.h"
 #include "Scene.h"
 #include "Animation.h"
+#include "Weapon.h"
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CEquipmentableObject()
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CRobotObject()
 {
 	m_nHitPoint = m_nMaxHitPoint = 100;
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
@@ -132,7 +133,7 @@ void CPlayer::Update(float fTimeElapsed)
 	ProcessBooster(fTimeElapsed);
 	ProcessOnGround(fTimeElapsed);
 	ProcessHitPoint();
-	ProcessTime(fTimeElapsed);
+	ProcessTime(m_pRHWeapon, fTimeElapsed);
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
@@ -140,20 +141,20 @@ void CPlayer::Update(float fTimeElapsed)
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	m_pCamera->SetLookAt(xmf3LookAt);
 
-	CGameObject::Animate(fTimeElapsed);
+	CRobotObject::Animate(fTimeElapsed);
 }
 
 void CPlayer::Rotate(float x, float y, float z)
 {
 	if (!IsZero(y))
 	{
-		m_fYaw += y;
-		if (m_fYaw > 360.0f) m_fYaw -= 360.0f;
-		if (m_fYaw < 0.0f) m_fYaw += 360.0f;
+		//m_fYaw += y;
+		//if (m_fYaw > 360.0f) m_fYaw -= 360.0f;
+		//if (m_fYaw < 0.0f) m_fYaw += 360.0f;
 
-		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(y));
-		m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
-		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
+		//XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(y));
+		//m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
+		//m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 	}
 
 	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
@@ -167,7 +168,7 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 {
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
 
-	CGameObject::Render(pd3dCommandList, pCamera);
+	CRobotObject::Render(pd3dCommandList, pCamera);
 }
 
 XMFLOAT4X4 CPlayer::GetToTarget()
@@ -342,123 +343,91 @@ void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAA
 	}
 }
 
-void CPlayer::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CPlayer::Attack(CWeapon *pWeapon)
 {
-	if (!m_bReloading)
+	if (pWeapon)
 	{
-		if (m_pWeapon) m_pWeapon->Shot(pd3dDevice, pd3dCommandList, this);
-	}
-}
+		int nType = pWeapon->GetType();
 
-void CPlayer::CheckReload()
-{
-	if (!m_pWeapon->GetReloadedAmmo())
-	{
-		if (m_nAmmo)
+		if (nType & WEAPON_TYPE_OF_GUN)
 		{
-			Reload();
+			CGun *pGun = (CGun*)pWeapon;
+
+			if (!m_bReloading) pGun->Shot();
 		}
 	}
 }
 
-void CPlayer::Reload()
+void CPlayer::PrepareAttack(CWeapon *pWeapon)
 {
-	if (!m_bReloading)
+	if (pWeapon)
 	{
-		m_bReloading = true;
-		m_fReloadTime = m_pWeapon->GetReloadTime();
-	}
-}
+		int nType = pWeapon->GetType();
 
-void CPlayer::ProcessTime(float fTimeElapsed)
-{
-	if (m_bReloading)
-	{
-		m_fReloadTime -= fTimeElapsed;
-
-		if (m_fReloadTime < 0.0f)
+		if (nType & WEAPON_TYPE_OF_GUN)
 		{
-			if (m_pWeapon) m_pWeapon->Reload(m_nAmmo);
-			m_bReloading = false;
+			CGun *pGun = (CGun*)pWeapon;
+
+			if (!pGun->GetReloadedAmmo())
+			{
+				if (m_nAmmo) Reload(pGun);
+			}
 		}
 	}
-
-	printf("Reload Time : %f, Reload(%d)\n", m_fReloadTime, m_bReloading);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-CWeapon::CWeapon()
+void CPlayer::Reload(CWeapon *pWeapon)
 {
-	m_fReloadTime = RELOAD_TIME;
-}
-
-CWeapon::~CWeapon()
-{
-}
-
-void CWeapon::Reload(int& nAmmo)
-{
-	m_nReloadedAmmo += nAmmo;
-
-	if (m_nReloadedAmmo > m_nMaxReloadAmmo)
+	if (pWeapon)
 	{
-		nAmmo = m_nReloadedAmmo - m_nMaxReloadAmmo;
-		m_nReloadedAmmo = m_nMaxReloadAmmo;
-	}
-	else nAmmo = 0;
-}
+		CGun *pGun = (CGun*)pWeapon;
 
-void CWeapon::Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CPlayer *pPlayer)
-{
-	if (m_fBurstCoolTime < 0.0f && m_nReloadedAmmo > 0)
-	{
-		m_bBurst = true;
-		SetBurstCoolTime();
-	}
-}
-
-void CWeapon::Animate(float ElapsedTime, CCamera *pCamera)
-{
-	if (m_bBurst)
-	{
-		if (m_fShotCoolTime <= 0.0f)
+		if (!m_bReloading)
 		{
-#ifndef ON_NETWORKING
-			Bullet *pBullet = NULL;
-			pBullet = new Bullet();
-
-			XMFLOAT4X4 xmf4x4World = m_pPlayer->GetToTarget();
-
-			pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
-			pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
-			pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
-			pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
-
-			m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
-#else
-			m_pPlayer->m_bShot = true;
-#endif
-			SetShotCoolTime();
-
-			m_nShotCount++;
-			m_nReloadedAmmo--;
-		}
-
-		if (m_nShotCount >= 3 || m_nReloadedAmmo == 0)
-		{
-			m_nShotCount = 0;
-			m_bBurst = false;
+			m_bReloading = true;
+			m_fReloadTime = pGun->GetReloadTime();
 		}
 	}
-	else
+}
+
+void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
+{
+	if (pWeapon)
 	{
-		m_fBurstCoolTime -= ElapsedTime;
+		int nType = pWeapon->GetType();
+
+		if (nType & WEAPON_TYPE_OF_GUN)
+		{
+			CGun *pGun = (CGun*)pWeapon;
+
+			if (m_bReloading)
+			{
+				m_fReloadTime -= fTimeElapsed;
+
+				if (m_fReloadTime < 0.0f)
+				{
+					if (m_pRHWeapon) pGun->Reload(m_nAmmo);
+
+					m_bReloading = false;
+				}
+			}
+		}
 	}
-	
-	if (m_fShotCoolTime > 0.0f)
+}
+
+WEAPON_TYPE CPlayer::GetWeaponType()
+{
+	if (m_pRHWeapon)
 	{
-		m_fShotCoolTime -= ElapsedTime;
+		int nType = m_pRHWeapon->GetType();
+
+		if (nType & WEAPON_TYPE_OF_GIM_GUN)
+			return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
+		else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
+			return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
+		else if (nType & WEAPON_TYPE_OF_BAZOOKA)
+			return WEAPON_TYPE::WEAPON_TYPE_BAZOOKA;
 	}
+
+	return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
 }

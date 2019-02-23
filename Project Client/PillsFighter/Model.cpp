@@ -7,6 +7,7 @@
 
 CTexture::CTexture(int nTextures, UINT nTextureType, int nSamplers)
 {
+	printf("-- %d --\n", nTextures);
 	m_nTextureType = nTextureType;
 	m_nTextures = nTextures;
 
@@ -343,7 +344,8 @@ void CModel::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned)
 	if (!m_pMesh)
 	{
 		if(bIsSkinned) m_nSkinnedMeshes++;
-		else m_nMeshes++;
+
+		m_nMeshes++;
 	}
 
 	m_pMesh = pMesh; 
@@ -415,11 +417,7 @@ void CModel::UpdateCollisionBox(std::vector<BoundingBox>& vxmAABB, int *pnIndex)
 	if ((*pnIndex) == vxmAABB.size())
 		return;
 
-	if (m_pMesh)
-	{
-		m_pMesh->m_xmAABB.Transform(vxmAABB[(*pnIndex)++], XMLoadFloat4x4(&m_xmf4x4World));
-	}
-
+	if (m_pMesh) m_pMesh->m_xmAABB.Transform(vxmAABB[(*pnIndex)++], XMLoadFloat4x4(&m_xmf4x4World));
 
 	if (m_pSibling) m_pSibling->UpdateCollisionBox(vxmAABB, pnIndex);
 	if (m_pChild) m_pChild->UpdateCollisionBox(vxmAABB, pnIndex);
@@ -491,14 +489,14 @@ CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D1
 	std::string pstrFilePath = ::GetFilePath(pstrFileName);
 	printf("File Path : %s\n", pstrFilePath.c_str());
 
-	CModel *pModel = CModel::LoadModelFromFile(pd3dDevice, pd3dCommandList, pFile, pstrFileName, pstrFilePath.c_str());
+	CModel *pRootModel = CModel::LoadModelFromFile(pd3dDevice, pd3dCommandList, pFile, pstrFileName, pstrFilePath.c_str());
 	int nMeshes = 0, nSkinnedMeshes = 0;
-	pModel->GetMeshes(&nMeshes, &nSkinnedMeshes);
-	pModel->SetModelMeshCount(nMeshes, nSkinnedMeshes);
-	if (bHasAnimation) pModel->m_pAnimationSet = ::CModel::LoadAnimationFromFile(pFile, pModel);
-	pModel->CacheSkinningBoneFrames(pModel);
+	pRootModel->GetMeshes(&nMeshes, &nSkinnedMeshes);
+	pRootModel->SetModelMeshCount(nMeshes, nSkinnedMeshes);
+	if (bHasAnimation) pRootModel->m_pAnimationSet = ::CModel::LoadAnimationFromFile(pFile, pRootModel);
+	pRootModel->CacheSkinningBoneFrames(pRootModel);
 
-	return pModel;
+	return pRootModel;
 }
 
 CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFileName, const char *pstrFilePath)
@@ -533,7 +531,6 @@ CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 
 			fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken)); //<Mesh>:
 			pSkinnedMesh->LoadMeshFromFile(pd3dDevice, pd3dCommandList, pFile);
-
 			CCubeMesh *pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, pSkinnedMesh->GetCenter(), pSkinnedMesh->GetExtents());
 			pModel->SetMesh(pSkinnedMesh, pCubeMesh, true);
 		}

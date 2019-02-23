@@ -89,12 +89,6 @@ protected:
 	ID3D12Resource	*m_pd3dcbLights = NULL;
 	LIGHTS			*m_pcbMappedLights = NULL;
 
-protected:
-	CWeapon			*m_pWeapon = NULL;
-
-public:
-	CWeapon* GetWeapon() { return m_pWeapon; }
-
 public: // For Network
 	CGameObject* m_pObjects[MAX_NUM_OBJECT];
 
@@ -129,4 +123,25 @@ public:
 
 protected:
 	float m_fCameraToTarget = 0.0f;
+
+protected:
+	CModel		*m_pGimGun = NULL;
+	CShader		*m_pGimGunBulletShader = NULL;
+
+	CModel		*m_pBazooka = NULL;
+	CShader		*m_pBazookaBulletShader = NULL;
+
+	CModel		*m_pMachineGun = NULL;
+	CShader		*m_pMachineGunBulletShader = NULL;
+
+public:
+	CModel* GetGimGun() { return m_pGimGun; }
+	CShader* GetGimGunBullet() { return m_pGimGunBulletShader; }
+
+	CModel* GetBazooka() { return m_pBazooka; }
+	CShader* GetBazookaBullet() { return m_pBazookaBulletShader; }
+
+	CModel* GetMachineGun() { return m_pMachineGun; }
+	CShader* GetMachineGunBullet() { return m_pMachineGunBulletShader; }
+
 };

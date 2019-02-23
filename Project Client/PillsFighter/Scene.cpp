@@ -163,7 +163,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/+4);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
@@ -208,16 +208,15 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
-	m_pWeapon = new CWeapon();
-	//CModel *pWeapon = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.txt", false);
-	CModel *pWeapon = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.txt", false);
-	m_pWeapon->SetModel(pWeapon);
-	m_pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	m_pWeapon->SetBullet(m_ppShaders[INDEX_SHADER_BULLET]);
-	m_pWeapon->SetForCreateBullet(pd3dDevice, pd3dCommandList);
+	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.txt", false);
+	m_pGimGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
 
-	//m_pWireShader = new CWireShader();
-	//m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.txt", false);
+	m_pBazookaBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
+
+	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.txt", false);
+	m_pMachineGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
+
 }
 
 void CScene::ReleaseObjects()
@@ -231,7 +230,6 @@ void CScene::ReleaseObjects()
 	if (m_pSkyBox) delete m_pSkyBox;
 	if (m_pTerrain) delete m_pTerrain;
 	if (m_pWireShader) delete m_pWireShader;
-	if (m_pWeapon) delete m_pWeapon;
 
 	if (m_ppShaders)
 	{
@@ -254,7 +252,7 @@ void CScene::ReleaseUploadBuffers()
 {
 	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
-	if (m_pWeapon)m_pWeapon->ReleaseUploadBuffers();
+	if (m_pGimGun) m_pGimGun->ReleaseUploadBuffers();
 
 	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
 }
@@ -297,13 +295,7 @@ void CScene::CheckCollision()
 	{
 		if (m_pPlayer->CollisionCheck(Enemy))
 		{
-			//std::cout << "Collision Player By Enemy\n" << std::endl;
-			printf("\n-[Player]-\n");
-			m_pPlayer->PrintAABB();
-
-			printf("\n-[Enemy]-\n");
-			Enemy->PrintAABB();
-			printf("\n");
+			std::cout << "Collision Player By Enemy\n" << std::endl;
 		}
 
 		for (const auto& Bullet : *vBullets)
@@ -325,7 +317,6 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	}
 
 	if (m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
-	if (m_pWeapon) m_pWeapon->Animate(fTimeElapsed, pCamera);
 
 	if (m_pLights)
 	{
@@ -600,7 +591,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	case OBJECT_TYPE_ITEM_HEALING:
-		pGameObject = new RotateObject();
+		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);

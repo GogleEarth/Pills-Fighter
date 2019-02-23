@@ -12,56 +12,13 @@
 
 class CShader;
 class CUserInterface;
-class CObjectsShader;
 class CRepository;
 class CScene;
-
-#define SHOT_COOLTIME	0.05f
-#define BURST_COOLTIME	0.5f
-#define RELOAD_TIME	3.0f
-
-class CWeapon : public CGameObject//CEquipment
-{
-public:
-	CWeapon();
-	virtual ~CWeapon();
-
-protected:
-	ID3D12Device *m_pd3dDevice = NULL;
-	ID3D12GraphicsCommandList *m_pd3dCommandList = NULL;
-
-	CObjectsShader *m_pBulletShader = NULL;
-	CPlayer	*m_pPlayer = NULL;
-
-	float m_fShotCoolTime = 0.0f;
-	float m_fBurstCoolTime = 0.0f;
-	bool m_bBurst = false;
-	int m_nShotCount = 0;
-
-	int m_nReloadedAmmo = 0;
-	int m_nMaxReloadAmmo = 30;
-
-	float m_fReloadTime = 0.0f;
-
-public:
-	float GetReloadTime() { return m_fReloadTime; }
-	virtual void Reload(int& nAmmo);
-	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
-	int GetReloadedAmmo() { return m_nReloadedAmmo; }
-	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
-	void SetBullet(CShader *Bullet) { m_pBulletShader = (CObjectsShader*)Bullet; }
-	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CPlayer *pPlayer);
-	virtual void SetShotCoolTime() { m_fShotCoolTime = SHOT_COOLTIME; }
-	virtual void SetBurstCoolTime() { m_fBurstCoolTime = BURST_COOLTIME; }
-	virtual void SetForCreateBullet(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { m_pd3dDevice = pd3dDevice; m_pd3dCommandList = pd3dCommandList; };
-
-	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
-};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CPlayer : public CEquipmentableObject
+class CPlayer : public CRobotObject
 {
 protected:
 	LPVOID m_pPlayerUpdatedContext = NULL;
@@ -141,30 +98,24 @@ public:
 
 public:
 	XMFLOAT4X4 GetToTarget();
-
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 
-public:
-	void Shot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-
-	void SetWeapon(CWeapon *pWeapon) 
-	{
-		m_pWeapon = pWeapon;
-		pWeapon->SetPlayer(this);
-		//EquipOnRightHand(pWeapon->GetModel());
-	}
-
 protected:
-	CWeapon *m_pWeapon = NULL;
+	int		m_nAmmo = 0;
+	bool	m_bReloading = false;
+	float	m_fReloadTime;
+	bool	m_bShot = false;
 
 public:
-	int	m_nAmmo = 0;
-	bool m_bReloading = false;
-	float m_fReloadTime;
-	bool m_bShot = false;
+	bool IsShotable() { return m_bShot; }
+	void IsShotable(bool bShot) { m_bShot = bShot; }
 
-	void Reload();
-	void CheckReload();
-	CWeapon* GetWeapon() { return m_pWeapon; }
-	void ProcessTime(float fTimeElapsed);
+	void PickUpAmmo(int nAmmo) { m_nAmmo += nAmmo; }
+
+	void ProcessTime(CWeapon *pWeapon, float fTimeElapsed);
+	void Attack(CWeapon *pWeapon);
+	void PrepareAttack(CWeapon *pWeapon);
+	void Reload(CWeapon *pWeapon);
+
+	WEAPON_TYPE GetWeaponType();
 };

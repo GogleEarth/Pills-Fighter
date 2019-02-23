@@ -4,6 +4,7 @@
 #include "Repository.h"
 #include "Scene.h"
 #include "Animation.h"
+#include "Weapon.h"
 
 CShader::CShader()
 {
@@ -415,7 +416,7 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.txt", true);
 
-	RandomMoveObject *pObject = new RandomMoveObject();
+	CRobotObject *pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 	pObject->SetPrepareRotate(0, 180, 0);
 
@@ -458,13 +459,13 @@ CRepairItemShader::~CRepairItemShader()
 
 void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.txt", false);
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.txt", false);
 	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.txt", false);
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.txt", false);
+	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.txt", false);
 
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
-	pObject->SetPrepareRotate(0, 180, 0);
+	pObject->SetPrepareRotate(0, 0, 0);
 	
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
@@ -485,22 +486,22 @@ void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	CGameObject *pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(-200.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(0.0f, 270.0f, 0.0f);
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
-
-	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(200.0f, 0.0f, 0.0f));
 	pObject->SetPrepareRotate(0.0f, 90.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
+	pObject->SetPosition(XMFLOAT3(200.0f, 0.0f, 0.0f));
+	pObject->SetPrepareRotate(0.0f, -90.0f, 0.0f);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+
+	pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 200.0f));
-	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, -180.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
 	pObject = new CGameObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -200.0f));
-	pObject->SetPrepareRotate(0.0f, 180.0f, 0.0f);
+	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
@@ -511,6 +512,7 @@ CEffectShader::CEffectShader()
 
 CEffectShader::~CEffectShader()
 {
+	if (m_pModel) m_pModel->Release();
 }
 
 D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
@@ -594,7 +596,7 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pModel = new CModel();
 	m_pModel->SetMesh(pMesh, NULL, false);
 	m_pModel->SetMaterial(ppMaterials, nMaterials);
-	//m_pModel->AddRef();
+	m_pModel->AddRef();
 
 	CEffect *pEffect = new CEffect();
 	pEffect->SetPosition(0.0f, 20.0f, 0.0f);
@@ -919,7 +921,11 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	m_ppUIRects[2]->Render(pd3dCommandList, 0);
 
 	// Draw Ammo
-	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, m_pPlayer->GetWeapon()->GetMaxReloadAmmo(), m_pPlayer->GetWeapon()->GetReloadedAmmo());
+	CGun *pRHGun = (CGun*)m_pPlayer->GetRHWeapon();
+	int nMaxReloadAmmo = pRHGun->GetMaxReloadAmmo();
+	int nReloadedAmmo = pRHGun->GetReloadedAmmo();
+
+	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
 	if (m_ppTextures[3]) m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[3]->Render(pd3dCommandList, 0);
 	
