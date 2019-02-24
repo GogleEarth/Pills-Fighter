@@ -497,7 +497,25 @@ CObstacleShader::~CObstacleShader()
 void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Hangar/Hangar.txt", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Hangar/TestInf.bin");
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveHangarSelfData.bin");
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveDoubleSquareSelfData.bin");
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonSelfData.bin");
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonLongtierSelfData.bin");
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSlopeTopSelfData.bin");
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSquareSelfData.bin");
+
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSteepleTopSelfData.bin");
 
 }
 
