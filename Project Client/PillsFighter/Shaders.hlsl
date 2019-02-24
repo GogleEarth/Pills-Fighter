@@ -109,7 +109,7 @@ float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
 
-	return(lerp(cColor, cIllumination, 0.4f));
+	return(cColor * cIllumination);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

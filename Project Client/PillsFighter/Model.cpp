@@ -7,7 +7,6 @@
 
 CTexture::CTexture(int nTextures, UINT nTextureType, int nSamplers)
 {
-	printf("-- %d --\n", nTextures);
 	m_nTextureType = nTextureType;
 	m_nTextures = nTextures;
 

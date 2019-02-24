@@ -10,11 +10,12 @@
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CRobotObject()
 {
+	m_pCamera = SetCamera(0.0f);
+
 	m_nHitPoint = m_nMaxHitPoint = 100;
 	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
-	SetPrepareRotate(0, 180, 0);
 
-	m_pCamera = SetCamera(0.0f);
+	AddPrepareRotate(0.0f, 180.0f, 0.0f);
 
 	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.txt", true);
 	//CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Player/Angrybot.txt", true);

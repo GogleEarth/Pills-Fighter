@@ -208,13 +208,7 @@ void CStandardMesh::LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		char pstrToken[64] = { 0 };
 		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
 
-		if (!strcmp(pstrToken, "<Bounds>:"))
-		{
-			BoundingBox xmAABB;
-			fscanf_s(pFile, "%f %f %f %f %f %f", &xmAABB.Center.x, &xmAABB.Center.y, &xmAABB.Center.z, &xmAABB.Extents.x, &xmAABB.Extents.y, &xmAABB.Extents.z);
-			//SetAABB(xmAABB);
-		}
-		else if (!strcmp(pstrToken, "<Positions>:"))
+		if (!strcmp(pstrToken, "<Positions>:"))
 		{
 			m_pxmf3Positions = new XMFLOAT3[m_nVertices];
 

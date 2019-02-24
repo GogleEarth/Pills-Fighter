@@ -105,6 +105,17 @@ public:
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CBZKBulletShader : public CObjectsShader
+{
+public:
+	CBZKBulletShader();
+	virtual ~CBZKBulletShader();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CRepairItemShader : public CObjectsShader

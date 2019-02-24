@@ -163,15 +163,15 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 
+		1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*BZK Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	// [0] Building, [1] Bullet, [2] Enemy, [3] Effect, [4] Repair Item
-	m_nShaders = 5;
+	m_nShaders = 6;
 	m_ppShaders = new CShader*[m_nShaders];
 
 	CObstacleShader *pObstacleShader = new CObstacleShader();
@@ -188,6 +188,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
+
+	CBZKBulletShader *pBZKBulletShader = new CBZKBulletShader();
+	pBZKBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pBZKBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_BZK_BULLET] = pBZKBulletShader;
 
 	CEffectShader *pEffectShader = new CEffectShader();
 	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -212,7 +217,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pGimGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
 
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.txt", false);
-	m_pBazookaBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
+	m_pBazookaBulletShader = m_ppShaders[INDEX_SHADER_BZK_BULLET];
 
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.txt", false);
 	m_pMachineGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];

@@ -300,7 +300,7 @@ void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 {
 	pObject->SetModel(m_pModel);
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	//pObject->SetPrepareRotate(0, 180, 0);
+	pObject->AddPrepareRotate(0, 180, 0);
 
 	m_vObjects.emplace_back(pObject);
 }
@@ -380,6 +380,7 @@ void CSkinnedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12Graphic
 {
 	pObject->SetModel(m_pModel);
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pObject->AddPrepareRotate(0, 180, 0);
 
 	m_vObjects.emplace_back(pObject);
 }
@@ -418,7 +419,6 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 
 	CRobotObject *pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(0, 180, 0);
 
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
@@ -447,6 +447,21 @@ void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.txt", false);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+CBZKBulletShader::CBZKBulletShader()
+{
+}
+
+CBZKBulletShader::~CBZKBulletShader()
+{
+}
+
+void CBZKBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/BZK_Bullet.txt", false);
+}
+
 ////////////////////////////////////////////////////////////
 
 CRepairItemShader::CRepairItemShader()
@@ -465,7 +480,6 @@ void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsComma
 
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
-	pObject->SetPrepareRotate(0, 0, 0);
 	
 	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
