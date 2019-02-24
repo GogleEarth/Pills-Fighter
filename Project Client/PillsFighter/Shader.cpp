@@ -497,26 +497,90 @@ CObstacleShader::~CObstacleShader()
 void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Hangar/Hangar.txt", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Hangar/TestInf.bin");
 
+}
+
+void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName)
+{
 	CGameObject *pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(-200.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(0.0f, 90.0f, 0.0f);
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
 
-	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(200.0f, 0.0f, 0.0f));
-	pObject->SetPrepareRotate(0.0f, -90.0f, 0.0f);
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	FILE *pInFile = NULL;
+	::fopen_s(&pInFile, pstrFileName, "rb");
+	if (!pInFile) {
+		std::cout << "lose bin file" << std::endl;
+	}
+	::rewind(pInFile);
 
-	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 200.0f));
-	pObject->SetPrepareRotate(0.0f, -180.0f, 0.0f);
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	char pstrToken[64] = { '\0' };
+	UINT nReads = 0;
+	float loadedToken = 0;
+	UINT cycle = 0;
+	XMFLOAT3 posLoader = XMFLOAT3(0, 0, 0);
+	XMFLOAT3 rotLoader = XMFLOAT3(0, 0, 0);
 
-	pObject = new CGameObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, -200.0f));
-	pObject->SetPrepareRotate(0.0f, 0.0f, 0.0f);
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	while (feof(pInFile) == 0)    
+	{
+		ReadPosrotFromFile(pInFile, pstrToken);
+
+		if (!strcmp(pstrToken, "m_value"))
+		{
+			switch (cycle) {
+			case 0:
+				nReads = LeftByteFromFile(pInFile, 2); 
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1); 
+				posLoader.x = loadedToken;
+				++cycle;
+				break;
+			case 1:
+				nReads = LeftByteFromFile(pInFile, 2); 
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1); 
+				posLoader.y = loadedToken;
+				++cycle;
+				break;
+			case 2:
+				nReads = LeftByteFromFile(pInFile, 2); 
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1); 
+				posLoader.z = loadedToken;
+				++cycle;
+				break;
+			case 3:
+				nReads = LeftByteFromFile(pInFile, 2); 
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.x = loadedToken;
+				++cycle;
+				break;
+			case 4:
+				nReads = LeftByteFromFile(pInFile, 2); 
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1); 
+				rotLoader.y = loadedToken;
+				++cycle;
+				break;
+			case 5:
+				nReads = LeftByteFromFile(pInFile, 2); 
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1); 
+				rotLoader.z = loadedToken;
+				pObject = new CGameObject();
+				pObject->SetPosition(posLoader);
+				pObject->SetPrepareRotate(rotLoader.x, rotLoader.y, rotLoader.z);
+				InsertObject(pd3dDevice, pd3dCommandList, pObject);
+				cycle = 0;
+				break;
+			}
+		}
+		else
+		{
+			std::cout << "bin file load error" << std::endl;
+			break;
+		}
+	}
+
 }
 
 //////////////////////////////////////////////
