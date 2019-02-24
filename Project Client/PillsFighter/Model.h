@@ -101,7 +101,7 @@ public:
 	void ReleaseUploadBuffers();
 
 public:
-	void LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFilePath);
+	void LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFilePath);
 
 public:
 	CShader							*m_pShader = NULL;
@@ -200,7 +200,7 @@ protected:
 
 public:
 	static CModel* LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation);
-	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFileName, const char *pstrFilePath);
-	static CAnimationSet* LoadAnimationFromFile(FILE *pFile, CModel *pModel);
+	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFileName, const char *pstrFilePath);
+	static CAnimationSet* LoadAnimationFromFile(FILE *pfile, CModel *pModel);
 
 };

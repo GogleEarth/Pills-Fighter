@@ -17,8 +17,9 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	AddPrepareRotate(0.0f, 180.0f, 0.0f);
 
-	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.txt", true);
-	//CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Player/Angrybot.txt", true);
+	//CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true);
+	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true);
+	//CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Player/Angrybot.bin", true);
 	m_pAnimationController = new CAnimationController(1, pModel->GetAnimationSet());
 	m_pAnimationController->SetTrackAnimation(0, 0);
 

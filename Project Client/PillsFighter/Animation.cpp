@@ -50,32 +50,29 @@ XMFLOAT4X4 CAnimation::GetSRT(int nFrame)
 	return(xmf4x4Transform);
 }
 
-void CAnimation::LoadAnimationFromFile(FILE *pFile, int nFrames)
+void CAnimation::LoadAnimationFromFile(FILE *pfile, int nFrames)
 {
+	BYTE nstrLength;
 	char pstrToken[64] = { 0 };
 
-	fscanf_s(pFile, "%s %f %d", m_pstrAnimationName, (int)sizeof(m_pstrAnimationName), &m_fAnimationLength, &m_nKeyFrameTransforms);
+	fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+	fread_s(m_pstrAnimationName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+	fread_s(&m_fAnimationLength, sizeof(float), sizeof(float), 1, pfile);
+	fread_s(&m_nKeyFrameTransforms, sizeof(int), sizeof(int), 1, pfile);
 
 	m_pfKeyFrameTransformTimes = new float[m_nKeyFrameTransforms];
 	m_ppxmf4x4KeyFrameTransforms = new XMFLOAT4X4*[m_nKeyFrameTransforms];
 
 	for (int i = 0; i < m_nKeyFrameTransforms; i++)
 	{
+		fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+		fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);  // <Transforms>:
+		pstrToken[nstrLength] = '\0';
 
-		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken)); // <Transforms>:
-
-		fscanf_s(pFile, "%f", &m_pfKeyFrameTransformTimes[i]);
+		fread_s(&m_pfKeyFrameTransformTimes[i], sizeof(float), sizeof(float), 1, pfile);
 
 		m_ppxmf4x4KeyFrameTransforms[i] = new XMFLOAT4X4[nFrames];
-
-		for (int j = 0; j < nFrames; j++)
-		{
-			fscanf_s(pFile, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
-				&m_ppxmf4x4KeyFrameTransforms[i][j]._11, &m_ppxmf4x4KeyFrameTransforms[i][j]._12, &m_ppxmf4x4KeyFrameTransforms[i][j]._13, &m_ppxmf4x4KeyFrameTransforms[i][j]._14,
-				&m_ppxmf4x4KeyFrameTransforms[i][j]._21, &m_ppxmf4x4KeyFrameTransforms[i][j]._22, &m_ppxmf4x4KeyFrameTransforms[i][j]._23, &m_ppxmf4x4KeyFrameTransforms[i][j]._24,
-				&m_ppxmf4x4KeyFrameTransforms[i][j]._31, &m_ppxmf4x4KeyFrameTransforms[i][j]._32, &m_ppxmf4x4KeyFrameTransforms[i][j]._33, &m_ppxmf4x4KeyFrameTransforms[i][j]._34,
-				&m_ppxmf4x4KeyFrameTransforms[i][j]._41, &m_ppxmf4x4KeyFrameTransforms[i][j]._42, &m_ppxmf4x4KeyFrameTransforms[i][j]._43, &m_ppxmf4x4KeyFrameTransforms[i][j]._44);
-		}
+		fread_s(m_ppxmf4x4KeyFrameTransforms[i], sizeof(XMFLOAT4X4) * nFrames, sizeof(XMFLOAT4X4), nFrames, pfile);
 	}
 }
 

@@ -164,7 +164,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
 	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 
-		1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*BZK Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/);
+		1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*BZK Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/ + 18 /*Building*/);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
@@ -213,13 +213,13 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
-	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.txt", false);
+	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
 	m_pGimGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
 
-	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.txt", false);
+	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pBazookaBulletShader = m_ppShaders[INDEX_SHADER_BZK_BULLET];
 
-	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.txt", false);
+	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 	m_pMachineGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
 
 }

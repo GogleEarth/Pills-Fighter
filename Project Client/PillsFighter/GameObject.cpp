@@ -370,7 +370,6 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 	int i = 0;
 	if(m_pModel)
 	{
-
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
 		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
@@ -512,7 +511,7 @@ void RandomMoveObject::Animate(float fTimeElapsed, CCamera *pCamera)
 			m_ElapsedTime += fTimeElapsed;
 	}
 
-	//MoveForward(m_MovingSpeed * fTimeElapsed);
+	MoveForward(m_MovingSpeed * fTimeElapsed);
 
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }
@@ -530,7 +529,7 @@ RotateObject::~RotateObject()
 
 void RotateObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-	//Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
+	Rotate(0.0f, m_RotateSpeed * fTimeElapsed, 0.0f);
 
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }

@@ -136,54 +136,59 @@ void CMaterial::ReleaseUploadBuffers()
 	}
 }
 
-void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFilePath)
+void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFilePath)
 {
+	BYTE nstrLength;
 	char pstrToken[64] = { 0 };
 
 	while(true)
 	{
-		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
+		fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+		fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);  // <Transforms>:
+		pstrToken[nstrLength] = '\0';
 
 		if (!strcmp(pstrToken, "<AmbientColor>:"))
 		{
-			fscanf_s(pFile, "%f %f %f %f", &m_xmf4AmbientColor.x, &m_xmf4AmbientColor.y, &m_xmf4AmbientColor.z, &m_xmf4AmbientColor.w);
+			fread_s(&m_xmf4AmbientColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<DiffuseColor>:"))
 		{
-			fscanf_s(pFile, "%f %f %f %f", &m_xmf4DiffuseColor.x, &m_xmf4DiffuseColor.y, &m_xmf4DiffuseColor.z, &m_xmf4DiffuseColor.w);
+			fread_s(&m_xmf4DiffuseColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<EmissiveColor>:"))
 		{
-			fscanf_s(pFile, "%f %f %f %f", &m_xmf4EmissiveColor.x, &m_xmf4EmissiveColor.y, &m_xmf4EmissiveColor.z, &m_xmf4EmissiveColor.w);
+			fread_s(&m_xmf4EmissiveColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<ReflectionColor>:"))
 		{
-			fscanf_s(pFile, "%f %f %f %f", &m_xmf4ReflectionColor.x, &m_xmf4ReflectionColor.y, &m_xmf4ReflectionColor.z, &m_xmf4ReflectionColor.w);
+			fread_s(&m_xmf4ReflectionColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<SpecularColor>:"))
 		{
-			fscanf_s(pFile, "%f %f %f %f", &m_xmf4SpecularColor.x, &m_xmf4SpecularColor.y, &m_xmf4SpecularColor.z, &m_xmf4SpecularColor.w);
+			fread_s(&m_xmf4SpecularColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<ReflectionFactor>:"))
 		{
-			fscanf_s(pFile, "%f", &m_xmf4ReflectionColor.w);
+			fread_s(&m_xmf4ReflectionColor.w, sizeof(float), sizeof(float), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<Shininess>:"))
 		{
-			fscanf_s(pFile, "%f", &m_fShininess);
+			fread_s(&m_fShininess, sizeof(float), sizeof(float), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<SpecularFactor>:"))
 		{
-			fscanf_s(pFile, "%f", &m_xmf4SpecularColor.w);
+			fread_s(&m_xmf4SpecularColor.w, sizeof(float), sizeof(float), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<Transparency>:"))
 		{
-			fscanf_s(pFile, "%f", &m_fTransparency);
+			fread_s(&m_fTransparency, sizeof(float), sizeof(float), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<DiffuseMap>:"))
 		{
 			char pstrFileName[64] = { 0 };
-			fscanf_s(pFile, "%s", pstrFileName, (int)sizeof(pstrFileName));
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+
 			if (!strcmp(pstrFileName, "null")) continue;
 
 			char pstrDiffuseFile[64] = { 0 };
@@ -207,7 +212,9 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		else if (!strcmp(pstrToken, "<NormalMap>:"))
 		{
 			char pstrFileName[64] = { 0 };
-			fscanf_s(pFile, "%s", pstrFileName, (int)sizeof(pstrFileName));
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+
 			if (!strcmp(pstrFileName, "null")) continue;
 
 			char pstrDiffuseFile[64] = { 0 };
@@ -231,7 +238,9 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		else if (!strcmp(pstrToken, "<SpecularFactorMap>:"))
 		{
 			char pstrFileName[64] = { 0 };
-			fscanf_s(pFile, "%s", pstrFileName, (int)sizeof(pstrFileName));
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+
 			if(!strcmp(pstrFileName, "null")) continue;
 
 			char pstrDiffuseFile[64] = { 0 };
@@ -255,7 +264,9 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		else if (!strcmp(pstrToken, "<SpecularMap>:"))
 		{
 			char pstrFileName[64] = { 0 };
-			fscanf_s(pFile, "%s", pstrFileName, (int)sizeof(pstrFileName));
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+
 			if (!strcmp(pstrFileName, "null")) continue;
 		}
 		else if (!strcmp(pstrToken, "</Material>"))
@@ -482,7 +493,7 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation)
 {
 	FILE *pFile;
-	fopen_s(&pFile, pstrFileName, "rt");
+	fopen_s(&pFile, pstrFileName, "rb");
 	printf("File : %s\n", pstrFileName);
 
 	std::string pstrFilePath = ::GetFilePath(pstrFileName);
@@ -492,57 +503,60 @@ CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D1
 	int nMeshes = 0, nSkinnedMeshes = 0;
 	pRootModel->GetMeshes(&nMeshes, &nSkinnedMeshes);
 	pRootModel->SetModelMeshCount(nMeshes, nSkinnedMeshes);
-	if (bHasAnimation) pRootModel->m_pAnimationSet = ::CModel::LoadAnimationFromFile(pFile, pRootModel);
+	if (bHasAnimation) pRootModel->m_pAnimationSet = CModel::LoadAnimationFromFile(pFile, pRootModel);
 	pRootModel->CacheSkinningBoneFrames(pRootModel);
 
 	return pRootModel;
 }
 
-CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile, const char *pstrFileName, const char *pstrFilePath)
+CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFileName, const char *pstrFilePath)
 {
 	CModel *pModel = NULL;
 
 	while (true)
 	{
+		BYTE nstrLength;
 		char pstrToken[64] = { 0 };
-		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
+		fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+		fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+		pstrToken[nstrLength] = '\0';
 
 		if (!strcmp(pstrToken, "<Frame>:"))
 		{
 			pModel = new CModel();
 			pModel->SetFileName(pstrFileName);
 
-			fscanf_s(pFile, "%s", pModel->m_pstrModelName, (int)sizeof(pModel->m_pstrModelName));
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pModel->m_pstrModelName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
 		}
 		else if (!strcmp(pstrToken, "<TransformMatrix>:"))
 		{
-			fscanf_s(pFile, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
-				&pModel->m_xmf4x4ToParent._11, &pModel->m_xmf4x4ToParent._12, &pModel->m_xmf4x4ToParent._13, &pModel->m_xmf4x4ToParent._14,
-				&pModel->m_xmf4x4ToParent._21, &pModel->m_xmf4x4ToParent._22, &pModel->m_xmf4x4ToParent._23, &pModel->m_xmf4x4ToParent._24,
-				&pModel->m_xmf4x4ToParent._31, &pModel->m_xmf4x4ToParent._32, &pModel->m_xmf4x4ToParent._33, &pModel->m_xmf4x4ToParent._34,
-				&pModel->m_xmf4x4ToParent._41, &pModel->m_xmf4x4ToParent._42, &pModel->m_xmf4x4ToParent._43, &pModel->m_xmf4x4ToParent._44);
+			fread_s(&pModel->m_xmf4x4ToParent, sizeof(XMFLOAT4X4), sizeof(XMFLOAT4X4), 1, pfile);
 		}
 		else if (!strcmp(pstrToken, "<SkinningInfo>:"))
 		{
 			CSkinnedMesh *pSkinnedMesh = new CSkinnedMesh(pd3dDevice, pd3dCommandList);
-			pSkinnedMesh->LoadSkinInfoFromFile(pd3dDevice, pd3dCommandList, pFile);
+			pSkinnedMesh->LoadSkinInfoFromFile(pd3dDevice, pd3dCommandList, pfile);
 			pSkinnedMesh->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-			fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken)); //<Mesh>:
-			pSkinnedMesh->LoadMeshFromFile(pd3dDevice, pd3dCommandList, pFile);
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+			pstrToken[nstrLength] = '\0';
+
+			pSkinnedMesh->LoadMeshFromFile(pd3dDevice, pd3dCommandList, pfile);
 			CCubeMesh *pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, pSkinnedMesh->GetCenter(), pSkinnedMesh->GetExtents());
 			pModel->SetMesh(pSkinnedMesh, pCubeMesh, true);
 		}
 		else if (!strcmp(pstrToken, "<Mesh>:"))
 		{
 			CStandardMesh *pMesh = new CStandardMesh(pd3dDevice, pd3dCommandList);
-			pMesh->LoadMeshFromFile(pd3dDevice, pd3dCommandList, pFile);
+			pMesh->LoadMeshFromFile(pd3dDevice, pd3dCommandList, pfile);
 			CCubeMesh *pCubeMesh = new CCubeMesh(pd3dDevice, pd3dCommandList, pMesh->GetCenter(), pMesh->GetExtents());
 			pModel->SetMesh(pMesh, pCubeMesh, false);
 		}
 		else if (!strcmp(pstrToken, "<Materials>:"))
 		{
-			fscanf_s(pFile, "%d", &pModel->m_nMaterials);
+			fread_s(&pModel->m_nMaterials, sizeof(int), sizeof(int), 1, pfile);
 
 			if (pModel->m_nMaterials > 0)
 			{
@@ -550,22 +564,22 @@ CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 
 				for (int i = 0; i < pModel->m_nMaterials; i++)
 				{
-					fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
+					fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+					fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+					pstrToken[nstrLength] = '\0';
+
 					if (!strcmp(pstrToken, "<Material>:"))
 					{
-						int nIndex = 0;
-						fscanf_s(pFile, "%d", &nIndex);
-
-						pModel->m_ppMaterials[nIndex] = new CMaterial();
-						pModel->m_ppMaterials[nIndex]->LoadMaterialFromFile(pd3dDevice, pd3dCommandList, pFile, pstrFilePath);
+						pModel->m_ppMaterials[i] = new CMaterial();
+						pModel->m_ppMaterials[i]->LoadMaterialFromFile(pd3dDevice, pd3dCommandList, pfile, pstrFilePath);
 
 						int nMeshType = pModel->m_pMesh->GetMeshType();
 						if (nMeshType & TYPE_STANDARD_MESH)
 						{
 							if (nMeshType & TYPE_SKINNED_MESH)
-								pModel->m_ppMaterials[nIndex]->SetSkinnedAnimationShader();
+								pModel->m_ppMaterials[i]->SetSkinnedAnimationShader();
 							else
-								pModel->m_ppMaterials[nIndex]->SetStandardShader();
+								pModel->m_ppMaterials[i]->SetStandardShader();
 						}
 					}
 				}
@@ -574,13 +588,13 @@ CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 		else if (!strcmp(pstrToken, "<Children>:"))
 		{
 			int nChild = 0;
-			fscanf_s(pFile, "%d", &nChild);
+			fread_s(&nChild, sizeof(int), sizeof(int), 1, pfile);
 
 			if (nChild > 0)
 			{
 				for (int i = 0; i < nChild; i++)
 				{
-					CModel *pChild = CModel::LoadModelFromFile(pd3dDevice, pd3dCommandList, pFile, pstrFileName, pstrFilePath);
+					CModel *pChild = CModel::LoadModelFromFile(pd3dDevice, pd3dCommandList, pfile, pstrFileName, pstrFilePath);
 					if (pChild) pModel->SetChild(pChild);
 				}
 			}
@@ -595,34 +609,41 @@ CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 	return pModel;
 }
 
-CAnimationSet* CModel::LoadAnimationFromFile(FILE *pFile, CModel *pModel)
+CAnimationSet* CModel::LoadAnimationFromFile(FILE *pfile, CModel *pModel)
 {
+	BYTE nstrLength;
 	char pstrToken[64] = { 0 };
 
 	CAnimationSet *pAnimationSet = NULL;
 
 	while (true)
 	{
-		fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
+		fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+		fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+		pstrToken[nstrLength] = '\0';
 
 		if (!strcmp(pstrToken, "<AnimationSets>:"))
 		{
 			int nAnimations;
-			fscanf_s(pFile, "%d", &nAnimations);
+			fread_s(&nAnimations, sizeof(int), sizeof(int), 1, pfile);
 
 			pAnimationSet = new CAnimationSet(nAnimations);
 		}
 		else if (!strcmp(pstrToken, "<FrameNames>:"))
 		{
 			int nFrames;
-			fscanf_s(pFile, "%d", &nFrames);
+			fread_s(&nFrames, sizeof(int), sizeof(int), 1, pfile);
 			pAnimationSet->SetAnimationFrames(nFrames);
 
 			CModel **ppCacheModels = NULL;
 			ppCacheModels = new CModel*[nFrames];
+
 			for (int i = 0; i < nFrames; i++)
 			{
-				fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken));
+				fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+				fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+				pstrToken[nstrLength] = '\0';
+
 				ppCacheModels[i] = pModel->FindFrame(pstrToken);
 			}
 
@@ -630,9 +651,11 @@ CAnimationSet* CModel::LoadAnimationFromFile(FILE *pFile, CModel *pModel)
 
 			for (int i = 0; i < pAnimationSet->GetAnimationCount(); i++)
 			{
-				fscanf_s(pFile, "%s", pstrToken, (int)sizeof(pstrToken)); // <AnimationSet>:
+				fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+				fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile); //<AnimationSet>:
+				pstrToken[nstrLength] = '\0';
 
-				pAnimationSet->GetAnimation(i)->LoadAnimationFromFile(pFile, pAnimationSet->GetAnimationFrames());
+				pAnimationSet->GetAnimation(i)->LoadAnimationFromFile(pfile, pAnimationSet->GetAnimationFrames());
 			}
 		}
 		else if (!strcmp(pstrToken, "</AnimationSets>"))

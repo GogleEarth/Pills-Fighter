@@ -102,7 +102,7 @@ public:
 	virtual ~CStandardMesh();
 
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	void LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile);
+	void LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ public:
 	virtual ~CSkinnedMesh();
 
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	void LoadSkinInfoFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pFile);
+	void LoadSkinInfoFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile);
 
 protected:
 	char						m_pstrSkinnedMeshName[64] = { 0 };
