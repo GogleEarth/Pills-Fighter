@@ -101,7 +101,10 @@ public:
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 
 protected:
-	int		m_nAmmo = 0;
+	int		m_nGimGunAmmo = 0;
+	int		m_nBazookaAmmo = 0;
+	int		m_nMachineGunAmmo = 0;
+
 	bool	m_bReloading = false;
 	float	m_fReloadTime;
 	bool	m_bShot = false;
@@ -110,7 +113,7 @@ public:
 	bool IsShotable() { return m_bShot; }
 	void IsShotable(bool bShot) { m_bShot = bShot; }
 
-	void PickUpAmmo(int nAmmo) { m_nAmmo += nAmmo; }
+	void PickUpAmmo(int nType, int nAmmo);
 
 	void ProcessTime(CWeapon *pWeapon, float fTimeElapsed);
 	void Attack(CWeapon *pWeapon);
@@ -118,4 +121,12 @@ public:
 	void Reload(CWeapon *pWeapon);
 
 	WEAPON_TYPE GetWeaponType();
+
+	void ChangeWeapon(int nSlotIndex);
+
+protected:
+	int m_nAnimationState = ANIMATION_STATE_IDLE;
+
+public:
+	void ChangeAnimation(int nState);
 };

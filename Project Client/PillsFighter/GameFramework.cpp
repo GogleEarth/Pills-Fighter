@@ -540,7 +540,10 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGimGun(), WEAPON_TYPE_OF_GIM_GUN, m_pScene->GetGimGunBullet());
 	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetBazooka(), WEAPON_TYPE_OF_BAZOOKA, m_pScene->GetBazookaBullet());
 	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetMachineGun(), WEAPON_TYPE_OF_MACHINEGUN, m_pScene->GetMachineGunBullet());
-	m_pPlayer->PickUpAmmo(1000);
+
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
 }
 
 void CGameFramework::BuildObjects()
@@ -662,13 +665,13 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			}
 			break;
 		case '1':
-			m_pPlayer->EquipOnRightHand(m_pPlayer->GetWeapon(0));
+			m_pPlayer->ChangeWeapon(0);
 			break;
 		case '2':
-			m_pPlayer->EquipOnRightHand(m_pPlayer->GetWeapon(1));
+			m_pPlayer->ChangeWeapon(1);
 			break;
 		case '3':
-			m_pPlayer->EquipOnRightHand(m_pPlayer->GetWeapon(2));
+			m_pPlayer->ChangeWeapon(2);
 			break;
 		default:
 			break;
@@ -738,6 +741,7 @@ void CGameFramework::ProcessInput()
 	}
 
 	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
+	else m_pPlayer->ChangeAnimation(ANIMATION_STATE_IDLE);
 
 	float cxDelta = 0.0f, cyDelta = 0.0f;
 	POINT ptCursorPos;

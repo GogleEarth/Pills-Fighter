@@ -92,7 +92,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (dwDirection)
 	{
-		m_pAnimationController->SetTrackAnimation(0, 1);
+		ChangeAnimation(ANIMATION_STATE_WALK_FORWARD);
 
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 
@@ -117,7 +117,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )	SetBoosterPower(-1.0f);
 
 		Move(xmf3Shift);
-	}
+	}		
 }
 
 void CPlayer::Move(const XMFLOAT3& xmf3Shift)
@@ -148,13 +148,13 @@ void CPlayer::Rotate(float x, float y, float z)
 {
 	if (!IsZero(y))
 	{
-		//m_fYaw += y;
-		//if (m_fYaw > 360.0f) m_fYaw -= 360.0f;
-		//if (m_fYaw < 0.0f) m_fYaw += 360.0f;
+		m_fYaw += y;
+		if (m_fYaw > 360.0f) m_fYaw -= 360.0f;
+		if (m_fYaw < 0.0f) m_fYaw += 360.0f;
 
-		//XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(y));
-		//m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
-		//m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
+		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(y));
+		m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
+		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 	}
 
 	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
@@ -358,6 +358,13 @@ void CPlayer::Attack(CWeapon *pWeapon)
 	}
 }
 
+void CPlayer::PickUpAmmo(int nType, int nAmmo)
+{
+	if (nType & WEAPON_TYPE_OF_GIM_GUN) m_nGimGunAmmo += nAmmo;
+	else if (nType & WEAPON_TYPE_OF_BAZOOKA) m_nBazookaAmmo += nAmmo;
+	else if (nType & WEAPON_TYPE_OF_MACHINEGUN) m_nMachineGunAmmo += nAmmo;
+}
+
 void CPlayer::PrepareAttack(CWeapon *pWeapon)
 {
 	if (pWeapon)
@@ -368,9 +375,21 @@ void CPlayer::PrepareAttack(CWeapon *pWeapon)
 		{
 			CGun *pGun = (CGun*)pWeapon;
 
-			if (!pGun->GetReloadedAmmo())
+			if (pGun->GetReloadedAmmo() == 0)
 			{
-				if (m_nAmmo) Reload(pGun);
+				if (nType & WEAPON_TYPE_OF_GIM_GUN)
+				{
+					if (m_nGimGunAmmo > 0) Reload(pGun);
+				}
+				else if (nType & WEAPON_TYPE_OF_BAZOOKA)
+				{
+					if (m_nBazookaAmmo > 0) Reload(pGun);
+				}
+				else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
+				{
+					if (m_nMachineGunAmmo > 0) Reload(pGun);
+				}
+				
 			}
 		}
 	}
@@ -406,12 +425,41 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 
 				if (m_fReloadTime < 0.0f)
 				{
-					if (m_pRHWeapon) pGun->Reload(m_nAmmo);
+					if (nType & WEAPON_TYPE_OF_GIM_GUN)
+					{
+						if (m_nGimGunAmmo > 0) pGun->Reload(m_nGimGunAmmo);
+					}
+					else if (nType & WEAPON_TYPE_OF_BAZOOKA)
+					{
+						if (m_nBazookaAmmo > 0) pGun->Reload(m_nBazookaAmmo);
+					}
+					else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
+					{
+						if (m_nMachineGunAmmo > 0) pGun->Reload(m_nMachineGunAmmo);
+					}
 
 					m_bReloading = false;
 				}
 			}
 		}
+	}
+}
+
+void CPlayer::ChangeWeapon(int nSlotIndex)
+{
+	CWeapon *pWeapon = GetWeapon(nSlotIndex);
+
+	m_bReloading = false;
+
+	EquipOnRightHand(pWeapon);
+}
+
+void CPlayer::ChangeAnimation(int nState)
+{
+	if (nState != m_nAnimationState)
+	{
+		m_nAnimationState = nState;
+		m_pAnimationController->SetTrackAnimation(0, nState);
 	}
 }
 
