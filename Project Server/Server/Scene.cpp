@@ -118,7 +118,9 @@ void CScene::AddObject(CGameObject* object)
 	{
 		m_pObjects[index] = object;
 		m_pObjects[index]->index = index;
-		if (object->m_Object_Type == OBJECT_TYPE_BULLET)
+		if (object->m_Object_Type == OBJECT_TYPE_MACHINE_BULLET 
+			|| object->m_Object_Type == OBJECT_TYPE_BZK_BULLET 
+			|| object->m_Object_Type == OBJECT_TYPE_BEAM_BULLET)
 		{
 			m_pObjects[index]->SetModel(m_pBulletMesh);
 		}

@@ -309,20 +309,33 @@ DWORD Framework::Update_Process(CScene* pScene)
 				//std::cout << "ÃÑ¾Ë»ý¼º\n";
 				pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
-				bulletpkt.Object_Type = OBJECT_TYPE_BULLET;
+				if (pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
+					bulletpkt.Object_Type = OBJECT_TYPE_MACHINE_BULLET;
+				else if (pkt.Player_Weapon == WEAPON_TYPE_BAZOOKA)
+					bulletpkt.Object_Type = OBJECT_TYPE_BZK_BULLET;
+				else if (pkt.Player_Weapon == WEAPON_TYPE_BEAM_RIFLE)
+					bulletpkt.Object_Type = OBJECT_TYPE_BEAM_BULLET;
 				bulletpkt.WorldMatrix = pkt.BulletWorldMatrix;
 				bulletpkt.Object_Index = pScene->GetIndex();
 				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
 
 				CGameObject* bullet;
-				if(pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
+				if (pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
+				{
 					bullet = new CGameObject(BULLET_TYPE_MACHINE_GUN);
+					bullet->m_Object_Type = OBJECT_TYPE_MACHINE_BULLET;
+				}
 				else if (pkt.Player_Weapon == WEAPON_TYPE_BAZOOKA)
+				{
 					bullet = new CGameObject(BULLET_TYPE_BAZOOKA);
+					bullet->m_Object_Type = OBJECT_TYPE_BZK_BULLET;
+				}
 				else if (pkt.Player_Weapon == WEAPON_TYPE_BEAM_RIFLE)
+				{
 					bullet = new CGameObject(BULLET_TYPE_BEAM_RIFLE);
-				bullet->m_Object_Type = OBJECT_TYPE_BULLET;
+					bullet->m_Object_Type = OBJECT_TYPE_BEAM_BULLET;
+				}
 				bullet->m_iId = pkt.ID;
 				bullet->SetWorldTransf(pkt.BulletWorldMatrix);
 				pScene->AddObject(bullet);
@@ -489,7 +502,9 @@ void Framework::CheckCollision(CScene* pScene)
 	{
 		if (pScene->m_pObjects[i] != NULL)
 		{
-			if (pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_BULLET)
+			if (pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_MACHINE_BULLET 
+				|| pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_BZK_BULLET 
+				|| pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_BEAM_BULLET)
 				vPlayerBulletObjects.emplace_back(pScene->m_pObjects[i]);
 			if (pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_ITEM_HEALING)
 				vHealingItem.emplace_back(pScene->m_pObjects[i]);

@@ -586,7 +586,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
-	case OBJECT_TYPE_BULLET:
+	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
@@ -600,6 +600,18 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
+	case OBJECT_TYPE_BZK_BULLET:
+		pGameObject = new Bullet();
+		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
+	case OBJECT_TYPE_BEAM_BULLET:
+		pGameObject = new Bullet();
+		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	}
 

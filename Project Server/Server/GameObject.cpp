@@ -132,7 +132,9 @@ void CGameObject::OnPrepareRender()
 
 void CGameObject::Animate(float fTimeElapsed)
 {
-	if (m_Object_Type == OBJECT_TYPE_BULLET)
+	if (m_Object_Type == OBJECT_TYPE_MACHINE_BULLET
+		|| m_Object_Type == OBJECT_TYPE_BZK_BULLET
+		|| m_Object_Type == OBJECT_TYPE_BEAM_BULLET)
 	{
 		if (m_ElapsedTime >= m_DurationTime)
 		{
