@@ -605,7 +605,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BZK_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	case OBJECT_TYPE_BEAM_BULLET:
 		pGameObject = new Bullet();
