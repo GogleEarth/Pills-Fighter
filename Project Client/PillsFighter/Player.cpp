@@ -102,21 +102,9 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 		if (dwDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
 		if (dwDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
-		if (dwDirection & DIR_UP)
-		{
-			if (m_nBoosterGauge > 0)
-			{
-				if (!(m_nState & OBJECT_STATE_BOOSTERING))
-				{
-					m_nState |= OBJECT_STATE_BOOSTERING;
-					m_nState &= ~OBJECT_STATE_ONGROUND;
-				}
+		if (dwDirection & DIR_UP) ActivationBooster();
 
-				SetBoosterPower(1.0f);
-			}
-		}
-
-		if ( (m_nState & OBJECT_STATE_BOOSTERING) && (dwDirection & DIR_DOWN) )	SetBoosterPower(-1.0f);
+		if (dwDirection & DIR_DOWN);
 
 		Move(xmf3Shift);
 	}		
@@ -132,8 +120,7 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 void CPlayer::Update(float fTimeElapsed)
 {
 	ProcessGravity(fTimeElapsed);
-	ProcessBooster(fTimeElapsed);
-	ProcessOnGround(fTimeElapsed);
+	ProcessBoosterGauge(fTimeElapsed);
 	ProcessHitPoint();
 	ProcessTime(m_pRHWeapon, fTimeElapsed);
 
@@ -142,6 +129,8 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	m_pCamera->SetLookAt(xmf3LookAt);
+
+	printf("%d\n", m_nState);
 
 	CRobotObject::Animate(fTimeElapsed);
 }
@@ -212,8 +201,6 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 		SetVelocity(fPlayerVelocity);
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
-
-		SetOnGround();
 	}
 }
 
@@ -243,61 +230,73 @@ void CPlayer::ProcessHitPoint()
 	}
 }
 
-void CPlayer::SetOnGround()
+void CPlayer::ActivationBooster()
 {
-	m_nState |= OBJECT_STATE_ONGROUND;
-	m_fBoosteringTime = 0.0f;
-	if (m_nState & OBJECT_STATE_BOOSTERING) m_nState &= ~OBJECT_STATE_BOOSTERING;
+	if (!(m_nState & OBJECT_STATE_BOOSTERING))
+	{
+		m_nState |= OBJECT_STATE_BOOSTERING;
+		m_bChargeBG = false;
+		SetElapsedBGConsumeTime();
+	}
 }
 
-void CPlayer::ProcessBooster(float fTimeElapsed)
+void CPlayer::DeactivationBooster()
+{
+	m_nState &= ~OBJECT_STATE_BOOSTERING;
+}
+
+void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 {
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		m_fOnGroundTime = 0.0f;
-
-		// 부스터 지속시간 처리
-		if (m_fBoosteringTime > 1.0f)
+		if (m_fElapsedBGConsumeTime <= 0.0f)
 		{
-			m_fBoosteringTime = 0.0f;
-			m_nBoosterGauge -= 5;
+			SetElapsedBGConsumeTime();
+			m_nBoosterGauge = ((m_nBoosterGauge - 5) <= 0) ? 0 : m_nBoosterGauge - 5;
 		}
+		else m_fElapsedBGConsumeTime -= fTimeElapsed;
 
-		// 부스터 게이지 처리
-		if (m_nBoosterGauge <= 0)
+		if (m_nBoosterGauge == 0)
 		{
-			m_nState &= ~OBJECT_STATE_BOOSTERING;
+			DeactivationBooster();
 			m_nBoosterGauge = 0;
 		}
-
-		m_fBoosteringTime += fTimeElapsed;
+		else
+			m_fKeepBoosteringTime += fTimeElapsed;
 	}
-	else if (m_nState & OBJECT_STATE_ONGROUND)
+	else
 	{
-		if (m_fOnGroundTime > 4.0f)
+		if (!m_bChargeBG)
 		{
-			if (m_nBoosterGauge < 100)
+			if (m_fKeepBoosteringTime <= 0.0f)
 			{
-				if (m_fBoosterGaugeChargeTime > 0.5f)
-				{
-					m_nBoosterGauge += 20;
-					m_fBoosterGaugeChargeTime = 0.0f;
-				}
-
-				m_fBoosterGaugeChargeTime += fTimeElapsed;
+				m_bChargeBG = true;
+				SetElapsedBGChargeTime();
+				m_fKeepBoosteringTime = 0.0f;
 			}
 			else
-				m_nBoosterGauge = 100;
+			{
+				m_bChargeBG = false;
+				m_fKeepBoosteringTime -= fTimeElapsed;
+			}
+		}
+
+		if (m_nBoosterGauge < 100)
+		{
+			if (m_bChargeBG)
+			{
+				if (m_fElapsedBGChargeTime <= 0.0f)
+				{
+					SetElapsedBGChargeTime();
+					m_nBoosterGauge = ((m_nBoosterGauge + 10) >= 100) ? 100 : m_nBoosterGauge + 10;
+				}
+				else m_fElapsedBGChargeTime -= fTimeElapsed;
+			}
 		}
 	}
-}
 
-void CPlayer::ProcessOnGround(float fTimeElapsed)
-{
-	if(m_nState & OBJECT_STATE_ONGROUND)
-	{
-		m_fOnGroundTime += fTimeElapsed;
-	}
+	printf("KeepBoosteringTime : %f\n", m_fKeepBoosteringTime);
+	printf("ElapsedBGChargeTime : %f\n\n", m_fElapsedBGChargeTime);
 }
 
 void CPlayer::ProcessGravity(float fTimeElapsed)
@@ -307,25 +306,8 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		if (!IsZero(m_fBoosterPower))
-		{
-			bool bIsNegativeNum = false;
-			if (m_fBoosterPower < FLT_EPSILON) bIsNegativeNum = true;
-
-			m_fBoosterPower = fabsf(m_fBoosterPower);
-			float fNormaize = m_fBoosterPower / m_fBoosterPower;
-			m_fBoosterPower -= fNormaize * fTimeElapsed;
-			if (m_fBoosterPower < FLT_EPSILON)
-				m_fBoosterPower = 0.0f;
-			else
-			{
-				if (bIsNegativeNum) m_fBoosterPower *= -1.0f;
-			}
-		}
-		float fHoldPower = m_fGravity;
-		m_fAccelerationY += m_fBoosterPower + fHoldPower;
-
-		if (fabsf(m_fAccelerationY) < FLT_EPSILON) m_fVelocityY = 0.0f;
+		float fBoosterPower = m_fGravity * ( (m_fKeepBoosteringTime > m_fMaxBoosterPower) ? m_fMaxBoosterPower : m_fKeepBoosteringTime);
+		m_fAccelerationY += fBoosterPower;
 	}
 
 	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
@@ -340,8 +322,6 @@ void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAA
 	if (xmf3Min.y == xmf3ObjMax.y)
 	{
 		std::cout << "Set" << std::endl;
-
-		SetOnGround();
 	}
 }
 

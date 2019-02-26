@@ -664,6 +664,16 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 			}
 			break;
+		case VK_SPACE:
+			m_pPlayer->DeactivationBooster();
+			break;
+		default:
+			break;
+		}
+		break;
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
 		case '1':
 			m_pPlayer->ChangeWeapon(0);
 			break;
@@ -673,10 +683,13 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 		case '3':
 			m_pPlayer->ChangeWeapon(2);
 			break;
+		case 'B':
+			m_bRenderWire = !m_bRenderWire;
+			break;
 		default:
 			break;
 		}
-		break;
+	break;
 	default:
 		break;
 	}
@@ -692,7 +705,7 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 		//	m_GameTimer.Stop();
 		//else
 		//	m_GameTimer.Start();
-		//break;
+		break;
 	}
 	case WM_SIZE:
 	{
@@ -711,12 +724,8 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 		OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
 		break;
 	case WM_KEYDOWN:
-		switch (wParam)
-		{
-		case 'B':
-			m_bRenderWire = !m_bRenderWire;
-			break;
-		}
+		OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+		break;
 	case WM_KEYUP:
 		OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 		break;
@@ -736,7 +745,6 @@ void CGameFramework::ProcessInput()
 		if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
 		if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
 		if (pKeyBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
-		if (pKeyBuffer['V'] & 0xF0) dwDirection |= DIR_DOWN;
 		if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 	}
 

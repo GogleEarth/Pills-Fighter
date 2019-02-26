@@ -61,31 +61,36 @@ protected:
 	CShader				*m_pUserInterface = NULL;
 
 protected:
-	int					m_nBoosterGauge = 100;
 	int					m_nState = 0x00;
-	float				m_fBoosteringTime = 0.0f;
-	float				m_fBoosterGaugeChargeTime = 0.0f;
 
-	float				m_fOnGroundTime = 0.0f;
+	int					m_nBoosterGauge = 100;
+	float				m_fElapsedBGConsumeTime = 0.0f;
+	float				m_fElapsedBGChargeTime = 0.0f;
+	float				m_fKeepBoosteringTime = 0.0f;
+	float				m_fMaxBoosterPower = 5.0f;
+	bool				m_bChargeBG = false;
+
 	float				m_fGravAcc;
 	float				m_fMass = 10.0f;
 
 	float				m_fVelocityY = 0.0f;
 	float				m_fAccelerationY = 0.0f;
-	float				m_fBoosterPower = 0.0f;
 	float				m_fGravity = 0.0f;
 
 public:
+	void ActivationBooster();
+	void DeactivationBooster();
+	void SetElapsedBGConsumeTime() { m_fElapsedBGConsumeTime = 1.0f; }
+	void SetElapsedBGChargeTime() { m_fElapsedBGChargeTime = 1.0f; }
+
 	int GetBoosterGauge() { return m_nBoosterGauge; }
 	void SetGravity(float fGravity) { m_fGravAcc = fGravity; }
 
-	void SetBoosterPower(float fPower) { m_fBoosterPower = fPower; }
 	float GetVelocity() { return m_fVelocityY; }
 	void SetVelocity(float fVelocity) { m_fVelocityY = fVelocity; }
 
 public:
-	void ProcessBooster(float fElapsedTime);
-	void ProcessOnGround(float fTimeElapsed);
+	void ProcessBoosterGauge(float fElapsedTime);
 	void ProcessHitPoint();
 	void ProcessGravity(float fTimeElapsed);
 
@@ -94,7 +99,6 @@ protected:
 
 public:
 	void SetScene(CScene *pCScene) { m_pScene = pCScene; }
-	void SetOnGround();
 
 public:
 	XMFLOAT4X4 GetToTarget();
