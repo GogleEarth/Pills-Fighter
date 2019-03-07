@@ -541,29 +541,29 @@ void Framework::CheckCollision(CScene* pScene)
 		}
 	}
 
-	// 플레이어의 총알과 장애물의 충돌처리
-	for (const auto& Bullet : vPlayerBulletObjects)
-	{
-		for (int k = 0; k < MAX_NUM_OBJECT; ++k)
-		{
-			if (pScene->m_pObstacles[k] != NULL)
-			{
-				if (!Bullet->IsDelete())
-				{
-					if (Bullet->GetAABB().Intersects(pScene->m_pObstacles[k]->GetAABB()))
-					{
-						XMFLOAT3 position = Bullet->GetPosition();
-						pktCE.efType = EFFECT_TYPE_ONE;
-						pktCE.xmf3Position = position;
-						effect_msg_queue.push(pktCE);
-						pktDO.Object_Index = Bullet->index;
-						delete_msg_queue.push(pktDO);
-						Bullet->Delete();
-					}
-				}
-			}
-		}
-	}
+	//// 플레이어의 총알과 장애물의 충돌처리
+	//for (const auto& Bullet : vPlayerBulletObjects)
+	//{
+	//	for (int k = 0; k < MAX_NUM_OBJECT; ++k)
+	//	{
+	//		if (pScene->m_pObstacles[k] != NULL)
+	//		{
+	//			if (!Bullet->IsDelete())
+	//			{
+	//				if (Bullet->GetAABB().Intersects(pScene->m_pObstacles[k]->GetAABB()))
+	//				{
+	//					XMFLOAT3 position = Bullet->GetPosition();
+	//					pktCE.efType = EFFECT_TYPE_ONE;
+	//					pktCE.xmf3Position = position;
+	//					effect_msg_queue.push(pktCE);
+	//					pktDO.Object_Index = Bullet->index;
+	//					delete_msg_queue.push(pktDO);
+	//					Bullet->Delete();
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 
 	// 플레이어와 아이템의 충돌체크
 	for (const auto& Item : vHealingItem)
