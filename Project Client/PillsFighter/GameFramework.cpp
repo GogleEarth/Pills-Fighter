@@ -858,7 +858,12 @@ void CGameFramework::FrameAdvance()
 	for (const auto& PlayerLife : m_vMsgPlayerLife)
 	{
 		if (PlayerLife->ID == m_Client_Info)
+		{
 			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - PlayerLife->HP);
+			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, PlayerLife->AMMO);
+			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, PlayerLife->AMMO);
+			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, PlayerLife->AMMO);
+		}
 		else
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
 	}

@@ -329,7 +329,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 		m_pLights->m_pLights->m_xmf3Direction = m_pPlayer->GetLook();
 	}
 
-	CheckCollision();
+	//CheckCollision();
 }
 
 void CScene::FindAimToTargetDistance()
@@ -612,6 +612,12 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		break;
+	case OBJECT_TYPE_ITEM_AMMO:
+		pGameObject = new CRobotObject();
+		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
 		break;
 	}
 

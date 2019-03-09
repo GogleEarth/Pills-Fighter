@@ -255,7 +255,11 @@ DWORD Framework::Update_Process(CScene* pScene)
 		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
 		if (!spawn_item)
 			item_cooltime += server_time.elapsedtime;
-
+		for (int i = 0; i < 2; ++i)
+		{
+			if (!spawn_ammo[i])
+				ammo_item_cooltime[i] += server_time.elapsedtime;
+		}
 		// 씬의 오브젝트 애니메이트
 		pScene->AnimateObjects(server_time.elapsedtime);
 		for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
@@ -290,10 +294,10 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt = msg_queue.front();
 			msg_queue.pop();
 
-			std::cout << "Player_id : " << pkt.ID << std::endl;
-			std::cout << "Player_position : " << pkt.WorldMatrix._41 << " " << pkt.WorldMatrix._42 << " " << pkt.WorldMatrix._43 << std::endl;
-			std::cout << "Player_Weapon : " << pkt.Player_Weapon << std::endl;
-			std::cout << "Player_Frame : " << pkt.Current_Frame << std::endl;
+			//std::cout << "Player_id : " << pkt.ID << std::endl;
+			//std::cout << "Player_position : " << pkt.WorldMatrix._41 << " " << pkt.WorldMatrix._42 << " " << pkt.WorldMatrix._43 << std::endl;
+			//std::cout << "Player_Weapon : " << pkt.Player_Weapon << std::endl;
+			//std::cout << "Player_Frame : " << pkt.Current_Frame << std::endl;
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
@@ -342,14 +346,14 @@ DWORD Framework::Update_Process(CScene* pScene)
 			}
 		}
 
-		// 아이템 생성 패킷 보내기(10초마다 생성)
-		if(item_cooltime >= ITEM_COOLTIME && !spawn_item)
+		// 회복 아이템 생성 패킷 보내기(60초마다 생성)
+		if(item_cooltime >= ITEM_HEALING_COOLTIME && !spawn_item)
 		{
 			std::cout << "아이템 생성\n";
 			PKT_ID pid = PKT_ID_CREATE_OBJECT;
 			PKT_CREATE_OBJECT bulletpkt;
 			bulletpkt.Object_Type = OBJECT_TYPE_ITEM_HEALING;
-			bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 10.0f, 0.0f, 1.0f };
+			bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 5.0f, 0.0f, 1.0f };
 			bulletpkt.Object_Index = pScene->GetIndex();
 			retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
 			retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
@@ -357,11 +361,42 @@ DWORD Framework::Update_Process(CScene* pScene)
 			CGameObject* item = new CGameObject;
 			item->m_Object_Type = OBJECT_TYPE_ITEM_HEALING;
 			item->m_iId = ITEM_ID;
-			item->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 10.0f, 0.0f, 1.0f });
+			item->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 5.0f, 0.0f, 1.0f });
 			pScene->AddObject(item);
 			item_cooltime = 0.0f;
 			spawn_item = true;
 		}
+
+		// 잔탄 아이템 생성 패킷 보내기(10초마다 생성)
+		for (int i = 0; i < 2; ++i)
+		{
+			if (ammo_item_cooltime[i] >= ITEM_AMMO_COOLTIME && !spawn_ammo[i])
+			{
+				std::cout << "아이템 생성\n";
+				PKT_ID pid = PKT_ID_CREATE_OBJECT;
+				PKT_CREATE_OBJECT bulletpkt;
+				bulletpkt.Object_Type = OBJECT_TYPE_ITEM_AMMO;
+				if(i == 0)
+					bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f };
+				else
+					bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 5.0f, 0.0f, 1.0f };
+				bulletpkt.Object_Index = pScene->GetIndex();
+				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
+				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+
+				CGameObject* item = new CGameObject;
+				item->m_Object_Type = OBJECT_TYPE_ITEM_AMMO;
+				item->m_iId = ITEM_AMMO1+i;
+				if (i == 0)
+					item->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f });
+				else
+					item->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 5.0f, 0.0f, 1.0f });
+				pScene->AddObject(item);
+				ammo_item_cooltime[i] = 0.0f;
+				spawn_ammo[i] = true;
+			}
+		}
+
 
 		// 오브젝트 업데이트 패킷 보내기
 		while (true)
@@ -399,7 +434,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			//std::cout << "오브젝트 삭제 패킷 전송\n";
 		}
 
-		// 플레이어 체력 변경 패킷 보내기
+		// 플레이어 체력/잔탄 변경 패킷 보내기
 		while (true)
 		{
 			PKT_PLAYER_LIFE pkt_l;
@@ -494,6 +529,7 @@ void Framework::CheckCollision(CScene* pScene)
 {
 	std::vector<CGameObject*> vPlayerBulletObjects;
 	std::vector<CGameObject*> vHealingItem;
+	std::vector<CGameObject*> vAmmoItem;
 	PKT_DELETE_OBJECT pktDO;
 	PKT_PLAYER_LIFE pktLF;
 	PKT_CREATE_EFFECT pktCE;
@@ -508,6 +544,8 @@ void Framework::CheckCollision(CScene* pScene)
 				vPlayerBulletObjects.emplace_back(pScene->m_pObjects[i]);
 			if (pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_ITEM_HEALING)
 				vHealingItem.emplace_back(pScene->m_pObjects[i]);
+			if(pScene->m_pObjects[i]->m_Object_Type == OBJECT_TYPE_ITEM_AMMO)
+				vAmmoItem.emplace_back(pScene->m_pObjects[i]);
 		}
 	}
 
@@ -565,7 +603,7 @@ void Framework::CheckCollision(CScene* pScene)
 	//	}
 	//}
 
-	// 플레이어와 아이템의 충돌체크
+	// 플레이어와 회복아이템의 충돌체크
 	for (const auto& Item : vHealingItem)
 	{
 		for (int k = 0; k < MAX_CLIENT; ++k)
@@ -587,6 +625,39 @@ void Framework::CheckCollision(CScene* pScene)
 							delete_msg_queue.push(pktDO);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = -50;
+							pktLF.AMMO = 0;
+							life_msg_queue.push(pktLF);
+							Item->Delete();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 플레이어와 잔탄아이템의 충돌체크
+	for (const auto& Item : vAmmoItem)
+	{
+		for (int k = 0; k < MAX_CLIENT; ++k)
+		{
+			if (pScene->m_pObjects[k]->m_bPlay)
+			{
+				if (!Item->IsDelete())
+				{
+					if (Item->m_iId != pScene->m_pObjects[k]->m_iId)
+					{
+						if (Item->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						{
+							spawn_ammo[Item->m_iId-ITEM_AMMO1] = false;
+							XMFLOAT3 position = Item->GetPosition();
+							pktCE.efType = EFFECT_TYPE_ONE;
+							pktCE.xmf3Position = position;
+							effect_msg_queue.push(pktCE);
+							pktDO.Object_Index = Item->index;
+							delete_msg_queue.push(pktDO);
+							pktLF.ID = pScene->m_pObjects[k]->m_iId;
+							pktLF.HP = 0;
+							pktLF.AMMO = 100;
 							life_msg_queue.push(pktLF);
 							Item->Delete();
 						}

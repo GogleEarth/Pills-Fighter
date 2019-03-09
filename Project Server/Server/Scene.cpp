@@ -124,7 +124,8 @@ void CScene::AddObject(CGameObject* object)
 		{
 			m_pObjects[index]->SetModel(m_pBulletMesh);
 		}
-		else if (object->m_Object_Type == OBJECT_TYPE_ITEM_HEALING)
+		else if (object->m_Object_Type == OBJECT_TYPE_ITEM_HEALING 
+			|| object->m_Object_Type == OBJECT_TYPE_ITEM_AMMO)
 		{
 			m_pObjects[index]->SetModel(m_pBulletMesh);
 		}
