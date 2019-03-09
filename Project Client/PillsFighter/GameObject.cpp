@@ -735,6 +735,18 @@ void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
 	CGameObject::Animate(ElapsedTime);
 }
 
+void CAnimationObject::ChangeAnimation(int nState)
+{
+	if (nState != m_nAnimationState)
+	{
+		m_nAnimationState = nState;
+		m_pAnimationController->SetTrackAnimation(0, nState);
+
+		m_bAnimationChanged = TRUE;
+	}
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 

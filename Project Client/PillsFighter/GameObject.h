@@ -276,6 +276,16 @@ public:
 	virtual ~CAnimationObject();
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+
+protected:
+	int		m_nAnimationState = ANIMATION_STATE_IDLE;
+	BOOL	m_bAnimationChanged = FALSE;
+
+public:
+	void ChangeAnimation(int nState);
+	int GetAnimationState() { return m_nAnimationState; }
+	BOOL GetAnimationChanged() { return m_bAnimationChanged; }
+	void SetAnimationChanged(BOOL bAnimationChagned) { m_bAnimationChanged = bAnimationChagned; }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

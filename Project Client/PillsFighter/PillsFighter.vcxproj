@@ -169,6 +169,7 @@
     <ClInclude Include="Model.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Network.h" />
     <ClInclude Include="PillsFighter.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Repository.h" />

@@ -127,10 +127,4 @@ public:
 	WEAPON_TYPE GetWeaponType();
 
 	void ChangeWeapon(int nSlotIndex);
-
-protected:
-	int m_nAnimationState = ANIMATION_STATE_IDLE;
-
-public:
-	void ChangeAnimation(int nState);
 };

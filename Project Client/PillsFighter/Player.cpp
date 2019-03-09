@@ -94,14 +94,30 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (dwDirection)
 	{
-		ChangeAnimation(ANIMATION_STATE_WALK_FORWARD);
 
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 
-		if (dwDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
-		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
-		if (dwDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
-		if (dwDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
+		if (dwDirection & DIR_FORWARD)
+		{
+			ChangeAnimation(ANIMATION_STATE_WALK_FORWARD);
+			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
+		}
+		if (dwDirection & DIR_BACKWARD)
+		{
+			ChangeAnimation(ANIMATION_STATE_WALK_BACKWARD);
+			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
+		}
+		if (dwDirection & DIR_RIGHT)
+		{
+			ChangeAnimation(ANIMATION_STATE_WALK_RIGHT);
+			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
+		}
+		if (dwDirection & DIR_LEFT)
+		{
+			ChangeAnimation(ANIMATION_STATE_WALK_LEFT);
+			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
+		}
+
 		if (dwDirection & DIR_UP) ActivationBooster();
 
 		if (dwDirection & DIR_DOWN);
@@ -129,8 +145,6 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	m_pCamera->SetLookAt(xmf3LookAt);
-
-	printf("%d\n", m_nState);
 
 	CRobotObject::Animate(fTimeElapsed);
 }
@@ -294,9 +308,6 @@ void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 			}
 		}
 	}
-
-	printf("KeepBoosteringTime : %f\n", m_fKeepBoosteringTime);
-	printf("ElapsedBGChargeTime : %f\n\n", m_fElapsedBGChargeTime);
 }
 
 void CPlayer::ProcessGravity(float fTimeElapsed)
@@ -434,15 +445,6 @@ void CPlayer::ChangeWeapon(int nSlotIndex)
 	m_bReloading = false;
 
 	EquipOnRightHand(pWeapon);
-}
-
-void CPlayer::ChangeAnimation(int nState)
-{
-	if (nState != m_nAnimationState)
-	{
-		m_nAnimationState = nState;
-		m_pAnimationController->SetTrackAnimation(0, nState);
-	}
 }
 
 WEAPON_TYPE CPlayer::GetWeaponType()
