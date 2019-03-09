@@ -73,6 +73,7 @@ typedef struct PKT_PLAYER_INFO
 	BOOL			IsShooting;
 	XMFLOAT4X4		BulletWorldMatrix;
 	WEAPON_TYPE		Player_Weapon;
+	BOOL			isChangeWeapon;
 	ANIMATION_TYPE	Player_Animation;
 	BOOL			isChangeAnimation;
 }PKT_PLAYER_INFO;

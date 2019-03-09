@@ -826,9 +826,12 @@ void CGameFramework::FrameAdvance()
 		else pktPlayerInfo.IsShooting = 0;
 
 		pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
+		pktPlayerInfo.isChangeWeapon = m_pPlayer->GetWeaponChanged();
+		if (pktPlayerInfo.isChangeWeapon) m_pPlayer->SetWeaponChanged(FALSE);
 		pktPlayerInfo.Player_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState());
 		pktPlayerInfo.isChangeAnimation = m_pPlayer->GetAnimationChanged();
 		if (pktPlayerInfo.isChangeAnimation) m_pPlayer->SetAnimationChanged(FALSE);
+
 
 		PKT_ID pid = PKT_ID_PLAYER_INFO;
 		retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);

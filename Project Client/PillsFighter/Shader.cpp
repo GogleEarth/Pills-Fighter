@@ -417,10 +417,10 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true);
 
-	//CRobotObject *pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	CRobotObject *pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, pContext);
 }
 
 void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
@@ -430,6 +430,13 @@ void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
 	pAnimationController->SetTrackAnimation(0, 0);
 	pObject->SetAnimationController(pAnimationController);
+
+	CRobotObject *pRobot = (CRobotObject*)pObject;
+	CScene *pScene = (CScene*)pContext;
+
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pScene->GetGimGun(), WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GIM_GUN);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pScene->GetBazooka(), WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pScene->GetMachineGun(), WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

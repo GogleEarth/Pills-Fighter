@@ -126,5 +126,13 @@ public:
 
 	WEAPON_TYPE GetWeaponType();
 
-	void ChangeWeapon(int nSlotIndex);
+	virtual void ChangeWeapon(int nSlotIndex);
+	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext);
+
+protected:
+	BOOL		m_bWeaponChanged = FALSE;
+
+public:
+	BOOL GetWeaponChanged() { return m_bWeaponChanged; }
+	void SetWeaponChanged(BOOL bWeaponChanged) { m_bWeaponChanged = bWeaponChanged; }
 };

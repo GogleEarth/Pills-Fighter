@@ -11,6 +11,11 @@ CWeapon::~CWeapon()
 {
 }
 
+void CWeapon::Initialize()
+{
+	SetType();
+}
+
 void CWeapon::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_pModel)
@@ -63,9 +68,10 @@ CGun::~CGun()
 
 void CGun::Initialize()
 {
+	CWeapon::Initialize();
+
 	SetReloadTime();
 	SetMaxReloadAmmo();
-	SetType();
 }
 
 void CGun::Reload(int& nAmmo)

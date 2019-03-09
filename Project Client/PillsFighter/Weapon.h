@@ -10,7 +10,7 @@ public:
 	CWeapon();
 	virtual ~CWeapon();
 
-	virtual void Initialize() {};
+	virtual void Initialize();
 
 protected:
 	CGameObject	*m_pOwner = NULL;
@@ -29,6 +29,7 @@ public:
 	int GetType() { return m_nType; }
 
 	virtual void SetType() {};
+	virtual void SetType(int nType) { m_nType |= nType; };
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);

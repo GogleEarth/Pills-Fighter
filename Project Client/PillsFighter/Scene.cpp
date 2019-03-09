@@ -171,6 +171,10 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
+	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
+	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
+	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
+
 	m_nShaders = 6;
 	m_ppShaders = new CShader*[m_nShaders];
 
@@ -181,7 +185,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	CGundamShader *pGundamhader = new CGundamShader();
 	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository, this);
 	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
 
 	CBulletShader *pBulletShader = new CBulletShader();
@@ -213,15 +217,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
-	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
 	m_pGimGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
-
-	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pBazookaBulletShader = m_ppShaders[INDEX_SHADER_BZK_BULLET];
-
-	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 	m_pMachineGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
-
 }
 
 void CScene::ReleaseObjects()
@@ -581,10 +579,10 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	switch (CreateObjectInfo.Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
-		pGameObject = new CGameObject();
+		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, this);
 		break;
 	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
@@ -653,6 +651,11 @@ void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		{
 			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
 			pObject->ChangeAnimation(((PKT_PLAYER_INFO*)pktData)->Player_Animation);
+		}
+		if (((PKT_PLAYER_INFO*)pktData)->isChangeWeapon)
+		{
+			CRobotObject *pObject = (CRobotObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
+			pObject->ChangeWeaponByType(((PKT_PLAYER_INFO*)pktData)->Player_Weapon);
 		}
 		break;
 	case PKT_ID_PLAYER_LIFE:

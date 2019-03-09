@@ -306,7 +306,10 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
 
-	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext);
+	virtual void ChangeWeapon(int nSlotIndex);
+	virtual void ChangeWeaponByType(WEAPON_TYPE nType);
+	virtual int GetWeaponIndex(int nType);
+	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType);
 	CWeapon* GetWeapon(int nIndex) { return m_vpWeapon[nIndex]; }
 
 protected:

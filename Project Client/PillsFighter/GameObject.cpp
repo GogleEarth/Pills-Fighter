@@ -783,37 +783,57 @@ void CRobotObject::EquipOnLeftHand(CWeapon *pWeapon)
 	m_pLHWeapon->SetParentModel(m_pLeftHand);
 }
 
-void CRobotObject::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext)
+void CRobotObject::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType)
 {
-	CWeapon *pWeapon = NULL;
-
-	switch (nType)
-	{
-	case WEAPON_TYPE_OF_GIM_GUN:
-		pWeapon = new CGimGun();
-		((CGimGun*)pWeapon)->SetBullet((CShader*)pContext);
-		break;
-	case WEAPON_TYPE_OF_BAZOOKA:
-		pWeapon = new CBazooka();
-		((CBazooka*)pWeapon)->SetBullet((CShader*)pContext);
-		break;
-	case WEAPON_TYPE_OF_MACHINEGUN:
-		pWeapon = new CMachineGun();
-		((CMachineGun*)pWeapon)->SetBullet((CShader*)pContext);
-		break;
-	default:
-		exit(1);
-		break;
-	}
+	CWeapon *pWeapon = new CWeapon();
 
 	pWeapon->SetModel(pWeaponModel);
 	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pWeapon->Initialize();
-	pWeapon->SetForCreate(pd3dDevice, pd3dCommandList);
+	pWeapon->SetType(nType);
 
 	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
 
 	m_vpWeapon.emplace_back(pWeapon);
+}
+
+int CRobotObject::GetWeaponIndex(int nType)
+{
+	int i = 0;
+	for (CWeapon *pWeapon : m_vpWeapon)
+	{
+		if (pWeapon->GetType() & nType)
+			return i;
+
+		i++;
+	}
+
+	return -1;
+}
+
+void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
+{
+	int nIndex;
+	switch (nType)
+	{
+	case WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_MACHINEGUN);
+		break;
+	case WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_GIM_GUN);
+		break;
+	case WEAPON_TYPE::WEAPON_TYPE_BAZOOKA:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_BAZOOKA);
+		break;
+	}
+
+	if (nIndex != -1) ChangeWeapon(nIndex);
+}
+
+void CRobotObject::ChangeWeapon(int nSlotIndex)
+{
+	CWeapon *pWeapon = GetWeapon(nSlotIndex);
+
+	EquipOnRightHand(pWeapon);
 }
 
 void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)

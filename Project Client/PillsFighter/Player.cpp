@@ -440,11 +440,10 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 
 void CPlayer::ChangeWeapon(int nSlotIndex)
 {
-	CWeapon *pWeapon = GetWeapon(nSlotIndex);
+	CRobotObject::ChangeWeapon(nSlotIndex);
 
 	m_bReloading = false;
-
-	EquipOnRightHand(pWeapon);
+	m_bWeaponChanged = TRUE;
 }
 
 WEAPON_TYPE CPlayer::GetWeaponType()
@@ -462,4 +461,37 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 	}
 
 	return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
+}
+
+void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext)
+{
+	CWeapon *pWeapon = NULL;
+
+	switch (nType)
+	{
+	case WEAPON_TYPE_OF_GIM_GUN:
+		pWeapon = new CGimGun();
+		if (pContext) ((CGimGun*)pWeapon)->SetBullet((CShader*)pContext);
+		break;
+	case WEAPON_TYPE_OF_BAZOOKA:
+		pWeapon = new CBazooka();
+		if (pContext) ((CBazooka*)pWeapon)->SetBullet((CShader*)pContext);
+		break;
+	case WEAPON_TYPE_OF_MACHINEGUN:
+		pWeapon = new CMachineGun();
+		if (pContext) ((CMachineGun*)pWeapon)->SetBullet((CShader*)pContext);
+		break;
+	default:
+		exit(1);
+		break;
+	}
+
+	pWeapon->SetModel(pWeaponModel);
+	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pWeapon->Initialize();
+	pWeapon->SetForCreate(pd3dDevice, pd3dCommandList);
+
+	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
+
+	m_vpWeapon.emplace_back(pWeapon);
 }
