@@ -197,114 +197,6 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 	return(output);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-cbuffer cbUIInfo : register(b3)
-{
-	int		giMaxValue;// : packoffset(c0.x);
-	int		giValue; //: packoffset(c0.y);
-};
-
-struct VS_UI_INPUT
-{
-	float2 center : POSITION;
-	float2 size : SIZE;
-};
-
-struct VS_UI_OUTPUT
-{
-	float2 center : POSITION;
-	float2 size : SIZE;
-};
-
-VS_UI_OUTPUT VS_UI(VS_UI_INPUT input)
-{
-	VS_UI_OUTPUT output;
-
-	output.center = input.center;
-	output.size = input.size;	
-
-	return(output);
-}
-
-struct GS_OUT
-{
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD;
-};
-
-[maxvertexcount(4)]
-void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
-{
-	float2 vUp = float2(0.0f, 1.0f);
-	float2 vRight = float2(1.0f, 0.0f);
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
-
-	float4 fVertices[4];
-	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
-
-	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, 1.0f);
-	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, 1.0f);
-	fUVs[3] = float2(1.0f, 0.0f);
-
-	GS_OUT output;
-
-	for (int i = 0; i < 4; i++)
-	{
-		output.pos = fVertices[i];
-		output.uv = fUVs[i];
-
-		outStream.Append(output);
-	}
-}
-
-[maxvertexcount(4)]
-void GS_UI_Bar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_OUT> outStream)
-{
-	float yPos = float(giValue) / float(giMaxValue);
-	float2 vUp = float2(0.0f, yPos);
-	float2 vRight = float2(1.0f, 0.0f);
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
-
-	float4 fVertices[4];
-	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
-
-	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, yPos);
-	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, yPos);
-	fUVs[3] = float2(1.0f, 0.0f);
-
-	GS_OUT output;
-
-	for (int i = 0; i < 4; i++)
-	{
-		output.pos = fVertices[i];
-		output.uv = fUVs[i];
-
-		outStream.Append(output);
-	}
-}
-
-float4 PS_UI(GS_OUT input) : SV_TARGET
-{
-	// 임시 텍스처 배열 인덱스는 0
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
-
-	return(cColor);
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 struct VS_TERRAIN_INPUT
@@ -343,7 +235,7 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	float4 cBaseTexColor = gtxtTexture[0].Sample(gssWrap, input.uv0);
 	float4 cDetailTexColor = gtxtTexture[1].Sample(gssWrap, input.uv1);
 
-	float4 cColor = input.color * saturate( (cBaseTexColor * 0.5f) + (cDetailTexColor * 0.5f));
+	float4 cColor = input.color * saturate((cBaseTexColor * 0.5f) + (cDetailTexColor * 0.5f));
 
 	return(cColor);
 }
@@ -381,35 +273,141 @@ float4 PSSkyBox(VS_SKYBOX_CUBEMAP_OUTPUT input) : SV_TARGET
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-struct VS_SPRITE_INPUT
+cbuffer cbUIInfo : register(b3)
 {
-	float3 position : POSITION;
-	float2 uv : TEXCOORD;
+	int		giMaxValue;// : packoffset(c0.x);
+	int		giValue; //: packoffset(c0.y);
 };
 
-struct VS_SPRITE_OUTPUT
+struct VS_RECT_INPUT
 {
-	float4 position : SV_POSITION;
-	float2 uv : TEXCOORD;
+	float2 center : POSITION;
+	float2 size : SIZE;
 };
 
-VS_SPRITE_OUTPUT VSSprite(VS_SPRITE_INPUT input)
+struct VS_RECT_OUTPUT
 {
-	VS_SPRITE_OUTPUT output;
+	float2 center : POSITION;
+	float2 size : SIZE;
+};
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
-
-	float3x3 f3x3Sprite = float3x3(gfTextureSpriteInfo.x, 0.0f, 0.0f, 0.0f, gfTextureSpriteInfo.y, 0.0f, input.uv.x * gfTextureSpriteInfo.x, input.uv.y * gfTextureSpriteInfo.y, 1.0f);
-	float3 f3Sprite = float3(gfTextureSpriteInfo.zw, 1.0f);
-	output.uv = (float2)mul(f3Sprite, f3x3Sprite);
-
-	return(output);
+VS_RECT_OUTPUT VS_RECT(VS_RECT_INPUT input)
+{
+	return(input);
 }
 
-float4 PSSprite(VS_SPRITE_OUTPUT input, uint primitiveID : SV_PrimitiveID) : SV_TARGET
+struct GS_RECT_OUT
+{
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD;
+};
+
+[maxvertexcount(4)]
+void GS_UI(point VS_RECT_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_RECT_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_RECT_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+[maxvertexcount(4)]
+void GS_UI_Bar(point VS_RECT_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_RECT_OUT> outStream)
+{
+	float yPos = float(giValue) / float(giMaxValue);
+	float2 vUp = float2(0.0f, yPos);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, yPos);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, yPos);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_RECT_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+float4 PS_RECT(GS_RECT_OUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
-	float4 cColor = gtxtTexture[0].SampleLevel(gssWrap, input.uv, 0);
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	return(cColor);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+[maxvertexcount(4)]
+void GS_SPRITE(point VS_RECT_OUTPUT input[1], inout TriangleStream<GS_RECT_OUT> outStream)
+{
+	float3 center = float3(input[0].center, 0.0f);
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(gvCameraPosition.xyz - center);
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(center + fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(center + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(center - fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[3] = float4(center - fHalfW * vRight + fHalfH * vUp, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_RECT_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = mul(mul(fVertices[i], gmtxView), gmtxProjection);
+		float3x3 f3x3Sprite = float3x3(gfTextureSpriteInfo.x, 0.0f, 0.0f, 0.0f, gfTextureSpriteInfo.y, 0.0f, fUVs[i].x * gfTextureSpriteInfo.x, fUVs[i].y * gfTextureSpriteInfo.y, 1.0f);
+		float3 f3Sprite = float3(gfTextureSpriteInfo.zw, 1.0f);
+		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
+
+		outStream.Append(output);
+	}
 }

@@ -158,29 +158,6 @@ public:
 	virtual void ReleaseUploadBuffers();
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CUIRect : public CMesh
-{
-protected:
-	XMFLOAT2						*m_pxmf2Positions = NULL;
-
-	XMFLOAT2						*m_pxmf2Sizes = NULL;
-
-	ID3D12Resource					*m_pd3dSizeBuffer = NULL;
-	ID3D12Resource					*m_pd3dSizeUploadBuffer = NULL;
-	D3D12_VERTEX_BUFFER_VIEW		m_d3dSizeBufferView;
-
-public:
-	CUIRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size);
-	virtual ~CUIRect();
-
-	void ReleaseUploadBuffers();
-	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-};
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 class CHeightMapImage
@@ -244,14 +221,23 @@ public:
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CRectMesh : public CMesh
+class CRect : public CMesh
 {
-public:
-	CRectMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight);
-	virtual ~CRectMesh();
+protected:
+	XMFLOAT2						*m_pxmf2Positions = NULL;
 
+	XMFLOAT2						*m_pxmf2Sizes = NULL;
+
+	ID3D12Resource					*m_pd3dSizeBuffer = NULL;
+	ID3D12Resource					*m_pd3dSizeUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dSizeBufferView;
+
+public:
+	CRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size);
+	virtual ~CRect();
+
+	void ReleaseUploadBuffers();
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };

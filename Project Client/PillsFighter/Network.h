@@ -1,6 +1,6 @@
 #pragma once
 
-#define ON_NETWORKING
+//#define ON_NETWORKING
 
 typedef enum PKT_ID
 {
