@@ -123,7 +123,10 @@ void CMaterial::UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dComma
 {
 	for (auto& Texture : m_vTextures)
 	{
-		if (Texture) Texture->UpdateShaderVariable(pd3dCommandList, 0);
+		if (Texture)
+		{
+			Texture->UpdateShaderVariables(pd3dCommandList);
+		}
 	}
 }
 

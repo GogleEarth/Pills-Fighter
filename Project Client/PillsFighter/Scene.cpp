@@ -95,11 +95,11 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.Num32BitValues = 4;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.ShaderRegister = 4; //TextureSprite
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TEXTURE_SPRITE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Constants.Num32BitValues = 6;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Constants.ShaderRegister = 4; //TextureSprite
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].Descriptor.ShaderRegister = 5; //Offset
@@ -110,6 +110,11 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].Descriptor.ShaderRegister = 6; //Transforms
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].Descriptor.ShaderRegister = 7; // Effect
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
@@ -164,7 +169,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
 	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 
-		1/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*BZK Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/ + 18 /*Building*/);
+		3/*Effect*/ + 4/*UI*/ + 2/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*BZK Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/ + 18 /*Building*/);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
@@ -175,7 +180,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
-	m_nShaders = 6;
+	m_nShaders = 7;
 	m_ppShaders = new CShader*[m_nShaders];
 
 	CObstacleShader *pObstacleShader = new CObstacleShader();
@@ -198,15 +203,20 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pBZKBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_BZK_BULLET] = pBZKBulletShader;
 
-	CEffectShader *pEffectShader = new CEffectShader();
-	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
+	CSpriteShader *pSpriteShader = new CSpriteShader();
+	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppShaders[INDEX_SHADER_SPRITE] = pSpriteShader;
 
 	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
 	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
+
+	CEffectShader *pEffectShader = new CEffectShader();
+	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
 
 	m_pWireShader = new CWireShader();
 	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -288,6 +298,7 @@ void CScene::CheckCollisionPlayer()
 
 void CScene::CheckCollision()
 {
+#ifndef ON_NETWORKING
 	std::vector<CGameObject*> *vEnemys;
 	std::vector<CGameObject*> *vBullets;
 
@@ -304,9 +315,28 @@ void CScene::CheckCollision()
 		for (const auto& Bullet : *vBullets)
 		{
 			if (Enemy->CollisionCheck(Bullet))
+			{
+				CEffect *pObject = new CEffect();
+				pObject->SetPosition(Bullet->GetPosition());
+				pObject->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
+				pObject->SetSpeed(0.3f);
+				pObject->SetDuration(1.5f);
+				pObject->SetActiveTime(0.5f);
+
+				((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pDevice, pCommandList, pObject, false, NULL);
+
+				float fSize = (float)(rand() % 2000) / 100.0f;
+				CSprite *pSprite = new CSprite(rand()%2, fSize);
+				pSprite->SetPosition(Bullet->GetPosition());
+				pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
+
+				((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pDevice, pCommandList, pSprite, false, NULL);
+
 				std::cout << "Collision Enemy By Bullet\n" << std::endl;
+			}
 		}
 	}
+#endif
 
 	FindAimToTargetDistance();
 }
@@ -582,40 +612,40 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, this);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true, this);
 		break;
 	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_OBSTACLE:
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_ITEM_HEALING:
 		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_BZK_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BZK_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BZK_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_BEAM_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_ITEM_AMMO:
 		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	}
 
@@ -633,11 +663,38 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 
 void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
 {
-	CEffect *pEffect = new CEffect();
-	pEffect->SetPosition(CreateEffectInfo.xmf3Position);
-	EFFECT_TYPE efType = CreateEffectInfo.efType;
+	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
+	CEffect *pEffect = NULL;
+	CSprite *pSprite = NULL;
+	float fSize = (float)(rand() % 2000) / 100.0f;
 
-	((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pEffect, &efType);
+	switch (nEffectType)
+	{
+	case EFFECT_TYPE::EFFECT_TYPE_DEFAULT:
+		pEffect = new CEffect();
+		pEffect->SetPosition(CreateEffectInfo.xmf3Position);
+		pEffect->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
+		pEffect->SetSpeed(0.3f);
+		pEffect->SetDuration(1.5f);
+		pEffect->SetActiveTime(0.5f);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pEffect, false, NULL);
+		break;
+	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE:
+		pSprite = new CSprite(rand() % 2, fSize);
+		pSprite->SetPosition(CreateEffectInfo.xmf3Position);
+		pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+		break;
+	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP:
+		pSprite = new CSprite(rand() % 2, fSize);
+		pSprite->SetPosition(CreateEffectInfo.xmf3Position);
+		pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP);
+
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+		break;
+	}
 }
 
 void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)

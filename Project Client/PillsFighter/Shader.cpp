@@ -296,11 +296,11 @@ void CObjectsShader::CheckDeleteObjects()
 	}
 }
 
-void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
 {
 	pObject->SetModel(m_pModel);
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pObject->AddPrepareRotate(0, 180, 0);
+	if(bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
 
 	m_vObjects.emplace_back(pObject);
 }
@@ -376,11 +376,11 @@ void CSkinnedObjectsShader::CheckDeleteObjects()
 	}
 }
 
-void CSkinnedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+void CSkinnedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
 {
 	pObject->SetModel(m_pModel);
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pObject->AddPrepareRotate(0, 180, 0);
+	if(bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
 
 	m_vObjects.emplace_back(pObject);
 }
@@ -420,12 +420,12 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	CRobotObject *pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
 }
 
-void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
 {
-	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, pContext);
+	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, bPrepareRotate, pContext);
 
 	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
 	pAnimationController->SetTrackAnimation(0, 0);
@@ -488,7 +488,7 @@ void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsComma
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
 	
-	InsertObject(pd3dDevice, pd3dCommandList, pObject);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
 }
 
 ////////////////////////////////////////////////////////////
@@ -594,7 +594,7 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 				pObject = new CGameObject();
 				pObject->SetPosition(posLoader);
 				pObject->SetPrepareRotate(rotLoader.x, rotLoader.y, rotLoader.z);
-				InsertObject(pd3dDevice, pd3dCommandList, pObject);
+				InsertObject(pd3dDevice, pd3dCommandList, pObject, true);
 				cycle = 0;
 				break;
 			}
@@ -608,7 +608,7 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 
 }
 
-//////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
 CEffectShader::CEffectShader()
 {
@@ -641,7 +641,7 @@ D3D12_SHADER_BYTECODE CEffectShader::CreateVertexShader(ID3DBlob **ppd3dShaderBl
 
 D3D12_SHADER_BYTECODE CEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_SPRITE", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_RECT", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
@@ -719,14 +719,20 @@ void CEffectShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
+void CEffectShader::ReleaseUploadBuffers()
+{
+	if (m_pModel)
+		m_pModel->ReleaseUploadBuffers();
+}
+
 void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Fire.dds", 0);
+	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HIT.dds", 0);
 
 	CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	CMesh *pMesh = new CRect(pd3dDevice, pd3dCommandList, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(20.0f, 20.0f));
+	CMesh *pMesh = new CRect(pd3dDevice, pd3dCommandList, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(4.0f, 2.0f));
 
 	CMaterial **ppMaterial = new CMaterial*[1];
 	ppMaterial[0] = new CMaterial();
@@ -737,38 +743,70 @@ void CEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pModel->SetMaterial(ppMaterial, 1);
 	m_pModel->AddRef();
 
-	CEffect *pEffect = new CEffect();
-	pEffect->SetPosition(0.0f, 20.0f, 0.0f);
-	EFFECT_TYPE efType = EFFECT_TYPE_LOOP;
+	CEffect *pObject = new CEffect();
+	pObject->SetPosition(0.0f, 0.0f, 0.0f);
+	pObject->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
+	pObject->SetSpeed(0.3f);
+	pObject->SetDuration(2.0f);
+	pObject->SetActiveTime(0.5f);
 
-	InsertObject(pd3dDevice, pd3dCommandList, pEffect, &efType);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, false, NULL);
 }
 
-void CEffectShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, void *pContext)
+//////////////////////////////////////////////////////////////////////
+
+CSpriteShader::CSpriteShader()
 {
-	CEffect *pEfObject = (CEffect*)pObject;
-	pEfObject->m_efType = *((EFFECT_TYPE*)pContext);
 
-	pEfObject->SetMaxSprite(5, 3, 12);
-
-	switch (pEfObject->m_efType)
-	{
-	case EFFECT_TYPE_ONE:
-		break;
-	}
-
-	CObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject);
 }
 
-void CEffectShader::ReleaseUploadBuffers()
+CSpriteShader::~CSpriteShader()
 {
-	if (m_pModel)
-		m_pModel->ReleaseUploadBuffers();
+
 }
 
-void CEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+D3D12_SHADER_BYTECODE CSpriteShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	CObjectsShader::Render(pd3dCommandList, pCamera);
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_SPRITE", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CSpriteShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_SPRITE", "ps_5_1", ppd3dShaderBlob));
+}
+
+void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	CTexture *pTexture = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Attack1.dds", 0);
+	pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Attack2.dds", 1);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	CMesh *pMesh = new CRect(pd3dDevice, pd3dCommandList, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(15.0f, 15.0f));
+
+	CMaterial **ppMaterial = new CMaterial*[1];
+	ppMaterial[0] = new CMaterial();
+	ppMaterial[0]->SetTexture(pTexture);
+
+	m_pModel = new CModel();
+	m_pModel->SetMesh(pMesh, NULL, false);
+	m_pModel->SetMaterial(ppMaterial, 1);
+	m_pModel->AddRef();
+
+	//CSprite *pSprite = new CSprite();
+	//pSprite->SetPosition(0.0f, 10.0f, 0.0f);
+	//pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
+
+	//InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+}
+
+void CSpriteShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
+{
+	CSprite *pSprite = (CSprite*)pObject;
+	pSprite->SetMaxSprite(5, 2, 7);
+
+	CObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, bPrepareRotate, pContext);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -904,7 +942,7 @@ D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderBar(ID3DBlob **ppd3dSh
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_RECT", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()

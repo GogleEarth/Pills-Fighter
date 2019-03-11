@@ -237,6 +237,11 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+struct CB_EFFECT_INFO
+{
+	float	m_fAge;
+	float	m_fDuration;
+};
 
 class CEffect : public CGameObject
 {
@@ -244,16 +249,48 @@ public:
 	CEffect();
 	virtual ~CEffect();
 
+	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
+	void SetSpeed(float fSpeed) { m_fSpeed = fSpeed; }
+	void SetDuration(float fDuration) { m_fDuration = fDuration; }
+	void SetActiveTime(float fActTime) { m_fActiveTime = fActTime; }
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+
+protected:
+	XMFLOAT3		m_xmf3Direction;
+	float			m_fSpeed;
+	
+	float			m_fActiveTime;
+	float			m_fAge;
+	float			m_fDuration;
+
+	ID3D12Resource	*m_pd3dcbEffect = NULL;
+	CB_EFFECT_INFO	*m_pcbMappedEffect = NULL;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CSprite : public CGameObject
+{
+public:
+	CSprite(UINT nTextureIndex, float fSize);
+	virtual ~CSprite();
+
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	void SetLookAt(XMFLOAT3& xmf3Target, XMFLOAT3& xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f));
 	void SpriteAnimate();
 
 	void SetMaxSprite(int x, int y, int Max) { m_nMaxSpriteX = x; m_nMaxSpriteY = y; m_nMaxSprite = Max; m_xmf4Sprite.x = (float)1 / x; m_xmf4Sprite.y = (float)1 / y; }
 	void SetSpritePos(int x, int y) { m_xmf4Sprite.z = (float)x; m_xmf4Sprite.w = (float)y; }
+	EFFECT_TYPE GetSpriteType() { return m_nEffectType; }
+	void SetSpriteType(EFFECT_TYPE nSpriteType) { m_nEffectType = nSpriteType; }
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-	EFFECT_TYPE m_efType;
 
 private:
 	XMFLOAT4	m_xmf4Sprite;
@@ -264,6 +301,11 @@ private:
 	int			m_nMaxSpriteX;
 	int			m_nMaxSpriteY;
 	int			m_nMaxSprite;
+
+	float		m_fSize;
+	UINT		m_nTextureIndex;
+
+	EFFECT_TYPE m_nEffectType;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

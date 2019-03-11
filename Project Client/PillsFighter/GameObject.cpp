@@ -665,46 +665,98 @@ void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 CEffect::CEffect() : CGameObject()
 {
-	m_nMaxSpriteX = m_nMaxSpriteY = m_nSpritePosX = m_nSpritePosY = 0;
+	m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_fSpeed = 0.0f;
+	m_fAge = 0.0f;
+	m_fDuration = 0.0f;
+	m_fActiveTime = 0.0f;
 }
 
 CEffect::~CEffect()
 {
+	ReleaseShaderVariables();
+}
+
+void CEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ( (sizeof(CB_EFFECT_INFO) + 255) & ~255);
+
+	m_pd3dcbEffect = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
+
+	m_pd3dcbEffect->Map(0, NULL, (void**)&m_pcbMappedEffect);
+
+	CGameObject::CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	SetSpritePos(m_nSpritePosX, m_nSpritePosY);
+	m_pcbMappedEffect->m_fAge = m_fAge;
+	m_pcbMappedEffect->m_fDuration = m_fDuration;
 
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_TEXTURE_SPRITE, 4, &m_xmf4Sprite, 0);
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_EFFECT, m_pd3dcbEffect->GetGPUVirtualAddress());
 
 	CGameObject::UpdateShaderVariables(pd3dCommandList);
 }
 
+void CEffect::ReleaseShaderVariables()
+{
+	if (m_pd3dcbEffect)
+	{
+		m_pd3dcbEffect->Unmap(0, NULL);
+		m_pd3dcbEffect->Release();
+	}
+
+	m_pd3dcbEffect = NULL;
+}
+
 void CEffect::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-	SpriteAnimate();
+	if (m_fAge >= m_fDuration)
+		Delete();
 
-	SetLookAt(pCamera->GetPosition(), XMFLOAT3(0.0f, 1.0f, 0.0f));
+	if(m_fAge >= m_fActiveTime) m_xmf3Position = Vector3::Add(m_xmf3Position, Vector3::ScalarProduct(m_xmf3Direction, m_fSpeed, false));
+
+	m_fAge += fTimeElapsed;
 
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }
 
-void CEffect::SetLookAt(XMFLOAT3& xmf3Target, XMFLOAT3& xmf3Up)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////
+
+CSprite::CSprite(UINT nTextureIndex, float fSize) : CGameObject()
 {
-	XMFLOAT3 xmf3Position(m_xmf3Position.x, m_xmf3Position.y, m_xmf3Position.z);
+	m_nTextureIndex = nTextureIndex;
+	m_fSize = fSize;
 
-	XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3Target, xmf3Position));
-	XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Up, xmf3Look, true);
-
-	m_xmf3Right.x = xmf3Right.x; m_xmf3Right.y = xmf3Right.y; m_xmf3Right.z = xmf3Right.z;
-	m_xmf3Up.x = xmf3Up.x; m_xmf3Up.y = xmf3Up.y; m_xmf3Up.z = xmf3Up.z;
-	m_xmf3Look.x = xmf3Look.x; m_xmf3Look.y = xmf3Look.y; m_xmf3Look.z = xmf3Look.z;
+	m_nMaxSpriteX = m_nMaxSpriteY = m_nSpritePosX = m_nSpritePosY = 0;
 }
 
-void CEffect::SpriteAnimate()
+CSprite::~CSprite()
 {
-	if (m_nSpritePosX + m_nSpritePosY * m_nMaxSpriteX == m_nMaxSprite && m_efType == EFFECT_TYPE_ONE)
+}
+
+void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	SetSpritePos(m_nSpritePosX, m_nSpritePosY);
+
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 4, &m_xmf4Sprite, 0);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 1, &m_fSize, 4);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 1, &m_nTextureIndex, 5);
+
+	CGameObject::UpdateShaderVariables(pd3dCommandList);
+}
+
+void CSprite::Animate(float fTimeElapsed, CCamera *pCamera)
+{
+	SpriteAnimate();
+
+	CGameObject::Animate(fTimeElapsed, pCamera);
+}
+
+void CSprite::SpriteAnimate()
+{
+	if (m_nSpritePosX + m_nSpritePosY * m_nMaxSpriteX == m_nMaxSprite && m_nEffectType == EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE)
 		Delete();
 	else
 	{

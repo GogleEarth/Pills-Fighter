@@ -572,6 +572,9 @@ void CGameFramework::BuildObjects()
 	if (m_pPlayer) m_pPlayer->ReleaseUploadBuffers();
 
 	if(m_pRepository) m_pRepository->ReleaseUploadBuffers();
+
+	::pDevice = m_pd3dDevice;
+	::pCommandList = m_pd3dCommandList;
 }
 
 void CGameFramework::ReleaseObjects()

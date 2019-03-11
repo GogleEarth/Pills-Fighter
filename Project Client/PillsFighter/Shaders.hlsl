@@ -20,10 +20,6 @@ cbuffer cbCameraInfo : register(b1)
 	float3		gvCameraPosition : packoffset(c8);
 };
 
-cbuffer cbTextureSprite : register(b4)
-{
-	float4	gfTextureSpriteInfo : packoffset(c0);
-};
 // b0 ~ b6
 #include "Light.hlsl"
 
@@ -365,7 +361,7 @@ void GS_UI_Bar(point VS_RECT_OUTPUT input[1], uint primID : SV_PrimitiveID, inou
 	}
 }
 
-float4 PS_RECT(GS_RECT_OUT input) : SV_TARGET
+float4 PS_UI(GS_RECT_OUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
@@ -376,8 +372,67 @@ float4 PS_RECT(GS_RECT_OUT input) : SV_TARGET
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+cbuffer cbTextureSprite : register(b4)
+{
+	float4	gfTextureSpriteInfo : packoffset(c0);
+	float	gfSize : packoffset(c1.x);
+	uint	gnTextureIndex : packoffset(c1.y);
+};
+
 [maxvertexcount(4)]
 void GS_SPRITE(point VS_RECT_OUTPUT input[1], inout TriangleStream<GS_RECT_OUT> outStream)
+{
+	float3 center = float3(input[0].center, 0.0f);
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(gvCameraPosition.xyz - center);
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfW = gfSize;
+	float fHalfH = gfSize;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(center + fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(center + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(center - fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[3] = float4(center - fHalfW * vRight + fHalfH * vUp, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_RECT_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = mul(mul(mul(fVertices[i], gmtxGameObject), gmtxView), gmtxProjection);
+		float3x3 f3x3Sprite = float3x3(gfTextureSpriteInfo.x, 0.0f, 0.0f, 0.0f, gfTextureSpriteInfo.y, 0.0f, fUVs[i].x * gfTextureSpriteInfo.x, fUVs[i].y * gfTextureSpriteInfo.y, 1.0f);
+		float3 f3Sprite = float3(gfTextureSpriteInfo.zw, 1.0f);
+		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
+
+		outStream.Append(output);
+	}
+}
+
+float4 PS_SPRITE(GS_RECT_OUT input) : SV_TARGET
+{
+	// 임시 텍스처 배열 인덱스는 0
+	float4 cColor = gtxtTexture[NonUniformResourceIndex(gnTextureIndex)].Sample(gssWrap, input.uv);
+
+	return(cColor);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+cbuffer cbEffect : register(b7)
+{
+	float	gfAge;
+	float	gfDuration;
+};
+
+[maxvertexcount(4)]
+void GS_RECT(point VS_RECT_OUTPUT input[1], inout TriangleStream<GS_RECT_OUT> outStream)
 {
 	float3 center = float3(input[0].center, 0.0f);
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
@@ -403,11 +458,20 @@ void GS_SPRITE(point VS_RECT_OUTPUT input[1], inout TriangleStream<GS_RECT_OUT> 
 
 	for (int i = 0; i < 4; i++)
 	{
-		output.pos = mul(mul(fVertices[i], gmtxView), gmtxProjection);
-		float3x3 f3x3Sprite = float3x3(gfTextureSpriteInfo.x, 0.0f, 0.0f, 0.0f, gfTextureSpriteInfo.y, 0.0f, fUVs[i].x * gfTextureSpriteInfo.x, fUVs[i].y * gfTextureSpriteInfo.y, 1.0f);
-		float3 f3Sprite = float3(gfTextureSpriteInfo.zw, 1.0f);
-		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
+		output.pos = mul(mul(mul(fVertices[i], gmtxGameObject), gmtxView), gmtxProjection);
+		output.uv = fUVs[i];
+		output.pos.z = 0.0f;
 
 		outStream.Append(output);
 	}
+}
+
+float4 PS_RECT(GS_RECT_OUT input) : SV_TARGET
+{
+	// 임시 텍스처 배열 인덱스는 0
+	float fOpacity = 1.0 - smoothstep(0.0f, gfDuration, gfAge);
+
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv) * float4(1.0f, 1.0f, 1.0f, fOpacity);
+
+	return(cColor);
 }
