@@ -464,7 +464,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			PKT_ID pid_l = PKT_ID_CREATE_EFFECT;
 			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
-
+			std::cout << pkt_ce.efType << " " << pkt_ce.xmf3Position.x << std::endl;
 			retval = Send_msg((char*)&pkt_ce, sizeof(PKT_CREATE_EFFECT), 0);
 		}
 
@@ -533,6 +533,7 @@ void Framework::CheckCollision(CScene* pScene)
 	std::vector<CGameObject*> vAmmoItem;
 	PKT_DELETE_OBJECT pktDO;
 	PKT_PLAYER_LIFE pktLF;
+	PKT_CREATE_EFFECT pktCDE;
 	PKT_CREATE_EFFECT pktCE;
 
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
@@ -564,7 +565,11 @@ void Framework::CheckCollision(CScene* pScene)
 						if (Bullet->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
 						{
 							XMFLOAT3 position = Bullet->GetPosition();
-							pktCE.efType = EFFECT_TYPE_ONE;
+							pktCDE.efType = EFFECT_TYPE_DEFAULT;
+							pktCDE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
+							pktCDE.xmf3Position.y += 20.0f;
+							effect_msg_queue.push(pktCDE);
+							pktCE.efType = EFFECT_TYPE_SPRITE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
 							pktDO.Object_Index = Bullet->index;
@@ -619,7 +624,7 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							spawn_item = false;
 							XMFLOAT3 position = Item->GetPosition();
-							pktCE.efType = EFFECT_TYPE_ONE;
+							pktCE.efType = EFFECT_TYPE_SPRITE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
 							pktDO.Object_Index = Item->index;
@@ -651,7 +656,7 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							spawn_ammo[Item->m_iId-ITEM_AMMO1] = false;
 							XMFLOAT3 position = Item->GetPosition();
-							pktCE.efType = EFFECT_TYPE_ONE;
+							pktCE.efType = EFFECT_TYPE_SPRITE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
 							pktDO.Object_Index = Item->index;
