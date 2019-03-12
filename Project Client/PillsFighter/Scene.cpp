@@ -666,7 +666,7 @@ void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
 	CEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
-	float fSize = (float)(rand() % 2000) / 100.0f;
+	float fSize = 10.0f;//(float)(rand() % 2000) / 100.0f;
 
 	switch (nEffectType)
 	{
@@ -685,14 +685,14 @@ void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pSprite->SetPosition(CreateEffectInfo.xmf3Position);
 		pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP:
 		pSprite = new CSprite(rand() % 2, fSize);
 		pSprite->SetPosition(CreateEffectInfo.xmf3Position);
 		pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
 		break;
 	}
 }
