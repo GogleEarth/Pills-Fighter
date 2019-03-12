@@ -179,8 +179,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	//그래픽 루트 시그너쳐를 생성한다. 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, 
-		3/*Effect*/ + 4/*UI*/ + 5/*Terrain*/ + 1/*SkyBox*/ + 3/*Bullet*/ + 3/*BZK Bullet*/ + 3/*GM*/ + 3/*Hangar*/ + 3/*Repair Item*/ + 3/*Gim Gun*/ + 3/*Machine Gun*/ + 3/*Bazooka*/ + 18 /*Building*/);
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, SCENE_DESCIPTOR_HEAP_COUNT);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
@@ -191,7 +190,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
-	m_nShaders = 7;
+	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
 
 	CObstacleShader *pObstacleShader = new CObstacleShader();
@@ -228,6 +227,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
+
+	CAmmoItemShader *pAmmoItemShader = new CAmmoItemShader();
+	pAmmoItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pAmmoItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_AMMO_ITEM] = pAmmoItemShader;
 
 	m_pWireShader = new CWireShader();
 	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -635,7 +639,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_ITEM_HEALING:
-		pGameObject = new CRobotObject();
+		pGameObject = new RotateObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
@@ -653,10 +657,10 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_ITEM_AMMO:
-		pGameObject = new CRobotObject();
+		pGameObject = new RotateObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_AMMO_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	}
 

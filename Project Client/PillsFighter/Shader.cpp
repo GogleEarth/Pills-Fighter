@@ -493,6 +493,21 @@ void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsComma
 
 ////////////////////////////////////////////////////////////
 
+CAmmoItemShader::CAmmoItemShader()
+{
+}
+
+CAmmoItemShader::~CAmmoItemShader()
+{
+}
+
+void CAmmoItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", false);
+}
+
+////////////////////////////////////////////////////////////
+
 CObstacleShader::CObstacleShader()
 {
 }
