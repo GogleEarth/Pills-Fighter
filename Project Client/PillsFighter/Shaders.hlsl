@@ -194,6 +194,7 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+Texture2D gtxtTileTexture[5] : register(t7); //	t7~t11
 
 struct VS_TERRAIN_INPUT
 {
@@ -227,11 +228,24 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
 
 float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 {
-	// 지형 텍스처 배열 인덱스 0 = Base, 1 = Detail
-	float4 cBaseTexColor = gtxtTexture[0].Sample(gssWrap, input.uv0);
-	float4 cDetailTexColor = gtxtTexture[1].Sample(gssWrap, input.uv1);
+	float4 cTileColor1 = gtxtTileTexture[1].Sample(gssWrap, input.uv1);
+	float4 cTileColor2 = gtxtTileTexture[2].Sample(gssWrap, input.uv1);
+	float4 cTileColor3 = gtxtTileTexture[3].Sample(gssWrap, input.uv1);
+	float4 cTileColor4 = gtxtTileTexture[4].Sample(gssWrap, input.uv1);
 
-	float4 cColor = input.color * saturate((cBaseTexColor * 0.5f) + (cDetailTexColor * 0.5f));
+	float4 cColor;
+	float4 road = float4(1, 1, 1, 1);
+	//float4 block = float4(127, 127, 127, 1);
+	float4 bush = float4(0, 0, 0, 1);
+	//float4 trail = float4(176, 176, 176, 1);
+
+	float4 tile = gtxtTileTexture[0].Sample(gssWrap, input.uv0);
+
+	if (all(tile == road)) { cColor = cTileColor1; }
+	else if (tile.x > 0.001 && tile.x < 0.6) { cColor = cTileColor2; }
+	else if (all(tile == bush)) { cColor = cTileColor3; }
+	else if (tile.x > 0.6 && tile.x < 0.999) { cColor = cTileColor4; }
+	else { cColor = float4(1, 1, 1, 1); }
 
 	return(cColor);
 }

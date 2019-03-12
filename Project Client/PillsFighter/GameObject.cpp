@@ -602,20 +602,23 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CTexture *pTerrainTexture = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
-	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Base.dds", 0);
-	pTerrainTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Tile.dds", 1);
+	CTexture *pTileTexture = new CTexture(5, RESOURCE_TEXTURE2D_ARRAY, 0);
+	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/StageSetting2048.dds", 0);
+	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile1.dds", 1);
+	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile2.dds", 2);
+	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile3.dds", 3);
+	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile4.dds", 4);
 
 	CShader *pShader = new CTerrainShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	CScene::CreateShaderResourceViews(pd3dDevice, pTerrainTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-	
-	CMaterial **ppTerrainMaterial = new CMaterial*[1];
-	ppTerrainMaterial[0] = new CMaterial();
-	ppTerrainMaterial[0]->SetTexture(pTerrainTexture);
-	ppTerrainMaterial[0]->SetShader(pShader);
+	CScene::CreateShaderResourceViews(pd3dDevice, pTileTexture, ROOT_PARAMETER_INDEX_TILES, false);
 
-	SetMaterial(ppTerrainMaterial, 1);
+	CMaterial **ppTileMaterial = new CMaterial*[1];
+	ppTileMaterial[0] = new CMaterial();
+	ppTileMaterial[0]->SetTexture(pTileTexture);
+	ppTileMaterial[0]->SetShader(pShader);
+
+	SetMaterial(ppTileMaterial, 1);
 }
 
 CHeightMapTerrain::~CHeightMapTerrain()
