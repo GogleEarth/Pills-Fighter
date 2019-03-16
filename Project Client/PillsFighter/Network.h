@@ -38,11 +38,11 @@ typedef enum SCENE_NAME
 	SCENE_NAME_COLONY
 }SCENE_NAME;
 
-typedef enum PKT_GAME_STATE
+typedef enum GAME_STATE
 {
-	PKT_GAME_STATE_START,
-	PKT_GAME_STATE_END
-}PKT_GAME_STATE;
+	GAME_STATE_START,
+	GAME_STATE_END
+}GAME_STATE;
 
 enum WEAPON_TYPE
 {
@@ -114,6 +114,12 @@ typedef struct PKT_CREATE_EFFECT
 	XMFLOAT3 xmf3Position;
 	EFFECT_TYPE nEffectType;
 }PKT_CREATE_EFFECT;
+
+struct PKT_GAME_STATE
+{
+	GAME_STATE game_state;
+	char num_player;
+};
 
 typedef SCENE_NAME SCENEINFO;
 typedef unsigned int CLIENTID;

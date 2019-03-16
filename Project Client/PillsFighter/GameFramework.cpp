@@ -186,8 +186,10 @@ void CGameFramework::InitNetwork()
 	PKT_GAME_STATE pktGameState;
 	retval = recvn(m_sock, (char*)&pktGameState, sizeof(PKT_GAME_STATE), 0);
 
-	if (pktGameState == PKT_GAME_STATE_START)
+	if (pktGameState.game_state == GAME_STATE_START)
 	{
+		m_pScene->m_nPlayers = pktGameState.num_player;
+		m_pScene->SetNumPlayers();
 		FrameworkThread *sFT = new FrameworkThread;
 		sFT->pGFW = this;
 		sFT->sock = m_sock;

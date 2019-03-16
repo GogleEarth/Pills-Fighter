@@ -413,6 +413,19 @@ CGundamShader::~CGundamShader()
 {
 }
 
+void CGundamShader::Render(ID3D12GraphicsCommandList * pd3dCommandList, CCamera * pCamera)
+{
+	CShader::Render(pd3dCommandList, pCamera);
+	for (int i = 0; i < m_nPlayers; i++)
+		m_vObjects[i]->Render(pd3dCommandList, pCamera);
+}
+
+void CGundamShader::RenderWire(ID3D12GraphicsCommandList * pd3dCommandList, CCamera * pCamera)
+{
+	for (int i = 0; i < m_nPlayers; i++)
+		m_vObjects[i]->Render(pd3dCommandList, pCamera);
+}
+
 void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true);

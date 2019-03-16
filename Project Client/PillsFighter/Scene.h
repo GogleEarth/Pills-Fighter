@@ -66,6 +66,9 @@ protected:
 	CShader						*m_pWireShader = NULL;
 
 public:
+	char						m_nPlayers;
+	void SetNumPlayers() { m_ppShaders[INDEX_SHADER_ENEMY]->m_nPlayers = m_nPlayers; }
+
 	// 충돌 체크를 검사한다.
 	virtual void CheckCollision();
 	virtual void CheckCollisionPlayer();

@@ -236,7 +236,9 @@ DWORD Framework::Update_Process(CScene* pScene)
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
-	PKT_GAME_STATE pstate = PKT_GAME_STATE_GAME_START;
+	PKT_GAME_STATE pstate;
+	pstate.game_state = GAME_STATE_GAME_START;
+	pstate.num_player = playernum;
 	retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
 
 	while (true)

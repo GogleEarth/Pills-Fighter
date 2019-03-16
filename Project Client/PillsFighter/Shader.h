@@ -36,6 +36,8 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {};
 
+	char m_nPlayers;
+
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
 };
@@ -248,6 +250,9 @@ class CGundamShader : public CSkinnedObjectsShader
 public:
 	CGundamShader();
 	virtual ~CGundamShader();
+
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate = false, void *pContext = NULL);
