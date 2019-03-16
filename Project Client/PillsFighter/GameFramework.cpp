@@ -115,11 +115,11 @@ void CGameFramework::InitNetwork()
 	if (WSAStartup(WS22, &wsa) != 0)
 		return;
 
-	char ServerIP[20];
-	::memset(&ServerIP, 0, sizeof(char[20]));
+	//char ServerIP[20];
+	//::memset(&ServerIP, 0, sizeof(char[20]));
 
-	std::cout << "서버 IP 입력 : ";
-	std::cin >> ServerIP;
+	//std::cout << "서버 IP 입력 : ";
+	//std::cin >> ServerIP;
 
 	// socket()
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -132,7 +132,7 @@ void CGameFramework::InitNetwork()
 	SOCKADDR_IN serveraddr;
 	ZeroMemory(&serveraddr, sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr(ServerIP);
+	serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
 	serveraddr.sin_port = htons(SERVERPORT);
 	retval = connect(m_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
 	if (retval == SOCKET_ERROR)
