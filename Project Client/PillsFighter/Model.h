@@ -191,6 +191,8 @@ public: // Root Model
 	int GetMeshes() { return m_nMeshes; }
 	int GetSkinnedMeshes() { return m_nSkinnedMeshes; }
 	
+	XMFLOAT3 GetPosition() { return XMFLOAT3(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43); }
+
 protected:
 	// Root Model = Total
 	int				m_nMeshes = 0; // All Mesh

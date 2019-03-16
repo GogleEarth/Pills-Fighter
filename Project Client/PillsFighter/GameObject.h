@@ -8,6 +8,7 @@
 class CShader;
 class CAnimationController;
 class CWeapon;
+class CParticle;
 
 struct MATERIAL
 {
@@ -142,6 +143,12 @@ public:
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 	void SetAnimationController(CAnimationController *pController) { m_pAnimationController = pController; }
+
+public:
+	void AddParticle(CParticle *pParticle) { m_vpParticles.emplace_back(pParticle); };
+
+protected:
+	std::vector<CParticle*> m_vpParticles;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -366,4 +373,94 @@ protected:
 public:
 	CWeapon* GetRHWeapon() { return m_pRHWeapon; }
 	CWeapon* GetLHWeapon() { return m_pLHWeapon; }
+
+protected:
+	CModel *m_pNozzle = NULL;
+
+public:
+	CModel* GetNozzleFrame() { return m_pNozzle; }
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define PARTICLE_TYPE_EMITTER 0
+#define MAX_PARTICLE_VERTEX_COUNT 1000
+
+struct CParticleVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT3	m_xmf3Velocity;
+	XMFLOAT2	m_xmf2Size;
+	UINT		m_nType;
+	float		m_fAge;
+	//UINT		m_nFactor;
+};
+
+struct CB_PARTICLE_INFO
+{
+	XMFLOAT3	gvPosition;
+	float		gfElapsedTime;
+	XMFLOAT4	gvRandom;
+	XMFLOAT3	gvDirection;
+	float		gfSpeed;
+	float		gfDuration;
+	//	float	gfEmitTime;
+};
+
+class CParticle
+{
+public:
+	CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual ~CParticle();
+	
+protected:
+	ID3D12Resource						*m_pd3dInitVertexBuffer;
+	ID3D12Resource						*m_pd3dInitVertexUploadBuffer;
+	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
+
+	ID3D12Resource						*m_pd3dVertexBuffer[2];
+	D3D12_VERTEX_BUFFER_VIEW			m_d3dVertexBufferView[2];
+	D3D12_STREAM_OUTPUT_BUFFER_VIEW		m_d3dSOBufferView[2];
+
+	int									m_nDrawBufferIndex = 0;
+	int									m_nSOBufferIndex = 1;
+	ID3D12Resource						*m_pd3dBuffer;
+	ID3D12Resource						*m_pd3dDummyBuffer;
+	ID3D12Resource						*m_pd3dReadBackBuffer;
+	
+	XMFLOAT3							m_xmf3Position;
+	XMFLOAT3							m_xmf3Direction;
+	float								m_fSpeed;
+	float								m_fElapsedTime;
+	float								m_fDuration;
+	float								m_fEmitTime;
+
+	bool								m_nInit = false;
+	int									m_nVertices;
+
+	CGameObject							*m_pFollowObject = NULL;
+	CModel								*m_pFollowFrame = NULL;
+
+	ID3D12Resource						*m_pd3dcbParticle = NULL;
+	CB_PARTICLE_INFO					*m_pcbMappedParticle;
+
+public:
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void ReleaseUploadBuffers();
+
+	virtual void Animate(float fTimeElapsed);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitTime);
+
+	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
+	void SetFollowObject(CGameObject *pObject, CModel *pModel);
+	void SetToFollowFramePosition();
 };

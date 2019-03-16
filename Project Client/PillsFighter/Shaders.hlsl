@@ -452,9 +452,10 @@ void GS_RECT(point VS_RECT_OUTPUT input[1], inout TriangleStream<GS_RECT_OUT> ou
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - center);
 	float3 vRight = normalize(cross(vUp, vLook));
+	float fDistance = distance(gvCameraPosition.xyz, center);
 
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
+	float fHalfW = input[0].size.x + fDistance * input[0].size.x;
+	float fHalfH = input[0].size.y + fDistance * input[0].size.y;
 
 	float4 fVertices[4];
 	fVertices[0] = float4(center + fHalfW * vRight - fHalfH * vUp, 1.0f);
@@ -486,6 +487,147 @@ float4 PS_RECT(GS_RECT_OUT input) : SV_TARGET
 	float fOpacity = 1.0 - smoothstep(0.0f, gfDuration, gfAge);
 
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv) * float4(1.0f, 1.0f, 1.0f, fOpacity);
+
+	return(cColor);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define PARTICLE_TYPE_EMITTER 0
+
+cbuffer cbParticleInfo : register(b8)
+{
+	float3	gvPosition;
+	float	gfElapsedTime;
+	float4	gvRandom;
+	float3	gvDirection;
+	float	gfSpeed;
+	float	gfPDuration;
+	//	float	gfEmitTime;
+}
+
+struct VS_INPUT
+{
+	float3	position : POSITION;
+	float3	velocity : VELOCITY;
+	float2	size : SIZE;
+	uint	type : TYPE;
+	float	age : AGE;
+	//uint	factor : FACTOR;
+};
+
+VS_INPUT VSParticleStreamOut(VS_INPUT input)
+{
+	return input;
+}
+
+[maxvertexcount(2)]
+void GSParticleStreamOut(point VS_INPUT input[1], inout PointStream<VS_INPUT> pointStream)
+{
+	input[0].age += gfElapsedTime;
+
+	if (input[0].type == PARTICLE_TYPE_EMITTER)
+	{
+		float3 vRandom = gvRandom.xyz;
+		vRandom = normalize(vRandom * 2.0f - 1.0f);
+
+		if (input[0].age > 0.005f)
+		{
+			VS_INPUT particle;
+			particle.position = input[0].position + gvPosition;
+			particle.velocity = gfSpeed * (vRandom);// +gvDirection);
+			particle.size = input[0].size;
+			particle.age = gfElapsedTime;
+			particle.type = 1;
+			//particle.factor = input[0].factor;
+
+			pointStream.Append(particle);
+		}
+
+		//if (input[0].age < 0.2f)
+		{
+			input[0].velocity = gfSpeed * (vRandom + gvDirection);
+			pointStream.Append(input[0]);
+		}
+	}
+	else
+	{
+		if (input[0].age < gfPDuration) pointStream.Append(input[0]);
+	}
+
+}
+
+////////////////////////////////////////////
+
+struct VS_OUTPUT
+{
+	float3 position : POSITION;
+	float2 size : SIZE;
+	float4 color : COLOR;
+	uint type : TYPE;
+};
+
+struct GS_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+	float2 uv : TEXCOORD;
+};
+
+VS_OUTPUT VSParticleDraw(VS_INPUT input)
+{
+	VS_OUTPUT output;
+
+	float t = input.age;
+	output.position = (input.velocity * t) + input.position;
+
+	float fOpacity = 1.0f - smoothstep(0.0f, gfPDuration, input.age);
+	output.color = float4(1.0f, 1.0f, 1.0f, fOpacity);
+
+	output.size = input.size;
+	output.type = input.type;
+
+	return output;
+}
+
+static float2 gvQuadTexCoord[4] = { float2(0.0f, 1.0f), float2(0.0f, 0.0f), float2(1.0f, 1.0f), float2(1.0f, 0.0f) };
+
+[maxvertexcount(4)]
+void GSParticleDraw(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> triStream)
+{
+	if (input[0].type == PARTICLE_TYPE_EMITTER) return;
+
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = gvCameraPosition.xyz - input[0].position;
+	vLook = normalize(vLook);
+	vLook.y = 0.0f;
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfWidth = 0.5f * input[0].size.x;
+	float fHalfHeight = 0.5f * input[0].size.y;
+
+	float4 vQuads[4];
+	vQuads[0] = float4(input[0].position + fHalfWidth * vRight - fHalfHeight * vUp, 1.0f);
+	vQuads[1] = float4(input[0].position + fHalfWidth * vRight + fHalfHeight * vUp, 1.0f);
+	vQuads[2] = float4(input[0].position - fHalfWidth * vRight - fHalfHeight * vUp, 1.0f);
+	vQuads[3] = float4(input[0].position - fHalfWidth * vRight + fHalfHeight * vUp, 1.0f);
+
+	matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
+
+	GS_OUTPUT output;
+	for (int i = 0; i < 4; i++)
+	{
+		output.position = mul(vQuads[i], mtxViewProjection);
+		output.uv = gvQuadTexCoord[i];
+		output.color = input[0].color;
+		triStream.Append(output);
+	}
+}
+
+float4 PSParticleDraw(GS_OUTPUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
 
 	return(cColor);
 }

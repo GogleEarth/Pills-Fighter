@@ -66,9 +66,6 @@ protected:
 	CShader						*m_pWireShader = NULL;
 
 public:
-	char						m_nPlayers;
-	void SetNumPlayers() { m_ppShaders[INDEX_SHADER_ENEMY]->m_nPlayers = m_nPlayers; }
-
 	// 충돌 체크를 검사한다.
 	virtual void CheckCollision();
 	virtual void CheckCollisionPlayer();
@@ -129,22 +126,12 @@ protected:
 
 protected:
 	CModel		*m_pGimGun = NULL;
-	CShader		*m_pGimGunBulletShader = NULL;
-
 	CModel		*m_pBazooka = NULL;
-	CShader		*m_pBazookaBulletShader = NULL;
-
 	CModel		*m_pMachineGun = NULL;
-	CShader		*m_pMachineGunBulletShader = NULL;
 
 public:
-	CModel* GetGimGun() { return m_pGimGun; }
-	CShader* GetGimGunBullet() { return m_pGimGunBulletShader; }
+	void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 
-	CModel* GetBazooka() { return m_pBazooka; }
-	CShader* GetBazookaBullet() { return m_pBazookaBulletShader; }
-
-	CModel* GetMachineGun() { return m_pMachineGun; }
-	CShader* GetMachineGunBullet() { return m_pMachineGunBulletShader; }
-
+protected:
+	CParticleShader		*m_pParticleShader = NULL;
 };

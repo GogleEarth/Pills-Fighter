@@ -56,6 +56,7 @@ public:
 	virtual CCamera *SetCamera(float fTimeElapsed);
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
 protected:
 	CShader				*m_pUserInterface = NULL;
 

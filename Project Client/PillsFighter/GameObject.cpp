@@ -346,6 +346,11 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		int i = 0;
 		m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
 	}
+
+	for (CParticle *pParticle : m_vpParticles)
+	{
+		pParticle->SetToFollowFramePosition();
+	}
 }
 
 void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
@@ -822,6 +827,7 @@ void CRobotObject::OnPrepareAnimate()
 {
 	m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
 	m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
+	m_pNozzle = m_pModel->FindFrame("Bone001");
 }
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
@@ -913,4 +919,192 @@ void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamer
 
 	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	CParticleVertex *pParticleVertex = new CParticleVertex();
+	m_nVertices = 1;
+
+	pParticleVertex[0].m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	pParticleVertex[0].m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	pParticleVertex[0].m_xmf2Size = XMFLOAT2(2.0f, 2.0f);
+	pParticleVertex[0].m_nType = PARTICLE_TYPE_EMITTER;
+	pParticleVertex[0].m_fAge = 0.0f;
+
+	m_pd3dInitVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pParticleVertex, sizeof(CParticleVertex),
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dInitVertexUploadBuffer);
+
+	m_d3dInitVertexBufferView.BufferLocation = m_pd3dInitVertexBuffer->GetGPUVirtualAddress();
+	m_d3dInitVertexBufferView.SizeInBytes = sizeof(CParticleVertex);
+	m_d3dInitVertexBufferView.StrideInBytes = sizeof(CParticleVertex);
+
+
+	m_pd3dBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
+
+	m_pd3dDummyBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL);
+
+	m_pd3dReadBackBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
+		D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST, NULL);
+
+	for (int i = 0; i < 2; i++)
+	{
+		m_pd3dVertexBuffer[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(CParticleVertex) * MAX_PARTICLE_VERTEX_COUNT,
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
+
+		m_d3dVertexBufferView[i].BufferLocation = m_pd3dVertexBuffer[i]->GetGPUVirtualAddress();
+		m_d3dVertexBufferView[i].SizeInBytes = sizeof(CParticleVertex) * MAX_PARTICLE_VERTEX_COUNT;
+		m_d3dVertexBufferView[i].StrideInBytes = sizeof(CParticleVertex);
+
+		m_d3dSOBufferView[i].BufferFilledSizeLocation = m_pd3dBuffer->GetGPUVirtualAddress();
+		m_d3dSOBufferView[i].BufferLocation = m_pd3dVertexBuffer[i]->GetGPUVirtualAddress();
+		m_d3dSOBufferView[i].SizeInBytes = sizeof(CParticleVertex) * MAX_PARTICLE_VERTEX_COUNT;
+	}
+}
+
+CParticle::~CParticle()
+{
+	if (m_pd3dBuffer) m_pd3dBuffer->Release();
+	if (m_pd3dDummyBuffer) m_pd3dDummyBuffer->Release();
+	if (m_pd3dReadBackBuffer) m_pd3dReadBackBuffer->Release();
+
+	for (int i = 0; i < 2; i++) if (m_pd3dVertexBuffer[i]) m_pd3dVertexBuffer[i]->Release();
+	if (m_pd3dInitVertexBuffer) m_pd3dInitVertexBuffer->Release();
+}
+
+void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitTime)
+{
+	m_xmf3Position = xmf3Position;
+	m_xmf3Direction = xmf3Direction;
+	m_fSpeed = fSpeed;
+	m_fDuration = fDuration;
+	m_fEmitTime = fEmitTime;
+
+	m_nDrawBufferIndex = 0;
+	m_nSOBufferIndex = 1;
+
+	m_nInit = false;
+}
+
+void CParticle::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_PARTICLE_INFO) + 255) & ~255); //256ÀÇ ¹è¼ö
+
+	m_pd3dcbParticle = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
+	m_pd3dcbParticle->Map(0, NULL, (void**)&m_pcbMappedParticle);
+}
+
+void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT4 xmf3Random = RANDOM_COLOR;
+
+	m_pcbMappedParticle->gvPosition = m_xmf3Position;
+	m_pcbMappedParticle->gfElapsedTime = m_fElapsedTime;
+	m_pcbMappedParticle->gvRandom = xmf3Random;
+	m_pcbMappedParticle->gvDirection = m_xmf3Direction;
+	m_pcbMappedParticle->gfSpeed = m_fSpeed;
+	m_pcbMappedParticle->gfDuration = m_fDuration;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PARTICLE, m_pd3dcbParticle->GetGPUVirtualAddress());
+}
+
+void CParticle::ReleaseShaderVariables()
+{
+	if (m_pcbMappedParticle)
+	{
+		m_pd3dcbParticle->Unmap(0, NULL);
+		m_pd3dcbParticle->Release();
+		m_pd3dcbParticle = NULL;
+	}
+}
+
+void CParticle::ReleaseUploadBuffers()
+{
+	if (m_pd3dInitVertexUploadBuffer) m_pd3dInitVertexUploadBuffer->Release();
+	m_pd3dInitVertexUploadBuffer = NULL;
+}
+
+void CParticle::SetFollowObject(CGameObject *pObject, CModel *pModel)
+{
+	m_pFollowObject = pObject;
+	pObject->AddParticle(this);
+	m_pFollowFrame = pModel;
+}
+
+void CParticle::SetToFollowFramePosition()
+{
+	if(m_pFollowFrame) SetPosition(m_pFollowFrame->GetPosition());
+}
+
+void CParticle::Animate(float fTimeElapsed)
+{
+	m_fElapsedTime = fTimeElapsed;
+}
+
+void CParticle::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_nInit)
+	{
+		if (m_nDrawBufferIndex == 0)
+		{
+			m_nDrawBufferIndex = 1;
+			m_nSOBufferIndex = 0;
+		}
+		else if (m_nDrawBufferIndex == 1)
+		{
+			m_nDrawBufferIndex = 0;
+			m_nSOBufferIndex = 1;
+		}
+
+		D3D12_RANGE d3dRange = { 0, sizeof(UINT64) };
+		UINT64 *nFilledSize = NULL;
+
+		m_pd3dReadBackBuffer->Map(0, &d3dRange, (void**)&nFilledSize);
+
+		m_nVertices = static_cast<int>((*nFilledSize) / sizeof(CParticleVertex));
+
+		d3dRange = { 0, 0 };
+		m_pd3dReadBackBuffer->Unmap(0, &d3dRange);
+	}
+}
+
+void CParticle::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	pd3dCommandList->CopyResource(m_pd3dReadBackBuffer, m_pd3dBuffer);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+	pd3dCommandList->CopyResource(m_pd3dBuffer, m_pd3dDummyBuffer);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_STREAM_OUT);
+
+	if (!m_nInit) m_nInit = true;
+}
+
+void CParticle::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UpdateShaderVariables(pd3dCommandList);
+
+	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	if (!m_nInit) pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
+	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+
+	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+}
+
+void CParticle::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UpdateShaderVariables(pd3dCommandList);
+
+	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	pd3dCommandList->SOSetTargets(0, 1, &m_d3dSOBufferView[m_nSOBufferIndex]);
+
+	if (!m_nInit) pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
+	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
 }

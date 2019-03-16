@@ -115,28 +115,36 @@ void CGameFramework::InitNetwork()
 	if (WSAStartup(WS22, &wsa) != 0)
 		return;
 
-	//char ServerIP[20];
-	//::memset(&ServerIP, 0, sizeof(char[20]));
-
-	//std::cout << "서버 IP 입력 : ";
-	//std::cin >> ServerIP;
-
-	// socket()
-	m_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_sock == INVALID_SOCKET)
-		err_quit("socket()");
-
 	int retval;
 
-	// connect()
-	SOCKADDR_IN serveraddr;
-	ZeroMemory(&serveraddr, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
-	serveraddr.sin_port = htons(SERVERPORT);
-	retval = connect(m_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
-	if (retval == SOCKET_ERROR)
-		err_quit("connect()");
+	while (true)
+	{
+		//char ServerIP[20];
+		//::memset(&ServerIP, 0, sizeof(char[20]));
+
+		//std::cout << "서버 IP 입력 : ";
+		//std::cin >> ServerIP;
+
+		// socket()
+		m_sock = socket(AF_INET, SOCK_STREAM, 0);
+		if (m_sock == INVALID_SOCKET)
+			err_display("socket()");
+
+		// connect()
+		SOCKADDR_IN serveraddr;
+		ZeroMemory(&serveraddr, sizeof(serveraddr));
+		serveraddr.sin_family = AF_INET;
+		serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
+		serveraddr.sin_port = htons(SERVERPORT);
+		retval = connect(m_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
+		if (retval == SOCKET_ERROR)
+		{
+			err_display("connect()");
+			continue;
+		}
+
+		break;
+	}
 
 	// 클라이언트 아이디 받기
 	retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
@@ -188,8 +196,14 @@ void CGameFramework::InitNetwork()
 
 	if (pktGameState.game_state == GAME_STATE_START)
 	{
-		m_pScene->m_nPlayers = pktGameState.num_player;
-		m_pScene->SetNumPlayers();
+		for (int i = 0; i < 8 - pktGameState.num_player; i++)
+		{
+			PKT_DELETE_OBJECT pktDO;
+			pktDO.Object_Index = pktGameState.num_player + i;
+			
+			m_pScene->DeleteObject(pktDO);
+		}
+
 		FrameworkThread *sFT = new FrameworkThread;
 		sFT->pGFW = this;
 		sFT->sock = m_sock;
@@ -247,7 +261,6 @@ CGameFramework::CGameFramework()
 
 	m_pScene = NULL;
 	m_pPlayer = NULL;
-
 
 	_tcscpy_s(m_pszCaption, _T(GAME_TITLE));
 }
@@ -310,7 +323,6 @@ void CGameFramework::OnDestroy()
 	if (m_pd3dDevice) m_pd3dDevice->Release();
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
 
-	//마우스 캡쳐를 해제한다. 
 	::ReleaseCapture();
 }
 
@@ -321,7 +333,6 @@ void CGameFramework::CreateSwapChain()
 	m_nWndClientWidth = rcClient.right - rcClient.left;
 	m_nWndClientHeight = rcClient.bottom - rcClient.top;
 
-	// 스왑체인을 생성한다.
 	DXGI_SWAP_CHAIN_DESC dxgiSwapChainDesc;
 	::ZeroMemory(&dxgiSwapChainDesc, sizeof(dxgiSwapChainDesc));
 	dxgiSwapChainDesc.BufferCount = m_nSwapChainBuffers;
@@ -346,7 +357,6 @@ void CGameFramework::CreateSwapChain()
 	HRESULT hResult = m_pdxgiFactory->CreateSwapChain(m_pd3dCommandQueue,
 		&dxgiSwapChainDesc, (IDXGISwapChain **)&m_pdxgiSwapChain);
 
-	//“Alt+Enter” 키의 동작을 비활성화한다. 
 	m_pdxgiFactory->MakeWindowAssociation(m_hWnd, DXGI_MWA_NO_ALT_ENTER);
 
 	//스왑체인의 현재 후면버퍼 인덱스를 저장한다.
@@ -414,7 +424,6 @@ void CGameFramework::CreateDirect3DDevice()
 
 void CGameFramework::CreateCommandQueueAndList()
 {
-	//직접(Direct) 명령 큐를 생성한다. 
 	D3D12_COMMAND_QUEUE_DESC d3dCommandQueueDesc;
 	::ZeroMemory(&d3dCommandQueueDesc, sizeof(D3D12_COMMAND_QUEUE_DESC));
 	d3dCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -422,11 +431,9 @@ void CGameFramework::CreateCommandQueueAndList()
 	HRESULT hResult = m_pd3dDevice->CreateCommandQueue(&d3dCommandQueueDesc,
 		_uuidof(ID3D12CommandQueue), (void **)&m_pd3dCommandQueue);
 
-	//직접(Direct) 명령 할당자를 생성한다. 
 	hResult = m_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
 		__uuidof(ID3D12CommandAllocator), (void **)&m_pd3dCommandAllocator);
 
-	//직접(Direct) 명령 리스트를 생성한다. 
 	hResult = m_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
 		m_pd3dCommandAllocator, NULL, __uuidof(ID3D12GraphicsCommandList), (void
 			**)&m_pd3dCommandList);
@@ -521,6 +528,10 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 			m_pScene = new CScene();
 			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 			break;
+		default:
+			m_pScene = new CScene();
+			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+			break;
 		}
 	}
 	else
@@ -535,17 +546,9 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 
 	m_pPlayer = pPlayer;
 	m_pScene->SetPlayer(pPlayer);
-	m_pPlayer->SetGravity(m_pScene->m_fGravAcc);
-	m_pPlayer->SetScene(m_pScene);
 	m_pCamera = m_pPlayer->GetCamera();
 
-	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGimGun(), WEAPON_TYPE_OF_GIM_GUN, m_pScene->GetGimGunBullet());
-	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetBazooka(), WEAPON_TYPE_OF_BAZOOKA, m_pScene->GetBazookaBullet());
-	m_pPlayer->AddWeapon(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetMachineGun(), WEAPON_TYPE_OF_MACHINEGUN, m_pScene->GetMachineGunBullet());
-
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
+	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList);
 }
 
 void CGameFramework::BuildObjects()
@@ -851,20 +854,25 @@ void CGameFramework::FrameAdvance()
 	for (const auto& TimeInfo : m_vMsgTimeInfo)
 	{
 		m_fElapsedTime += TimeInfo->ElapsedTime;
+
+		delete TimeInfo;
 	}
 	m_vMsgTimeInfo.clear();
 	m_Mutex.unlock();
 
 	m_Mutex.lock();
 
-	for (const auto& PlayerInfo : m_vMsgPlayerInfo)
+	for (auto& PlayerInfo : m_vMsgPlayerInfo)
 	{
 		if (PlayerInfo->ID != m_Client_Info)
+
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
+
+		delete PlayerInfo;
 	}
 	m_vMsgPlayerInfo.clear();
 
-	for (const auto& PlayerLife : m_vMsgPlayerLife)
+	for (auto& PlayerLife : m_vMsgPlayerLife)
 	{
 		if (PlayerLife->ID == m_Client_Info)
 		{
@@ -875,30 +883,40 @@ void CGameFramework::FrameAdvance()
 		}
 		else
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
+
+		delete PlayerLife;
 	}
 	m_vMsgPlayerLife.clear();
 
-	for (const auto& CreateInfo : m_vMsgCreateObject)
+	for (auto& CreateInfo : m_vMsgCreateObject)
 	{
 		CreateObject(*CreateInfo);
+
+		delete CreateInfo;
 	}
 	m_vMsgCreateObject.clear();
 
-	for (const auto& UpdateInfo : m_vMsgUpdateInfo)
+	for (auto& UpdateInfo : m_vMsgUpdateInfo)
 	{
 		m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)UpdateInfo);
+
+		delete UpdateInfo;
 	}
 	m_vMsgUpdateInfo.clear();
 
-	for (const auto& DelteInfo : m_vMsgDeleteObject)
+	for (auto& DelteInfo : m_vMsgDeleteObject)
 	{
 		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
+
+		delete DelteInfo;
 	}
 	m_vMsgDeleteObject.clear();
 
-	for (const auto& CreateInfo : m_vMsgCreateEffect)
+	for (auto& CreateInfo : m_vMsgCreateEffect)
 	{
 		CreateEffect(*CreateInfo);
+
+		delete CreateInfo;
 	}
 	m_vMsgCreateEffect.clear();
 
@@ -918,34 +936,19 @@ void CGameFramework::FrameAdvance()
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
-	D3D12_RESOURCE_BARRIER d3dResourceBarrier;
-	::ZeroMemory(&d3dResourceBarrier, sizeof(D3D12_RESOURCE_BARRIER));
-	d3dResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	d3dResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	d3dResourceBarrier.Transition.pResource =
-		m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex];
-	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
+	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle =
-		m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex *
-		m_nRtvDescriptorIncrementSize);
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * m_nRtvDescriptorIncrementSize);
 
 	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
-	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle,
-		pfClearColor/*Colors::Azure*/, 0, NULL);
+	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle, pfClearColor/*Colors::Azure*/, 0, NULL);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle =
-		m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle,
-		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
-	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE,
-		&d3dDsvCPUDescriptorHandle);
+	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE, &d3dDsvCPUDescriptorHandle);
 
 	if (m_pCamera) m_pCamera->GenerateViewMatrix();
 
@@ -966,10 +969,8 @@ void CGameFramework::FrameAdvance()
 	}
 	//////////////////////////////////////////////////////////////////
 
-	d3dResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	d3dResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	d3dResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	m_pd3dCommandList->ResourceBarrier(1, &d3dResourceBarrier);
+
+	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT );
 
 	hResult = m_pd3dCommandList->Close();
 

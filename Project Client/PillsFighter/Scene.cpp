@@ -127,6 +127,11 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[4]; // t7~10
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_PARTICLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_PARTICLE].Descriptor.ShaderRegister = 8;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_PARTICLE].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_PARTICLE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -155,7 +160,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dSamplerDescs[1].RegisterSpace = 0;
 	pd3dSamplerDescs[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
 	::ZeroMemory(&d3dRootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
 	d3dRootSignatureDesc.NumParameters = _countof(pd3dRootParameters);
@@ -186,10 +191,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
-	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
-	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
-
 	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
 
@@ -203,15 +204,20 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository, this);
 	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
 
-	CBulletShader *pBulletShader = new CBulletShader();
-	pBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_BULLET] = pBulletShader;
+	CBulletShader *pGGBulletShader = new CBulletShader();
+	pGGBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pGGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_GG_BULLET] = pGGBulletShader;
 
 	CBZKBulletShader *pBZKBulletShader = new CBZKBulletShader();
 	pBZKBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pBZKBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_BZK_BULLET] = pBZKBulletShader;
+
+	CBulletShader *pMGBulletShader = new CBulletShader();
+	pMGBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pMGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_MG_BULLET] = pMGBulletShader;
 
 	CSpriteShader *pSpriteShader = new CSpriteShader();
 	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -242,9 +248,32 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/HeightMap.raw"), 257, 257, 257, 257, xmf3Scale, xmf4Color);
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
-	m_pGimGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
-	m_pBazookaBulletShader = m_ppShaders[INDEX_SHADER_BZK_BULLET];
-	m_pMachineGunBulletShader = m_ppShaders[INDEX_SHADER_BULLET];
+	m_pParticleShader = new CParticleShader();
+	m_pParticleShader->CreateShader(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+	m_pParticleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+
+	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
+	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
+	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
+}
+
+void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if(m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer);
+
+	if (m_pPlayer)
+	{
+		m_pPlayer->SetGravity(m_fGravAcc);
+		m_pPlayer->SetScene(this);
+	}
+
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_GG_BULLET]);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_BZK_BULLET]);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_MG_BULLET]);
+
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
 }
 
 void CScene::ReleaseObjects()
@@ -273,6 +302,13 @@ void CScene::ReleaseObjects()
 		delete[] m_ppShaders;
 	}
 
+	if (m_pParticleShader)
+	{
+		m_pParticleShader->ReleaseShaderVariables();
+		m_pParticleShader->ReleaseObjects();
+		delete m_pParticleShader;
+	}
+
 	ReleaseShaderVariables();
 }
 
@@ -283,6 +319,7 @@ void CScene::ReleaseUploadBuffers()
 	if (m_pGimGun) m_pGimGun->ReleaseUploadBuffers();
 
 	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
+	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
 }
 
 bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -318,7 +355,7 @@ void CScene::CheckCollision()
 	std::vector<CGameObject*> *vBullets;
 
 	vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
-	vBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_BULLET])->GetObjects();
+	vBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_GG_BULLET])->GetObjects();
 
 	for (const auto& Enemy : *vEnemys)
 	{
@@ -363,6 +400,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 		if(m_ppShaders[i])
 			m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
 	}
+	if (m_pParticleShader) m_pParticleShader->AnimateObjects(fTimeElapsed);
 
 	if (m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
 
@@ -452,6 +490,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		if(m_ppShaders[i])
 			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
+	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
 }
 
 void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -627,13 +666,13 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true, this);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_MG_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_OBSTACLE:
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
@@ -654,7 +693,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		((CObjectsShader*)m_ppShaders[INDEX_SHADER_GG_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
 		break;
 	case OBJECT_TYPE_ITEM_AMMO:
 		pGameObject = new RotateObject();
@@ -681,7 +720,7 @@ void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
 	CEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
-	float fSize = 10.0f;//(float)(rand() % 2000) / 100.0f;
+	float fSize = (float)(rand() % 2000) / 100.0f;
 
 	switch (nEffectType)
 	{
