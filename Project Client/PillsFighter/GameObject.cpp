@@ -671,117 +671,6 @@ void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-CEffect::CEffect() : CGameObject()
-{
-	m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_fSpeed = 0.0f;
-	m_fAge = 0.0f;
-	m_fDuration = 0.0f;
-	m_fActiveTime = 0.0f;
-}
-
-CEffect::~CEffect()
-{
-	ReleaseShaderVariables();
-}
-
-void CEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	UINT ncbElementBytes = ( (sizeof(CB_EFFECT_INFO) + 255) & ~255);
-
-	m_pd3dcbEffect = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
-
-	m_pd3dcbEffect->Map(0, NULL, (void**)&m_pcbMappedEffect);
-
-	CGameObject::CreateShaderVariables(pd3dDevice, pd3dCommandList);
-}
-
-void CEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	m_pcbMappedEffect->m_fAge = m_fAge;
-	m_pcbMappedEffect->m_fDuration = m_fDuration;
-
-	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_EFFECT, m_pd3dcbEffect->GetGPUVirtualAddress());
-
-	CGameObject::UpdateShaderVariables(pd3dCommandList);
-}
-
-void CEffect::ReleaseShaderVariables()
-{
-	if (m_pd3dcbEffect)
-	{
-		m_pd3dcbEffect->Unmap(0, NULL);
-		m_pd3dcbEffect->Release();
-	}
-
-	m_pd3dcbEffect = NULL;
-}
-
-void CEffect::Animate(float fTimeElapsed, CCamera *pCamera)
-{
-	if (m_fAge >= m_fDuration)
-		Delete();
-
-	if(m_fAge >= m_fActiveTime) m_xmf3Position = Vector3::Add(m_xmf3Position, Vector3::ScalarProduct(m_xmf3Direction, m_fSpeed, false));
-
-	m_fAge += fTimeElapsed;
-
-	CGameObject::Animate(fTimeElapsed, pCamera);
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////
-
-CSprite::CSprite(UINT nTextureIndex, float fSize) : CGameObject()
-{
-	m_nTextureIndex = nTextureIndex;
-	m_fSize = fSize;
-
-	m_nMaxSpriteX = m_nMaxSpriteY = m_nSpritePosX = m_nSpritePosY = 0;
-}
-
-CSprite::~CSprite()
-{
-}
-
-void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	SetSpritePos(m_nSpritePosX, m_nSpritePosY);
-
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 4, &m_xmf4Sprite, 0);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 1, &m_fSize, 4);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 1, &m_nTextureIndex, 5);
-
-	CGameObject::UpdateShaderVariables(pd3dCommandList);
-}
-
-void CSprite::Animate(float fTimeElapsed, CCamera *pCamera)
-{
-	SpriteAnimate();
-
-	CGameObject::Animate(fTimeElapsed, pCamera);
-}
-
-void CSprite::SpriteAnimate()
-{
-	if (m_nSpritePosX + m_nSpritePosY * m_nMaxSpriteX == m_nMaxSprite && m_nEffectType == EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE)
-		Delete();
-	else
-	{
-		m_nSpritePosX++;
-		if (m_nSpritePosX == m_nMaxSpriteX)
-		{
-			m_nSpritePosX = 0;
-			m_nSpritePosY++;
-		}
-		if (m_nSpritePosY == m_nMaxSpriteY)
-			m_nSpritePosY = 0;
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////
-
 CAnimationObject::CAnimationObject() : CGameObject()
 {
 }
@@ -919,6 +808,240 @@ void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamer
 
 	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////
+
+CSprite::CSprite(UINT nTextureIndex, float fSize) : CGameObject()
+{
+	m_nTextureIndex = nTextureIndex;
+	m_fSize = fSize;
+
+	m_nMaxSpriteX = m_nMaxSpriteY = m_nSpritePosX = m_nSpritePosY = 0;
+}
+
+CSprite::~CSprite()
+{
+}
+
+void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	SetSpritePos(m_nSpritePosX, m_nSpritePosY);
+
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 4, &m_xmf4Sprite, 0);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 1, &m_fSize, 4);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SPRITE, 1, &m_nTextureIndex, 5);
+
+	CGameObject::UpdateShaderVariables(pd3dCommandList);
+}
+
+void CSprite::Animate(float fTimeElapsed, CCamera *pCamera)
+{
+	SpriteAnimate();
+
+	CGameObject::Animate(fTimeElapsed, pCamera);
+}
+
+void CSprite::SpriteAnimate()
+{
+	if (m_nSpritePosX + m_nSpritePosY * m_nMaxSpriteX == m_nMaxSprite && m_nEffectType == EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE)
+		Delete();
+	else
+	{
+		m_nSpritePosX++;
+		if (m_nSpritePosX == m_nMaxSpriteX)
+		{
+			m_nSpritePosX = 0;
+			m_nSpritePosY++;
+		}
+		if (m_nSpritePosY == m_nMaxSpriteY)
+			m_nSpritePosY = 0;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration)
+{
+	m_fDuration = fDuration;
+
+	m_nVertices = 0;
+
+	m_pd3dInitVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(CEffectVertex) * MAX_EFFECT_INIT_VERTEX_COUNT);
+
+	m_pd3dInitVertexBuffer->Map(0, NULL, (void**)&m_pMappedInitVertices);
+
+	m_d3dInitVertexBufferView.BufferLocation = m_pd3dInitVertexBuffer->GetGPUVirtualAddress();
+	m_d3dInitVertexBufferView.SizeInBytes = sizeof(CEffectVertex) * MAX_EFFECT_INIT_VERTEX_COUNT;
+	m_d3dInitVertexBufferView.StrideInBytes = sizeof(CEffectVertex);
+
+
+	m_pd3dBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
+
+	m_pd3dDummyBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL);
+
+	m_pd3dReadBackBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
+		D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST, NULL);
+
+	for (int i = 0; i < 2; i++)
+	{
+		m_pd3dVertexBuffer[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(CEffectVertex) * MAX_EFFECT_VERTEX_COUNT,
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
+
+		m_d3dVertexBufferView[i].BufferLocation = m_pd3dVertexBuffer[i]->GetGPUVirtualAddress();
+		m_d3dVertexBufferView[i].SizeInBytes = sizeof(CEffectVertex) * MAX_EFFECT_VERTEX_COUNT;
+		m_d3dVertexBufferView[i].StrideInBytes = sizeof(CEffectVertex);
+
+		m_d3dSOBufferView[i].BufferFilledSizeLocation = m_pd3dBuffer->GetGPUVirtualAddress();
+		m_d3dSOBufferView[i].BufferLocation = m_pd3dVertexBuffer[i]->GetGPUVirtualAddress();
+		m_d3dSOBufferView[i].SizeInBytes = sizeof(CEffectVertex) * MAX_EFFECT_VERTEX_COUNT;
+	}
+}
+
+CEffect::~CEffect()
+{
+	if (m_pd3dBuffer) m_pd3dBuffer->Release();
+	if (m_pd3dDummyBuffer) m_pd3dDummyBuffer->Release();
+	if (m_pd3dReadBackBuffer) m_pd3dReadBackBuffer->Release();
+
+	for (int i = 0; i < 2; i++) if (m_pd3dVertexBuffer[i]) m_pd3dVertexBuffer[i]->Release();
+	if (m_pd3dInitVertexBuffer)
+	{
+		m_pd3dInitVertexBuffer->Unmap(0, NULL);
+		m_pd3dInitVertexBuffer->Release();
+	}
+
+	ReleaseShaderVariables();
+}
+
+void CEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_EFFECT_INFO) + 255) & ~255);
+
+	m_pd3dcbEffect = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
+
+	m_pd3dcbEffect->Map(0, NULL, (void**)&m_pcbMappedEffect);
+}
+
+void CEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pcbMappedEffect->m_fElapsedTime = m_fElapsedTime;
+	m_pcbMappedEffect->m_fDuration = m_fDuration;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_EFFECT, m_pd3dcbEffect->GetGPUVirtualAddress());
+}
+
+void CEffect::ReleaseShaderVariables()
+{
+	if (m_pd3dcbEffect)
+	{
+		m_pd3dcbEffect->Unmap(0, NULL);
+		m_pd3dcbEffect->Release();
+
+		m_pd3dcbEffect = NULL;
+	}
+}
+
+void CEffect::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+{
+	m_pMappedInitVertices[m_nInitVertices].m_xmf3Position = xmf3Position;
+	m_pMappedInitVertices[m_nInitVertices].m_xmf2Size = xmf2Size;
+	m_pMappedInitVertices[m_nInitVertices++].m_fAge = 0.0f;
+}
+
+void CEffect::Animate(float fTimeElapsed)
+{
+	m_fElapsedTime = fTimeElapsed;
+}
+
+void CEffect::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_nDrawBufferIndex == 0)
+	{
+		m_nDrawBufferIndex = 1;
+		m_nSOBufferIndex = 0;
+	}
+	else if (m_nDrawBufferIndex == 1)
+	{
+		m_nDrawBufferIndex = 0;
+		m_nSOBufferIndex = 1;
+	}
+
+	D3D12_RANGE d3dRange = { 0, sizeof(UINT64) };
+	UINT64 *nFilledSize = NULL;
+
+	m_pd3dReadBackBuffer->Map(0, &d3dRange, (void**)&nFilledSize);
+
+	m_nVertices = static_cast<int>((*nFilledSize) / sizeof(CEffectVertex));
+	printf("%d\n", m_nVertices);
+
+	d3dRange = { 0, 0 };
+	m_pd3dReadBackBuffer->Unmap(0, &d3dRange);
+}
+
+void CEffect::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_nVertices | m_nInitVertices)
+	{
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+		UpdateShaderVariables(pd3dCommandList);
+
+		pd3dCommandList->SOSetTargets(0, 1, &m_d3dSOBufferView[m_nSOBufferIndex]);
+	}
+
+	if (m_nVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+
+		pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	}
+
+	if (m_nInitVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
+
+		pd3dCommandList->DrawInstanced(m_nInitVertices, 1, 0, 0);
+	}
+}
+
+void CEffect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_nVertices | m_nInitVertices)
+	{
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+		UpdateShaderVariables(pd3dCommandList);
+	}
+
+	if (m_nVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+
+		pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	}
+
+	if (m_nInitVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
+
+		pd3dCommandList->DrawInstanced(m_nInitVertices, 1, 0, 0);
+	}
+}
+
+void CEffect::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	pd3dCommandList->CopyResource(m_pd3dReadBackBuffer, m_pd3dBuffer);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+	pd3dCommandList->CopyResource(m_pd3dBuffer, m_pd3dDummyBuffer);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_STREAM_OUT);
+
+	m_nInitVertices = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

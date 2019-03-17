@@ -119,12 +119,6 @@ void CGameFramework::InitNetwork()
 
 	while (true)
 	{
-		//char ServerIP[20];
-		//::memset(&ServerIP, 0, sizeof(char[20]));
-
-		//std::cout << "서버 IP 입력 : ";
-		//std::cin >> ServerIP;
-
 		// socket()
 		m_sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (m_sock == INVALID_SOCKET)

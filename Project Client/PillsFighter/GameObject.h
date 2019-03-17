@@ -244,79 +244,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-struct CB_EFFECT_INFO
-{
-	float	m_fAge;
-	float	m_fDuration;
-};
-
-class CEffect : public CGameObject
-{
-public:
-	CEffect();
-	virtual ~CEffect();
-
-	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
-	void SetSpeed(float fSpeed) { m_fSpeed = fSpeed; }
-	void SetDuration(float fDuration) { m_fDuration = fDuration; }
-	void SetActiveTime(float fActTime) { m_fActiveTime = fActTime; }
-
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-
-	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-
-protected:
-	XMFLOAT3		m_xmf3Direction;
-	float			m_fSpeed;
-	
-	float			m_fActiveTime;
-	float			m_fAge;
-	float			m_fDuration;
-
-	ID3D12Resource	*m_pd3dcbEffect = NULL;
-	CB_EFFECT_INFO	*m_pcbMappedEffect = NULL;
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-class CSprite : public CGameObject
-{
-public:
-	CSprite(UINT nTextureIndex, float fSize);
-	virtual ~CSprite();
-
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-
-	void SpriteAnimate();
-
-	void SetMaxSprite(int x, int y, int Max) { m_nMaxSpriteX = x; m_nMaxSpriteY = y; m_nMaxSprite = Max; m_xmf4Sprite.x = (float)1 / x; m_xmf4Sprite.y = (float)1 / y; }
-	void SetSpritePos(int x, int y) { m_xmf4Sprite.z = (float)x; m_xmf4Sprite.w = (float)y; }
-	EFFECT_TYPE GetSpriteType() { return m_nEffectType; }
-	void SetSpriteType(EFFECT_TYPE nSpriteType) { m_nEffectType = nSpriteType; }
-
-	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-
-private:
-	XMFLOAT4	m_xmf4Sprite;
-
-	int			m_nSpritePosX;
-	int			m_nSpritePosY;
-
-	int			m_nMaxSpriteX;
-	int			m_nMaxSpriteY;
-	int			m_nMaxSprite;
-
-	float		m_fSize;
-	UINT		m_nTextureIndex;
-
-	EFFECT_TYPE m_nEffectType;
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 class CAnimationObject : public CGameObject
 {
@@ -463,4 +390,107 @@ public:
 	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	void SetFollowObject(CGameObject *pObject, CModel *pModel);
 	void SetToFollowFramePosition();
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct CB_EFFECT_INFO
+{
+	float m_fElapsedTime;
+	float m_fDuration;
+};
+
+struct CEffectVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT2	m_xmf2Size;
+	float		m_fAge;
+};
+
+class CEffect
+{
+public:
+	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
+	virtual ~CEffect();
+
+
+	// 상수 버퍼에 넣을 것 [ 지속 시간, 경과 시간(프레임 시간) ]
+	// 정점 버퍼에 들어갈 것. [ 위치, 사이즈, 경과 시간 ]
+protected:
+#define	MAX_EFFECT_VERTEX_COUNT 1000
+#define	MAX_EFFECT_INIT_VERTEX_COUNT 100
+
+	ID3D12Resource						*m_pd3dInitVertexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
+
+	int									m_nInitVertices = 0;
+	CEffectVertex						*m_pMappedInitVertices;
+
+	ID3D12Resource						*m_pd3dVertexBuffer[2];
+	D3D12_VERTEX_BUFFER_VIEW			m_d3dVertexBufferView[2];
+	D3D12_STREAM_OUTPUT_BUFFER_VIEW		m_d3dSOBufferView[2];
+
+	int									m_nDrawBufferIndex = 0;
+	int									m_nSOBufferIndex = 1;
+	ID3D12Resource						*m_pd3dBuffer;
+	ID3D12Resource						*m_pd3dDummyBuffer;
+	ID3D12Resource						*m_pd3dReadBackBuffer;
+
+	int									m_nVertices = 0;
+
+	float								m_fElapsedTime = 0.0f;
+	float								m_fDuration = 0.0f;
+
+	ID3D12Resource						*m_pd3dcbEffect = NULL;
+	CB_EFFECT_INFO						*m_pcbMappedEffect = NULL;
+
+public:
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+	virtual void Animate(float fTimeElapsed);
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CSprite : public CGameObject
+{
+public:
+	CSprite(UINT nTextureIndex, float fSize);
+	virtual ~CSprite();
+
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	void SpriteAnimate();
+
+	void SetMaxSprite(int x, int y, int Max) { m_nMaxSpriteX = x; m_nMaxSpriteY = y; m_nMaxSprite = Max; m_xmf4Sprite.x = (float)1 / x; m_xmf4Sprite.y = (float)1 / y; }
+	void SetSpritePos(int x, int y) { m_xmf4Sprite.z = (float)x; m_xmf4Sprite.w = (float)y; }
+	EFFECT_TYPE GetSpriteType() { return m_nEffectType; }
+	void SetSpriteType(EFFECT_TYPE nSpriteType) { m_nEffectType = nSpriteType; }
+
+	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+
+private:
+	XMFLOAT4	m_xmf4Sprite;
+
+	int			m_nSpritePosX;
+	int			m_nSpritePosY;
+
+	int			m_nMaxSpriteX;
+	int			m_nMaxSpriteY;
+	int			m_nMaxSprite;
+
+	float		m_fSize;
+	UINT		m_nTextureIndex;
+
+	EFFECT_TYPE m_nEffectType;
 };

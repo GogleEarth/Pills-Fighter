@@ -120,7 +120,7 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].Descriptor.ShaderRegister = 7; // Effect
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].DescriptorTable.NumDescriptorRanges = 1;
@@ -219,10 +219,11 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pMGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_MG_BULLET] = pMGBulletShader;
 
-	CSpriteShader *pSpriteShader = new CSpriteShader();
-	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_SPRITE] = pSpriteShader;
+	//CSpriteShader *pSpriteShader = new CSpriteShader();
+	//pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	//pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	//m_ppShaders[INDEX_SHADER_SPRITE] = pSpriteShader;
+	m_ppShaders[INDEX_SHADER_SPRITE] = NULL;
 
 	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
 	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -368,21 +369,14 @@ void CScene::CheckCollision()
 		{
 			if (Enemy->CollisionCheck(Bullet))
 			{
-				CEffect *pObject = new CEffect();
-				pObject->SetPosition(Bullet->GetPosition());
-				pObject->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
-				pObject->SetSpeed(0.3f);
-				pObject->SetDuration(1.5f);
-				pObject->SetActiveTime(0.5f);
+				((CEffectShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(Bullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-				((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pDevice, pCommandList, pObject, false, NULL);
+				//float fSize = (float)(rand() % 2000) / 100.0f;
+				//CSprite *pSprite = new CSprite(rand()%2, fSize);
+				//pSprite->SetPosition(Bullet->GetPosition());
+				//pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
 
-				float fSize = (float)(rand() % 2000) / 100.0f;
-				CSprite *pSprite = new CSprite(rand()%2, fSize);
-				pSprite->SetPosition(Bullet->GetPosition());
-				pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
-
-				((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pDevice, pCommandList, pSprite, false, NULL);
+				//((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pDevice, pCommandList, pSprite, false, NULL);
 
 				std::cout << "Collision Enemy By Bullet\n" << std::endl;
 			}
@@ -725,14 +719,14 @@ void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_DEFAULT:
-		pEffect = new CEffect();
-		pEffect->SetPosition(CreateEffectInfo.xmf3Position);
-		pEffect->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
-		pEffect->SetSpeed(0.3f);
-		pEffect->SetDuration(1.5f);
-		pEffect->SetActiveTime(0.5f);
+		//pEffect = new CEffect();
+		//pEffect->SetPosition(CreateEffectInfo.xmf3Position);
+		//pEffect->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
+		//pEffect->SetSpeed(0.3f);
+		//pEffect->SetDuration(1.5f);
+		//pEffect->SetActiveTime(0.5f);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pEffect, false, NULL);
+		//((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pEffect, false, NULL);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE:
 		pSprite = new CSprite(rand() % 2, fSize);
