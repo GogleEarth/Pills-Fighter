@@ -893,12 +893,6 @@ void CEFadeOutShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	m_pEffect = new CEFadeOut(pd3dDevice, pd3dCommandList, 2.0f);
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	InsertEffect(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.04f, 0.02f));
-	InsertEffect(XMFLOAT3(10.0f, 0.0f, 0.0f), XMFLOAT2(0.04f, 0.02f));
-	InsertEffect(XMFLOAT3(0.0f, 10.0f, 0.0f), XMFLOAT2(0.04f, 0.02f));
-	InsertEffect(XMFLOAT3(20.0f, 0.0f, 0.0f), XMFLOAT2(0.04f, 0.02f));
-	InsertEffect(XMFLOAT3(0.0f, 20.0f, 0.0f), XMFLOAT2(0.04f, 0.02f));
 }
 
 void CEFadeOutShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
@@ -995,14 +989,8 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f, EFFECT_TYPE_SPRITE_LOOP);
+	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f, EFFECT_TYPE_SPRITE_ONE);
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	InsertEffect(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(10.0f, 10.0f), rand() % 2);
-	InsertEffect(XMFLOAT3(10.0f, 0.0f, 0.0f), XMFLOAT2(10.0f, 10.0f), rand() % 2);
-	InsertEffect(XMFLOAT3(0.0f, 10.0f, 0.0f), XMFLOAT2(10.0f, 10.0f), rand() % 2);
-	InsertEffect(XMFLOAT3(20.0f, 0.0f, 0.0f), XMFLOAT2(10.0f, 10.0f), rand() % 2);
-	InsertEffect(XMFLOAT3(0.0f, 20.0f, 0.0f), XMFLOAT2(10.0f, 10.0f), rand() % 2);
 }
 
 void CSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex)

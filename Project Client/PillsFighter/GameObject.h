@@ -403,7 +403,7 @@ public:
 
 protected:
 #define	MAX_EFFECT_VERTEX_COUNT 1000
-#define	MAX_EFFECT_INIT_VERTEX_COUNT 100
+#define	MAX_EFFECT_INIT_VERTEX_COUNT 1000
 
 	ID3D12Resource						*m_pd3dInitVertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
