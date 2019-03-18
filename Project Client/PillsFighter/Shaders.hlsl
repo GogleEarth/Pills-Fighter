@@ -488,11 +488,19 @@ void GSEffectStreamOut(point VS_EFFECT_INPUT input[1], inout PointStream<VS_EFFE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+#define EFFECT_TYPE_SPRITE_ONE 1
+#define EFFECT_TYPE_SPRITE_LOOP 2
+
 struct SPRITE
 {
-	float4 m_vSpriteInfo;
-	float2 m_f2Size;
-	uint m_nIndex;
+	float2 m_f2SpriteSize;
+	uint m_nMaxSpriteX;
+	uint m_nMaxSpriteY;
+	uint m_nMaxSprite;
+	float m_fElapsedTime;
+	float m_fDuration;
+	float m_fDurationPerSprite;
+	uint m_nSpriteType;
 };
 
 ConstantBuffer<SPRITE> gSprite : register(b4);
@@ -500,66 +508,120 @@ ConstantBuffer<SPRITE> gSprite : register(b4);
 struct VS_SPRITE_INPUT
 {
 	float3 position : POSITION;
+	float2 size : SIZE;
+	uint2 spritepos : SPRITEPOS;
+	float age : AGE;
+	uint texindex : TEXINDEX;
 };
 
 struct VS_SPRITE_OUTPUT
 {
 	float3 position : POSITION;
+	float2 size : SIZE;
+	uint2 spritepos : SPRITEPOS;
+	uint texindex : TEXINDEX;
 };
 
 struct GS_SPRITE_OUTPUT
 {
 	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
+	uint texindex : TEXINDEX;
 };
 
-VS_SPRITE_OUTPUT VS_Sprite(VS_SPRITE_INPUT input)
+VS_SPRITE_OUTPUT VSSpriteDraw(VS_SPRITE_INPUT input)
+{
+	VS_SPRITE_OUTPUT output;
+
+	output.position = input.position;
+	output.size = input.size;
+	output.spritepos = input.spritepos;
+	output.texindex = input.texindex;
+
+	return output;
+}
+
+[maxvertexcount(4)]
+void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRITE_OUTPUT> outStream)
+{
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].position + fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(input[0].position + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(input[0].position - fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[3] = float4(input[0].position - fHalfW * vRight + fHalfH * vUp, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_SPRITE_OUTPUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.position = mul(mul(fVertices[i], gmtxView), gmtxProjection);
+		float3x3 f3x3Sprite = float3x3(gSprite.m_f2SpriteSize.x, 0.0f, 0.0f, 0.0f, gSprite.m_f2SpriteSize.y, 0.0f, fUVs[i].x * gSprite.m_f2SpriteSize.x, fUVs[i].y * gSprite.m_f2SpriteSize.y, 1.0f);
+		float3 f3Sprite = float3(input[0].spritepos, 1.0f);
+		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
+		output.texindex = input[0].texindex;
+
+		outStream.Append(output);
+	}
+}
+
+float4 PSSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture[NonUniformResourceIndex(input.texindex)].Sample(gssWrap, input.uv);
+
+	return(cColor);
+}
+
+VS_SPRITE_INPUT VSSpriteStreamOut(VS_SPRITE_INPUT input)
 {
 	return input;
 }
 
-[maxvertexcount(4)]
-void GS_Sprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRITE_OUTPUT> outStream)
+[maxvertexcount(1)]
+void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRITE_INPUT> outStream)
 {
-	//float3 center = float3(input[0].center, 0.0f);
-	//float3 vUp = float3(0.0f, 1.0f, 0.0f);
-	//float3 vLook = normalize(gvCameraPosition.xyz - center);
-	//float3 vRight = normalize(cross(vUp, vLook));
+	uint nSpritePos = input[0].spritepos.x + input[0].spritepos.y * gSprite.m_nMaxSpriteX;
 
-	//float fHalfW = gfSize;
-	//float fHalfH = gfSize;
+	if (nSpritePos == gSprite.m_nMaxSprite)
+	{
+		if (gSprite.m_nSpriteType == EFFECT_TYPE_SPRITE_ONE) return;
+		else if(gSprite.m_nSpriteType == EFFECT_TYPE_SPRITE_LOOP)
+		{
+			input[0].spritepos.x = input[0].spritepos.y = 0;
+			input[0].age = 0.0f;
+		}
+	}
+	else
+	{
+		input[0].age += gSprite.m_fElapsedTime;
 
-	//float4 fVertices[4];
-	//fVertices[0] = float4(center + fHalfW * vRight - fHalfH * vUp, 1.0f);
-	//fVertices[1] = float4(center + fHalfW * vRight + fHalfH * vUp, 1.0f);
-	//fVertices[2] = float4(center - fHalfW * vRight - fHalfH * vUp, 1.0f);
-	//fVertices[3] = float4(center - fHalfW * vRight + fHalfH * vUp, 1.0f);
+		float fNextSpriteTime = nSpritePos * gSprite.m_fDurationPerSprite;
 
-	//float2 fUVs[4];
-	//fUVs[0] = float2(0.0f, 1.0f);
-	//fUVs[1] = float2(0.0f, 0.0f);
-	//fUVs[2] = float2(1.0f, 1.0f);
-	//fUVs[3] = float2(1.0f, 0.0f);
+		if (input[0].age >= fNextSpriteTime)
+		{
+			input[0].spritepos.x += 1;
 
-	//GS_RECT_OUT output;
+			if (input[0].spritepos.x == gSprite.m_nMaxSpriteX)
+			{
+				input[0].spritepos.x = 0;
+				input[0].spritepos.y += 1;
+			}
+		}
+	}
 
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	output.pos = mul(mul(mul(fVertices[i], gmtxGameObject), gmtxView), gmtxProjection);
-	//	float3x3 f3x3Sprite = float3x3(gfTextureSpriteInfo.x, 0.0f, 0.0f, 0.0f, gfTextureSpriteInfo.y, 0.0f, fUVs[i].x * gfTextureSpriteInfo.x, fUVs[i].y * gfTextureSpriteInfo.y, 1.0f);
-	//	float3 f3Sprite = float3(gfTextureSpriteInfo.zw, 1.0f);
-	//	output.uv = (float2)mul(f3Sprite, f3x3Sprite);
-
-	//	outStream.Append(output);
-	//}
-}
-
-float4 PS_Sprite(GS_SPRITE_OUTPUT input) : SV_TARGET
-{
-	//// 임시 텍스처 배열 인덱스는 0
-	//float4 cColor = gtxtTexture[NonUniformResourceIndex(gnTextureIndex)].Sample(gssWrap, input.uv);
-
-	//return(cColor);
-	return(float4(0.0f,0.0f,0.0f,0.0f));
+	outStream.Append(input[0]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

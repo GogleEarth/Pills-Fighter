@@ -101,10 +101,9 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Constants.Num32BitValues = 6;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Constants.ShaderRegister = 4; //TextureSprite
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Descriptor.ShaderRegister = 4; //TextureSprite
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -219,21 +218,20 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pMGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_MG_BULLET] = pMGBulletShader;
 
-	//CSpriteShader *pSpriteShader = new CSpriteShader();
-	//pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	//pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	//m_ppShaders[INDEX_SHADER_SPRITE] = pSpriteShader;
-	m_ppShaders[INDEX_SHADER_SPRITE] = NULL;
+	CSpriteShader *pSpriteShader = new CSpriteShader();
+	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppShaders[INDEX_SHADER_SPRITE] = pSpriteShader;
 
 	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
 	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
 
-	CEffectShader *pEffectShader = new CEffectShader();
-	pEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_EFFECT] = pEffectShader;
+	CEFadeOutShader *pFadeOutShader = new CEFadeOutShader();
+	pFadeOutShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pFadeOutShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppShaders[INDEX_SHADER_EFFECT] = pFadeOutShader;
 
 	CAmmoItemShader *pAmmoItemShader = new CAmmoItemShader();
 	pAmmoItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -369,14 +367,9 @@ void CScene::CheckCollision()
 		{
 			if (Enemy->CollisionCheck(Bullet))
 			{
-				((CEffectShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(Bullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+				((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(Bullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-				//float fSize = (float)(rand() % 2000) / 100.0f;
-				//CSprite *pSprite = new CSprite(rand()%2, fSize);
-				//pSprite->SetPosition(Bullet->GetPosition());
-				//pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
-
-				//((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pDevice, pCommandList, pSprite, false, NULL);
+				((CSpriteShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertEffect(Bullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), rand() % 2);
 
 				std::cout << "Collision Enemy By Bullet\n" << std::endl;
 			}
@@ -712,35 +705,20 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
 {
 	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
-	CEffect *pEffect = NULL;
+	CDefaultEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
 	float fSize = (float)(rand() % 2000) / 100.0f;
 
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_DEFAULT:
-		//pEffect = new CEffect();
-		//pEffect->SetPosition(CreateEffectInfo.xmf3Position);
-		//pEffect->SetDirection(XMFLOAT3(0.0f, 1.0f, 0.0f));
-		//pEffect->SetSpeed(0.3f);
-		//pEffect->SetDuration(1.5f);
-		//pEffect->SetActiveTime(0.5f);
-
-		//((CObjectsShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertObject(pd3dDevice, pd3dCommandList, pEffect, false, NULL);
+		((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE:
-		pSprite = new CSprite(rand() % 2, fSize);
-		pSprite->SetPosition(CreateEffectInfo.xmf3Position);
-		pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE);
-
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+		((CSpriteShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), rand() % 2);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP:
-		pSprite = new CSprite(rand() % 2, fSize);
-		pSprite->SetPosition(CreateEffectInfo.xmf3Position);
-		pSprite->SetSpriteType(EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP);
-
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertObject(pd3dDevice, pd3dCommandList, pSprite, false, NULL);
+		((CSpriteShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), rand() % 2);
 		break;
 	}
 }

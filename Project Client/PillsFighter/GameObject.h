@@ -395,28 +395,12 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-struct CB_EFFECT_INFO
-{
-	float m_fElapsedTime;
-	float m_fDuration;
-};
-
-struct CEffectVertex
-{
-	XMFLOAT3	m_xmf3Position;
-	XMFLOAT2	m_xmf2Size;
-	float		m_fAge;
-};
-
-class CEffect
+class CDefaultEffect
 {
 public:
-	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
-	virtual ~CEffect();
+	CDefaultEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes);
+	virtual ~CDefaultEffect();
 
-
-	// 상수 버퍼에 넣을 것 [ 지속 시간, 경과 시간(프레임 시간) ]
-	// 정점 버퍼에 들어갈 것. [ 위치, 사이즈, 경과 시간 ]
 protected:
 #define	MAX_EFFECT_VERTEX_COUNT 1000
 #define	MAX_EFFECT_INIT_VERTEX_COUNT 100
@@ -425,7 +409,7 @@ protected:
 	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
 
 	int									m_nInitVertices = 0;
-	CEffectVertex						*m_pMappedInitVertices;
+	void								*m_pMappedInitVertices;
 
 	ID3D12Resource						*m_pd3dVertexBuffer[2];
 	D3D12_VERTEX_BUFFER_VIEW			m_d3dVertexBufferView[2];
@@ -438,59 +422,105 @@ protected:
 	ID3D12Resource						*m_pd3dReadBackBuffer;
 
 	int									m_nVertices = 0;
-
-	float								m_fElapsedTime = 0.0f;
-	float								m_fDuration = 0.0f;
-
-	ID3D12Resource						*m_pd3dcbEffect = NULL;
-	CB_EFFECT_INFO						*m_pcbMappedEffect = NULL;
+	UINT								m_nBytes = 0;
 
 public:
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void ReleaseShaderVariables() {};
+
+	virtual void Animate(float fTimeElapsed) {};
 
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
+};
+
+/////////////////////////////////////////////////////////
+
+struct CB_FADEOUT_INFO
+{
+	float m_fElapsedTime;
+	float m_fDuration;
+};
+
+struct CFadeOutVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT2	m_xmf2Size;
+	float		m_fAge;
+};
+
+class CEFadeOut : public CDefaultEffect
+{
+public:
+	CEFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
+	virtual ~CEFadeOut();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
 
 	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
 	virtual void Animate(float fTimeElapsed);
+
+protected:
+	float								m_fElapsedTime = 0.0f;
+	float								m_fDuration = 0.0f;
+
+	ID3D12Resource						*m_pd3dcbFadeOut = NULL;
+	CB_FADEOUT_INFO						*m_pcbMappedFadeOut = NULL;
 };
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+/////////////////////////////////////////////////////////
 
-class CSprite : public CGameObject
+struct CB_SPRITE_INFO
+{
+	XMFLOAT2 m_xmf2SpriteSize;
+	UINT m_nMaxSpriteX;
+	UINT m_nMaxSpriteY;
+	UINT m_nMaxSprite;
+	float m_fElapsedTime;
+	float m_fDuration;
+	float m_fDurationPerSprite;
+	UINT m_nSpriteType;
+};
+
+struct CSpriteVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT2	m_xmf2Size;
+	XMUINT2		m_xmn2SpritePos;
+	float		m_fAge;
+	UINT		m_nTextureIndex;
+};
+
+class CSprite : public CDefaultEffect
 {
 public:
-	CSprite(UINT nTextureIndex, float fSize);
+	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType);
 	virtual ~CSprite();
 
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
 
-	void SpriteAnimate();
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex);
+	virtual void Animate(float fTimeElapsed);
 
-	void SetMaxSprite(int x, int y, int Max) { m_nMaxSpriteX = x; m_nMaxSpriteY = y; m_nMaxSprite = Max; m_xmf4Sprite.x = (float)1 / x; m_xmf4Sprite.y = (float)1 / y; }
-	void SetSpritePos(int x, int y) { m_xmf4Sprite.z = (float)x; m_xmf4Sprite.w = (float)y; }
-	EFFECT_TYPE GetSpriteType() { return m_nEffectType; }
-	void SetSpriteType(EFFECT_TYPE nSpriteType) { m_nEffectType = nSpriteType; }
+protected:
+	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
+	UINT				m_nMaxSpriteX = 0;
+	UINT				m_nMaxSpriteY = 0;
+	UINT				m_nMaxSprite = 0;
 
-	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
+	float				m_fElapsedTime = 0.0f;
+	float				m_fDuration = 0.0f;
+	float				m_fDurationPerSprite = 0.0f;
 
-private:
-	XMFLOAT4	m_xmf4Sprite;
+	EFFECT_TYPE			m_nSpriteType = EFFECT_TYPE_SPRITE_ONE;
 
-	int			m_nSpritePosX;
-	int			m_nSpritePosY;
-
-	int			m_nMaxSpriteX;
-	int			m_nMaxSpriteY;
-	int			m_nMaxSprite;
-
-	float		m_fSize;
-	UINT		m_nTextureIndex;
-
-	EFFECT_TYPE m_nEffectType;
+	ID3D12Resource		*m_pd3dcbSprite = NULL;
+	CB_SPRITE_INFO		*m_pcbMappedSprite = NULL;
 };
