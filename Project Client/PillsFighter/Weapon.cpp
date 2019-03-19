@@ -86,6 +86,31 @@ void CGun::Reload(int& nAmmo)
 	else nAmmo = 0;
 }
 
+void CGun::Shot()
+{
+	CPlayer *pPlayer = (CPlayer*)m_pOwner;
+
+#ifndef ON_NETWORKING
+	Bullet *pBullet = NULL;
+	pBullet = new Bullet();
+
+	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget();
+
+	pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
+	pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
+	pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
+	pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
+
+	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
+#else
+	pPlayer->IsShotable(true);
+#endif
+
+	SetShotCoolTime();
+
+	m_nReloadedAmmo--;
+}
+
 void CGun::Animate(float ElapsedTime, CCamera *pCamera)
 {
 	if (m_fShotCoolTime > 0.0f)
@@ -112,7 +137,7 @@ void CGimGun::SetType()
 	CGun::SetType();
 }
 
-void CGimGun::Shot()
+void CGimGun::Attack()
 {
 	if (m_fBurstCoolTime < 0.0f && m_nReloadedAmmo > 0)
 	{
@@ -123,32 +148,13 @@ void CGimGun::Shot()
 
 void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 {
-	CPlayer *pPlayer = (CPlayer*)m_pOwner;
-
 	if (m_bBurst)
 	{
 		if (m_fShotCoolTime <= 0.0f)
 		{
-
-#ifndef ON_NETWORKING
-			Bullet *pBullet = NULL;
-			pBullet = new Bullet();
-
-			XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget();
-
-			pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
-			pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
-			pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
-			pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
-
-			m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
-#else
-			pPlayer->IsShotable(true);
-#endif
-			SetShotCoolTime();
+			CGun::Shot();
 
 			m_nShotCount++;
-			m_nReloadedAmmo--;
 		}
 
 		if (m_nShotCount >= 3 || m_nReloadedAmmo == 0)
@@ -168,7 +174,7 @@ void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CBazooka::CBazooka() : CGimGun()
+CBazooka::CBazooka() : CGun()
 {
 }
 
@@ -183,10 +189,18 @@ void CBazooka::SetType()
 	CGun::SetType();
 }
 
+void CBazooka::Attack()
+{
+	if (m_nReloadedAmmo > 0 && m_fShotCoolTime <= 0.0f)
+	{
+		Shot();
+		SetShotCoolTime();
+	}
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CMachineGun::CMachineGun() : CGimGun()
+CMachineGun::CMachineGun() : CGun()
 {
 }
 
@@ -201,3 +215,11 @@ void CMachineGun::SetType()
 	CGun::SetType();
 }
 
+void CMachineGun::Attack()
+{
+	if (m_nReloadedAmmo > 0 && m_fShotCoolTime <= 0.0f)
+	{
+		Shot();
+		SetShotCoolTime();
+	}
+}

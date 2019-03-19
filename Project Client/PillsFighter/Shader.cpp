@@ -981,7 +981,20 @@ D3D12_SHADER_BYTECODE CSpriteShader::CreateSOGeometryShader(ID3DBlob **ppd3dShad
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSSpriteStreamOut", "gs_5_1", ppd3dShaderBlob));
 }
 
-void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CHitSpriteShader::CHitSpriteShader()
+{
+
+}
+
+CHitSpriteShader::~CHitSpriteShader()
+{
+
+}
+
+void CHitSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pTexture = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
 	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Attack1.dds", 0);
@@ -993,11 +1006,39 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex)
+void CHitSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
 {
-	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, nTextureIndex);
+	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, rand() % 2);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CExpSpriteShader::CExpSpriteShader()
+{
+
+}
+
+CExpSpriteShader::~CExpSpriteShader()
+{
+
+}
+
+void CExpSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Explosion.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 3, 12, 1.0f, EFFECT_TYPE_SPRITE_ONE);
+	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CExpSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+{
+	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, 0);
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 

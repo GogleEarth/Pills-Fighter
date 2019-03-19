@@ -218,10 +218,15 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pMGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_MG_BULLET] = pMGBulletShader;
 
-	CSpriteShader *pSpriteShader = new CSpriteShader();
-	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_SPRITE] = pSpriteShader;
+	CHitSpriteShader *pHitSpriteShader = new CHitSpriteShader();
+	pHitSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pHitSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppShaders[INDEX_SHADER_HIT_SPRITE] = pHitSpriteShader;
+
+	CExpSpriteShader *pExpSpriteShader = new CExpSpriteShader();
+	pExpSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pExpSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppShaders[INDEX_SHADER_EXP_SPRITE] = pExpSpriteShader;
 
 	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
 	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -352,9 +357,11 @@ void CScene::CheckCollision()
 #ifndef ON_NETWORKING
 	std::vector<CGameObject*> *vEnemys;
 	std::vector<CGameObject*> *vBullets;
+	std::vector<CGameObject*> *vBZKBullets;
 
 	vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
 	vBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_GG_BULLET])->GetObjects();
+	vBZKBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_BZK_BULLET])->GetObjects();
 
 	for (const auto& Enemy : *vEnemys)
 	{
@@ -363,15 +370,36 @@ void CScene::CheckCollision()
 			std::cout << "Collision Player By Enemy\n" << std::endl;
 		}
 
-		for (const auto& Bullet : *vBullets)
+		for (const auto& pBullet : *vBullets)
 		{
-			if (Enemy->CollisionCheck(Bullet))
+			if (!pBullet->IsDelete())
 			{
-				((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(Bullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+				if (Enemy->CollisionCheck(pBullet))
+				{
+					((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-				((CSpriteShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertEffect(Bullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), rand() % 2);
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f));
 
-				std::cout << "Collision Enemy By Bullet\n" << std::endl;
+					pBullet->Delete();
+					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+				}
+			}
+		}
+
+		for (const auto& pBZKBullet : *vBZKBullets)
+		{
+			if (!pBZKBullet->IsDelete())
+			{
+				if (Enemy->CollisionCheck(pBZKBullet))
+				{
+					((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f));
+
+					pBZKBullet->Delete();
+
+					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+				}
 			}
 		}
 	}
@@ -402,8 +430,8 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 void CScene::FindAimToTargetDistance()
 {
-	std::vector<CGameObject*> *vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
-	std::vector<CGameObject*> *vObstacles = static_cast<CRepairItemShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
+	std::vector<CGameObject*> *vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
+	std::vector<CGameObject*> *vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -715,10 +743,10 @@ void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 		((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE:
-		((CSpriteShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), rand() % 2);
+		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP:
-		((CSpriteShader*)m_ppShaders[INDEX_SHADER_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), rand() % 2);
+		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize));
 		break;
 	}
 }

@@ -344,7 +344,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 		{
 			CGun *pGun = (CGun*)pWeapon;
 
-			if (!m_bReloading) pGun->Shot();
+			if (!m_bReloading) pGun->Attack();
 		}
 	}
 }

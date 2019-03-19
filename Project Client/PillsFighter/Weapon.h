@@ -64,7 +64,8 @@ public:
 	virtual void Reload(int& nAmmo);
 
 public:
-	virtual void Shot() {};
+	virtual void Attack() {};
+	virtual void Shot();
 
 	virtual void SetReloadTime() {}
 	virtual void SetShotCoolTime() {}
@@ -72,16 +73,15 @@ public:
 	virtual void SetMaxReloadAmmo() {}
 	virtual void SetType() { m_nType |= WEAPON_TYPE_OF_GUN; }
 
-public:
 	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define SHOT_COOLTIME	0.05f
-#define BURST_COOLTIME	0.5f
-#define RELOAD_TIME	3.0f
+#define GG_SHOT_COOLTIME	0.05f
+#define GG_BURST_COOLTIME	0.5f
+#define GG_RELOAD_TIME		2.0f
 
 class CGimGun : public CGun
 {
@@ -95,11 +95,11 @@ protected:
 	int		m_nShotCount = 0;
 
 public:
-	virtual void Shot();
+	virtual void Attack();
 
-	virtual void SetReloadTime() { m_fReloadTime = RELOAD_TIME; }
-	virtual void SetShotCoolTime() { m_fShotCoolTime = SHOT_COOLTIME; }
-	virtual void SetBurstCoolTime() { m_fBurstCoolTime = BURST_COOLTIME; }
+	virtual void SetReloadTime() { m_fReloadTime = GG_RELOAD_TIME; }
+	virtual void SetShotCoolTime() { m_fShotCoolTime = GG_SHOT_COOLTIME; }
+	virtual void SetBurstCoolTime() { m_fBurstCoolTime = GG_BURST_COOLTIME; }
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
 	virtual void SetType();
 
@@ -109,11 +109,20 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CBazooka : public CGimGun // 나중에 Gun으로 바꿔야함
+#define BZK_SHOT_COOLTIME	1.0f
+#define BZK_RELOAD_TIME		3.0f
+
+class CBazooka : public CGun
 {
 public:
 	CBazooka();
 	virtual ~CBazooka();
+
+	virtual void Attack();
+
+	virtual void SetReloadTime() { m_fReloadTime = BZK_RELOAD_TIME; }
+	virtual void SetShotCoolTime() { m_fShotCoolTime = BZK_SHOT_COOLTIME; }
+	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 5; }
 
 	virtual void SetType();
 };
@@ -121,11 +130,20 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CMachineGun : public CGimGun // 나중에 Gun으로 바꿔야함
+#define MG_SHOT_COOLTIME	0.08f
+#define MG_RELOAD_TIME		3.0f
+
+class CMachineGun : public CGun
 {
 public:
 	CMachineGun();
 	virtual ~CMachineGun();
+
+	virtual void Attack();
+
+	virtual void SetReloadTime() { m_fReloadTime = MG_RELOAD_TIME; }
+	virtual void SetShotCoolTime() { m_fShotCoolTime = MG_SHOT_COOLTIME; }
+	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
 
 	virtual void SetType();
 };
