@@ -1,6 +1,6 @@
 #pragma once
 
-//#define ON_NETWORKING
+#define ON_NETWORKING
 
 typedef enum PKT_ID
 {
@@ -12,7 +12,8 @@ typedef enum PKT_ID
 	PKT_ID_SEND_COMPLETE,
 	PKT_ID_UPDATE_OBJECT,
 	PKT_ID_CREATE_EFFECT,
-	PKT_ID_GAME_STATE
+	PKT_ID_GAME_STATE,
+	PKT_ID_PLAYER_IN
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -119,6 +120,11 @@ struct PKT_GAME_STATE
 {
 	GAME_STATE game_state;
 	char num_player;
+};
+
+struct PKT_PLAYER_IN
+{
+	int id;
 };
 
 typedef SCENE_NAME SCENEINFO;

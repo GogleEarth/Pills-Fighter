@@ -147,4 +147,5 @@ public: // for Network
 	float m_fFrameRate = 0.0f;
 	float m_fFPSTimeElapsed = 0.0f;
 	int m_nFramePerSecond = 0;
+	bool gamestart = false;
 };

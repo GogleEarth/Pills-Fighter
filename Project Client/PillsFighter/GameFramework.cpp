@@ -84,6 +84,8 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 			continue;
 		}
 		else if(iPktID == PKT_ID_CREATE_EFFECT)  nPktSize = sizeof(PKT_CREATE_EFFECT); // 오브젝트 업데이트 정보
+		else if (iPktID == PKT_ID_PLAYER_IN) nPktSize = sizeof(PKT_PLAYER_IN); // 룸 플레이어정보
+		else if (iPktID == PKT_ID_GAME_STATE) nPktSize = sizeof(PKT_GAME_STATE);
 		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
 
 		// 데이터 받기 # 패킷 구조체 - 결정
@@ -102,6 +104,22 @@ DWORD CGameFramework::ThreadFunc(LPVOID arg)
 			m_vMsgUpdateInfo.emplace_back((PKT_UPDATE_OBJECT*)buf); // 오브젝트 업데이트 정보
 		}
 		else if (iPktID == PKT_ID_CREATE_EFFECT)  m_vMsgCreateEffect.emplace_back((PKT_CREATE_EFFECT*)buf); // 이펙트  정보 [ 생성 ]
+		else if (iPktID == PKT_ID_PLAYER_IN)
+		{
+			std::cout << "\n" << ((PKT_PLAYER_IN*)buf)->id << "번 플레이어 접속\n";
+		}
+		else if (iPktID == PKT_ID_GAME_STATE)
+		{
+			gamestart = true;
+			if(((PKT_GAME_STATE*)buf)->game_state == GAME_STATE_START)
+			for (int i = 0; i < 8 - ((PKT_GAME_STATE*)buf)->num_player; i++)
+			{
+				PKT_DELETE_OBJECT pktDO;
+				pktDO.Object_Index = ((PKT_GAME_STATE*)buf)->num_player + i;
+
+				m_pScene->DeleteObject(pktDO);
+			}
+		}
 		m_Mutex.unlock();
 	}
 }
@@ -167,6 +185,11 @@ void CGameFramework::InitNetwork()
 		CreateObject(pktCreateObject);
 	}
 
+	FrameworkThread *sFT = new FrameworkThread;
+	sFT->pGFW = this;
+	sFT->sock = m_sock;
+	m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
+
 	if (m_Client_Info == 0)
 	{
 		while (true)
@@ -185,26 +208,7 @@ void CGameFramework::InitNetwork()
 		}
 	}
 
-	PKT_GAME_STATE pktGameState;
-	retval = recvn(m_sock, (char*)&pktGameState, sizeof(PKT_GAME_STATE), 0);
-
-	if (pktGameState.game_state == GAME_STATE_START)
-	{
-		for (int i = 0; i < 8 - pktGameState.num_player; i++)
-		{
-			PKT_DELETE_OBJECT pktDO;
-			pktDO.Object_Index = pktGameState.num_player + i;
-			
-			m_pScene->DeleteObject(pktDO);
-		}
-
-		FrameworkThread *sFT = new FrameworkThread;
-		sFT->pGFW = this;
-		sFT->sock = m_sock;
-		m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
-	}
-	else
-		exit(0);
+	while (!gamestart);
 }
 
 void CGameFramework::CloseNetwork()
@@ -964,7 +968,7 @@ void CGameFramework::FrameAdvance()
 	//////////////////////////////////////////////////////////////////
 
 
-	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT );
+	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 	hResult = m_pd3dCommandList->Close();
 
@@ -1001,6 +1005,7 @@ void CGameFramework::FrameAdvance()
 	_stprintf(m_pszCaption + nLength, _T("(%f, %f)"), Screenx, Screeny);
 
 	::SetWindowText(m_hWnd, m_pszCaption);
+
 }
 
 void CGameFramework::OnResizeBackBuffers()

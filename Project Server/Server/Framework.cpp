@@ -109,20 +109,13 @@ void Framework::main_loop()
 					break;
 				}
 
-				Client_INFO info;
-				info.id = count;
-				info.socket = client_sock;
-				m.lock();
-				clients.emplace_back(Client_INFO{ count, client_sock });
-				m.unlock();
-
 				SCENEINFO sinfo = SCENE_NAME_COLONY;
 				retval = send(client_sock, (char*)&sinfo, sizeof(SCENEINFO), 0);
 
 				PKT_PLAYER_INFO pktdata;
 				PKT_CREATE_OBJECT anotherpktdata;
 				std::cout << count << std::endl;
-				pktdata.ID = clients[count].id;
+				pktdata.ID = count;
 				pktdata.WorldMatrix = m_pScene->m_pObjects[count]->m_xmf4x4World;
 				m_pScene->m_pObjects[count]->m_bPlay = true;
 				std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
@@ -139,6 +132,34 @@ void Framework::main_loop()
 						retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
 					}
 				}
+
+				std::cout << clients.size() << "\n";
+				if (clients.size() > 0)
+				{
+					PKT_ID pid_pin = PKT_ID_PLAYER_IN;
+					PKT_PLAYER_IN pkt_pin;
+					for (int i = 0; i < count; ++i)
+					{
+						pkt_pin.id = i;
+						std::cout << i << "번쨰 플레이어 정보 정보 보냄\n";
+						retval = send(client_sock, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
+						retval = send(client_sock, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
+					}
+					for (auto client : clients)
+					{
+						pkt_pin.id = count;
+						std::cout << count << "번쨰 플레이어 정보 정보 입장\n";
+						retval = send(client.socket, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
+						retval = send(client.socket, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
+					}
+				}
+
+				Client_INFO info;
+				info.id = count;
+				info.socket = client_sock;
+				m.lock();
+				clients.emplace_back(Client_INFO{ count, client_sock });
+				m.unlock();
 
 				Arg* arg = new Arg;
 				arg->pthis = this;
@@ -223,7 +244,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 {
 	while (true)
 	{
-		std::cout << "게임시작 대기중\n";
+		//std::cout << "게임시작 대기중\n";
 		if (game_start)
 		{
 			playernum = count;
@@ -239,6 +260,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 	PKT_GAME_STATE pstate;
 	pstate.game_state = GAME_STATE_GAME_START;
 	pstate.num_player = playernum;
+	PKT_ID pstateid = PKT_ID_GAME_STATE;
+	retval = Send_msg((char*)&pstateid, sizeof(PKT_ID), 0);
 	retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
 
 	while (true)
@@ -351,7 +374,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		// 회복 아이템 생성 패킷 보내기(60초마다 생성)
 		if(item_cooltime >= ITEM_HEALING_COOLTIME && !spawn_item)
 		{
-			std::cout << "아이템 생성\n";
+			//std::cout << "아이템 생성\n";
 			PKT_ID pid = PKT_ID_CREATE_OBJECT;
 			PKT_CREATE_OBJECT bulletpkt;
 			bulletpkt.Object_Type = OBJECT_TYPE_ITEM_HEALING;
@@ -374,7 +397,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		{
 			if (ammo_item_cooltime[i] >= ITEM_AMMO_COOLTIME && !spawn_ammo[i])
 			{
-				std::cout << "아이템 생성\n";
+				//std::cout << "아이템 생성\n";
 				PKT_ID pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
 				bulletpkt.Object_Type = OBJECT_TYPE_ITEM_AMMO;
@@ -466,7 +489,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			PKT_ID pid_l = PKT_ID_CREATE_EFFECT;
 			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
-			std::cout << pkt_ce.efType << " " << pkt_ce.xmf3Position.x << std::endl;
+			//std::cout << pkt_ce.efType << " " << pkt_ce.xmf3Position.x << std::endl;
 			retval = Send_msg((char*)&pkt_ce, sizeof(PKT_CREATE_EFFECT), 0);
 		}
 
