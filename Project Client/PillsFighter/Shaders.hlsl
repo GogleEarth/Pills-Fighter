@@ -497,8 +497,6 @@ struct SPRITE
 	uint m_nMaxSpriteX;
 	uint m_nMaxSpriteY;
 	uint m_nMaxSprite;
-	float m_fElapsedTime;
-	float m_fDuration;
 	float m_fDurationPerSprite;
 	uint m_nSpriteType;
 };
@@ -605,7 +603,7 @@ void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRI
 	}
 	else
 	{
-		input[0].age += gSprite.m_fElapsedTime;
+		input[0].age += gEffect.m_fElapsedTime;
 
 		float fNextSpriteTime = nSpritePos * gSprite.m_fDurationPerSprite;
 

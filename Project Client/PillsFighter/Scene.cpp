@@ -13,17 +13,265 @@ CScene::CScene()
 	C.bVisible = 0;
 	C.dwSize = 1;
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &C);
-
-	for (int i = 0; i < MAX_NUM_OBJECT; i++)
-		m_pObjects[i] = NULL;
 }
-
 
 CScene::~CScene()
 {
 }
 
-ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
+void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
+{
+	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, SCENE_DESCIPTOR_HEAP_COUNT);
+}
+
+void CScene::ReleaseObjects()
+{
+	CMaterial::ReleaseShaders();
+
+	if (m_pd3dGraphicsRootSignature)
+	{
+		m_pd3dGraphicsRootSignature->Release();
+		m_pd3dGraphicsRootSignature = NULL;
+	}
+
+	if (m_pd3dDescriptorHeap)
+	{
+		m_pd3dDescriptorHeap->Release();
+		m_pd3dDescriptorHeap = NULL;
+	}
+
+	if (m_pLights)
+	{
+		delete m_pLights;
+		m_pLights = NULL;
+	}
+
+	if (m_pSkyBox)
+	{
+		delete m_pSkyBox;
+		m_pSkyBox = NULL;
+	}
+
+	if (m_pTerrain)
+	{
+		delete m_pTerrain;
+		m_pTerrain = NULL;
+	}
+
+	if (m_pWireShader)
+	{
+		delete m_pWireShader;
+		m_pWireShader = NULL;
+	}
+
+	if (m_ppShaders)
+	{
+		for (int i = 0; i < m_nShaders; i++)
+		{
+			if (m_ppShaders[i])
+			{
+				m_ppShaders[i]->ReleaseShaderVariables();
+				m_ppShaders[i]->ReleaseObjects();
+				delete m_ppShaders[i];
+			}
+		}
+		delete[] m_ppShaders;
+		m_ppShaders = NULL;
+	}
+
+	if (m_pParticleShader)
+	{
+		m_pParticleShader->ReleaseShaderVariables();
+		m_pParticleShader->ReleaseObjects();
+		delete m_pParticleShader;
+		m_pParticleShader = NULL;
+	}
+
+	ReleaseShaderVariables();
+}
+
+void CScene::ReleaseUploadBuffers()
+{
+	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
+	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
+
+	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
+	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
+}
+
+bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+{
+	return(false);
+}
+
+bool CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+{
+	return(false);
+}
+
+bool CScene::ProcessInput(UCHAR *pKeysBuffer)
+{
+	return(false);
+}
+
+void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
+{
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		if (m_ppShaders[i])
+			m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
+	}
+	if (m_pParticleShader) m_pParticleShader->AnimateObjects(fTimeElapsed);
+
+	if (m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
+
+	if (m_pLights)
+	{
+		m_pLights->m_pLights[1].m_xmf3Position = m_pPlayer->GetPosition();
+		m_pLights->m_pLights->m_xmf3Direction = m_pPlayer->GetLook();
+	}
+
+	CheckCollision();
+}
+
+void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
+	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
+
+	if (pCamera)
+	{
+		pCamera->SetViewportsAndScissorRects(pd3dCommandList);
+		pCamera->UpdateShaderVariables(pd3dCommandList);
+	}
+
+	UpdateShaderVariables(pd3dCommandList);
+
+	if (m_pd3dcbLights)
+	{
+		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
+		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
+	}
+
+	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera);
+	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
+
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		if(m_ppShaders[i])
+			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
+	}
+
+	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
+}
+
+void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	if(m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
+
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		if(m_ppShaders[i])
+			m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
+	}
+}
+
+void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
+{
+	if (!m_pd3dDescriptorHeap)
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
+		d3dDescriptorHeapDesc.NumDescriptors = nViews;
+		d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		d3dDescriptorHeapDesc.NodeMask = 0;
+		pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
+
+		m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	}
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
+	d3dShaderResourceViewDesc.Format = d3dResourceDesc.Format;
+	d3dShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	switch (nTextureType)
+	{
+	case RESOURCE_TEXTURE2D: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 1)
+	case RESOURCE_TEXTURE2D_ARRAY:
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		d3dShaderResourceViewDesc.Texture2D.MipLevels = -1;
+		d3dShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
+		d3dShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		break;
+	case RESOURCE_TEXTURE2DARRAY: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize != 1)
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+		d3dShaderResourceViewDesc.Texture2DArray.MipLevels = -1;
+		d3dShaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.Texture2DArray.PlaneSlice = 0;
+		d3dShaderResourceViewDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+		d3dShaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
+		d3dShaderResourceViewDesc.Texture2DArray.ArraySize = d3dResourceDesc.DepthOrArraySize;
+		break;
+	case RESOURCE_TEXTURE_CUBE: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 6)
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		d3dShaderResourceViewDesc.TextureCube.MipLevels = -1;
+		d3dShaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+		d3dShaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+		break;
+	case RESOURCE_BUFFER: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		d3dShaderResourceViewDesc.Buffer.FirstElement = 0;
+		d3dShaderResourceViewDesc.Buffer.NumElements = 0;
+		d3dShaderResourceViewDesc.Buffer.StructureByteStride = 0;
+		d3dShaderResourceViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		break;
+	}
+	return(d3dShaderResourceViewDesc);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+
+	if (pTexture)
+	{
+		int nTextures = pTexture->GetTextures();
+		int nTextureType = pTexture->GetTextureType();
+
+		for (int i = 0; i < nTextures; i++)
+		{
+			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
+			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
+			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
+			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
+			m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+
+			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
+			m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		}
+	}
+
+	return d3dSrvGPUDescriptorHandle;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CColonyScene::CColonyScene() : CScene()
+{
+	for (int i = 0; i < MAX_NUM_OBJECT; i++)
+		m_pObjects[i] = NULL;
+}
+
+CColonyScene::~CColonyScene()
+{
+
+}
+
+ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 {
 	ID3D12RootSignature *pd3dGraphicsRootSignature = NULL;
 
@@ -99,32 +347,32 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.ShaderRegister = 3; //HP
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Descriptor.ShaderRegister = 4; //TextureSprite
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].Descriptor.ShaderRegister = 5; //Offset
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].Descriptor.ShaderRegister = 6; //Transforms
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_TRANSFORMS].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[4]; // t7~10
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].Descriptor.ShaderRegister = 7; // Effect
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[4]; // t7~10
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_TILES].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Descriptor.ShaderRegister = 4; //TextureSprite
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SPRITE].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PARTICLE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PARTICLE].Descriptor.ShaderRegister = 8;
@@ -178,12 +426,13 @@ ID3D12RootSignature *CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevic
 	return(pd3dGraphicsRootSignature);
 }
 
-void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
+void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
 	//그래픽 루트 시그너쳐를 생성한다. 
+	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
+
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, SCENE_DESCIPTOR_HEAP_COUNT);
 	CMaterial::PrepareShaders(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	BuildLightsAndMaterials();
@@ -233,7 +482,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
 
-	CEFadeOutShader *pFadeOutShader = new CEFadeOutShader();
+	CFadeOutShader *pFadeOutShader = new CFadeOutShader();
 	pFadeOutShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pFadeOutShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppShaders[INDEX_SHADER_EFFECT] = pFadeOutShader;
@@ -261,9 +510,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 }
 
-void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if(m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer);
+	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer);
 
 	if (m_pPlayer)
 	{
@@ -280,79 +529,16 @@ void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
 }
 
-void CScene::ReleaseObjects()
+void CColonyScene::ReleaseUploadBuffers()
 {
-	CMaterial::ReleaseShaders();
+	CScene::ReleaseUploadBuffers();
 
-	if (m_pd3dGraphicsRootSignature) m_pd3dGraphicsRootSignature->Release();
-	if (m_pd3dDescriptorHeap) m_pd3dDescriptorHeap->Release();
-
-	if (m_pLights) delete m_pLights;
-	if (m_pSkyBox) delete m_pSkyBox;
-	if (m_pTerrain) delete m_pTerrain;
-	if (m_pWireShader) delete m_pWireShader;
-
-	if (m_ppShaders)
-	{
-		for (int i = 0; i < m_nShaders; i++)
-		{
-			if (m_ppShaders[i])
-			{
-				m_ppShaders[i]->ReleaseShaderVariables();
-				m_ppShaders[i]->ReleaseObjects();
-				delete m_ppShaders[i];
-			}
-		}
-		delete[] m_ppShaders;
-	}
-
-	if (m_pParticleShader)
-	{
-		m_pParticleShader->ReleaseShaderVariables();
-		m_pParticleShader->ReleaseObjects();
-		delete m_pParticleShader;
-	}
-
-	ReleaseShaderVariables();
-}
-
-void CScene::ReleaseUploadBuffers()
-{
-	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
-	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
 	if (m_pGimGun) m_pGimGun->ReleaseUploadBuffers();
-
-	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
-	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
+	if (m_pBazooka) m_pBazooka->ReleaseUploadBuffers();
+	if (m_pMachineGun) m_pMachineGun->ReleaseUploadBuffers();
 }
 
-bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	return(false);
-}
-
-bool CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	return(false);
-}
-
-bool CScene::ProcessInput(UCHAR *pKeysBuffer)
-{
-	return(false);
-}
-
-void CScene::CheckCollisionPlayer()
-{
-	std::vector<CGameObject*> *vObstacles;
-	vObstacles = static_cast<CRepairItemShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
-
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
-}
-
-void CScene::CheckCollision()
+void CColonyScene::CheckCollision()
 {
 #ifndef ON_NETWORKING
 	std::vector<CGameObject*> *vEnemys;
@@ -376,7 +562,7 @@ void CScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBullet))
 				{
-					((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
 					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f));
 
@@ -392,7 +578,7 @@ void CScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBZKBullet))
 				{
-					((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
 					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f));
 
@@ -408,27 +594,18 @@ void CScene::CheckCollision()
 	FindAimToTargetDistance();
 }
 
-void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
+void CColonyScene::CheckCollisionPlayer()
 {
-	for (int i = 0; i < m_nShaders; i++)
+	std::vector<CGameObject*> *vObstacles;
+	vObstacles = static_cast<CRepairItemShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
+
+	for (const auto& Obstacle : *vObstacles)
 	{
-		if(m_ppShaders[i])
-			m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
+		m_pPlayer->MoveToCollision(Obstacle);
 	}
-	if (m_pParticleShader) m_pParticleShader->AnimateObjects(fTimeElapsed);
-
-	if (m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
-
-	if (m_pLights)
-	{
-		m_pLights->m_pLights[1].m_xmf3Position = m_pPlayer->GetPosition();
-		m_pLights->m_pLights->m_xmf3Direction = m_pPlayer->GetLook();
-	}
-
-	CheckCollision();
 }
 
-void CScene::FindAimToTargetDistance()
+void CColonyScene::FindAimToTargetDistance()
 {
 	std::vector<CGameObject*> *vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
 	std::vector<CGameObject*> *vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OBSTACLE])->GetObjects();
@@ -439,7 +616,7 @@ void CScene::FindAimToTargetDistance()
 	XMFLOAT3 xmf3CameraPos = m_pPlayer->GetCamera()->GetPosition();
 	XMVECTOR xmvCameraPos = XMLoadFloat3(&xmf3CameraPos);
 	XMVECTOR xmvLook = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetLookVector()));
-	
+
 	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
 
 	for (const auto& Enemy : *vEnemys)
@@ -481,50 +658,7 @@ void CScene::FindAimToTargetDistance()
 	m_fCameraToTarget = fDistance;
 }
 
-void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
-	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
-
-	if (pCamera)
-	{
-		pCamera->SetViewportsAndScissorRects(pd3dCommandList);
-		pCamera->UpdateShaderVariables(pd3dCommandList);
-	}
-
-	UpdateShaderVariables(pd3dCommandList);
-
-	D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
-	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
-
-	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera);
-	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
-
-	for (int i = 0; i < m_nShaders; i++)
-	{
-		if(m_ppShaders[i])
-			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
-	}
-	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
-}
-
-void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	if(m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
-
-	for (int i = 0; i < m_nShaders; i++)
-	{
-		if(m_ppShaders[i])
-			m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
-	}
-}
-
-void CScene::SetPlayer(CPlayer* pPlayer)
-{
-	m_pPlayer = pPlayer;
-}
-
-void CScene::BuildLightsAndMaterials()
+void CColonyScene::BuildLightsAndMaterials()
 {
 	m_pLights = new LIGHTS;
 	::ZeroMemory(m_pLights, sizeof(LIGHTS));
@@ -562,7 +696,7 @@ void CScene::BuildLightsAndMaterials()
 	m_pLights->m_pLights[2].m_xmf3Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
 }
 
-void CScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CColonyScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	UINT ncbElementBytes = ((sizeof(LIGHTS) + 255) & ~255);
 	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
@@ -570,102 +704,24 @@ void CScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 	m_pd3dcbLights->Map(0, NULL, (void **)&m_pcbMappedLights);
 }
 
-void CScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
 }
 
-void CScene::ReleaseShaderVariables()
+void CColonyScene::ReleaseShaderVariables()
 {
 	if (m_pd3dcbLights)
 	{
 		m_pd3dcbLights->Unmap(0, NULL);
 		m_pd3dcbLights->Release();
+		m_pd3dcbLights = NULL;
 	}
-}
-
-void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
-{
-	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
-	d3dDescriptorHeapDesc.NumDescriptors = nViews;
-	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	d3dDescriptorHeapDesc.NodeMask = 0;
-	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
-
-	m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-}
-
-D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
-{
-	D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
-	d3dShaderResourceViewDesc.Format = d3dResourceDesc.Format;
-	d3dShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	switch (nTextureType)
-	{
-	case RESOURCE_TEXTURE2D: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 1)
-	case RESOURCE_TEXTURE2D_ARRAY:
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		d3dShaderResourceViewDesc.Texture2D.MipLevels = -1;
-		d3dShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-		d3dShaderResourceViewDesc.Texture2D.PlaneSlice = 0;
-		d3dShaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-		break;
-	case RESOURCE_TEXTURE2DARRAY: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize != 1)
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-		d3dShaderResourceViewDesc.Texture2DArray.MipLevels = -1;
-		d3dShaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-		d3dShaderResourceViewDesc.Texture2DArray.PlaneSlice = 0;
-		d3dShaderResourceViewDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
-		d3dShaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-		d3dShaderResourceViewDesc.Texture2DArray.ArraySize = d3dResourceDesc.DepthOrArraySize;
-		break;
-	case RESOURCE_TEXTURE_CUBE: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)(d3dResourceDesc.DepthOrArraySize == 6)
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-		d3dShaderResourceViewDesc.TextureCube.MipLevels = -1;
-		d3dShaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
-		d3dShaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-		break;
-	case RESOURCE_BUFFER: //(d3dResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
-		d3dShaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		d3dShaderResourceViewDesc.Buffer.FirstElement = 0;
-		d3dShaderResourceViewDesc.Buffer.NumElements = 0;
-		d3dShaderResourceViewDesc.Buffer.StructureByteStride = 0;
-		d3dShaderResourceViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-		break;
-	}
-	return(d3dShaderResourceViewDesc);
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
-{
-	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
-
-	if (pTexture)
-	{
-		int nTextures = pTexture->GetTextures();
-		int nTextureType = pTexture->GetTextureType();
-
-		for (int i = 0; i < nTextures; i++)
-		{
-			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
-			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
-			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
-			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
-			m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-
-			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
-			m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-		}
-	}
-
-	return d3dSrvGPUDescriptorHandle;
 }
 
 //////////////////////////////// for Networking
 
-void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo)
+void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo)
 {
 	CGameObject* pGameObject = NULL;
 	//pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
@@ -721,7 +777,7 @@ void CScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pObjects[CreateObjectInfo.Object_Index] = pGameObject;
 }
 
-void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
+void CColonyScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 {
 	if (m_pObjects[DeleteObjectInfo.Object_Index])
 	{
@@ -730,17 +786,17 @@ void CScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 	}
 }
 
-void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
+void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
 {
 	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
-	CDefaultEffect *pEffect = NULL;
+	CEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
 	float fSize = (float)(rand() % 2000) / 100.0f;
 
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_DEFAULT:
-		((CEFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
+		((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE:
 		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize));
@@ -751,7 +807,7 @@ void CScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	}
 }
 
-void CScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
+void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 {
 	switch (pktID)
 	{

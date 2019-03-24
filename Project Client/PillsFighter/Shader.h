@@ -204,7 +204,7 @@ public:
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
 
 protected:
-	CDefaultEffect			*m_pEffect = NULL;
+	CEffect			*m_pEffect = NULL;
 	CTexture				*m_pTexture = NULL;
 
 	ID3D12PipelineState		*m_pd3dSOPipelineState = NULL;
@@ -213,11 +213,11 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CEFadeOutShader : public CEffectShader
+class CFadeOutShader : public CEffectShader
 {
 public:
-	CEFadeOutShader();
-	virtual ~CEFadeOutShader();
+	CFadeOutShader();
+	virtual ~CFadeOutShader();
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();

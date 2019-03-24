@@ -812,15 +812,15 @@ void CEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *
 
 //////////////////////////////////////////////////////////////////////
 
-CEFadeOutShader::CEFadeOutShader()
+CFadeOutShader::CFadeOutShader()
 {
 }
 
-CEFadeOutShader::~CEFadeOutShader()
+CFadeOutShader::~CFadeOutShader()
 {
 }
 
-D3D12_INPUT_LAYOUT_DESC CEFadeOutShader::CreateInputLayout()
+D3D12_INPUT_LAYOUT_DESC CFadeOutShader::CreateInputLayout()
 {
 	UINT nInputElementDescs = 3;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
@@ -836,7 +836,7 @@ D3D12_INPUT_LAYOUT_DESC CEFadeOutShader::CreateInputLayout()
 	return(d3dInputLayoutDesc);
 }
 
-D3D12_STREAM_OUTPUT_DESC CEFadeOutShader::CreateStreamOutput()
+D3D12_STREAM_OUTPUT_DESC CFadeOutShader::CreateStreamOutput()
 {
 	UINT nSODecls = 3;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
@@ -859,45 +859,45 @@ D3D12_STREAM_OUTPUT_DESC CEFadeOutShader::CreateStreamOutput()
 	return(d3dStreamOutputDesc);
 }
 
-D3D12_SHADER_BYTECODE CEFadeOutShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CFadeOutShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSEffectStreamOut", "vs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CEFadeOutShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CFadeOutShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CEFadeOutShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CFadeOutShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSEffectDraw", "vs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CEFadeOutShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CFadeOutShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSEffectDraw", "gs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CEFadeOutShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CFadeOutShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSEffectDraw", "ps_5_1", ppd3dShaderBlob));
 }
 
-void CEFadeOutShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+void CFadeOutShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/HIT.dds", 0);
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_pEffect = new CEFadeOut(pd3dDevice, pd3dCommandList, 2.0f);
+	m_pEffect = new CFadeOut(pd3dDevice, pd3dCommandList, 2.0f);
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CEFadeOutShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+void CFadeOutShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
 {
-	((CEFadeOut*)m_pEffect)->AddVertex(xmf3Position, xmf2Size);
+	((CFadeOut*)m_pEffect)->AddVertex(xmf3Position, xmf2Size);
 }
 
 
@@ -1244,7 +1244,8 @@ void CParticleShader::ReleaseUploadBuffers()
 void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	CParticle *pParticle = NULL;
-	for (int i = 0; i < 1; i++)
+
+	for (int i = 0; i < 2; i++)
 	{
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), 40.0f, 1.0f, 1.0f);
@@ -1261,10 +1262,8 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 void CParticleShader::SetFollowObject(CGameObject *pObject)
 {
-	for (CParticle* pParticle : m_vpParticles)
-	{
-		pParticle->SetFollowObject(pObject, ((CRobotObject*)pObject)->GetNozzleFrame());
-	}
+	m_vpParticles[0]->SetFollowObject(pObject, ((CRobotObject*)pObject)->GetLeftNozzleFrame());
+	m_vpParticles[1]->SetFollowObject(pObject, ((CRobotObject*)pObject)->GetRightNozzleFrame());
 }
 
 void CParticleShader::AnimateObjects(float fTimeElapsed)

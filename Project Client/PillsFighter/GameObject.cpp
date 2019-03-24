@@ -716,7 +716,8 @@ void CRobotObject::OnPrepareAnimate()
 {
 	m_pRightHand = m_pModel->FindFrame("Bip001_R_Hand");
 	m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
-	m_pNozzle = m_pModel->FindFrame("Bone001");
+	m_pLeftNozzle = m_pModel->FindFrame("Bone001");
+	m_pRightNozzle = m_pModel->FindFrame("Bone002");
 }
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
@@ -813,10 +814,11 @@ void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamer
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-CDefaultEffect::CDefaultEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes)
+CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, float fDuration)
 {
 	m_nVertices = 0;
 	m_nBytes = nBytes;
+	m_fDuration = fDuration;
 
 	m_pd3dInitVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, m_nBytes * MAX_EFFECT_INIT_VERTEX_COUNT);
 
@@ -851,7 +853,7 @@ CDefaultEffect::CDefaultEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	}
 }
 
-CDefaultEffect::~CDefaultEffect()
+CEffect::~CEffect()
 {
 	if (m_pd3dBuffer) m_pd3dBuffer->Release();
 	if (m_pd3dDummyBuffer) m_pd3dDummyBuffer->Release();
@@ -868,7 +870,40 @@ CDefaultEffect::~CDefaultEffect()
 	ReleaseShaderVariables();
 }
 
-void CDefaultEffect::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
+void CEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_EFFECT_INFO) + 255) & ~255);
+
+	m_pd3dcbEffect = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
+
+	m_pd3dcbEffect->Map(0, NULL, (void**)&m_pcbMappedEffect);
+}
+
+void CEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pcbMappedEffect->m_fElapsedTime = m_fElapsedTime;
+	m_pcbMappedEffect->m_fDuration = m_fDuration;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_EFFECT, m_pd3dcbEffect->GetGPUVirtualAddress());
+}
+
+void CEffect::ReleaseShaderVariables()
+{
+	if (m_pd3dcbEffect)
+	{
+		m_pd3dcbEffect->Unmap(0, NULL);
+		m_pd3dcbEffect->Release();
+
+		m_pd3dcbEffect = NULL;
+	}
+}
+
+void CEffect::Animate(float fTimeElapsed)
+{
+	m_fElapsedTime = fTimeElapsed;
+}
+
+void CEffect::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_nDrawBufferIndex == 0)
 	{
@@ -892,7 +927,7 @@ void CDefaultEffect::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
 	m_pd3dReadBackBuffer->Unmap(0, &d3dRange);
 }
 
-void CDefaultEffect::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
+void CEffect::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_nVertices | m_nInitVertices)
 	{
@@ -918,7 +953,7 @@ void CDefaultEffect::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
-void CDefaultEffect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+void CEffect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_nVertices | m_nInitVertices)
 	{
@@ -942,7 +977,7 @@ void CDefaultEffect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
-void CDefaultEffect::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+void CEffect::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	pd3dCommandList->CopyResource(m_pd3dReadBackBuffer, m_pd3dBuffer);
@@ -955,67 +990,31 @@ void CDefaultEffect::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-CEFadeOut::CEFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration) : CDefaultEffect(pd3dDevice, pd3dCommandList, sizeof(CFadeOutVertex))
+CFadeOut::CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CFadeOutVertex), fDuration)
 {
-	m_fDuration = fDuration;
 }
 
-CEFadeOut::~CEFadeOut()
+CFadeOut::~CFadeOut()
 {
-	ReleaseShaderVariables();
 }
 
-void CEFadeOut::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	UINT ncbElementBytes = ((sizeof(CB_FADEOUT_INFO) + 255) & ~255);
-
-	m_pd3dcbFadeOut = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
-
-	m_pd3dcbFadeOut->Map(0, NULL, (void**)&m_pcbMappedFadeOut);
-}
-
-void CEFadeOut::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	m_pcbMappedFadeOut->m_fElapsedTime = m_fElapsedTime;
-	m_pcbMappedFadeOut->m_fDuration = m_fDuration;
-
-	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_EFFECT, m_pd3dcbFadeOut->GetGPUVirtualAddress());
-}
-
-void CEFadeOut::ReleaseShaderVariables()
-{
-	if (m_pd3dcbFadeOut)
-	{
-		m_pd3dcbFadeOut->Unmap(0, NULL);
-		m_pd3dcbFadeOut->Release();
-
-		m_pd3dcbFadeOut = NULL;
-	}
-}
-
-void CEFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
 {
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_fAge = 0.0f;
 }
 
-void CEFadeOut::Animate(float fTimeElapsed)
-{
-	m_fElapsedTime = fTimeElapsed;
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType) : CDefaultEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex))
+CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), fDuration)
 {
 	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
 	m_nMaxSpriteX = nMaxX;
 	m_nMaxSpriteY = nMaxY;
 	m_nMaxSprite = nMax;
-	m_fDuration = fDuration;
-	m_fDurationPerSprite = m_fDuration / (float)m_nMaxSprite;
+	m_fDurationPerSprite = fDuration / (float)nMax;
 	m_nSpriteType = nSpriteType;
 }
 
@@ -1039,8 +1038,6 @@ void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 	m_pcbMappedSprite->m_nMaxSpriteX = m_nMaxSpriteX;
 	m_pcbMappedSprite->m_nMaxSpriteY = m_nMaxSpriteY;
 	m_pcbMappedSprite->m_nMaxSprite = m_nMaxSprite;
-	m_pcbMappedSprite->m_fElapsedTime = m_fElapsedTime;
-	m_pcbMappedSprite->m_fDuration = m_fDuration;
 	m_pcbMappedSprite->m_fDurationPerSprite = m_fDurationPerSprite;
 	m_pcbMappedSprite->m_nSpriteType = m_nSpriteType;
 
@@ -1065,11 +1062,6 @@ void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureI
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmn2SpritePos = XMUINT2(0, 0);
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_fAge = 0.0f;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_nTextureIndex = nTextureIndex;
-}
-
-void CSprite::Animate(float fTimeElapsed)
-{
-	m_fElapsedTime = fTimeElapsed;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -302,10 +302,134 @@ public:
 	CWeapon* GetLHWeapon() { return m_pLHWeapon; }
 
 protected:
-	CModel *m_pNozzle = NULL;
+	CModel *m_pLeftNozzle = NULL;
+	CModel *m_pRightNozzle = NULL;
 
 public:
-	CModel* GetNozzleFrame() { return m_pNozzle; }
+	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
+	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct CB_EFFECT_INFO
+{
+	float m_fElapsedTime;
+	float m_fDuration;
+};
+
+class CEffect
+{
+public:
+	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, float fDuration);
+	virtual ~CEffect();
+
+protected:
+#define	MAX_EFFECT_VERTEX_COUNT 1000
+#define	MAX_EFFECT_INIT_VERTEX_COUNT 1000
+
+	ID3D12Resource						*m_pd3dInitVertexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
+
+	int									m_nInitVertices = 0;
+	void								*m_pMappedInitVertices;
+
+	ID3D12Resource						*m_pd3dVertexBuffer[2];
+	D3D12_VERTEX_BUFFER_VIEW			m_d3dVertexBufferView[2];
+	D3D12_STREAM_OUTPUT_BUFFER_VIEW		m_d3dSOBufferView[2];
+
+	int									m_nDrawBufferIndex = 0;
+	int									m_nSOBufferIndex = 1;
+	ID3D12Resource						*m_pd3dBuffer;
+	ID3D12Resource						*m_pd3dDummyBuffer;
+	ID3D12Resource						*m_pd3dReadBackBuffer;
+
+	int									m_nVertices = 0;
+	UINT								m_nBytes = 0;
+
+	float								m_fElapsedTime = 0.0f;
+	float								m_fDuration = 0.0f;
+
+	ID3D12Resource						*m_pd3dcbEffect = NULL;
+	CB_EFFECT_INFO						*m_pcbMappedEffect = NULL;
+
+public:
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void Animate(float fTimeElapsed);
+
+	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
+};
+
+/////////////////////////////////////////////////////////
+
+struct CFadeOutVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT2	m_xmf2Size;
+	float		m_fAge;
+};
+
+class CFadeOut : public CEffect
+{
+public:
+	CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
+	virtual ~CFadeOut();
+
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+};
+
+/////////////////////////////////////////////////////////
+
+struct CB_SPRITE_INFO
+{
+	XMFLOAT2 m_xmf2SpriteSize;
+	UINT m_nMaxSpriteX;
+	UINT m_nMaxSpriteY;
+	UINT m_nMaxSprite;
+	float m_fDurationPerSprite;
+	UINT m_nSpriteType;
+};
+
+struct CSpriteVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT2	m_xmf2Size;
+	XMUINT2		m_xmn2SpritePos;
+	float		m_fAge;
+	UINT		m_nTextureIndex;
+};
+
+class CSprite : public CEffect
+{
+public:
+	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType);
+	virtual ~CSprite();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex);
+
+protected:
+	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
+	UINT				m_nMaxSpriteX = 0;
+	UINT				m_nMaxSpriteY = 0;
+	UINT				m_nMaxSprite = 0;
+
+	float				m_fDurationPerSprite = 0.0f;
+
+	EFFECT_TYPE			m_nSpriteType = EFFECT_TYPE_SPRITE_ONE;
+
+	ID3D12Resource		*m_pd3dcbSprite = NULL;
+	CB_SPRITE_INFO		*m_pcbMappedSprite = NULL;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -340,7 +464,7 @@ class CParticle
 public:
 	CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CParticle();
-	
+
 protected:
 	ID3D12Resource						*m_pd3dInitVertexBuffer;
 	ID3D12Resource						*m_pd3dInitVertexUploadBuffer;
@@ -355,7 +479,7 @@ protected:
 	ID3D12Resource						*m_pd3dBuffer;
 	ID3D12Resource						*m_pd3dDummyBuffer;
 	ID3D12Resource						*m_pd3dReadBackBuffer;
-	
+
 	XMFLOAT3							m_xmf3Position;
 	XMFLOAT3							m_xmf3Direction;
 	float								m_fSpeed;
@@ -390,137 +514,4 @@ public:
 	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	void SetFollowObject(CGameObject *pObject, CModel *pModel);
 	void SetToFollowFramePosition();
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-class CDefaultEffect
-{
-public:
-	CDefaultEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes);
-	virtual ~CDefaultEffect();
-
-protected:
-#define	MAX_EFFECT_VERTEX_COUNT 1000
-#define	MAX_EFFECT_INIT_VERTEX_COUNT 1000
-
-	ID3D12Resource						*m_pd3dInitVertexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
-
-	int									m_nInitVertices = 0;
-	void								*m_pMappedInitVertices;
-
-	ID3D12Resource						*m_pd3dVertexBuffer[2];
-	D3D12_VERTEX_BUFFER_VIEW			m_d3dVertexBufferView[2];
-	D3D12_STREAM_OUTPUT_BUFFER_VIEW		m_d3dSOBufferView[2];
-
-	int									m_nDrawBufferIndex = 0;
-	int									m_nSOBufferIndex = 1;
-	ID3D12Resource						*m_pd3dBuffer;
-	ID3D12Resource						*m_pd3dDummyBuffer;
-	ID3D12Resource						*m_pd3dReadBackBuffer;
-
-	int									m_nVertices = 0;
-	UINT								m_nBytes = 0;
-
-public:
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {};
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
-	virtual void ReleaseShaderVariables() {};
-
-	virtual void Animate(float fTimeElapsed) {};
-
-	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
-};
-
-/////////////////////////////////////////////////////////
-
-struct CB_FADEOUT_INFO
-{
-	float m_fElapsedTime;
-	float m_fDuration;
-};
-
-struct CFadeOutVertex
-{
-	XMFLOAT3	m_xmf3Position;
-	XMFLOAT2	m_xmf2Size;
-	float		m_fAge;
-};
-
-class CEFadeOut : public CDefaultEffect
-{
-public:
-	CEFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
-	virtual ~CEFadeOut();
-
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
-	virtual void Animate(float fTimeElapsed);
-
-protected:
-	float								m_fElapsedTime = 0.0f;
-	float								m_fDuration = 0.0f;
-
-	ID3D12Resource						*m_pd3dcbFadeOut = NULL;
-	CB_FADEOUT_INFO						*m_pcbMappedFadeOut = NULL;
-};
-
-/////////////////////////////////////////////////////////
-
-struct CB_SPRITE_INFO
-{
-	XMFLOAT2 m_xmf2SpriteSize;
-	UINT m_nMaxSpriteX;
-	UINT m_nMaxSpriteY;
-	UINT m_nMaxSprite;
-	float m_fElapsedTime;
-	float m_fDuration;
-	float m_fDurationPerSprite;
-	UINT m_nSpriteType;
-};
-
-struct CSpriteVertex
-{
-	XMFLOAT3	m_xmf3Position;
-	XMFLOAT2	m_xmf2Size;
-	XMUINT2		m_xmn2SpritePos;
-	float		m_fAge;
-	UINT		m_nTextureIndex;
-};
-
-class CSprite : public CDefaultEffect
-{
-public:
-	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType);
-	virtual ~CSprite();
-
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex);
-	virtual void Animate(float fTimeElapsed);
-
-protected:
-	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
-	UINT				m_nMaxSpriteX = 0;
-	UINT				m_nMaxSpriteY = 0;
-	UINT				m_nMaxSprite = 0;
-
-	float				m_fElapsedTime = 0.0f;
-	float				m_fDuration = 0.0f;
-	float				m_fDurationPerSprite = 0.0f;
-
-	EFFECT_TYPE			m_nSpriteType = EFFECT_TYPE_SPRITE_ONE;
-
-	ID3D12Resource		*m_pd3dcbSprite = NULL;
-	CB_SPRITE_INFO		*m_pcbMappedSprite = NULL;
 };

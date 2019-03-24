@@ -523,7 +523,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 		switch (*pSI)
 		{
 		case SCENE_NAME_COLONY:
-			m_pScene = new CScene();
+			m_pScene = new CColonyScene();
 			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 			break;
 		default:
@@ -534,7 +534,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	}
 	else
 	{
-		m_pScene = new CScene();
+		m_pScene = new CColonyScene();
 		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 	}
 

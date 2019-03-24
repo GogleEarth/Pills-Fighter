@@ -3,6 +3,8 @@
 #include "Shader.h"
 #include "Player.h"
 
+class CRepository;
+
 struct LIGHT
 {
 	XMFLOAT4 m_xmf4Ambient;
@@ -26,84 +28,44 @@ struct LIGHTS
 	XMFLOAT4 m_xmf4GlobalAmbient;
 };
 
-class CRepository;
-
 class CScene
 {
 public:
 	CScene();
-	~CScene();
+	virtual ~CScene();
 
-	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
-	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void ReleaseObjects();
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void ReleaseUploadBuffers();
 
-	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
-	void ReleaseObjects();
+	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual bool ProcessInput(UCHAR *pKeysBuffer);
 
-	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
-	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
+	virtual void CheckCollision() {}
+	virtual void CheckCollisionPlayer() {}
+	virtual void FindAimToTargetDistance() {}
 
-	bool ProcessInput(UCHAR *pKeysBuffer);
-	void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
-	void ReleaseUploadBuffers();
+	virtual void BuildLightsAndMaterials() {}
 
-	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
+	virtual void ReleaseShaderVariables() {};
 
-protected:
-	CPlayer						*m_pPlayer = NULL;
+	virtual ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice) { return NULL; };
 
-	int							m_nShaders = 0;
-	CShader						**m_ppShaders = NULL;
-
-	CHeightMapTerrain			*m_pTerrain = NULL;
-	CSkyBox						*m_pSkyBox = NULL;
-
-	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
-
-	CShader						*m_pWireShader = NULL;
-
-public:
-	// 충돌 체크를 검사한다.
-	virtual void CheckCollision();
-	virtual void CheckCollisionPlayer();
-	virtual void FindAimToTargetDistance();
-
-	void SetPlayer(CPlayer* pPlayer);
-
-	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
-
-public: //For Lights
-	void BuildLightsAndMaterials();
-
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-
-protected:
-	//씬의 조명
-	LIGHTS			*m_pLights = NULL;
-
-	ID3D12Resource	*m_pd3dcbLights = NULL;
-	LIGHTS			*m_pcbMappedLights = NULL;
-
-public: // For Network
-	CGameObject* m_pObjects[MAX_NUM_OBJECT];
-
-	void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);
-	void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
-	void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
-	void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
-
-	//////
-public:
-	float		m_fGravAcc = 9.8f;
-
-public:
 	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement);
+
+public:
+	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
+	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
+	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandleForHeapStart() { return(m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart()); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandleForHeapStart() { return(m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart()); }
@@ -111,27 +73,77 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUSrvDescriptorStartHandle() { return(m_d3dSrvCPUDescriptorStartHandle); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUSrvDescriptorStartHandle() { return(m_d3dSrvGPUDescriptorStartHandle); }
 
+	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
+
+	float GetToTargetDistance() { return m_fCameraToTarget; }
+
 protected:
-	static ID3D12DescriptorHeap		*m_pd3dDescriptorHeap;
+	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
 
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
 
+	ID3D12RootSignature					*m_pd3dGraphicsRootSignature = NULL;
 
+	LIGHTS								*m_pLights = NULL;
+	ID3D12Resource						*m_pd3dcbLights = NULL;
+	LIGHTS								*m_pcbMappedLights = NULL;
+
+	CPlayer								*m_pPlayer = NULL;
+	CHeightMapTerrain					*m_pTerrain = NULL;
+	CSkyBox								*m_pSkyBox = NULL;
+
+	int									m_nShaders = 0;
+	CShader								**m_ppShaders = NULL;
+
+	CShader								*m_pWireShader = NULL;
+	CParticleShader						*m_pParticleShader = NULL;
+
+protected:
+	float			m_fGravAcc = 9.8f;
+	float			m_fCameraToTarget = 0.0f;
+
+public: // Network
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
+	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo) {}
+	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo) {}
+	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CColonyScene : public CScene
+{
 public:
-	float GetToTargetDistance() { return m_fCameraToTarget; }
+	CColonyScene();
+	virtual ~CColonyScene();
+
+	virtual ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
+
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseUploadBuffers();
+
+	virtual void CheckCollision();
+	virtual void CheckCollisionPlayer();
+	virtual void FindAimToTargetDistance();
+
+	virtual void BuildLightsAndMaterials();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+public: // Network
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);
+	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
+	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
+	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 
 protected:
-	float m_fCameraToTarget = 0.0f;
+	CGameObject* m_pObjects[MAX_NUM_OBJECT];
 
-protected:
 	CModel		*m_pGimGun = NULL;
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
-
-public:
-	void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-
-protected:
-	CParticleShader		*m_pParticleShader = NULL;
 };
