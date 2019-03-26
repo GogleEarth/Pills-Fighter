@@ -540,8 +540,8 @@ DWORD Framework::client_process(SOCKET arg)
 			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID,
 				((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting,
 				((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
-				((PKT_PLAYER_INFO*)buf)->isChangeWeapon,
-				((PKT_PLAYER_INFO*)buf)->Player_Animation, ((PKT_PLAYER_INFO*)buf)->isChangeAnimation});
+				((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Animation,
+				((PKT_PLAYER_INFO*)buf)->isChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
 
 			SetEvent(client_Event[((PKT_PLAYER_INFO*)buf)->ID]);
 			WaitForSingleObject(Event, INFINITE);
