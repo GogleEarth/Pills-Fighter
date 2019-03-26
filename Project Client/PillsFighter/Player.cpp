@@ -19,7 +19,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true);
 	m_pAnimationController = new CAnimationController(1, pModel->GetAnimationSet());
-	m_pAnimationController->SetTrackAnimation(0, 0);
+	m_pAnimationController->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 
 	SetModel(pModel);
 	

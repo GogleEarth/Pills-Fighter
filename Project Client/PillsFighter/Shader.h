@@ -308,21 +308,23 @@ public:
 
 	virtual void ReleaseUploadBuffers();
 
+	virtual void CheckDeleteObjects();
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	void SetFollowObject(CGameObject *pObject);
+
+	void SetFollowObject(CGameObject *pObject, CModel *pFrame);
 
 protected:
 	ID3DBlob						*m_pd3dGeometryShaderBlob = NULL;
 
 	ID3D12PipelineState				*m_pd3dSOPipelineState = NULL;
 
-public:
 	CTexture						*m_pTexture;
 
 	std::vector<CParticle*>			m_vpParticles;
+	int								m_nParticleIndex = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -512,7 +512,8 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer);
+	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
+	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
 
 	if (m_pPlayer)
 	{
@@ -738,6 +739,10 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
 		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+
+		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
+		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
+
 		break;
 	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
@@ -781,6 +786,11 @@ void CColonyScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 {
 	if (m_pObjects[DeleteObjectInfo.Object_Index])
 	{
+		if (m_pObjects[DeleteObjectInfo.Object_Index]->GetType() & OBJECT_TYPE_ROBOT)
+		{
+			std::vector<CParticle*> vpParticles = ((CRobotObject*)m_pObjects[DeleteObjectInfo.Object_Index])->GetParticles();
+			for (CParticle *pParticle : vpParticles) pParticle->Delete();
+		}
 		m_pObjects[DeleteObjectInfo.Object_Index]->Delete();
 		m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
 	}
@@ -824,6 +834,7 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 			CRobotObject *pObject = (CRobotObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
 			pObject->ChangeWeaponByType(((PKT_PLAYER_INFO*)pktData)->Player_Weapon);
 		}
+		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetState(((PKT_PLAYER_INFO*)pktData)->State);
 		break;
 	case PKT_ID_PLAYER_LIFE:
 		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);

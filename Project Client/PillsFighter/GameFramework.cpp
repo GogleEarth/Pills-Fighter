@@ -837,6 +837,7 @@ void CGameFramework::FrameAdvance()
 		pktPlayerInfo.Player_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState());
 		pktPlayerInfo.isChangeAnimation = m_pPlayer->GetAnimationChanged();
 		if (pktPlayerInfo.isChangeAnimation) m_pPlayer->SetAnimationChanged(FALSE);
+		pktPlayerInfo.State = m_pPlayer->GetState();
 
 
 		PKT_ID pid = PKT_ID_PLAYER_INFO;

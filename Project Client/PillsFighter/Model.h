@@ -190,7 +190,10 @@ public: // Root Model
 
 	int GetMeshes() { return m_nMeshes; }
 	int GetSkinnedMeshes() { return m_nSkinnedMeshes; }
-	
+
+	XMFLOAT3 GetLook() { return XMFLOAT3(m_xmf4x4World._31, m_xmf4x4World._32, m_xmf4x4World._33); }
+	XMFLOAT3 GetUp() { return XMFLOAT3(m_xmf4x4World._21, m_xmf4x4World._22, m_xmf4x4World._23); }
+	XMFLOAT3 GetRight() { return XMFLOAT3(m_xmf4x4World._11, m_xmf4x4World._12, m_xmf4x4World._13); }
 	XMFLOAT3 GetPosition() { return XMFLOAT3(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43); }
 
 protected:

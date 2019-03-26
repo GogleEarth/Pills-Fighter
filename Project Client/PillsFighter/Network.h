@@ -78,6 +78,7 @@ typedef struct PKT_PLAYER_INFO
 	BOOL			isChangeWeapon;
 	ANIMATION_TYPE	Player_Animation;
 	BOOL			isChangeAnimation;
+	int				State;
 }PKT_PLAYER_INFO;
 
 typedef struct PKT_PLAYER_LIFE

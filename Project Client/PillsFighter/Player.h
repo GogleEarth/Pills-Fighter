@@ -61,8 +61,6 @@ protected:
 	CShader				*m_pUserInterface = NULL;
 
 protected:
-	int					m_nState = 0x00;
-
 	int					m_nBoosterGauge = 100;
 	float				m_fElapsedBGConsumeTime = 0.0f;
 	float				m_fElapsedBGChargeTime = 0.0f;

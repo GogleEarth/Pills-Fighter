@@ -635,7 +635,7 @@ struct PARTICLE
 	float3	m_vDirection;
 	float	m_fSpeed;
 	float	m_fDuration;
-	//	float	gfEmitTime;
+	bool	m_bEmit;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(b8);
@@ -647,7 +647,6 @@ struct VS_PARTICLE_INPUT
 	float2	size : SIZE;
 	uint	type : TYPE;
 	float	age : AGE;
-	//uint	factor : FACTOR;
 };
 
 VS_PARTICLE_INPUT VSParticleStreamOut(VS_PARTICLE_INPUT input)
@@ -665,15 +664,14 @@ void GSParticleStreamOut(point VS_PARTICLE_INPUT input[1], inout PointStream<VS_
 		float3 vRandom = gParticle.m_vRandom.xyz;
 		vRandom = normalize(vRandom * 2.0f - 1.0f);
 
-		if (input[0].age > 0.005f)
+		if ((gParticle.m_bEmit == true) && (input[0].age > 0.005f))
 		{
 			VS_PARTICLE_INPUT particle;
 			particle.position = input[0].position + gParticle.m_vPosition;
-			particle.velocity = gParticle.m_fSpeed * (vRandom);// +gvDirection);
+			particle.velocity = gParticle.m_fSpeed * (vRandom + gParticle.m_vDirection);
 			particle.size = input[0].size;
 			particle.age = gParticle.m_fElapsedTime;
 			particle.type = 1;
-			//particle.factor = input[0].factor;
 
 			pointStream.Append(particle);
 		}

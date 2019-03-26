@@ -146,9 +146,19 @@ public:
 
 public:
 	void AddParticle(CParticle *pParticle) { m_vpParticles.emplace_back(pParticle); };
+	virtual void ApplyToParticle(CParticle *pParticle);
 
 protected:
 	std::vector<CParticle*> m_vpParticles;
+	int					m_nState = 0x00;
+	int					m_nType = 0x00;
+
+public:
+	int GetState() { return m_nState; }
+	void SetState(int nState) { m_nState = nState; }
+
+	int GetType() { return m_nType; }
+	std::vector<CParticle*>& GetParticles() { return m_vpParticles; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -306,6 +316,8 @@ protected:
 	CModel *m_pRightNozzle = NULL;
 
 public:
+	void ApplyToParticle(CParticle *pParticle);
+
 	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
 	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }
 };
@@ -445,18 +457,17 @@ struct CParticleVertex
 	XMFLOAT2	m_xmf2Size;
 	UINT		m_nType;
 	float		m_fAge;
-	//UINT		m_nFactor;
 };
 
 struct CB_PARTICLE_INFO
 {
-	XMFLOAT3	gvPosition;
-	float		gfElapsedTime;
-	XMFLOAT4	gvRandom;
-	XMFLOAT3	gvDirection;
-	float		gfSpeed;
-	float		gfDuration;
-	//	float	gfEmitTime;
+	XMFLOAT3	m_vPosition;
+	float		m_fElapsedTime;
+	XMFLOAT4	m_vRandom;
+	XMFLOAT3	m_vDirection;
+	float		m_fSpeed;
+	float		m_fDuration;
+	bool		m_bEmit;
 };
 
 class CParticle
@@ -485,7 +496,7 @@ protected:
 	float								m_fSpeed;
 	float								m_fElapsedTime;
 	float								m_fDuration;
-	float								m_fEmitTime;
+	bool								m_bEmit = true;
 
 	bool								m_nInit = false;
 	int									m_nVertices;
@@ -495,6 +506,8 @@ protected:
 
 	ID3D12Resource						*m_pd3dcbParticle = NULL;
 	CB_PARTICLE_INFO					*m_pcbMappedParticle;
+
+	bool								m_bDelete = false;
 
 public:
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
@@ -509,9 +522,16 @@ public:
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitTime);
+	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration);
 
 	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
+	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
+	void SetEmit(bool bEmit) { m_bEmit = bEmit; }
+
 	void SetFollowObject(CGameObject *pObject, CModel *pModel);
 	void SetToFollowFramePosition();
+	void SetDirectionByFollowFrame();
+
+	void Delete() { m_bDelete = true; }
+	int IsDelete() { return m_bDelete; }
 };

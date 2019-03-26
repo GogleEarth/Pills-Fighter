@@ -333,6 +333,11 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 	}
 }
 
+void CGameObject::ApplyToParticle(CParticle *pParticle)
+{
+	pParticle->SetToFollowFramePosition();
+}
+
 void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_pModel)
@@ -349,7 +354,7 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 
 	for (CParticle *pParticle : m_vpParticles)
 	{
-		pParticle->SetToFollowFramePosition();
+		ApplyToParticle(pParticle);
 	}
 }
 
@@ -613,7 +618,7 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile2.dds", 2);
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile3.dds", 3);
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile4.dds", 4);
-	
+
 	CShader *pShader = new CTerrainShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	CScene::CreateShaderResourceViews(pd3dDevice, pTileTexture, ROOT_PARAMETER_INDEX_TILES, false);
@@ -701,7 +706,7 @@ void CAnimationObject::ChangeAnimation(int nState)
 
 CRobotObject::CRobotObject() : CAnimationObject()
 {
-
+	m_nType |= OBJECT_TYPE_ROBOT;
 }
 
 CRobotObject::~CRobotObject()
@@ -780,11 +785,23 @@ void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
 	if (nIndex != -1) ChangeWeapon(nIndex);
 }
 
-void CRobotObject::ChangeWeapon(int nSlotIndex)
+void CRobotObject::CRobotObject::ChangeWeapon(int nSlotIndex)
 {
 	CWeapon *pWeapon = GetWeapon(nSlotIndex);
 
 	EquipOnRightHand(pWeapon);
+}
+
+void CRobotObject::ApplyToParticle(CParticle *pParticle)
+{
+	CGameObject::ApplyToParticle(pParticle);
+
+	if (m_nState & OBJECT_STATE_BOOSTERING) 
+ 		pParticle->SetEmit(true);
+	else pParticle->SetEmit(false);
+
+	XMFLOAT3 xmf3ParticleDir = XMFLOAT3(-m_xmf3Look.x - m_xmf3Up.x, -m_xmf3Look.y - m_xmf3Up.y, -m_xmf3Look.z - m_xmf3Up.z);
+	pParticle->SetDirection(xmf3ParticleDir);
 }
 
 void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
@@ -1088,7 +1105,6 @@ CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 	m_d3dInitVertexBufferView.SizeInBytes = sizeof(CParticleVertex);
 	m_d3dInitVertexBufferView.StrideInBytes = sizeof(CParticleVertex);
 
-
 	m_pd3dBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
 		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
 
@@ -1121,15 +1137,16 @@ CParticle::~CParticle()
 
 	for (int i = 0; i < 2; i++) if (m_pd3dVertexBuffer[i]) m_pd3dVertexBuffer[i]->Release();
 	if (m_pd3dInitVertexBuffer) m_pd3dInitVertexBuffer->Release();
+	if (m_pd3dInitVertexUploadBuffer) m_pd3dInitVertexUploadBuffer->Release();
+	m_pd3dInitVertexUploadBuffer = NULL;
 }
 
-void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitTime)
+void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration)
 {
 	m_xmf3Position = xmf3Position;
 	m_xmf3Direction = xmf3Direction;
 	m_fSpeed = fSpeed;
 	m_fDuration = fDuration;
-	m_fEmitTime = fEmitTime;
 
 	m_nDrawBufferIndex = 0;
 	m_nSOBufferIndex = 1;
@@ -1149,12 +1166,13 @@ void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 {
 	XMFLOAT4 xmf3Random = RANDOM_COLOR;
 
-	m_pcbMappedParticle->gvPosition = m_xmf3Position;
-	m_pcbMappedParticle->gfElapsedTime = m_fElapsedTime;
-	m_pcbMappedParticle->gvRandom = xmf3Random;
-	m_pcbMappedParticle->gvDirection = m_xmf3Direction;
-	m_pcbMappedParticle->gfSpeed = m_fSpeed;
-	m_pcbMappedParticle->gfDuration = m_fDuration;
+	m_pcbMappedParticle->m_vPosition = m_xmf3Position;
+	m_pcbMappedParticle->m_fElapsedTime = m_fElapsedTime;
+	m_pcbMappedParticle->m_vRandom = xmf3Random;
+	m_pcbMappedParticle->m_vDirection = m_xmf3Direction;
+	m_pcbMappedParticle->m_fSpeed = m_fSpeed;
+	m_pcbMappedParticle->m_fDuration = m_fDuration;
+	m_pcbMappedParticle->m_bEmit = m_bEmit;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PARTICLE, m_pd3dcbParticle->GetGPUVirtualAddress());
 }
@@ -1185,6 +1203,11 @@ void CParticle::SetFollowObject(CGameObject *pObject, CModel *pModel)
 void CParticle::SetToFollowFramePosition()
 {
 	if(m_pFollowFrame) SetPosition(m_pFollowFrame->GetPosition());
+}
+
+void CParticle::SetDirectionByFollowFrame()
+{
+	if(m_pFollowFrame) SetDirection(m_pFollowFrame->GetLook());
 }
 
 void CParticle::Animate(float fTimeElapsed)

@@ -420,10 +420,10 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
-	CRobotObject *pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	//CRobotObject *pObject = new CRobotObject();
+	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
+	//InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
 }
 
 void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
@@ -1248,10 +1248,10 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 {
 	CParticle *pParticle = NULL;
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 8 * 2; i++)
 	{
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), 40.0f, 1.0f, 1.0f);
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 40.0f, 1.0f);
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		m_vpParticles.emplace_back(pParticle);
@@ -1263,32 +1263,51 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 }
 
-void CParticleShader::SetFollowObject(CGameObject *pObject)
+void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
 {
-	m_vpParticles[0]->SetFollowObject(pObject, ((CRobotObject*)pObject)->GetLeftNozzleFrame());
-	m_vpParticles[1]->SetFollowObject(pObject, ((CRobotObject*)pObject)->GetRightNozzleFrame());
+	m_vpParticles[m_nParticleIndex++]->SetFollowObject(pObject, pFrame);
 }
 
+void CParticleShader::CheckDeleteObjects()
+{
+	if (m_vpParticles.size())
+	{
+		for (auto& Object = m_vpParticles.begin(); Object != m_vpParticles.end();)
+		{
+			if ((*Object)->IsDelete())
+			{
+				delete *Object;
+
+				m_nParticleIndex--;
+				Object = m_vpParticles.erase(Object);
+			}
+			else
+				Object++;
+		}
+	}
+}
 void CParticleShader::AnimateObjects(float fTimeElapsed)
 {
-	for (CParticle* pParticle : m_vpParticles)
+	CheckDeleteObjects();
+
+	for(int i = 0; i < m_nParticleIndex; i++)
 	{
-		pParticle->Animate(fTimeElapsed);
+		m_vpParticles[i]->Animate(fTimeElapsed);
 	}
 }
 
 void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	for (CParticle* pParticle : m_vpParticles) pParticle->ReadVertexCount(pd3dCommandList);
+	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->ReadVertexCount(pd3dCommandList);
 
 	if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
-	for (CParticle* pParticle : m_vpParticles) pParticle->SORender(pd3dCommandList);
+	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->SORender(pd3dCommandList);
 
 	m_pTexture->UpdateShaderVariables(pd3dCommandList);
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-	for (CParticle* pParticle : m_vpParticles) pParticle->Render(pd3dCommandList);
+	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->Render(pd3dCommandList);
 
-	for (CParticle* pParticle : m_vpParticles) pParticle->AfterRender(pd3dCommandList);
+	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->AfterRender(pd3dCommandList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
