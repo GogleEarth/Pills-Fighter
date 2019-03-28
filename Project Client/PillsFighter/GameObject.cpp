@@ -1025,14 +1025,13 @@ void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), fDuration)
+CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), fDuration)
 {
 	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
 	m_nMaxSpriteX = nMaxX;
 	m_nMaxSpriteY = nMaxY;
 	m_nMaxSprite = nMax;
 	m_fDurationPerSprite = fDuration / (float)nMax;
-	m_nSpriteType = nSpriteType;
 }
 
 CSprite::~CSprite()
@@ -1056,7 +1055,6 @@ void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 	m_pcbMappedSprite->m_nMaxSpriteY = m_nMaxSpriteY;
 	m_pcbMappedSprite->m_nMaxSprite = m_nMaxSprite;
 	m_pcbMappedSprite->m_fDurationPerSprite = m_fDurationPerSprite;
-	m_pcbMappedSprite->m_nSpriteType = m_nSpriteType;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_SPRITE, m_pd3dcbSprite->GetGPUVirtualAddress());
 }
@@ -1072,13 +1070,14 @@ void CSprite::ReleaseShaderVariables()
 	}
 }
 
-void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex)
+void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, EFFECT_ANIMATION_TYPE nEffectAniType)
 {
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmn2SpritePos = XMUINT2(0, 0);
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_fAge = 0.0f;
-	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_nTextureIndex = nTextureIndex;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_nTextureIndex = nTextureIndex;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_nType = nEffectAniType;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

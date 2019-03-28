@@ -545,10 +545,12 @@ void CColonyScene::CheckCollision()
 	std::vector<CGameObject*> *vEnemys;
 	std::vector<CGameObject*> *vBullets;
 	std::vector<CGameObject*> *vBZKBullets;
+	std::vector<CGameObject*> *vMGBullets;
 
 	vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
 	vBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_GG_BULLET])->GetObjects();
 	vBZKBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_BZK_BULLET])->GetObjects();
+	vMGBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_MG_BULLET])->GetObjects();
 
 	for (const auto& Enemy : *vEnemys)
 	{
@@ -565,7 +567,7 @@ void CColonyScene::CheckCollision()
 				{
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f));
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_LOOP);
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -581,9 +583,26 @@ void CColonyScene::CheckCollision()
 				{
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f));
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_LOOP);
 
 					pBZKBullet->Delete();
+
+					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+				}
+			}
+		}
+
+		for (const auto& pMGBullet : *vMGBullets)
+		{
+			if (!pMGBullet->IsDelete())
+			{
+				if (Enemy->CollisionCheck(pMGBullet))
+				{
+					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_LOOP);
+
+					pMGBullet->Delete();
 
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
 				}
@@ -799,20 +818,21 @@ void CColonyScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
 void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
 {
 	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
+	EFFECT_ANIMATION_TYPE nEffectAniType = CreateEffectInfo.nEffectAniType;
 	CEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
 	float fSize = (float)(rand() % 2000) / 100.0f;
 
 	switch (nEffectType)
 	{
-	case EFFECT_TYPE::EFFECT_TYPE_DEFAULT:
+	case EFFECT_TYPE::EFFECT_TYPE_WORD_HIT:
 		((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
-	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_ONE:
-		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize));
+	case EFFECT_TYPE::EFFECT_TYPE_HIT:
+		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
-	case EFFECT_TYPE::EFFECT_TYPE_SPRITE_LOOP:
-		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize));
+	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
+		((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	}
 }

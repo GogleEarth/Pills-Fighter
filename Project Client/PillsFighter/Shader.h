@@ -204,7 +204,7 @@ public:
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
 
 protected:
-	CEffect			*m_pEffect = NULL;
+	CEffect					*m_pEffect = NULL;
 	CTexture				*m_pTexture = NULL;
 
 	ID3D12PipelineState		*m_pd3dSOPipelineState = NULL;
@@ -253,7 +253,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL) {}
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size) {}
+	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,7 +266,7 @@ public:
 	virtual ~CHitSpriteShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,7 +279,7 @@ public:
 	virtual ~CExpSpriteShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

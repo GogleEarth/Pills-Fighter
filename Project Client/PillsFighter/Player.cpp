@@ -244,7 +244,7 @@ void CPlayer::ProcessHitPoint()
 
 void CPlayer::ActivationBooster()
 {
-	if (!(m_nState & OBJECT_STATE_BOOSTERING))
+	if (!(m_nState & OBJECT_STATE_BOOSTERING) && m_nBoosterGauge > 0)
 	{
 		m_nState |= OBJECT_STATE_BOOSTERING;
 		m_bChargeBG = false;

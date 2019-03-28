@@ -488,8 +488,8 @@ void GSEffectStreamOut(point VS_EFFECT_INPUT input[1], inout PointStream<VS_EFFE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define EFFECT_TYPE_SPRITE_ONE 1
-#define EFFECT_TYPE_SPRITE_LOOP 2
+#define EFFECT_TYPE_SPRITE_ONE 0
+#define EFFECT_TYPE_SPRITE_LOOP 1
 
 struct SPRITE
 {
@@ -498,7 +498,6 @@ struct SPRITE
 	uint m_nMaxSpriteY;
 	uint m_nMaxSprite;
 	float m_fDurationPerSprite;
-	uint m_nSpriteType;
 };
 
 ConstantBuffer<SPRITE> gSprite : register(b4);
@@ -510,6 +509,7 @@ struct VS_SPRITE_INPUT
 	uint2 spritepos : SPRITEPOS;
 	float age : AGE;
 	uint texindex : TEXINDEX;
+	uint type : TYPE;
 };
 
 struct VS_SPRITE_OUTPUT
@@ -594,8 +594,8 @@ void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRI
 
 	if (nSpritePos == gSprite.m_nMaxSprite)
 	{
-		if (gSprite.m_nSpriteType == EFFECT_TYPE_SPRITE_ONE) return;
-		else if(gSprite.m_nSpriteType == EFFECT_TYPE_SPRITE_LOOP)
+		if (input[0].type == EFFECT_TYPE_SPRITE_ONE) return;
+		else if(input[0].type == EFFECT_TYPE_SPRITE_LOOP)
 		{
 			input[0].spritepos.x = input[0].spritepos.y = 0;
 			input[0].age = 0.0f;

@@ -32,3 +32,11 @@ public:
 	XMFLOAT4 m_xmf4UV;
 };
 
+/*
+Info line : Padding
+Common line : LineHeight, scaleW, scaleH
+Character Info : id, x, y, width, height, xoffset, yoffset, xadvance, 
+
+x, y : 텍스처 좌표 시작 위치
+width, height : 크기
+*/

@@ -406,7 +406,6 @@ struct CB_SPRITE_INFO
 	UINT m_nMaxSpriteY;
 	UINT m_nMaxSprite;
 	float m_fDurationPerSprite;
-	UINT m_nSpriteType;
 };
 
 struct CSpriteVertex
@@ -416,19 +415,20 @@ struct CSpriteVertex
 	XMUINT2		m_xmn2SpritePos;
 	float		m_fAge;
 	UINT		m_nTextureIndex;
+	UINT		m_nType;
 };
 
 class CSprite : public CEffect
 {
 public:
-	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration, EFFECT_TYPE nSpriteType);
+	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration);
 	virtual ~CSprite();
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, EFFECT_ANIMATION_TYPE nEffectAniType);
 
 protected:
 	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
@@ -437,8 +437,6 @@ protected:
 	UINT				m_nMaxSprite = 0;
 
 	float				m_fDurationPerSprite = 0.0f;
-
-	EFFECT_TYPE			m_nSpriteType = EFFECT_TYPE_SPRITE_ONE;
 
 	ID3D12Resource		*m_pd3dcbSprite = NULL;
 	CB_SPRITE_INFO		*m_pcbMappedSprite = NULL;

@@ -420,10 +420,12 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
-	//CRobotObject *pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+#ifndef ON_NETWORKING
+	CRobotObject *pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
+#endif
 }
 
 void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
@@ -484,8 +486,6 @@ CRepairItemShader::~CRepairItemShader()
 void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.bin", false);
-	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
-	//m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
@@ -918,7 +918,7 @@ CSpriteShader::~CSpriteShader()
 
 D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 5;
+	UINT nInputElementDescs = 6;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -926,6 +926,7 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 	pd3dInputElementDescs[2] = { "SPRITEPOS", 0, DXGI_FORMAT_R32G32_UINT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "TEXINDEX", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[5] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -936,7 +937,7 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 {
-	UINT nSODecls = 5;
+	UINT nSODecls = 6;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
@@ -944,6 +945,7 @@ D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[2] = { 0, "SPRITEPOS", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "TEXINDEX", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[5] = { 0, "TYPE", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1005,13 +1007,13 @@ void CHitSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f, EFFECT_TYPE_SPRITE_ONE);
+	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f);
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CHitSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+void CHitSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType)
 {
-	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, rand() % 2);
+	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, rand() % 2, nEffectAniType);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1034,13 +1036,13 @@ void CExpSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 3, 12, 1.0f, EFFECT_TYPE_SPRITE_ONE);
+	m_pEffect = new CSprite(pd3dDevice, pd3dCommandList, 5, 3, 12, 1.0f);
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CExpSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+void CExpSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType)
 {
-	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, 0);
+	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, 0, nEffectAniType);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
