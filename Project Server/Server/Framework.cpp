@@ -333,7 +333,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			retval = Send_msg((char*)&pkt, sizeof(pkt), 0);
 
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
-			if (pkt.IsShooting == true)
+			if (pkt.IsShooting == TRUE)
 			{
 				//std::cout << "총알생성\n";
 				pid = PKT_ID_CREATE_OBJECT;
@@ -590,11 +590,13 @@ void Framework::CheckCollision(CScene* pScene)
 						if (Bullet->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
 						{
 							XMFLOAT3 position = Bullet->GetPosition();
-							pktCDE.efType = EFFECT_TYPE_DEFAULT;
+							pktCE.efType = EFFECT_TYPE_HIT_FONT;
+							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCDE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
 							pktCDE.xmf3Position.y += 20.0f;
 							effect_msg_queue.push(pktCDE);
-							pktCE.efType = EFFECT_TYPE_SPRITE_ONE;
+							pktCE.efType = EFFECT_TYPE_EXPLOSION;
+							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
 							pktDO.Object_Index = Bullet->index;
@@ -649,7 +651,8 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							spawn_item = false;
 							XMFLOAT3 position = Item->GetPosition();
-							pktCE.efType = EFFECT_TYPE_SPRITE_ONE;
+							pktCE.efType = EFFECT_TYPE_HIT;
+							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
 							pktDO.Object_Index = Item->index;
@@ -681,7 +684,8 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							spawn_ammo[Item->m_iId-ITEM_AMMO1] = false;
 							XMFLOAT3 position = Item->GetPosition();
-							pktCE.efType = EFFECT_TYPE_SPRITE_ONE;
+							pktCE.efType = EFFECT_TYPE_HIT;
+							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
 							pktDO.Object_Index = Item->index;
