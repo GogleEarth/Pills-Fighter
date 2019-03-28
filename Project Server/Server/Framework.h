@@ -33,7 +33,7 @@ class Framework
 	CModel HangarMesh;
 	CGameTimer m_GameTimer;
 	int playernum;
-	bool game_start = false;
+	volatile bool game_start = false;
 	float item_cooltime = 0.0f;
 	float ammo_item_cooltime[2] = { 0.0f,0.0f };
 	bool spawn_ammo[2] = { false,false };
