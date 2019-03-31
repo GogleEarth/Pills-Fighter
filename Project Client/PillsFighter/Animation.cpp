@@ -13,6 +13,17 @@ CAnimation::~CAnimation()
 	if (m_ppxmf4x4KeyFrameTransforms) delete[] m_ppxmf4x4KeyFrameTransforms;
 }
 
+void *CAnimation::GetCallbackData()
+{
+	for (int i = 0; i < m_nCallbackKeys; i++)
+	{
+		if (::IsEqual(m_pCallbackKeys[i].m_fTime, m_fAnimationTimePosition, ANIMATION_CALLBACK_EPSILON)) 
+			return(m_pCallbackKeys[i].m_pCallbackData);
+	}
+
+	return(NULL);
+}
+
 void CAnimation::SetTimePosition(float fTrackTimePosition)
 {
 	m_fAnimationTimePosition = fTrackTimePosition;
@@ -31,6 +42,12 @@ void CAnimation::SetTimePosition(float fTrackTimePosition)
 	case ANIMATION_TYPE_PINGPONG:
 		break;
 	}
+
+	if (m_pAnimationCallbackHandler)
+	{
+		void *pCallbackData = GetCallbackData();
+		if (pCallbackData) m_pAnimationCallbackHandler->HandleCallback(pCallbackData);
+	}
 }
 
 XMFLOAT4X4 CAnimation::GetSRT(int nFrame)
@@ -48,6 +65,23 @@ XMFLOAT4X4 CAnimation::GetSRT(int nFrame)
 	}
 
 	return(xmf4x4Transform);
+}
+
+void CAnimation::SetCallbackKeys(int nCallbackKeys)
+{
+	m_nCallbackKeys = nCallbackKeys;
+	m_pCallbackKeys = new CALLBACKKEY[nCallbackKeys];
+}
+
+void CAnimation::SetCallbackKey(int nKeyIndex, float fKeyTime, void *pData)
+{
+	m_pCallbackKeys[nKeyIndex].m_fTime = fKeyTime;
+	m_pCallbackKeys[nKeyIndex].m_pCallbackData = pData;
+}
+
+void CAnimation::SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler)
+{
+	m_pAnimationCallbackHandler = pCallbackHandler;
 }
 
 void CAnimation::LoadAnimationFromFile(FILE *pfile, int nFrames)
@@ -91,6 +125,22 @@ CAnimationSet::~CAnimationSet()
 	if (m_ppAnimationFrameCaches) delete[] m_ppAnimationFrameCaches;
 }
 
+void CAnimationSet::SetCallbackKeys(int nAnimationSet, int nCallbackKeys)
+{
+	m_pAnimations[nAnimationSet].m_nCallbackKeys = nCallbackKeys;
+	m_pAnimations[nAnimationSet].m_pCallbackKeys = new CALLBACKKEY[nCallbackKeys];
+}
+
+void CAnimationSet::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, void *pData)
+{
+	m_pAnimations[nAnimationSet].m_pCallbackKeys[nKeyIndex].m_fTime = fKeyTime;
+	m_pAnimations[nAnimationSet].m_pCallbackKeys[nKeyIndex].m_pCallbackData = pData;
+}
+
+void CAnimationSet::SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler)
+{
+	m_pAnimations[nAnimationSet].SetAnimationCallbackHandler(pCallbackHandler);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -113,6 +163,21 @@ CAnimationController::~CAnimationController()
 void CAnimationController::SetAnimationSet(CAnimationSet *pAnimationSet)
 {
 	m_pAnimationSet = pAnimationSet;
+}
+
+void CAnimationController::SetCallbackKeys(int nAnimationSet, int nCallbackKeys)
+{
+	if (m_pAnimationSet) m_pAnimationSet->SetCallbackKeys(nAnimationSet, nCallbackKeys);
+}
+
+void CAnimationController::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, void *pData)
+{
+	if (m_pAnimationSet) m_pAnimationSet->SetCallbackKey(nAnimationSet, nKeyIndex, fKeyTime, pData);
+}
+
+void CAnimationController::SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler)
+{
+	if (m_pAnimationSet) m_pAnimationSet->SetAnimationCallbackHandler(nAnimationSet, pCallbackHandler);
 }
 
 void CAnimationController::SetTrackAnimation(int nAnimationTrackIndex, int nAnimationIndex)

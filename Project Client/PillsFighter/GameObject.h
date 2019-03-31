@@ -2,6 +2,8 @@
 
 #include "Camera.h"
 #include "Model.h"
+#include "Animation.h"
+#include "Sound.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -277,6 +279,16 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+class CSoundCallbackHandler : public CAnimationCallbackHandler
+{
+public:
+	CSoundCallbackHandler() { }
+	~CSoundCallbackHandler() { }
+
+public:
+	virtual void HandleCallback(void *pCallbackData);
+};
+
 class CRobotObject : public CAnimationObject
 {
 public:
@@ -316,10 +328,20 @@ protected:
 	CModel *m_pRightNozzle = NULL;
 
 public:
-	void ApplyToParticle(CParticle *pParticle);
+	virtual void ApplyToParticle(CParticle *pParticle);
 
 	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
 	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }
+
+public:
+	CRobotObjectSound *m_pSound = NULL;
+
+	void PlayGGShot() { m_pSound->PlayGGShot(); }
+	void PlayMGShot() { m_pSound->PlayMGShot(); }
+	void PlayBZKShot() { m_pSound->PlayBZKShot(); }
+	void PlayMove() { m_pSound->PlayMove(); }
+	void PlayBooster() { m_pSound->PlayBooster(); }
+	void PauseBooster() { m_pSound->PauseBooster(); }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

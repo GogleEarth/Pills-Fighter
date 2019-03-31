@@ -2,8 +2,10 @@
 
 #include "Shader.h"
 #include "Player.h"
+#include "Sound.h"
 
 class CRepository;
+class CSound;
 
 struct LIGHT
 {
@@ -146,4 +148,6 @@ protected:
 	CModel		*m_pGimGun = NULL;
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
+
+	CColonySceneSound *m_pSceneSound = NULL;
 };

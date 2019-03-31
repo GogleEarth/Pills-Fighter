@@ -7,6 +7,8 @@ ID3D12DescriptorHeap *CScene::m_pd3dDescriptorHeap = NULL;
 D3D12_CPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvCPUDescriptorStartHandle;
 D3D12_GPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvGPUDescriptorStartHandle;
 
+extern CSound gSound;
+
 CScene::CScene()
 {
 	CONSOLE_CURSOR_INFO C;
@@ -264,11 +266,14 @@ CColonyScene::CColonyScene() : CScene()
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 		m_pObjects[i] = NULL;
+
+	m_pSceneSound = new CColonySceneSound();
 }
 
 CColonyScene::~CColonyScene()
 {
-
+	if (m_pSceneSound) delete m_pSceneSound;
+	m_pSceneSound = NULL;
 }
 
 ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
@@ -294,7 +299,7 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 	pd3dDescriptorRanges[2].BaseShaderRegister = 5; //t5: Normal
 	pd3dDescriptorRanges[2].RegisterSpace = 0;
 	pd3dDescriptorRanges[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
+	
 	pd3dDescriptorRanges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[3].NumDescriptors = 1;
 	pd3dDescriptorRanges[3].BaseShaderRegister = 6; //t6: Skybox
@@ -428,7 +433,6 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 
 void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
-	//그래픽 루트 시그너쳐를 생성한다. 
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
 
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
@@ -508,6 +512,8 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
+
+	m_pSceneSound->PlayBGM();
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -565,9 +571,11 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBullet))
 				{
+					((CRobotObject*)Enemy)->m_pSound->PlayGGHit();
+
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_LOOP);
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -581,9 +589,11 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBZKBullet))
 				{
+					((CRobotObject*)Enemy)->m_pSound->PlayBZKHit();
+
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_LOOP);
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
 
 					pBZKBullet->Delete();
 
@@ -598,9 +608,11 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pMGBullet))
 				{
+					((CRobotObject*)Enemy)->m_pSound->PlayGGHit();
+
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_LOOP);
+					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
 
 					pMGBullet->Delete();
 

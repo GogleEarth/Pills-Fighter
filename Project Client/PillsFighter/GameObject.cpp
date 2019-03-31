@@ -5,6 +5,8 @@
 #include "Weapon.h"
 #include "Animation.h"
 
+extern CSound gSound;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CGameObject::CGameObject()
@@ -704,17 +706,25 @@ void CAnimationObject::ChangeAnimation(int nState)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
+void CSoundCallbackHandler::HandleCallback(void *pCallbackData)
+{
+	if (!strcmp((char*)pCallbackData, "Move"))
+		((CRobotObject*)m_pContext)->PlayMove();
+}
+
 CRobotObject::CRobotObject() : CAnimationObject()
 {
 	m_nType |= OBJECT_TYPE_ROBOT;
+
+	m_pSound = new CRobotObjectSound();
 }
 
 CRobotObject::~CRobotObject()
 {
-	for (CWeapon *pWeapon : m_vpWeapon)
-	{
-		delete pWeapon;
-	}
+	for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
+
+	if(m_pSound) delete m_pSound;
+	m_pSound = NULL;
 }
 
 void CRobotObject::OnPrepareAnimate()
@@ -807,6 +817,11 @@ void CRobotObject::ApplyToParticle(CParticle *pParticle)
 void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	CGameObject::Animate(fTimeElapsed, pCamera);
+
+	if (m_nState & OBJECT_STATE_BOOSTERING)
+		m_pSound->PlayBooster();
+	else
+		m_pSound->PauseBooster();
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
@@ -1046,6 +1061,8 @@ void CSprite::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 	m_pd3dcbSprite = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
 
 	m_pd3dcbSprite->Map(0, NULL, (void**)&m_pcbMappedSprite);
+
+	CEffect::CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1057,6 +1074,8 @@ void CSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 	m_pcbMappedSprite->m_fDurationPerSprite = m_fDurationPerSprite;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_SPRITE, m_pd3dcbSprite->GetGPUVirtualAddress());
+
+	CEffect::UpdateShaderVariables(pd3dCommandList);
 }
 
 void CSprite::ReleaseShaderVariables()

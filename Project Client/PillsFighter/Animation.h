@@ -5,6 +5,27 @@
 #define ANIMATION_TYPE_PINGPONG		2
 
 class CModel;
+class CSound;
+
+#define ANIMATION_CALLBACK_EPSILON	0.01f
+
+struct CALLBACKKEY
+{
+	float  							m_fTime = 0.0f;
+	void  							*m_pCallbackData = NULL;
+};
+
+class CAnimationCallbackHandler
+{
+public:
+	CAnimationCallbackHandler() { }
+	~CAnimationCallbackHandler() { }
+
+public:
+	virtual void HandleCallback(void *pCallbackData) { }
+
+	void *m_pContext = NULL;
+};
 
 class CAnimation
 {
@@ -13,17 +34,23 @@ public:
 	virtual ~CAnimation();
 
 protected:
-	char			m_pstrAnimationName[64] = { 0 };
+	char							m_pstrAnimationName[64] = { 0 };
 
-	float			m_fAnimationLength = 0.0f;
+	float							m_fAnimationLength = 0.0f;
 
-	int				m_nKeyFrameTransforms = 0; 
+	int								m_nKeyFrameTransforms = 0;
 
-	float			*m_pfKeyFrameTransformTimes = NULL;
-	XMFLOAT4X4		**m_ppxmf4x4KeyFrameTransforms = NULL;
+	float							*m_pfKeyFrameTransformTimes = NULL;
+	XMFLOAT4X4						**m_ppxmf4x4KeyFrameTransforms = NULL;
 
-	float			m_fAnimationTimePosition = 0.0f;
-	int				m_nAnimationType = ANIMATION_TYPE_LOOP;
+	float							m_fAnimationTimePosition = 0.0f;
+	int								m_nAnimationType = ANIMATION_TYPE_LOOP;
+
+public:
+	int 							m_nCallbackKeys = 0;
+	CALLBACKKEY 					*m_pCallbackKeys = NULL;
+
+	CAnimationCallbackHandler 		*m_pAnimationCallbackHandler = NULL;
 
 public:
 	void SetTimePosition(float fTrackTimePosition);
@@ -31,6 +58,12 @@ public:
 	XMFLOAT4X4 GetSRT(int nFrame);
 
 	void LoadAnimationFromFile(FILE *pfile, int nFrames);
+
+	void SetCallbackKeys(int nCallbackKeys);
+	void SetCallbackKey(int nKeyIndex, float fTime, void *pData);
+	void SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler);
+
+	void *GetCallbackData();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -56,6 +89,10 @@ public:
 	CModel* GetCachedFrame(int nIndex) { return m_ppAnimationFrameCaches[nIndex]; }
 	void SetAnimationFrames(int nFrames) { m_nAnimationFrames = nFrames; }
 	void SetAnimationFrameCaches(CModel **ppAnimationFrameCaches) { m_ppAnimationFrameCaches = ppAnimationFrameCaches; }
+
+	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, void *pData);
+	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -118,4 +155,8 @@ public:
 
 	void AdvanceTime(float fElapsedTime);
 	void ApplyTransform();
+
+	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, void *pData);
+	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };

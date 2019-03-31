@@ -2,6 +2,9 @@
 #include "Weapon.h"
 #include "Shader.h"
 #include "Player.h"
+#include "Scene.h"
+
+extern CSound gSound;
 
 CWeapon::CWeapon() : CGameObject()
 {
@@ -152,7 +155,7 @@ void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 	{
 		if (m_fShotCoolTime <= 0.0f)
 		{
-			CGun::Shot();
+			Shot();
 
 			m_nShotCount++;
 		}
@@ -169,6 +172,13 @@ void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 	}
 
 	CGun::Animate(ElapsedTime, pCamera);
+}
+
+void CGimGun::Shot()
+{
+	CGun::Shot();
+
+	((CPlayer*)m_pOwner)->PlayGGShot();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,6 +207,13 @@ void CBazooka::Attack()
 		SetShotCoolTime();
 	}
 }
+
+void CBazooka::Shot()
+{
+	CGun::Shot();
+
+	((CPlayer*)m_pOwner)->PlayBZKShot();
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -222,4 +239,11 @@ void CMachineGun::Attack()
 		Shot();
 		SetShotCoolTime();
 	}
+}
+
+void CMachineGun::Shot()
+{
+	CGun::Shot();
+
+	((CPlayer*)m_pOwner)->PlayMGShot();
 }

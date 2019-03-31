@@ -434,6 +434,7 @@ void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
 	pAnimationController->SetTrackAnimation(0, 0);
+	
 	pObject->SetAnimationController(pAnimationController);
 
 	CRobotObject *pRobot = (CRobotObject*)pObject;
