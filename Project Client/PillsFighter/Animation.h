@@ -6,13 +6,15 @@
 
 class CModel;
 class CSound;
+struct SoundMaterial;
 
 #define ANIMATION_CALLBACK_EPSILON	0.01f
 
 struct CALLBACKKEY
 {
 	float  							m_fTime = 0.0f;
-	void  							*m_pCallbackData = NULL;
+	CSound 							*m_pCallbackSound = NULL;
+	SoundMaterial  					*m_pCallbackSoundMaterial = NULL;
 };
 
 class CAnimationCallbackHandler
@@ -22,9 +24,7 @@ public:
 	~CAnimationCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(void *pCallbackData) { }
-
-	void *m_pContext = NULL;
+	virtual void HandleCallback(CSound *pCallbackSound, SoundMaterial *pCallbackSoundMaterial) { }
 };
 
 class CAnimation
@@ -60,10 +60,10 @@ public:
 	void LoadAnimationFromFile(FILE *pfile, int nFrames);
 
 	void SetCallbackKeys(int nCallbackKeys);
-	void SetCallbackKey(int nKeyIndex, float fTime, void *pData);
+	void SetCallbackKey(int nKeyIndex, float fTime, CSound *pSound, SoundMaterial *pSoundMaterial);
 	void SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler);
 
-	void *GetCallbackData();
+	void GetCallbackData(CSound **pSound, SoundMaterial **pSoundMaterial);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ public:
 	void SetAnimationFrameCaches(CModel **ppAnimationFrameCaches) { m_ppAnimationFrameCaches = ppAnimationFrameCaches; }
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, void *pData);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pSound, SoundMaterial *pSoundMaterial);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };
 
@@ -157,6 +157,6 @@ public:
 	void ApplyTransform();
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, void *pData);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pSound, SoundMaterial *pSoundMaterial);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };

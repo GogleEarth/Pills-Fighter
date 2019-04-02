@@ -267,13 +267,13 @@ CColonyScene::CColonyScene() : CScene()
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 		m_pObjects[i] = NULL;
 
-	m_pSceneSound = new CColonySceneSound();
+	m_pSound = new CColonySceneSound();
 }
 
 CColonyScene::~CColonyScene()
 {
-	if (m_pSceneSound) delete m_pSceneSound;
-	m_pSceneSound = NULL;
+	if (m_pSound) delete m_pSound;
+	m_pSound = NULL;
 }
 
 ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
@@ -513,7 +513,7 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
-	m_pSceneSound->PlayBGM();
+	m_pSound->PlayFMODSound(&(m_pSound->m_BGM));
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -571,7 +571,8 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBullet))
 				{
-					((CRobotObject*)Enemy)->m_pSound->PlayGGHit();
+					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
+					pSound->PlayFMODSound(&pSound->m_GGHit);
 
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
@@ -589,7 +590,8 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBZKBullet))
 				{
-					((CRobotObject*)Enemy)->m_pSound->PlayBZKHit();
+					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
+					pSound->PlayFMODSound(&pSound->m_BZKHit);
 
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
@@ -608,7 +610,8 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pMGBullet))
 				{
-					((CRobotObject*)Enemy)->m_pSound->PlayGGHit();
+					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
+					pSound->PlayFMODSound(&pSound->m_GGHit);
 
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
@@ -880,7 +883,6 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		break;
 	case PKT_ID_UPDATE_OBJECT:
 		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
-		//position.y += 10;
 		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
 		break;
 	case PKT_ID_CREATE_EFFECT:

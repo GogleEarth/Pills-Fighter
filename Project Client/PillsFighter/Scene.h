@@ -149,5 +149,5 @@ protected:
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
 
-	CColonySceneSound *m_pSceneSound = NULL;
+	CColonySceneSound *m_pSound = NULL;
 };

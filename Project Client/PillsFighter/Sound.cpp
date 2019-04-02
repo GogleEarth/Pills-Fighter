@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Sound.h"
 
-
 CSound::CSound()
 {
 	FMOD::System_Create(&m_pfmodSystem);
@@ -15,60 +14,71 @@ CSound::~CSound()
 	m_pfmodSystem->release();
 }
 
+void CSound::PlayFMODSoundLoop(SoundMaterial *pSoundMaterial)
+{
+	bool bPlaying = false;
+	pSoundMaterial->pChannel->isPlaying(&bPlaying);
+
+	if (!bPlaying) m_pfmodSystem->playSound(pSoundMaterial->pSound, NULL, false, &(pSoundMaterial->pChannel));
+	else
+	{
+		ResumeFMODSound(pSoundMaterial);
+	}
+}
+
+void CSound::PlayFMODSound(SoundMaterial *pSoundMaterial)
+{
+	m_pfmodSystem->playSound(pSoundMaterial->pSound, NULL, false, &(pSoundMaterial->pChannel));
+}
+
+void CSound::ResumeFMODSound(SoundMaterial *pSoundMaterial)
+{
+	bool bPause = false;
+	pSoundMaterial->pChannel->getPaused(&bPause);
+
+	if (bPause) pSoundMaterial->pChannel->setPaused(false);
+}
+
+void CSound::PauseFMODSound(SoundMaterial *pSoundMaterial)
+{
+	bool bPause = false;
+	pSoundMaterial->pChannel->getPaused(&bPause);
+
+	if(!bPause) pSoundMaterial->pChannel->setPaused(true);
+}
+
 //////////////////////////////////////////////////////////////////////
 
 CColonySceneSound::CColonySceneSound() : CSound()
 {
-	m_pfmodSystem->createSound("./Resource/BGM/bgm_pvp_p03.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pfmodBGM);
+	m_pfmodSystem->createSound("./Resource/BGM/bgm_pvp_p03.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &(m_BGM.pSound));
 }
 
 CColonySceneSound::~CColonySceneSound()
 {
-	m_pfmodBGM->release();
+	m_BGM.pSound->release();
 }
 
 //////////////////////////////////////////////////////////////////////
 
 CRobotObjectSound::CRobotObjectSound() : CSound()
 {
-	m_pfmodSystem->createSound("./Resource/SE/Gun_Hit.wav", FMOD_DEFAULT, NULL, &m_pfmodGGHit);
-	m_pfmodSystem->createSound("./Resource/SE/Gun_Shot.wav", FMOD_DEFAULT, NULL, &m_pfmodGGShot);
-	m_pfmodSystem->createSound("./Resource/SE/BZK_Hit.wav", FMOD_DEFAULT, NULL, &m_pfmodBZKHit);
-	m_pfmodSystem->createSound("./Resource/SE/BZK_Shot.wav", FMOD_DEFAULT, NULL, &m_pfmodBZKShot);
-	m_pfmodSystem->createSound("./Resource/SE/MG_Shot.wav", FMOD_DEFAULT, NULL, &m_pfmodMGShot);
-	m_pfmodSystem->createSound("./Resource/SE/Move.wav", FMOD_DEFAULT, NULL, &m_pfmodMove);
-	m_pfmodSystem->createSound("./Resource/SE/Booster.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pfmodBooster);
+	m_pfmodSystem->createSound("./Resource/SE/Gun_Hit.wav", FMOD_DEFAULT, NULL, &(m_GGHit.pSound));
+	m_pfmodSystem->createSound("./Resource/SE/Gun_Shot.wav", FMOD_DEFAULT, NULL, &(m_GGShot.pSound));
+	m_pfmodSystem->createSound("./Resource/SE/BZK_Hit.wav", FMOD_DEFAULT, NULL, &(m_BZKHit.pSound));
+	m_pfmodSystem->createSound("./Resource/SE/BZK_Shot.wav", FMOD_DEFAULT, NULL, &(m_BZKShot.pSound));
+	m_pfmodSystem->createSound("./Resource/SE/MG_Shot.wav", FMOD_DEFAULT, NULL, &(m_MGShot.pSound));
+	m_pfmodSystem->createSound("./Resource/SE/Move.wav", FMOD_DEFAULT, NULL, &(m_Move.pSound));
+	m_pfmodSystem->createSound("./Resource/SE/Booster.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &(m_Booster.pSound));
 }
 
 CRobotObjectSound::~CRobotObjectSound()
 {
-	m_pfmodGGHit->release();
-	m_pfmodGGShot->release();
-	m_pfmodBZKHit->release();
-	m_pfmodBZKShot->release();
-	m_pfmodMGShot->release();
-	m_pfmodMove->release();
-	m_pfmodBooster->release();
-}
-
-void CRobotObjectSound::PlayBooster() 
-{
-	if (!bPlayBooster)
-	{
-		m_pfmodSystem->playSound(m_pfmodBooster, NULL, 0, &m_pfmodChannelBooster);
-		bPlayBooster = true;
-	}
-
-	bool bPause = false;
-	m_pfmodChannelBooster->getPaused(&bPause);
-
-	if(bPause) m_pfmodChannelBooster->setPaused(false);
-}
-
-void CRobotObjectSound::PauseBooster()
-{
-	bool bPause = false;
-	m_pfmodChannelBooster->getPaused(&bPause);
-
-	if (!bPause) m_pfmodChannelBooster->setPaused(true);
+	m_GGHit.pSound->release();
+	m_GGShot.pSound->release();
+	m_BZKHit.pSound->release();
+	m_BZKShot.pSound->release();
+	m_MGShot.pSound->release();
+	m_Move.pSound->release();
+	m_Booster.pSound->release();
 }

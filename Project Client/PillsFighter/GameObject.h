@@ -286,7 +286,7 @@ public:
 	~CSoundCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(void *pCallbackData);
+	virtual void HandleCallback(CSound *pCallbackSound, SoundMaterial *pCallbackSoundMaterial);
 };
 
 class CRobotObject : public CAnimationObject
@@ -335,13 +335,6 @@ public:
 
 public:
 	CRobotObjectSound *m_pSound = NULL;
-
-	void PlayGGShot() { m_pSound->PlayGGShot(); }
-	void PlayMGShot() { m_pSound->PlayMGShot(); }
-	void PlayBZKShot() { m_pSound->PlayBZKShot(); }
-	void PlayMove() { m_pSound->PlayMove(); }
-	void PlayBooster() { m_pSound->PlayBooster(); }
-	void PauseBooster() { m_pSound->PauseBooster(); }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

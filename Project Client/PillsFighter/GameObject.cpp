@@ -706,10 +706,9 @@ void CAnimationObject::ChangeAnimation(int nState)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-void CSoundCallbackHandler::HandleCallback(void *pCallbackData)
+void CSoundCallbackHandler::HandleCallback(CSound *pCallbackSound, SoundMaterial *pCallbackSoundMaterial)
 {
-	if (!strcmp((char*)pCallbackData, "Move"))
-		((CRobotObject*)m_pContext)->PlayMove();
+	pCallbackSound->PlayFMODSound(pCallbackSoundMaterial);
 }
 
 CRobotObject::CRobotObject() : CAnimationObject()
@@ -819,9 +818,9 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	CGameObject::Animate(fTimeElapsed, pCamera);
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
-		m_pSound->PlayBooster();
+		m_pSound->PlayFMODSoundLoop(&(m_pSound->m_Booster));
 	else
-		m_pSound->PauseBooster();
+		m_pSound->PauseFMODSound(&(m_pSound->m_Booster));
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
