@@ -706,9 +706,9 @@ void CAnimationObject::ChangeAnimation(int nState)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-void CSoundCallbackHandler::HandleCallback(CSound *pCallbackSound, SoundMaterial *pCallbackSoundMaterial)
+void CSoundCallbackHandler::HandleCallback(CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound)
 {
-	pCallbackSound->PlayFMODSound(pCallbackSoundMaterial);
+	pCallbackSound->PlayFMODSound(pfmodCallbackSound);
 }
 
 CRobotObject::CRobotObject() : CAnimationObject()
@@ -818,12 +818,15 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	CGameObject::Animate(fTimeElapsed, pCamera);
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
-		m_pSound->PlayFMODSoundLoop(&(m_pSound->m_Booster));
+		m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBooster, m_pSound->m_pChannelBooster);
 	else
-		m_pSound->PauseFMODSound(&(m_pSound->m_Booster));
+		m_pSound->PauseFMODSound(m_pSound->m_pChannelBooster);
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
+
+	if (m_pSound)
+		m_pSound->Update();
 }
 
 void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

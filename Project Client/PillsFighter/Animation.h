@@ -6,15 +6,14 @@
 
 class CModel;
 class CSound;
-struct SoundMaterial;
 
 #define ANIMATION_CALLBACK_EPSILON	0.01f
 
 struct CALLBACKKEY
 {
 	float  							m_fTime = 0.0f;
-	CSound 							*m_pCallbackSound = NULL;
-	SoundMaterial  					*m_pCallbackSoundMaterial = NULL;
+	CSound							*m_pCallbackSound = NULL;
+	FMOD::Sound   					*m_pfmodCallbackSound = NULL;
 };
 
 class CAnimationCallbackHandler
@@ -24,7 +23,7 @@ public:
 	~CAnimationCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(CSound *pCallbackSound, SoundMaterial *pCallbackSoundMaterial) { }
+	virtual void HandleCallback(CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound) { }
 };
 
 class CAnimation
@@ -60,10 +59,10 @@ public:
 	void LoadAnimationFromFile(FILE *pfile, int nFrames);
 
 	void SetCallbackKeys(int nCallbackKeys);
-	void SetCallbackKey(int nKeyIndex, float fTime, CSound *pSound, SoundMaterial *pSoundMaterial);
+	void SetCallbackKey(int nKeyIndex, float fTime, CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
 	void SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler);
 
-	void GetCallbackData(CSound **pSound, SoundMaterial **pSoundMaterial);
+	void GetCallbackData(CSound **ppCallbackSound, FMOD::Sound **ppfmodCallbackSound);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +90,7 @@ public:
 	void SetAnimationFrameCaches(CModel **ppAnimationFrameCaches) { m_ppAnimationFrameCaches = ppAnimationFrameCaches; }
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pSound, SoundMaterial *pSoundMaterial);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };
 
@@ -157,6 +156,6 @@ public:
 	void ApplyTransform();
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pSound, SoundMaterial *pSoundMaterial);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };

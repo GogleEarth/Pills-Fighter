@@ -286,7 +286,7 @@ public:
 	~CSoundCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(CSound *pCallbackSound, SoundMaterial *pCallbackSoundMaterial);
+	virtual void HandleCallback(CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
 };
 
 class CRobotObject : public CAnimationObject

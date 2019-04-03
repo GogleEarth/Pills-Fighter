@@ -178,7 +178,7 @@ void CGimGun::Shot()
 {
 	CGun::Shot();
 
-	((CPlayer*)m_pOwner)->m_pSound->PlayFMODSound(&(((CPlayer*)m_pOwner)->m_pSound->m_GGShot));
+	((CPlayer*)m_pOwner)->m_pSound->PlayFMODSound(((CPlayer*)m_pOwner)->m_pSound->m_pSoundGGShot);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -212,7 +212,7 @@ void CBazooka::Shot()
 {
 	CGun::Shot();
 
-	((CPlayer*)m_pOwner)->m_pSound->PlayFMODSound(&(((CPlayer*)m_pOwner)->m_pSound->m_BZKShot));
+	((CPlayer*)m_pOwner)->m_pSound->PlayFMODSound(((CPlayer*)m_pOwner)->m_pSound->m_pSoundBZKShot);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -245,5 +245,5 @@ void CMachineGun::Shot()
 {
 	CGun::Shot();
 
-	((CPlayer*)m_pOwner)->m_pSound->PlayFMODSound(&(((CPlayer*)m_pOwner)->m_pSound->m_MGShot));
+	((CPlayer*)m_pOwner)->m_pSound->PlayFMODSound(((CPlayer*)m_pOwner)->m_pSound->m_pSoundMGShot);
 }

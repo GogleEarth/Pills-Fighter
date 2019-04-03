@@ -1,22 +1,17 @@
 #pragma once
 #include "stdafx.h"
 
-struct SoundMaterial
-{
-	FMOD::Sound* pSound = NULL;
-	FMOD::Channel* pChannel = NULL;
-};
-
 class CSound
 {
 public:
 	CSound();
 	virtual ~CSound();
 
-	void PlayFMODSound(SoundMaterial *pSoundMaterial);
-	void PlayFMODSoundLoop(SoundMaterial *pSoundMaterial);
-	void ResumeFMODSound(SoundMaterial *pSoundMaterial);
-	void PauseFMODSound(SoundMaterial *pSoundMaterial);
+	void PlayFMODSound(FMOD::Sound *pSound);
+	void PlayFMODSoundLoop(FMOD::Sound *pSound, FMOD::Channel *pChannel);
+	void ResumeFMODSound(FMOD::Channel *pChannel);
+	void PauseFMODSound(FMOD::Channel *pChannel);
+	void Update();
 
 protected:
 	FMOD::System* m_pfmodSystem = NULL;
@@ -30,7 +25,8 @@ public:
 	CColonySceneSound();
 	virtual ~CColonySceneSound();
 
-	SoundMaterial m_BGM;
+	FMOD::Sound *m_pSoundBGM;
+	FMOD::Channel *m_pChannelBGM;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -41,11 +37,13 @@ public:
 	CRobotObjectSound();
 	virtual ~CRobotObjectSound();
 	
-	SoundMaterial m_GGHit;
-	SoundMaterial m_GGShot;
-	SoundMaterial m_BZKHit;
-	SoundMaterial m_BZKShot;
-	SoundMaterial m_MGShot;
-	SoundMaterial m_Move;
-	SoundMaterial m_Booster;
+	FMOD::Sound *m_pSoundGGHit;
+	FMOD::Sound *m_pSoundGGShot;
+	FMOD::Sound *m_pSoundBZKHit;
+	FMOD::Sound *m_pSoundBZKShot;
+	FMOD::Sound *m_pSoundMGShot;
+	FMOD::Sound *m_pSoundMove;
+
+	FMOD::Sound *m_pSoundBooster;
+	FMOD::Channel *m_pChannelBooster;
 };

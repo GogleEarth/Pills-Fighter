@@ -16,11 +16,6 @@ struct CFontKerning
 	float fAmount;
 };
 
-struct CFont
-{
-
-};
-
 class CFontVertex
 {
 public:
@@ -30,6 +25,15 @@ public:
 	XMFLOAT4 m_xmf4Position;
 	XMFLOAT4 m_xmf4Color;
 	XMFLOAT4 m_xmf4UV;
+};
+
+class CFont
+{
+public:
+	CFont();
+	~CFont();
+
+	void LoadDataFromFile(const char *pstrFileName);
 };
 
 /*
