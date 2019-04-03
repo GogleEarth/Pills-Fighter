@@ -31,6 +31,8 @@ void CSound::PlayFMODSound(FMOD::Sound *pSound)
 	FMOD::Channel *pChannel;
 
 	m_pfmodSystem->playSound(pSound, NULL, false, &pChannel);
+
+	m_pfmodSystem->update();
 }
 
 void CSound::ResumeFMODSound(FMOD::Channel *pChannel)
@@ -47,11 +49,6 @@ void CSound::PauseFMODSound(FMOD::Channel *pChannel)
 	pChannel->getPaused(&bPause);
 
 	if(!bPause) pChannel->setPaused(true);
-}
-
-void CSound::Update()
-{
-	m_pfmodSystem->update();
 }
 
 //////////////////////////////////////////////////////////////////////

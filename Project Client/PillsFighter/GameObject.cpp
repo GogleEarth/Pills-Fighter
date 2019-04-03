@@ -824,9 +824,6 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
-
-	if (m_pSound)
-		m_pSound->Update();
 }
 
 void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

@@ -11,7 +11,6 @@ public:
 	void PlayFMODSoundLoop(FMOD::Sound *pSound, FMOD::Channel *pChannel);
 	void ResumeFMODSound(FMOD::Channel *pChannel);
 	void PauseFMODSound(FMOD::Channel *pChannel);
-	void Update();
 
 protected:
 	FMOD::System* m_pfmodSystem = NULL;
