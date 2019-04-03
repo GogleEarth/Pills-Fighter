@@ -513,7 +513,7 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
-	m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBGM, m_pSound->m_pChannelBGM);
+	if(m_pSound) m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBGM, m_pSound->m_pChannelBGM);
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -572,7 +572,7 @@ void CColonyScene::CheckCollision()
 				if (Enemy->CollisionCheck(pBullet))
 				{
 					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
-					pSound->PlayFMODSound(pSound->m_pSoundGGHit);
+					if(pSound) pSound->PlayFMODSound(pSound->m_pSoundGGHit);
 
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
@@ -591,7 +591,7 @@ void CColonyScene::CheckCollision()
 				if (Enemy->CollisionCheck(pBZKBullet))
 				{
 					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
-					pSound->PlayFMODSound(pSound->m_pSoundBZKHit);
+					if (pSound) pSound->PlayFMODSound(pSound->m_pSoundBZKHit);
 
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
@@ -611,7 +611,7 @@ void CColonyScene::CheckCollision()
 				if (Enemy->CollisionCheck(pMGBullet))
 				{
 					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
-					pSound->PlayFMODSound(pSound->m_pSoundMGShot);
+					if (pSound) pSound->PlayFMODSound(pSound->m_pSoundGGHit);
 
 					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 

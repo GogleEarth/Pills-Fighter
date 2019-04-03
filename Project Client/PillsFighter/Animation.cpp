@@ -126,7 +126,7 @@ void CAnimation::LoadAnimationFromFile(FILE *pfile, int nFrames)
 CAnimationSet::CAnimationSet(int nAnimations)
 {
 	m_nAnimations = nAnimations;
-	m_pAnimations = new CAnimation[m_nAnimations];
+	m_pAnimations = new CAnimation[nAnimations];
 }
 
 CAnimationSet::~CAnimationSet()

@@ -818,9 +818,13 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	CGameObject::Animate(fTimeElapsed, pCamera);
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
-		m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBooster, m_pSound->m_pChannelBooster);
+	{
+		if (m_pSound) m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBooster, m_pSound->m_pChannelBooster);
+	}
 	else
-		m_pSound->PauseFMODSound(m_pSound->m_pChannelBooster);
+	{
+		if (m_pSound) m_pSound->PauseFMODSound(m_pSound->m_pChannelBooster);
+	}
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
