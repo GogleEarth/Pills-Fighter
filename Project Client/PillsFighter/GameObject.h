@@ -65,8 +65,8 @@ public:
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void OnPrepareRender();
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
 
 	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
 	virtual void ReleaseUploadBuffers();
@@ -161,6 +161,9 @@ public:
 
 	int GetType() { return m_nType; }
 	std::vector<CParticle*>& GetParticles() { return m_vpParticles; }
+
+public:
+	void UpdateInstanceShaderVariables(VS_VB_INSTANCE *pcbMappedGameObjects, int *pnIndex);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

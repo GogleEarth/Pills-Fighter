@@ -63,6 +63,7 @@ public:
 #define MATERIAL_DETAIL_NORMAL_MAP		0x40
 
 struct CB_GAMEOBJECT_INFO;
+struct VS_VB_INSTANCE;
 
 class CMaterial
 {
@@ -96,26 +97,13 @@ public:
 	void SetTexture(CTexture *pTexture);
 
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject);
+	void UpdateShaderVariable(VS_VB_INSTANCE* pcbMappedGameObject);
 	void UpdateTextureShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void ReleaseUploadBuffers();
 
 public:
 	void LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFilePath);
-
-public:
-	CShader							*m_pShader = NULL;
-
-	void SetShader(CShader *pShader) { m_pShader = pShader; }
-	void SetStandardShader() { CMaterial::SetShader(m_pStandardShader); }
-	void SetSkinnedAnimationShader() { CMaterial::SetShader(m_pSkinnedAnimationShader); }
-
-	static void CMaterial::PrepareShaders(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
-	static void CMaterial::ReleaseShaders();
-
-protected:
-	static CShader					*m_pStandardShader;
-	static CShader					*m_pSkinnedAnimationShader;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,8 +143,10 @@ public:
 	void ReleaseUploadBuffers();
 	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* vd3dcbGameObject, CB_GAMEOBJECT_INFO* vcbMappedGameObject);
 
-	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex);
+	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances = 1);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances);
+	void UpdateInstanceShaderVariables(VS_VB_INSTANCE *m_pcbMappedGameObjects, int *pnIndex);
 
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
@@ -208,4 +198,9 @@ public:
 	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFileName, const char *pstrFilePath);
 	static CAnimationSet* LoadAnimationFromFile(FILE *pfile, CModel *pModel);
 
+protected:
+	CShader							*m_pShader = NULL;
+
+public:
+	void SetShader(CShader *pShader) { m_pShader = pShader; }
 };

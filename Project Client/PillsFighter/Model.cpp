@@ -100,9 +100,6 @@ CMaterial::~CMaterial()
 			delete Texture;
 
 	m_vTextures.empty();
-
-	if (m_pShader != m_pStandardShader && m_pShader != m_pSkinnedAnimationShader)
-		delete m_pShader;
 }
 
 void CMaterial::SetTexture(CTexture *pTexture)
@@ -111,6 +108,15 @@ void CMaterial::SetTexture(CTexture *pTexture)
 }
 
 void CMaterial::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
+{
+	pcbMappedGameObject->m_Material.m_xmf4Ambient = m_xmf4AmbientColor;
+	pcbMappedGameObject->m_Material.m_xmf4Diffuse = m_xmf4DiffuseColor;
+	pcbMappedGameObject->m_Material.m_xmf4Emissive = m_xmf4EmissiveColor;
+	pcbMappedGameObject->m_Material.m_xmf4Specular = m_xmf4SpecularColor;
+	pcbMappedGameObject->m_nTexturesMask = m_nType;
+}
+
+void CMaterial::UpdateShaderVariable(VS_VB_INSTANCE* pcbMappedGameObject)
 {
 	pcbMappedGameObject->m_Material.m_xmf4Ambient = m_xmf4AmbientColor;
 	pcbMappedGameObject->m_Material.m_xmf4Diffuse = m_xmf4DiffuseColor;
@@ -278,26 +284,6 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		}
 	}
 }
-CShader *CMaterial::m_pSkinnedAnimationShader = NULL;
-CShader *CMaterial::m_pStandardShader = NULL;
-
-void CMaterial::PrepareShaders(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature)
-{
-	m_pStandardShader = new CShader();
-	m_pStandardShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pStandardShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	m_pSkinnedAnimationShader = new CSkinnedAnimationShader();
-	m_pSkinnedAnimationShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pSkinnedAnimationShader->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-}
-
-void CMaterial::ReleaseShaders()
-{
-	if (m_pStandardShader) delete m_pStandardShader;
-	if (m_pSkinnedAnimationShader) delete m_pSkinnedAnimationShader;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CModel::CModel()
@@ -321,6 +307,7 @@ CModel::~CModel()
 	}
 
 	if (m_pAnimationSet) delete m_pAnimationSet;
+	if (m_pShader) delete m_pShader;
 }
 
 void CModel::AddRef()
@@ -436,16 +423,16 @@ void CModel::UpdateCollisionBox(std::vector<BoundingBox>& vxmAABB, int *pnIndex)
 	if (m_pChild) m_pChild->UpdateCollisionBox(vxmAABB, pnIndex);
 }
 
-void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex)
+void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances)
 {
 	if ((*pnIndex) == vd3dcbGameObject.size())
 		return;
 
 	if (m_pCubeMesh)
 	{
-		if (m_nMeshes > 0) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
+		if (m_nMeshes > 0 && nInstances == 1) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
 
-		m_pCubeMesh->Render(pd3dCommandList, 0);
+		m_pCubeMesh->Render(pd3dCommandList, 0, nInstances);
 
 		(*pnIndex)++;
 	}
@@ -462,10 +449,33 @@ void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, I
 	XMStoreFloat4x4(&pcbMappedGameObject->m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
 }
 
+void CModel::UpdateInstanceShaderVariables(VS_VB_INSTANCE *m_pcbMappedGameObjects, int *pnIndex)
+{
+	if (m_pMesh)
+	{
+		XMStoreFloat4x4(&m_pcbMappedGameObjects[*pnIndex].m_xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
+
+		if (m_nMaterials > 0)
+		{
+			for (int i = 0; i < m_nMaterials; i++)
+			{
+				if (m_ppMaterials[i]) m_ppMaterials[i]->UpdateShaderVariable(&m_pcbMappedGameObjects[*pnIndex]);
+			}
+		}
+
+		(*pnIndex)++;
+	}
+
+	if (m_pSibling) m_pSibling->UpdateInstanceShaderVariables(m_pcbMappedGameObjects, pnIndex);
+	if (m_pChild) m_pChild->UpdateInstanceShaderVariables(m_pcbMappedGameObjects, pnIndex);
+}
+
 void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex)
 {
 	if ((*pnIndex) == vd3dcbGameObject.size())
 		return;
+
+	if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
 
 	if (m_pMesh)
 	{
@@ -473,11 +483,11 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 
 		if (m_nMaterials > 0)
 		{
+
 			for (int i = 0; i < m_nMaterials; i++)
 			{
 				if (m_ppMaterials[i])
 				{
-					if (m_ppMaterials[i]->m_pShader) m_ppMaterials[i]->m_pShader->Render(pd3dCommandList, pCamera);
 					m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, vcbMappedGameObject[*pnIndex]);
 					m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
 				}
@@ -491,6 +501,28 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 
 	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
+}
+
+void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
+{
+	if (m_pMesh)
+	{
+		if (m_nMaterials > 0)
+		{
+			for (int i = 0; i < m_nMaterials; i++)
+			{
+				if (m_ppMaterials[i])
+				{
+					m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
+				}
+
+				m_pMesh->Render(pd3dCommandList, i, nInstances);
+			}
+		}
+	}
+
+	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, nInstances);
+	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, nInstances);
 }
 
 CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation)
@@ -575,15 +607,6 @@ CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 					{
 						pModel->m_ppMaterials[i] = new CMaterial();
 						pModel->m_ppMaterials[i]->LoadMaterialFromFile(pd3dDevice, pd3dCommandList, pfile, pstrFilePath);
-
-						int nMeshType = pModel->m_pMesh->GetMeshType();
-						if (nMeshType & TYPE_STANDARD_MESH)
-						{
-							if (nMeshType & TYPE_SKINNED_MESH)
-								pModel->m_ppMaterials[i]->SetSkinnedAnimationShader();
-							else
-								pModel->m_ppMaterials[i]->SetStandardShader();
-						}
 					}
 				}
 			}

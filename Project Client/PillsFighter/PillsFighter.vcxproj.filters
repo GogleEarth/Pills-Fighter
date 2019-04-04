@@ -145,6 +145,5 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Project.txt" />
-    <Text Include="Text.txt" />
   </ItemGroup>
 </Project>

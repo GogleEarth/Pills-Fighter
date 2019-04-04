@@ -369,8 +369,17 @@ void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
 	}
 }
 
-void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
 {
+	if(nInstances > 1)
+	{ 
+		if (m_pModel)
+		{
+			m_pModel->Render(pd3dCommandList, pCamera, nInstances);
+			return;
+		}
+	}
+
 	OnPrepareRender();
 
 	if (m_pAnimationController) m_pAnimationController->ApplyTransform();
@@ -388,7 +397,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 	}
 }
 
-void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
 {
 	OnPrepareRender();
 
@@ -397,7 +406,19 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 	UpdateShaderVariables(pd3dCommandList);
 
 	int i = 0;
-	if(m_pModel) m_pModel->RenderWire(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
+	if(m_pModel) m_pModel->RenderWire(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, nInstances);
+}
+
+void CGameObject::UpdateInstanceShaderVariables(VS_VB_INSTANCE *pcbMappedGameObjects, int *pnIndex)
+{
+	if (m_pModel)
+	{
+		OnPrepareRender();
+
+		UpdateWorldTransform();
+
+		m_pModel->UpdateInstanceShaderVariables(pcbMappedGameObjects, pnIndex);
+	}
 }
 
 void CGameObject::ReleaseUploadBuffers()
@@ -628,9 +649,9 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	CMaterial **ppTileMaterial = new CMaterial*[1];
 	ppTileMaterial[0] = new CMaterial();
 	ppTileMaterial[0]->SetTexture(pTileTexture);
-	ppTileMaterial[0]->SetShader(pShader);
 
 	SetMaterial(ppTileMaterial, 1);
+	m_pModel->SetShader(pShader);
 }
 
 CHeightMapTerrain::~CHeightMapTerrain()
@@ -658,9 +679,9 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
 	ppSkyBoxMaterial[0] = new CMaterial();
 	ppSkyBoxMaterial[0]->SetTexture(pSkyBoxTexture);
-	ppSkyBoxMaterial[0]->SetShader(pShader);
 
 	SetMaterial(ppSkyBoxMaterial, 1);
+	m_pModel->SetShader(pShader);
 }
 
 CSkyBox::~CSkyBox()

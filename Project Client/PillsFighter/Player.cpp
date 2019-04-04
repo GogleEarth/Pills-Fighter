@@ -59,6 +59,10 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	SetPlayerUpdatedContext(pTerrain);
 	SetCameraUpdatedContext(pTerrain);
+
+	CSkinnedAnimationShader *pShader = new CSkinnedAnimationShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	m_pModel->SetShader(pShader);
 }
 
 CPlayer::~CPlayer()
@@ -141,7 +145,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_UP) ActivationBooster();
 
-		if (dwDirection & DIR_DOWN);
+		//if (dwDirection & DIR_DOWN);
 
 		Move(xmf3Shift);
 	}		

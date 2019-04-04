@@ -326,6 +326,61 @@ void CObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCam
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+CInstancingObjectsShader::CInstancingObjectsShader()
+{
+
+}
+
+CInstancingObjectsShader::~CInstancingObjectsShader()
+{
+
+}
+
+D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"Shaders.hlsl", "VSInsTextured", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"Shaders.hlsl", "PSInsTextured", "ps_5_1", ppd3dShaderBlob));
+}
+
+void CInstancingObjectsShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pd3dcbGameObjects = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, static_cast<UINT>(sizeof(VS_VB_INSTANCE) * m_vObjects.size()), D3D12_HEAP_TYPE_UPLOAD,
+		D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+	m_pd3dcbGameObjects->Map(0, NULL, (void **)&m_pcbMappedGameObjects);
+}
+
+void CInstancingObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetGraphicsRootShaderResourceView(ROOT_PARAMETER_INDEX_INSTANCE, m_pd3dcbGameObjects->GetGPUVirtualAddress());
+
+	int nIndex = 0;
+	for (int i = 0; i < m_vObjects.size(); i++)
+	{
+		m_vObjects[i]->UpdateInstanceShaderVariables(m_pcbMappedGameObjects, &nIndex);
+	}
+}
+
+void CInstancingObjectsShader::ReleaseShaderVariables()
+{
+	if (m_pd3dcbGameObjects) m_pd3dcbGameObjects->Unmap(0, NULL);
+	if (m_pd3dcbGameObjects) m_pd3dcbGameObjects->Release();
+}
+
+void CInstancingObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::Render(pd3dCommandList, pCamera);
+
+	m_vObjects[0]->Render(pd3dCommandList, pCamera, static_cast<int>(m_vObjects.size()));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
 CSkinnedObjectsShader::CSkinnedObjectsShader()
 {
 
@@ -509,7 +564,7 @@ void CAmmoItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommand
 	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", false);
 }
 
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CObstacleShader::CObstacleShader()
 {
@@ -517,34 +572,6 @@ CObstacleShader::CObstacleShader()
 
 CObstacleShader::~CObstacleShader()
 {
-}
-
-void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Hangar.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveHangarSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveDoubleSquareSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonLongtierSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSlopeTopSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSquareSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSteepleTopSelfData.bin");
-
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin");
-
 }
 
 void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName)
@@ -630,6 +657,71 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 }
 
 //////////////////////////////////////////////////////////////////////
+
+void CHangarShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Hangar.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveHangarSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CDoubleSquareShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveDoubleSquareSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void COctagonShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void COctagonLongTierShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonLongtierSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CSlopetopShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSlopeTopSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CSquareShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSquareSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CSteepletopShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSteepleTopSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CWallShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", false);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin");
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CEffectShader::CEffectShader()
 {

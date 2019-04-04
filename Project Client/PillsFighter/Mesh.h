@@ -73,7 +73,7 @@ public:
 
 	virtual void ReleaseUploadBuffers();
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet, int nInstances = 1);
 
 	BoundingBox m_xmAABB;
 	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
