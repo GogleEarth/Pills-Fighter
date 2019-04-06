@@ -21,14 +21,14 @@
 #define FLAG		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM
 #define LANG		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
 #define WS22		MAKEWORD(2,2)
-#define MAX_BUFFER	1024
+#define MAX_BUFFER	13
 
 // TODO: 여기에 미리 컴파일하려는 헤더 추가
 
 struct PlayerInfo
 {
 	int Player_num;
-	char* player_id;
+	char Player_id[MAX_BUFFER];
 	SOCKET client_sock;
 	bool in_room = false;
 };
@@ -57,7 +57,7 @@ enum RoobyPacketType
 typedef struct RoobyPacketLogIn
 {
 	int Player_num;
-	char* Player_id;
+	char Player_id[MAX_BUFFER];
 }RoobyPacketLogIn,
 RoobyPacketLogOut;
 

@@ -46,7 +46,7 @@ enum RoobyPacketType
 typedef struct RoobyPacketLogIn
 {
 	int Player_num;
-	char* Player_id;
+	char Player_id[MAX_BUFFER];
 }RoobyPacketLogIn,
 RoobyPacketLogOut;
 
@@ -68,8 +68,7 @@ int main()
 	int retval;
 	char Id[MAX_BUFFER];
 	std::cout << "아이디 입력(영문12자 한글6자이내):";
-	std::cin.getline(Id, MAX_BUFFER);
-	std::cin.clear();
+	std::cin >> Id;
 	std::cout << Id << "\n";
 	// 윈속 초기화
 	WSADATA wsa;
@@ -90,6 +89,15 @@ int main()
 	retval = connect(sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
 	if (retval == SOCKET_ERROR)
 		err_quit("connect()");
+
+	int len = strlen(Id);
+	char* buf = new char[(int)len];
+	strncpy(buf, Id, len);
+	std::cout << (int)len << "바이트 보내야힘\n";
+	retval = send(sock, (char*)&len, sizeof(int), 0);
+	std::cout << retval << "바이트 보냄\n";
+	retval = send(sock, buf, (int)len, 0);
+	std::cout << retval << "바이트 보냄\n";
 
 	HANDLE hThread = CreateThread(
 		NULL, 0, receve,
@@ -158,23 +166,50 @@ int recvn(SOCKET s, char * buf, int len, int flags)
 DWORD WINAPI receve(LPVOID arg)
 {
 	int retval;
-	char buf[MAX_BUFFER];
 	SOCKET sock = (SOCKET)arg;
 
 	while (true)
 	{
-		retval = recvn(sock, buf, MAX_BUFFER, 0);
+		RoobyPacketType PktID;
+		// 데이터 받기 # 패킷 식별 ID
+		retval = recvn(sock, (char*)&PktID, sizeof(RoobyPacketType), 0);
 		if (retval == SOCKET_ERROR)
 		{
-			err_display("recv()");
+			std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID\n";
 			break;
 		}
-		std::cout << retval << "바이트 보냈음\n";
-
-		//// 받은 데이터 출력
-		//PLAYER_INFO p_info;
-		//memcpy(&p_info, &buf, sizeof(PLAYER_INFO));
-		//std::cout << "아이디: " << p_info.client_id << std::endl;
+		else
+		{
+			std::cout << "패킷 타입 : " << PktID << std::endl;
+			switch (PktID)
+			{
+			case RoobyPacketTypeLogIn:
+				int pktlen;
+				RoobyPacketLogIn login;
+				retval = recvn(sock, (char*)&pktlen, sizeof(int), 0);
+				std::cout << pktlen << "바이트 받아야함\n";
+				retval = recvn(sock, (char*)&login, pktlen, 0);
+				login.Player_id[pktlen - sizeof(int)] = '\0';
+				std::cout << login.Player_id << "입장!\n";
+				break;
+			case RoobyPacketTypeLogOut:
+				break;
+			case RoobyPacketTypeCreateRoom:
+				break;
+			case RoobyPacketTypeDestroyRoom:
+				break;
+			case RoobyPacketTypeInvitePlayer:
+				break;
+			case RoobyPacketTypeRoomIn:
+				break;
+			case RoobyPacketTypeRoomOut:
+				break;
+			case RoobyPacketTypeRoomInfo:
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	return 0;

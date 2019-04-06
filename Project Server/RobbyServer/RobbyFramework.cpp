@@ -1,8 +1,11 @@
 #include "pch.h"
 #include "RobbyFramework.h"
 
-std::vector<PlayerInfo> clients;
+std::vector<PlayerInfo*> clients;
 std::vector<RoomInfo> rooms;
+std::vector<std::thread> threads;
+
+std::thread th[MAX_USER];
 char room_num;
 SOCKET room_sock;
 std::mutex lock;
@@ -59,10 +62,10 @@ int RobbyFramework::Build()
 void RobbyFramework::Accept()
 {
 	int addrlen;
-	char idlen_buf[sizeof(int)];
-	char id_buf[MAX_BUFFER];
+	int idlen;
 	int retval;
 	int client_num = 0;
+	char id[MAX_BUFFER];
 	while (true)
 	{
 		if (clients.size() < MAX_USER)
@@ -79,45 +82,65 @@ void RobbyFramework::Accept()
 			}
 			else
 			{
-				retval = recvn(client_sock, idlen_buf, sizeof(int), 0);
-				int id_len = (int)idlen_buf;
-				retval = recvn(client_sock, id_buf, id_len, 0);
-				if (!strcmp(id_buf, "RoomServer"))
+				retval = recvn(client_sock, (char*)&idlen, sizeof(int), 0);
+				std::cout << idlen << "바이트 받아야함\n";
+				retval = recvn(client_sock, id, idlen, 0);
+				id[idlen] = '\0';
+				std::cout << id << "\n";
+				if (strcmp(id, "RoomServer") != 0)
 				{
-					RoobyPacketLogIn new_player;
-					if (client_num != 0)
-					{
-						//접속한 플레이어를 모든 플레이어에게 알려줌
-						SendAllPlayer(RoobyPacketTypeLogIn);
-						strcpy(new_player.Player_id, id_buf);
-						new_player.Player_num = client_num;
-						for (auto d : clients)
-						{
-							send(d.client_sock, (char*)sizeof(new_player), sizeof(int), 0);
-						}
-						SendAllPlayer((char*)&new_player);
-					}
 					if (client_num != 0)
 					{
 						//모든 플레이어를 접속한 플레이어에게 알려줌
 						for (auto d : clients)
 						{
-							send(client_sock,(char*)RoobyPacketTypeLogIn,sizeof(RoobyPacketType),0);
-							strcpy(new_player.Player_id, id_buf);
-							new_player.Player_num = client_num;
-							send(client_sock, (char*)sizeof(new_player), sizeof(int), 0);
-							send(client_sock, (char*)&new_player, sizeof(new_player), 0);
+							RoobyPacketType pkttype = RoobyPacketTypeLogIn;
+							RoobyPacketLogIn* new_player = new RoobyPacketLogIn;
+							strncpy(new_player->Player_id, d->Player_id, strlen(d->Player_id));
+							new_player->Player_num = d->Player_num;
+							int pktsize = sizeof(&new_player);
+							send(client_sock, (char*)&pkttype, sizeof(RoobyPacketType), 0);
+							send(client_sock, (char*)&pktsize, sizeof(int), 0);
+							std::cout << pktsize << "바이트 보내야함 : " << new_player->Player_id << "\n";
+							retval = send(client_sock, (char*)new_player, sizeof(new_player), 0);
+							std::cout << retval << "바이트 보냄\n";
+							delete new_player;
 						}
 					}
-					clients.emplace_back(PlayerInfo{ client_num, id_buf, client_sock });
+					if (client_num != 0)
+					{
+						//접속한 플레이어를 모든 플레이어에게 알려줌5
+						RoobyPacketLogIn* new_player = new RoobyPacketLogIn;
+						strncpy(new_player->Player_id, id, idlen);
+						SendAllPlayer(RoobyPacketTypeLogIn);
+						std::cout << "패킷타입 send\n";
+						new_player->Player_num = client_num;
+						int pktlen = sizeof(&new_player);
+						std::cout << pktlen << "바이트 보내야함\n";
+						SendAllPlayer((char*)&pktlen, sizeof(int));
+						SendAllPlayer((char*)new_player, pktlen);
+						delete new_player;
+					}
+					PlayerInfo* pinfo = new PlayerInfo;
+					pinfo->client_sock = client_sock;
+					pinfo->Player_num = client_num;
+					strncpy(pinfo->Player_id, id, idlen);
+					pinfo->Player_id[idlen] = '\0';
+					clients.emplace_back(pinfo);
+					th[client_num] = std::thread{ Recv,client_sock };
+					std::cout << clients[client_num]->Player_id << std::endl;
+					std::cout << "클라이언트 입장처리 완료\n";
 					client_num++;
-					threads.emplace_back(std::thread(Recv, client_sock));
-					threads.rend()->join();
 				}
-				else;
+				else
+				{
+					std::cout << "룸 서버 ID임\n";
+				}
 			}
 		}
 	}
+	for (int i = 0; i < MAX_USER; ++i)
+		th[i].join();
 }
 
 void RobbyFramework::Release()
@@ -130,11 +153,11 @@ void RobbyFramework::Release()
 	WSACleanup();
 }
 
-void SendAllPlayer(char* buf)
+void SendAllPlayer(char* buf, int len)
 {
 	for (auto d : clients)
 	{
-		send(d.client_sock, buf, sizeof(buf), 0);
+		send(d->client_sock, buf, len, 0);
 	}
 }
 
@@ -142,7 +165,7 @@ void SendAllPlayer(RoobyPacketType pktType)
 {
 	for (auto d : clients)
 	{
-		send(d.client_sock, (char*)pktType, sizeof(RoobyPacketType), 0);
+		send(d->client_sock, (char*)&pktType, sizeof(RoobyPacketType), 0);
 	}
 }
 
@@ -159,7 +182,7 @@ void Recv(SOCKET client_sock)
 		if (retval == SOCKET_ERROR)
 		{
 			std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID\n";
-		
+			break;
 		}
 		ProcessPacket(client_sock, PktID);
 	}
@@ -186,12 +209,12 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 		//send(room_sock, (char*)&room, sizeof(RoobyPacketCreateRoom), 0);
 		rooms.emplace_back(RoomInfo{ room_num, 1 });
 		SendAllPlayer(RoobyPacketTypeCreateRoom);
-		SendAllPlayer((char*)&room);
+		SendAllPlayer((char*)&room, sizeof(room));
 		for (auto d : clients)
 		{
-			if (client_sock == d.client_sock)
+			if (client_sock == d->client_sock)
 			{
-				d.in_room = true;
+				d->in_room = true;
 				break;
 			}
 		}
