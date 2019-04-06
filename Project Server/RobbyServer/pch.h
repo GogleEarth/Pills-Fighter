@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 #define MAX_USER	100
 #define SERVERIP	"127.0.0.1"
@@ -26,11 +27,49 @@
 
 struct PlayerInfo
 {
+	int Player_num;
 	char* player_id;
 	SOCKET client_sock;
+	bool in_room = false;
 };
 
-struct RoomInfo
+typedef struct RoomInfo
 {
 	char room_num;
+	char Player_num;
+}RoomInfo, 
+RoobyPacketCreateRoom, 
+RoobyPacketDestroyRoom,
+RoobyPacketRoomInfo;
+
+enum RoobyPacketType
+{
+	RoobyPacketTypeLogIn,
+	RoobyPacketTypeLogOut,
+	RoobyPacketTypeCreateRoom,
+	RoobyPacketTypeDestroyRoom,
+	RoobyPacketTypeInvitePlayer,
+	RoobyPacketTypeRoomIn,
+	RoobyPacketTypeRoomOut,
+	RoobyPacketTypeRoomInfo
 };
+
+typedef struct RoobyPacketLogIn
+{
+	int Player_num;
+	char* Player_id;
+}RoobyPacketLogIn,
+RoobyPacketLogOut;
+
+struct RoobyPacketInvitePlayer
+{
+	int fromPlayer_num;
+	int toPlayer_num;
+};
+
+typedef struct RoobyPacketRoomIn
+{
+	int Player_num;
+	char Room_num;
+}RoobyPacketRoomIn, 
+RoobyPacketRoomOut;

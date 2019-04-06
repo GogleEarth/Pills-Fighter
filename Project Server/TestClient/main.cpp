@@ -11,67 +11,66 @@
 #include <chrono>
 
 #define SERVERIP	"127.0.0.1"
-#define SERVERPORT	9000
+#define SERVERPORT	9001
 #define FLAG		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM
 #define LANG		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
 #define WS22		MAKEWORD(2,2)
-#define BUFSIZE		76
+#define MAX_BUFFER	13
 
 void err_quit(char* msg);
 void err_display(char* msg);
 int recvn(SOCKET s, char* buf, int len, int flags);
 DWORD WINAPI receve(LPVOID arg);
 
-
-enum PKT_ID
+typedef struct RoomInfo
 {
-	PKT_ID_PLAYER_INFO = 1, // 플레이어 정보
-	PKT_ID_PLAYER_LIFE = 2, // 플레이어 hp
-	PKT_ID_CREATE_OBJECT = 3, // 오브젝트 생성
-	PKT_ID_DELETE_OBJECT = 4 // 오브젝트 삭제
+	char room_num;
+	char Player_num;
+}RoomInfo,
+RoobyPacketCreateRoom,
+RoobyPacketDestroyRoom,
+RoobyPacketRoomInfo;
+
+enum RoobyPacketType
+{
+	RoobyPacketTypeLogIn,
+	RoobyPacketTypeLogOut,
+	RoobyPacketTypeCreateRoom,
+	RoobyPacketTypeDestroyRoom,
+	RoobyPacketTypeInvitePlayer,
+	RoobyPacketTypeRoomIn,
+	RoobyPacketTypeRoomOut,
+	RoobyPacketTypeRoomInfo
 };
 
-enum OBJECT_TYPE
+typedef struct RoobyPacketLogIn
 {
-	OBJECT_TYPE_BULLET, // 총알
-	OBJECT_TYPE_OBSTACLE // 장애물
+	int Player_num;
+	char* Player_id;
+}RoobyPacketLogIn,
+RoobyPacketLogOut;
+
+struct RoobyPacketInvitePlayer
+{
+	int fromPlayer_num;
+	int toPlayer_num;
 };
 
-// 이하 패킷 구조체
-struct PKT_PLAYER_INFO
+typedef struct RoobyPacketRoomIn
 {
-	int Id;
-	DirectX::XMFLOAT4X4 worldmatrix;
-	int shooting;
-};
-
-struct PKT_PLAYER_LIFE
-{
-	int id;
-	DWORD player_hp;
-};
-
-struct PKT_CREATE_OBJECT
-{
-	OBJECT_TYPE Object_Type;
-	DirectX::XMFLOAT4X4 worldmatrix;
-	BYTE Object_Index;
-};
-
-struct PKT_DELETE_OBJECT
-{
-	BYTE Object_Index;
-};
+	int Player_num;
+	char Room_num;
+}RoobyPacketRoomIn,
+RoobyPacketRoomOut;
 
 int main()
 {
 	int retval;
-	PKT_PLAYER_INFO pinfo;
-	ZeroMemory(&pinfo.worldmatrix, sizeof(DirectX::XMFLOAT4X4));
-	std::cout << "아이디 입력:";
-	std::cin >> pinfo.Id;
-	pinfo.shooting = 0;
-
+	char Id[MAX_BUFFER];
+	std::cout << "아이디 입력(영문12자 한글6자이내):";
+	std::cin.getline(Id, MAX_BUFFER);
+	std::cin.clear();
+	std::cout << Id << "\n";
 	// 윈속 초기화
 	WSADATA wsa;
 	if (WSAStartup(WS22, &wsa) != 0)
@@ -92,49 +91,14 @@ int main()
 	if (retval == SOCKET_ERROR)
 		err_quit("connect()");
 
-
-	//HANDLE hThread = CreateThread(
-	//	NULL, 0, receve,
-	//	(LPVOID)sock, 0, NULL);
+	HANDLE hThread = CreateThread(
+		NULL, 0, receve,
+		(LPVOID)sock, 0, NULL);
 	
-	float elapsedtime = 0.0f;
-	unsigned int i = 0;
 	// 서버와 데이터 통신
 	while (true)
 	{
-		//auto start = std::chrono::high_resolution_clock::now();
-		//if (elapsedtime >= 1.0f)
-		//{
-		if (i >= 10000000)
-		{
-			PKT_ID pid = PKT_ID_PLAYER_INFO;
-			char pid_buf[sizeof(PKT_ID)];
-			memcpy(&pid_buf, &pid, sizeof(PKT_ID));
-			retval = send(sock, pid_buf, sizeof(PKT_ID), 0);
-			if (retval == SOCKET_ERROR)
-				err_display("send");
-			std::cout << retval << "바이트 보냈음\n";
 
-			pinfo.worldmatrix._11 += 0.01f;
-
-			char pinfo_buf[sizeof(PKT_PLAYER_INFO)];
-			memcpy(&pinfo_buf, &pinfo, sizeof(PKT_PLAYER_INFO));
-			retval = send(sock, pinfo_buf, sizeof(PKT_PLAYER_INFO), 0);
-			if (retval == SOCKET_ERROR)
-				err_display("send");
-			std::cout << retval << "바이트 보냈음\n";
-
-			i = 0;
-		}
-		i++;
-			//elapsedtime = 0;
-		//}
-		//std::cout << "메롱메롱" << std::endl;
-
-		//auto end = std::chrono::high_resolution_clock::now();
-		//auto du = end - start;
-		//elapsedtime += std::chrono::duration_cast<std::chrono::milliseconds>(du).count()/1000.0f;
-		//std::cout << elapsedtime << "지남\n";
 	}
 
 	closesocket(sock);
@@ -194,12 +158,12 @@ int recvn(SOCKET s, char * buf, int len, int flags)
 DWORD WINAPI receve(LPVOID arg)
 {
 	int retval;
-	char buf[BUFSIZE];
+	char buf[MAX_BUFFER];
 	SOCKET sock = (SOCKET)arg;
 
 	while (true)
 	{
-		retval = recv(sock, buf, BUFSIZE, 0);
+		retval = recvn(sock, buf, MAX_BUFFER, 0);
 		if (retval == SOCKET_ERROR)
 		{
 			err_display("recv()");
