@@ -1045,27 +1045,29 @@ void CGameFramework::FrameAdvance()
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
 	if (m_pScene) m_pScene->PrepareRenderEffects(m_pd3dCommandList);
-
-	//Draw Environment Map
-	::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	for (int i = 0; i < 6; i++)
-	{
-		m_pCubeMapCamera[i]->SetPosition(m_pPlayer->GetPosition());
-		m_pCubeMapCamera[i]->GenerateViewMatrix();
-
-		m_pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
-		m_pd3dCommandList->ClearDepthStencilView(m_d3dDsvEnvirCubeMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-
-		m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvEnvirCubeMapCPUHandle[i], TRUE, &m_d3dDsvEnvirCubeMapCPUHandle);
-
-		if (m_pScene)
-		{
-			m_pScene->Render(m_pd3dCommandList, m_pCubeMapCamera[i]);
-		}
-	}
-	::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 	
+	//Draw Environment Map
+	if (m_GameTimer.GetFPS() % 5 == 0)
+	{
+		::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		for (int i = 0; i < 6; i++)
+		{
+			m_pCubeMapCamera[i]->SetPosition(m_pPlayer->GetPosition());
+			m_pCubeMapCamera[i]->GenerateViewMatrix();
+
+			m_pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
+			m_pd3dCommandList->ClearDepthStencilView(m_d3dDsvEnvirCubeMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+
+			m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvEnvirCubeMapCPUHandle[i], TRUE, &m_d3dDsvEnvirCubeMapCPUHandle);
+
+			if (m_pScene)
+			{
+				m_pScene->Render(m_pd3dCommandList, m_pCubeMapCamera[i]);
+			}
+		}
+		::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+	}
 
 	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 

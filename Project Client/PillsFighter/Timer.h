@@ -15,6 +15,7 @@ public:
 
 	unsigned long GetFrameRate(LPTSTR lpszString = NULL, int nCharacters = 0);
 	float GetTimeElapsed();
+	int GetFPS() { return m_nFramesPerSecond; }
 
 private:
 	bool m_bHardwareHasPerformanceCounter;

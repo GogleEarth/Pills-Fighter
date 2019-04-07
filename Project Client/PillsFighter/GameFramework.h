@@ -112,7 +112,8 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
 
-	CCamera			*m_pCubeMapCamera[6];
+	CCamera							*m_pCubeMapCamera[6];
+
 public:
 	void CreateEnvironmentMap();
 	void CreateCubeMapCamera();
