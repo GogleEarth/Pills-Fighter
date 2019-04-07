@@ -22,6 +22,8 @@
 #define LANG		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
 #define WS22		MAKEWORD(2,2)
 #define MAX_BUFFER	13
+#define MAX_ROOMS	20
+
 
 // TODO: 여기에 미리 컴파일하려는 헤더 추가
 

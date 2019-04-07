@@ -2,7 +2,7 @@
 #include "RobbyFramework.h"
 
 std::vector<PlayerInfo*> clients;
-std::vector<RoomInfo> rooms;
+std::vector<RoomInfo*> rooms;
 std::vector<std::thread> threads;
 
 std::thread room_thread;
@@ -90,6 +90,8 @@ void RobbyFramework::Accept()
 				std::cout << id << "\n";
 				if (strcmp(id, "RoomServer") != 0)
 				{
+					//플레이어의 번호를 보냄
+					send(client_sock, (char*)&client_num, sizeof(int), 0);
 					if (client_num != 0)
 					{
 						//모든 플레이어를 접속한 플레이어에게 알려줌
@@ -210,7 +212,12 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 	int retval;
 	int PktSize = 0;
 	char* buf;
-	RoobyPacketCreateRoom room;
+	RoobyPacketCreateRoom createroom;
+	RoobyPacketRoomIn roomin;
+	RoobyPacketRoomInfo roominfo;
+	char roominfail = 0;
+	RoobyPacketType type_roomin;
+	RoomInfo* roomdata;
 	switch (pktType)
 	{
 	case RoobyPacketTypeLogIn:
@@ -219,15 +226,18 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 		break;
 	case RoobyPacketTypeCreateRoom:
 		std::cout << "방생성패킷 받음\n";
+		roomdata = new RoomInfo;
 		lock.lock();
-		room.room_num = room_num;
+		createroom.room_num = room_num;
 		lock.unlock();
-		room.Player_num = 1;
+		createroom.Player_num = 1;
 		//send(room_sock, (char*)RoobyPacketTypeCreateRoom, sizeof(RoobyPacketType), 0);
 		//send(room_sock, (char*)&room, sizeof(RoobyPacketCreateRoom), 0);
-		rooms.emplace_back(RoomInfo{ room_num, 1 });
+		roomdata->Player_num = 1;
+		roomdata->room_num = createroom.room_num;
+		rooms.emplace_back(roomdata);
 		SendAllPlayer(pktType);
-		SendAllPlayer((char*)&room, sizeof(room));
+		SendAllPlayer((char*)&createroom, sizeof(createroom));
 		for (auto d : clients)
 		{
 			if (client_sock == d->client_sock)
@@ -237,7 +247,7 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 			}
 		}
 		send(room_sock, (char*)&pktType, sizeof(pktType), 0);
-		send(room_sock, (char*)&room, sizeof(room), 0);
+		send(room_sock, (char*)&createroom, sizeof(createroom), 0);
 
 		lock.lock();
 		room_num++;
@@ -253,6 +263,26 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 		((RoobyPacketInvitePlayer*)buf)->fromPlayer_num;
 		break;
 	case RoobyPacketTypeRoomIn:
+		PktSize = sizeof(RoobyPacketRoomIn);
+		type_roomin = RoobyPacketTypeRoomIn;
+		retval = recvn(client_sock, (char*)&roomin, PktSize, 0);
+		lock.lock();
+		for (auto d : rooms)
+		{
+			if (roomin.Room_num == d->room_num)
+				if (d->Player_num < 8)
+				{
+					d->Player_num += 1;
+					roominfail = 1;
+					roominfo.room_num = roomin.Room_num;
+					roominfo.Player_num = d->Player_num;
+				}
+		}
+		lock.unlock();
+		send(client_sock, (char*)&type_roomin, sizeof(RoobyPacketTypeRoomIn), 0);
+		send(client_sock, (char*)&roominfail, sizeof(char), 0);
+		SendAllPlayer(RoobyPacketTypeRoomInfo);
+		SendAllPlayer((char*)&roominfo, sizeof(roominfo));
 		break;
 	case RoobyPacketTypeRoomOut:
 		break;
