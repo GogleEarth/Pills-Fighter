@@ -106,7 +106,17 @@ int main()
 	// 서버와 데이터 통신
 	while (true)
 	{
-
+		int n;
+		std::cout << "커맨트 입력 : ";
+		std::cin >> n;
+		switch (n)
+		{
+		case 1:
+			std::cout << "방을 생성합니다.\n";
+			RoobyPacketType pkttype = RoobyPacketTypeCreateRoom;
+			send(sock, (char*)&pkttype, sizeof(RoobyPacketType), 0);
+			break;
+		}
 	}
 
 	closesocket(sock);
@@ -170,6 +180,7 @@ DWORD WINAPI receve(LPVOID arg)
 
 	while (true)
 	{
+		int pktlen;
 		RoobyPacketType PktID;
 		// 데이터 받기 # 패킷 식별 ID
 		retval = recvn(sock, (char*)&PktID, sizeof(RoobyPacketType), 0);
@@ -184,7 +195,6 @@ DWORD WINAPI receve(LPVOID arg)
 			switch (PktID)
 			{
 			case RoobyPacketTypeLogIn:
-				int pktlen;
 				RoobyPacketLogIn login;
 				retval = recvn(sock, (char*)&pktlen, sizeof(int), 0);
 				std::cout << pktlen << "바이트 받아야함\n";
@@ -195,6 +205,9 @@ DWORD WINAPI receve(LPVOID arg)
 			case RoobyPacketTypeLogOut:
 				break;
 			case RoobyPacketTypeCreateRoom:
+				RoobyPacketCreateRoom createroom;
+				retval = recvn(sock, (char*)&createroom, sizeof(RoobyPacketCreateRoom), 0);
+				std::cout << "\n" << (int)createroom.room_num << "번 방 생성됨!\n";
 				break;
 			case RoobyPacketTypeDestroyRoom:
 				break;

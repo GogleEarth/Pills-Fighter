@@ -5,6 +5,7 @@ std::vector<PlayerInfo*> clients;
 std::vector<RoomInfo> rooms;
 std::vector<std::thread> threads;
 
+std::thread room_thread;
 std::thread th[MAX_USER];
 char room_num;
 SOCKET room_sock;
@@ -121,6 +122,20 @@ void RobbyFramework::Accept()
 						SendAllPlayer((char*)new_player, pktlen);
 						delete new_player;
 					}
+					lock.lock();
+					if (rooms.size() != 0)
+					{
+						RoobyPacketType pktType = RoobyPacketTypeCreateRoom;
+						//생성되어있는 방 정보를 새로 들어온 플레이어에게 알려줌
+						for (auto d : rooms)
+						{
+							send(client_sock, (char*)&pktType, sizeof(pktType), 0);
+							send(client_sock, (char*)&d, sizeof(d), 0);
+						}
+					}
+					lock.unlock();
+
+
 					PlayerInfo* pinfo = new PlayerInfo;
 					pinfo->client_sock = client_sock;
 					pinfo->Player_num = client_num;
@@ -135,6 +150,8 @@ void RobbyFramework::Accept()
 				else
 				{
 					std::cout << "룸 서버 ID임\n";
+					room_sock = client_sock;
+					room_thread = std::thread{ Recv,client_sock };
 				}
 			}
 		}
@@ -201,6 +218,7 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 	case RoobyPacketTypeLogOut:
 		break;
 	case RoobyPacketTypeCreateRoom:
+		std::cout << "방생성패킷 받음\n";
 		lock.lock();
 		room.room_num = room_num;
 		lock.unlock();
@@ -208,7 +226,7 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 		//send(room_sock, (char*)RoobyPacketTypeCreateRoom, sizeof(RoobyPacketType), 0);
 		//send(room_sock, (char*)&room, sizeof(RoobyPacketCreateRoom), 0);
 		rooms.emplace_back(RoomInfo{ room_num, 1 });
-		SendAllPlayer(RoobyPacketTypeCreateRoom);
+		SendAllPlayer(pktType);
 		SendAllPlayer((char*)&room, sizeof(room));
 		for (auto d : clients)
 		{
@@ -218,6 +236,9 @@ void ProcessPacket(SOCKET client_sock, RoobyPacketType pktType)
 				break;
 			}
 		}
+		send(room_sock, (char*)&pktType, sizeof(pktType), 0);
+		send(room_sock, (char*)&room, sizeof(room), 0);
+
 		lock.lock();
 		room_num++;
 		lock.unlock();
