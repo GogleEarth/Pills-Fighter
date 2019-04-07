@@ -25,7 +25,7 @@ protected:
 
 	int								m_nTextures = 0;
 	ID3D12Resource					**m_ppd3dTextures = NULL;
-	ID3D12Resource					**m_ppd3dTextureUploadBuffers;
+	ID3D12Resource					**m_ppd3dTextureUploadBuffers = NULL;
 
 	SRVROOTARGUMENTINFO				*m_pRootArgumentInfos = NULL;
 
@@ -197,10 +197,4 @@ public:
 	static CModel* LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation);
 	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFileName, const char *pstrFilePath);
 	static CAnimationSet* LoadAnimationFromFile(FILE *pfile, CModel *pModel);
-
-protected:
-	CShader							*m_pShader = NULL;
-
-public:
-	void SetShader(CShader *pShader) { m_pShader = pShader; }
 };

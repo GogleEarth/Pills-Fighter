@@ -64,6 +64,10 @@ public:
 	XMFLOAT3& GetUpVector() { return(m_xmf3Up); }
 	XMFLOAT3& GetLookVector() { return(m_xmf3Look); }
 
+	void SetRight(XMFLOAT3 xmf3Vector) { m_xmf3Right = xmf3Vector; }
+	void SetUp(XMFLOAT3 xmf3Vector) { m_xmf3Up = xmf3Vector; }
+	void SetLook(XMFLOAT3 xmf3Vector) { m_xmf3Look = xmf3Vector; }
+
 	float& GetPitch() { return(m_fPitch); }
 	float& GetRoll() { return(m_fRoll); }
 	float& GetYaw() { return(m_fYaw); }

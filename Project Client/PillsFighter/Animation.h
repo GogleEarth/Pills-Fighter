@@ -12,8 +12,7 @@ class CSound;
 struct CALLBACKKEY
 {
 	float  							m_fTime = 0.0f;
-	CSound							*m_pCallbackSound = NULL;
-	FMOD::Sound   					*m_pfmodCallbackSound = NULL;
+	UINT							m_nType;
 };
 
 class CAnimationCallbackHandler
@@ -23,7 +22,7 @@ public:
 	~CAnimationCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound) { }
+	virtual void HandleCallback(UINT nSoundType) { }
 };
 
 class CAnimation
@@ -59,10 +58,10 @@ public:
 	void LoadAnimationFromFile(FILE *pfile, int nFrames);
 
 	void SetCallbackKeys(int nCallbackKeys);
-	void SetCallbackKey(int nKeyIndex, float fTime, CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
+	void SetCallbackKey(int nKeyIndex, float fTime, UINT nSoundType);
 	void SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler);
 
-	void GetCallbackData(CSound **ppCallbackSound, FMOD::Sound **ppfmodCallbackSound);
+	UINT GetCallbackData();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +89,7 @@ public:
 	void SetAnimationFrameCaches(CModel **ppAnimationFrameCaches) { m_ppAnimationFrameCaches = ppAnimationFrameCaches; }
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, UINT nSoundType);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };
 
@@ -156,6 +155,6 @@ public:
 	void ApplyTransform();
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, UINT nSoundType);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };

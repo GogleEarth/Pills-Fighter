@@ -4,7 +4,7 @@
 #include "Player.h"
 #include "Scene.h"
 
-extern CSound gSound;
+extern CFMODSound gFmodSound;
 
 CWeapon::CWeapon() : CGameObject()
 {
@@ -19,43 +19,33 @@ void CWeapon::Initialize()
 	SetType();
 }
 
+void CWeapon::SetOwnerTransform(XMFLOAT4X4 xmf4x4World)
+{
+	m_xmf3Right = XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13);
+	m_xmf3Up = XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23);
+	m_xmf3Look = XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33);
+	m_xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
+}
+
 void CWeapon::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-	if (m_pModel)
-	{
-		if (m_pParentModel) m_xmf4x4World = m_pParentModel->GetWorldTransf();
+	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
 
-		UpdateWorldTransform();
-
-		int i = 0;
-		m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
-	}
+	CGameObject::Animate(fTimeElapsed, pCamera);
 }
 
-void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
 {
-	if (m_pModel)
-	{
-		if (m_pParentModel) m_xmf4x4World = m_pParentModel->GetWorldTransf();
+	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
 
-		UpdateWorldTransform();
-
-		int i = 0;
-		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
-	}
+	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
 }
 
-void CWeapon::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera)
+void CWeapon::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
 {
-	if (m_pModel)
-	{
-		if (m_pParentModel) m_xmf4x4World = m_pParentModel->GetWorldTransf();
+	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
 
-		UpdateWorldTransform();
-
-		int i = 0;
-		m_pModel->RenderWire(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
-	}
+	CGameObject::RenderWire(pd3dCommandList, pCamera, nInstances);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,8 +168,7 @@ void CGimGun::Shot()
 {
 	CGun::Shot();
 
-	CRobotObjectSound *pSound = ((CPlayer*)m_pOwner)->m_pSound;
-	if (pSound) pSound->PlayFMODSound(pSound->m_pSoundGGShot);
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,8 +202,7 @@ void CBazooka::Shot()
 {
 	CGun::Shot();
 
-	CRobotObjectSound *pSound = ((CPlayer*)m_pOwner)->m_pSound;
-	if (pSound) pSound->PlayFMODSound(pSound->m_pSoundBZKShot);
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -247,6 +235,5 @@ void CMachineGun::Shot()
 {
 	CGun::Shot();
 
-	CRobotObjectSound *pSound = ((CPlayer*)m_pOwner)->m_pSound;
-	if(pSound) pSound->PlayFMODSound(pSound->m_pSoundMGShot);
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
 }

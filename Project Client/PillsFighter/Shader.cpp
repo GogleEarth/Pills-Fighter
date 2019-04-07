@@ -150,7 +150,6 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
-
 void CShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
@@ -475,6 +474,8 @@ void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
 
+	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
+
 #ifndef ON_NETWORKING
 	CRobotObject *pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
@@ -494,9 +495,18 @@ void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	CRobotObject *pRobot = (CRobotObject*)pObject;
 
+	CShader *pShader = new CShader();
+	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
+
+	pRobot->SetWeaponShader(pShader);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GIM_GUN);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
+}
+
+void CGundamShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CSkinnedObjectsShader::Render(pd3dCommandList, pCamera);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -721,6 +731,7 @@ void CWallShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CEffectShader::CEffectShader()
@@ -893,16 +904,21 @@ void CEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *
 {
 	CShader::OnPrepareRender(pd3dCommandList);
 
+	m_pTexture->UpdateShaderVariables(pd3dCommandList);
+
+	if (m_pEffect) m_pEffect->Render(pd3dCommandList);
+}
+
+void CEffectShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
 	if (m_pEffect) m_pEffect->ReadVertexCount(pd3dCommandList);
 
 	if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
 	if (m_pEffect) m_pEffect->SORender(pd3dCommandList);
+}
 
-	if (m_pTexture) m_pTexture->UpdateShaderVariables(pd3dCommandList);
-
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-	if (m_pEffect) m_pEffect->Render(pd3dCommandList);
-
+void CEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
 	if (m_pEffect) m_pEffect->AfterRender(pd3dCommandList);
 }
 
@@ -1137,6 +1153,7 @@ void CExpSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EF
 {
 	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, 0, nEffectAniType);
 }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -1381,6 +1398,7 @@ void CParticleShader::CheckDeleteObjects()
 		}
 	}
 }
+
 void CParticleShader::AnimateObjects(float fTimeElapsed)
 {
 	CheckDeleteObjects();
@@ -1393,15 +1411,23 @@ void CParticleShader::AnimateObjects(float fTimeElapsed)
 
 void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	CShader::OnPrepareRender(pd3dCommandList);
+
+	m_pTexture->UpdateShaderVariables(pd3dCommandList);
+
+	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->Render(pd3dCommandList);
+}
+
+void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
 	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->ReadVertexCount(pd3dCommandList);
 
 	if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
 	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->SORender(pd3dCommandList);
+}
 
-	m_pTexture->UpdateShaderVariables(pd3dCommandList);
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->Render(pd3dCommandList);
-
+void CParticleShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
 	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->AfterRender(pd3dCommandList);
 }
 

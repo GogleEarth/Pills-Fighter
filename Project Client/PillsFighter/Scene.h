@@ -52,6 +52,8 @@ public:
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void BuildLightsAndMaterials() {}
 
@@ -101,9 +103,19 @@ protected:
 	CShader								*m_pWireShader = NULL;
 	CParticleShader						*m_pParticleShader = NULL;
 
+	int									m_nEffectShaders = 0;
+	CEffectShader						**m_ppEffectShaders = NULL;
+
 protected:
 	float			m_fGravAcc = 9.8f;
 	float			m_fCameraToTarget = 0.0f;
+
+	ID3D12Resource	*m_pd3dEnvirCube = NULL;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_d3dSrvGPUEnvirCubeDescriptorHandle;
+
+public:
+	void SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnvirCube);
+	void SetEnvirMap(ID3D12GraphicsCommandList *pd3dCommandList);
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
@@ -148,6 +160,4 @@ protected:
 	CModel		*m_pGimGun = NULL;
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
-
-	CColonySceneSound *m_pSound = NULL;
 };

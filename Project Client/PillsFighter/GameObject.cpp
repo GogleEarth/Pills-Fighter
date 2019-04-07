@@ -5,7 +5,7 @@
 #include "Weapon.h"
 #include "Animation.h"
 
-extern CSound gSound;
+extern CFMODSound gFmodSound;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,6 +30,7 @@ CGameObject::~CGameObject()
 	ReleaseShaderVariables();
 
 	if (m_pModel) m_pModel->Release();
+	if (m_pShader) delete m_pShader;
 }
 
 void CGameObject::SetModel(CModel *pModel)
@@ -391,6 +392,8 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 	int i = 0;
 	if(m_pModel)
 	{
+		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
+
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
 		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
@@ -635,6 +638,11 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
+	CShader *pShader = new CTerrainShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+
+	SetShader(pShader);
+
 	CTexture *pTileTexture = new CTexture(5, RESOURCE_TEXTURE2D_ARRAY, 0);
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/2048CityMap.dds", 0);
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile1.dds", 1);
@@ -642,8 +650,6 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile3.dds", 3);
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile4.dds", 4);
 
-	CShader *pShader = new CTerrainShader();
-	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	CScene::CreateShaderResourceViews(pd3dDevice, pTileTexture, ROOT_PARAMETER_INDEX_TILES, false);
 
 	CMaterial **ppTileMaterial = new CMaterial*[1];
@@ -651,7 +657,6 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	ppTileMaterial[0]->SetTexture(pTileTexture);
 
 	SetMaterial(ppTileMaterial, 1);
-	m_pModel->SetShader(pShader);
 }
 
 CHeightMapTerrain::~CHeightMapTerrain()
@@ -668,12 +673,14 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
+	CShader *pShader = new CSkyBoxShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	SetShader(pShader);
+
 	CTexture *pSkyBoxTexture = new CTexture(1, RESOURCE_TEXTURE_CUBE, 0);
 	//pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_0.dds", 0);
 	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
 
-	CShader *pShader = new CSkyBoxShader();
-	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	CScene::CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false);
 
 	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
@@ -681,7 +688,6 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	ppSkyBoxMaterial[0]->SetTexture(pSkyBoxTexture);
 
 	SetMaterial(ppSkyBoxMaterial, 1);
-	m_pModel->SetShader(pShader);
 }
 
 CSkyBox::~CSkyBox()
@@ -727,24 +733,26 @@ void CAnimationObject::ChangeAnimation(int nState)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-void CSoundCallbackHandler::HandleCallback(CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound)
+void CSoundCallbackHandler::HandleCallback(UINT nSoundType)
 {
-	pCallbackSound->PlayFMODSound(pfmodCallbackSound);
+	switch (nSoundType)
+	{
+	case CALLBACK_SOUND_TYPE_MOVE:
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMove);
+		break;
+	}
 }
 
 CRobotObject::CRobotObject() : CAnimationObject()
 {
 	m_nType |= OBJECT_TYPE_ROBOT;
-
-	m_pSound = new CRobotObjectSound();
 }
 
 CRobotObject::~CRobotObject()
 {
 	for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
 
-	if(m_pSound) delete m_pSound;
-	m_pSound = NULL;
+	if (m_pWeaponShader) delete m_pWeaponShader;
 }
 
 void CRobotObject::OnPrepareAnimate()
@@ -840,28 +848,30 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		if (m_pSound) m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBooster, m_pSound->m_pChannelBooster);
+		gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBooster, &m_pChannelBooster);
 	}
 	else
 	{
-		if (m_pSound) m_pSound->PauseFMODSound(m_pSound->m_pChannelBooster);
+		gFmodSound.PauseFMODSound(m_pChannelBooster);
 	}
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
 }
 
-void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
-	CGameObject::Render(pd3dCommandList, pCamera);
+	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
+
+	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
 	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera);
 	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera);
 }
 
-void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
-	CGameObject::RenderWire(pd3dCommandList, pCamera);
+	CGameObject::RenderWire(pd3dCommandList, pCamera, nInstances);
 
 	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);

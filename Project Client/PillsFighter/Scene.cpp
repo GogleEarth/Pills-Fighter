@@ -7,6 +7,8 @@ ID3D12DescriptorHeap *CScene::m_pd3dDescriptorHeap = NULL;
 D3D12_CPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvCPUDescriptorStartHandle;
 D3D12_GPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvGPUDescriptorStartHandle;
 
+extern CFMODSound gFmodSound;
+
 CScene::CScene()
 {
 	CONSOLE_CURSOR_INFO C;
@@ -77,6 +79,21 @@ void CScene::ReleaseObjects()
 		m_ppShaders = NULL;
 	}
 
+	if (m_ppEffectShaders)
+	{
+		for (int i = 0; i < m_nEffectShaders; i++)
+		{
+			if (m_ppEffectShaders[i])
+			{
+				m_ppEffectShaders[i]->ReleaseShaderVariables();
+				m_ppEffectShaders[i]->ReleaseObjects();
+				delete m_ppEffectShaders[i];
+			}
+		}
+		delete[] m_ppEffectShaders;
+		m_ppEffectShaders = NULL;
+	}
+
 	if (m_pParticleShader)
 	{
 		m_pParticleShader->ReleaseShaderVariables();
@@ -94,6 +111,7 @@ void CScene::ReleaseUploadBuffers()
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
 
 	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
+	for (int i = 0; i < m_nEffectShaders; i++) if(m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
 	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
 }
 
@@ -119,6 +137,13 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 		if (m_ppShaders[i])
 			m_ppShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
 	}
+
+	for (int i = 0; i < m_nEffectShaders; i++)
+	{
+		if (m_ppEffectShaders[i])
+			m_ppEffectShaders[i]->AnimateObjects(fTimeElapsed, pCamera);
+	}
+
 	if (m_pParticleShader) m_pParticleShader->AnimateObjects(fTimeElapsed);
 
 	if (m_pTerrain) m_pTerrain->Animate(fTimeElapsed, pCamera);
@@ -136,6 +161,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 {
 	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
 	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
+
+	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvGPUEnvirCubeDescriptorHandle);
 
 	if (pCamera)
 	{
@@ -160,6 +187,12 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
 
+	for (int i = 0; i < m_nEffectShaders; i++)
+	{
+		if (m_ppEffectShaders[i])
+			m_ppEffectShaders[i]->Render(pd3dCommandList, pCamera);
+	}
+
 	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
 }
 
@@ -172,6 +205,30 @@ void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCa
 		if(m_ppShaders[i])
 			m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
 	}
+}
+
+void CScene::PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pd3dGraphicsRootSignature) pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
+
+	for (int i = 0; i < m_nEffectShaders; i++)
+	{
+		if (m_ppEffectShaders[i])
+			m_ppEffectShaders[i]->PrepareRender(pd3dCommandList);
+	}
+
+	if (m_pParticleShader) m_pParticleShader->PrepareRender(pd3dCommandList);
+}
+
+void CScene::AfterRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	for (int i = 0; i < m_nEffectShaders; i++)
+	{
+		if (m_ppEffectShaders[i])
+			m_ppEffectShaders[i]->AfterRender(pd3dCommandList);
+	}
+
+	if (m_pParticleShader) m_pParticleShader->AfterRender(pd3dCommandList);
 }
 
 void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
@@ -231,6 +288,26 @@ D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3
 	return(d3dShaderResourceViewDesc);
 }
 
+void CScene::SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnvirCube)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC d3dSRVDesc;
+	d3dSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	d3dSRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	d3dSRVDesc.TextureCube.MostDetailedMip = 0;
+	d3dSRVDesc.TextureCube.MipLevels = 1;
+	d3dSRVDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+
+	pd3dDevice->CreateShaderResourceView(pd3dEnvirCube, &d3dSRVDesc, m_d3dSrvCPUDescriptorStartHandle);
+	m_pd3dEnvirCube = pd3dEnvirCube;
+
+	m_d3dSrvGPUEnvirCubeDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+
+	m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+	m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+
+}
+
 D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
@@ -263,20 +340,17 @@ CColonyScene::CColonyScene() : CScene()
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 		m_pObjects[i] = NULL;
 
-	m_pSound = new CColonySceneSound();
 }
 
 CColonyScene::~CColonyScene()
 {
-	if (m_pSound) delete m_pSound;
-	m_pSound = NULL;
 }
 
 ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 {
 	ID3D12RootSignature *pd3dGraphicsRootSignature = NULL;
 
-	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[5];
+	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[6];
 
 	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[0].NumDescriptors = 3;
@@ -307,6 +381,12 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 	pd3dDescriptorRanges[4].BaseShaderRegister = 7; // t7~10: tile*4 + Setting
 	pd3dDescriptorRanges[4].RegisterSpace = 0;
 	pd3dDescriptorRanges[4].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	pd3dDescriptorRanges[5].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	pd3dDescriptorRanges[5].NumDescriptors = 1;
+	pd3dDescriptorRanges[5].BaseShaderRegister = 13; // t13: Envir
+	pd3dDescriptorRanges[5].RegisterSpace = 0;
+	pd3dDescriptorRanges[5].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_ROOT_PARAMETER pd3dRootParameters[MAX_ROOT_PARAMETER_INDEX];
 
@@ -385,6 +465,11 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_INSTANCE].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_INSTANCE].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[5]; // t6: Texture Cube
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -442,8 +527,10 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
+	//
 	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
+	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
 
 	CHangarShader *pHangarShader = new CHangarShader();
 	pHangarShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -487,7 +574,7 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	CGundamShader *pGundamhader = new CGundamShader();
 	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository, this);
+	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository, m_pd3dGraphicsRootSignature);
 	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
 
 	CBulletShader *pGGBulletShader = new CBulletShader();
@@ -505,31 +592,36 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pMGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_MG_BULLET] = pMGBulletShader;
 
-	CHitSpriteShader *pHitSpriteShader = new CHitSpriteShader();
-	pHitSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pHitSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_HIT_SPRITE] = pHitSpriteShader;
-
-	CExpSpriteShader *pExpSpriteShader = new CExpSpriteShader();
-	pExpSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pExpSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_EXP_SPRITE] = pExpSpriteShader;
-
 	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
 	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
-
-	CFadeOutShader *pFadeOutShader = new CFadeOutShader();
-	pFadeOutShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pFadeOutShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppShaders[INDEX_SHADER_EFFECT] = pFadeOutShader;
 
 	CAmmoItemShader *pAmmoItemShader = new CAmmoItemShader();
 	pAmmoItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pAmmoItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_AMMO_ITEM] = pAmmoItemShader;
 
+	//
+	m_nEffectShaders = EFFECT_SHADER_INDEX;
+	m_ppEffectShaders = new CEffectShader*[m_nEffectShaders];
+
+	CFadeOutShader *pFadeOutShader = new CFadeOutShader();
+	pFadeOutShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pFadeOutShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT] = pFadeOutShader;
+
+	CHitSpriteShader *pHitSpriteShader = new CHitSpriteShader();
+	pHitSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pHitSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE] = pHitSpriteShader;
+
+	CExpSpriteShader *pExpSpriteShader = new CExpSpriteShader();
+	pExpSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pExpSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE] = pExpSpriteShader;
+
+	//
 	m_pWireShader = new CWireShader();
 	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 
@@ -544,21 +636,10 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pParticleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
-	CShader *pShader = new CShader();
-	pShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pGimGun->SetShader(pShader);
-
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false); 
-	pShader = new CShader();
-	pShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pBazooka->SetShader(pShader);
-
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false); 
-	pShader = new CShader();
-	pShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pMachineGun->SetShader(pShader);
 
-	if(m_pSound) m_pSound->PlayFMODSoundLoop(m_pSound->m_pSoundBGM, m_pSound->m_pChannelBGM);
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -572,8 +653,8 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pPlayer->SetScene(this);
 	}
 
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_GG_BULLET]);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_BZK_BULLET]);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_GG_BULLET]); 
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_BZK_BULLET]); 
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_MG_BULLET]);
 
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
@@ -616,12 +697,11 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBullet))
 				{
-					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
-					if(pSound) pSound->PlayFMODSound(pSound->m_pSoundGGHit);
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
+					((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -635,12 +715,11 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pBZKBullet))
 				{
-					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
-					if (pSound) pSound->PlayFMODSound(pSound->m_pSoundBZKHit);
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 
-					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
+					((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
 
 					pBZKBullet->Delete();
 
@@ -655,12 +734,11 @@ void CColonyScene::CheckCollision()
 			{
 				if (Enemy->CollisionCheck(pMGBullet))
 				{
-					CRobotObjectSound *pSound = ((CRobotObject*)Enemy)->m_pSound;
-					if (pSound) pSound->PlayFMODSound(pSound->m_pSoundGGHit);
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
 
-					((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
+					((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
 
 					pMGBullet->Delete();
 
@@ -760,108 +838,138 @@ void CColonyScene::FindAimToTargetDistance()
 
 	std::vector<CGameObject*> *vObstacles;
 
-	vObstacles  = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+	if (m_ppShaders[INDEX_SHADER_HANGAR])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_DOUBLESQUARE])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+	if (m_ppShaders[INDEX_SHADER_DOUBLESQUARE])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_DOUBLESQUARE])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGON])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+
+	if (m_ppShaders[INDEX_SHADER_OCTAGON])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGON])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+
+	if (m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SLOPETOP])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+
+	if (m_ppShaders[INDEX_SHADER_SLOPETOP])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SLOPETOP])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SQUARE])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+
+	if (m_ppShaders[INDEX_SHADER_SQUARE])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SQUARE])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STEEPLETOP])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+
+	if (m_ppShaders[INDEX_SHADER_STEEPLETOP])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STEEPLETOP])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_WALL])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
+
+	if (m_ppShaders[INDEX_SHADER_WALL])
 	{
-		// 카메라 이동 O
-		if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_WALL])->GetObjects();
+		for (const auto& Obstacle : *vObstacles)
 		{
-			if (fDistance > fTemp)
+			// 카메라 이동 O
+			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				fDistance = fTemp;
-				pTarget = Obstacle;
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Obstacle;
+				}
 			}
 		}
 	}
@@ -1023,13 +1131,13 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_WORD_HIT:
-		((CFadeOutShader*)m_ppShaders[INDEX_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
+		((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
-		((CSpriteShader*)m_ppShaders[INDEX_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
-		((CSpriteShader*)m_ppShaders[INDEX_SHADER_EXP_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	}
 }

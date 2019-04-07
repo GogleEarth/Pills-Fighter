@@ -302,6 +302,8 @@ public:
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
 
@@ -413,6 +415,8 @@ public:
 	virtual void CheckDeleteObjects();
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 
@@ -468,10 +472,14 @@ public:
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate = false, void *pContext = NULL);
 
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
 protected:
 	CModel		*m_pGimGun = NULL;
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
+
+	ID3D12RootSignature *m_pd3dSceneRootSignature = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

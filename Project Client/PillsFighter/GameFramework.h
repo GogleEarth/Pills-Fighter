@@ -32,22 +32,18 @@ private:
 	static const UINT				m_nSwapChainBuffers = 2;
 	UINT							m_nSwapChainBufferIndex;
 
-	//렌더 타겟 버퍼, 서술자 힙 인터페이스 포인터, 렌더 타겟 서술자 원소의 크기이다. 
 	ID3D12Resource					*m_ppd3dRenderTargetBuffers[m_nSwapChainBuffers];
 	ID3D12DescriptorHeap			*m_pd3dRtvDescriptorHeap = NULL;
 	UINT							m_nRtvDescriptorIncrementSize;
 
-	//깊이-스텐실 버퍼, 서술자 힙 인터페이스 포인터, 깊이-스텐실 서술자 원소의 크기이다. 
 	ID3D12Resource					*m_pd3dDepthStencilBuffer = NULL;
 	ID3D12DescriptorHeap			*m_pd3dDsvDescriptorHeap = NULL;
 	UINT							m_nDsvDescriptorIncrementSize;
 
-	//명령 큐, 명령 할당자, 명령 리스트 인터페이스 포인터이다. 
 	ID3D12CommandQueue				*m_pd3dCommandQueue = NULL;
 	ID3D12CommandAllocator			*m_pd3dCommandAllocator = NULL;
 	ID3D12GraphicsCommandList		*m_pd3dCommandList = NULL;
 
-	//펜스 인터페이스 포인터, 펜스의 값, 이벤트 핸들이다.
 	ID3D12Fence						*m_pd3dFence = NULL;
 	UINT64							m_nFenceValues[m_nSwapChainBuffers];
 	HANDLE							m_hFenceEvent;
@@ -61,7 +57,7 @@ private:
 
 	POINT							m_ptOldCursorPos;
 	RECT							m_wndRect;
-	POINT ptCursorPos;
+	POINT							m_ptCursorPos;
 	BOOL							m_LButtonDown = FALSE;
 	BOOL							m_bRenderWire = FALSE;
 
@@ -108,6 +104,18 @@ public:
 
 protected:
 	CRepository	 *m_pRepository = NULL;
+
+	int								m_nCubeMapWidth;
+	int								m_nCubeMapHeight;
+	ID3D12Resource					*m_pd3dEnvirCube;
+	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
+
+	CCamera			*m_pCubeMapCamera[6];
+public:
+	void CreateEnvironmentMap();
+	void CreateCubeMapCamera();
 
 public: // for Network
 	HANDLE m_hThread;

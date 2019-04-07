@@ -289,6 +289,7 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 CModel::CModel()
 {
 	m_xmf4x4ToParent = Matrix4x4::Identity();
+	m_xmf4x4World = Matrix4x4::Identity();
 }
 
 CModel::~CModel()
@@ -307,7 +308,6 @@ CModel::~CModel()
 	}
 
 	if (m_pAnimationSet) delete m_pAnimationSet;
-	if (m_pShader) delete m_pShader;
 }
 
 void CModel::AddRef()
@@ -474,8 +474,6 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 {
 	if ((*pnIndex) == vd3dcbGameObject.size())
 		return;
-
-	if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
 
 	if (m_pMesh)
 	{

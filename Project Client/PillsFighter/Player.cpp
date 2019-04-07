@@ -21,27 +21,26 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pAnimationController = new CAnimationController(1, pModel->GetAnimationSet());
 	m_pAnimationController->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, m_pSound, m_pSound->m_pSoundMove);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, m_pSound, m_pSound->m_pSoundMove);
-
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, m_pSound, m_pSound->m_pSoundMove);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, m_pSound, m_pSound->m_pSoundMove);
-
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, m_pSound, m_pSound->m_pSoundMove);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, m_pSound, m_pSound->m_pSoundMove);
-
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, m_pSound, m_pSound->m_pSoundMove);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, m_pSound, m_pSound->m_pSoundMove);
-
 	CAnimationCallbackHandler *pAnimationCallbackHandler = new CSoundCallbackHandler();
 
+	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, CALLBACK_SOUND_TYPE_MOVE);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, CALLBACK_SOUND_TYPE_MOVE);
 	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
+
+	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, CALLBACK_SOUND_TYPE_MOVE);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, CALLBACK_SOUND_TYPE_MOVE);
 	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
+
+	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, CALLBACK_SOUND_TYPE_MOVE);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, CALLBACK_SOUND_TYPE_MOVE);
 	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
+
+	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, CALLBACK_SOUND_TYPE_MOVE);
+	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, CALLBACK_SOUND_TYPE_MOVE);
 	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
 
 	SetModel(pModel);
@@ -60,9 +59,13 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	SetPlayerUpdatedContext(pTerrain);
 	SetCameraUpdatedContext(pTerrain);
 
-	CSkinnedAnimationShader *pShader = new CSkinnedAnimationShader();
+	CSkinnedAnimationShader *pPlayerShader = new CSkinnedAnimationShader();
+	pPlayerShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	SetShader(pPlayerShader);
+
+	CShader *pShader = new CShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	m_pModel->SetShader(pShader);
+	SetWeaponShader(pShader);
 }
 
 CPlayer::~CPlayer()

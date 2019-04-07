@@ -30,6 +30,8 @@ Texture2D gtxtSpecularTexture : register(t4);
 Texture2D gtxtNormalTexture : register(t5);
 TextureCube gtxtSkyCubeTexture : register(t6);
 
+TextureCube gtxtEnvirCubeTexture : register(t13);
+
 SamplerState gssWrap : register(s0);
 SamplerState gssClamp : register(s1);
 
@@ -50,7 +52,7 @@ struct VS_STANDARD_OUTPUT
 	float3 binormalW : BINORMAL;
 	float3 tangentW : TANGENT;
 	float2 uv : TEXCOORD;
-	//float3 reflection : REFLECTION;
+	float3 reflection : REFLECTION;
 };
 
 #define MATERIAL_ALBEDO_MAP				0x01
@@ -67,7 +69,7 @@ VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gmtxGameObject);
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
-	//output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
+	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
 	return(output);
 }
@@ -75,6 +77,7 @@ VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
 	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
+	float4 cCubeColor = gtxtEnvirCubeTexture.Sample(gssClamp, input.reflection);
 
 	// 임시 텍스처 배열 인덱스는 0
 	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -90,8 +93,8 @@ float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 		fSpecularFactor = gtxtSpecularTexture.Sample(gssWrap, input.uv).x;
 
 	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	float4 cColor = f4AlbedoColor;
-	//float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.7);
+	//float4 cColor = f4AlbedoColor;
+	float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.5);
 
 	float3 normalW = normalize(input.normalW);
 
@@ -263,8 +266,6 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 			continue;
 
 		mtxVertexToBoneWorld = mul(gpmtxBoneOffsets[input.indices[i]], gpmtxBoneTransforms[input.indices[i]]);
-		//mtxVertexToBoneWorld = gpmtxBoneOffsets[input.indices[i]];
-		//mtxVertexToBoneWorld = gpmtxBoneTransforms[input.indices[i]];
 		output.positionW += input.weights[i] * mul(float4(input.position, 1.0f), mtxVertexToBoneWorld).xyz;
 		output.normalW += input.weights[i] * mul(input.normal, (float3x3)mtxVertexToBoneWorld);
 		output.tangentW += input.weights[i] * mul(input.tangent, (float3x3)mtxVertexToBoneWorld);
@@ -273,7 +274,7 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 
 	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
 	output.uv = input.uv;
-	//output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
+	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
 	return(output);
 }

@@ -23,6 +23,7 @@ protected:
 
 public:
 	void SetForCreate(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { m_pd3dDevice = pd3dDevice; m_pd3dCommandList = pd3dCommandList; };
+	void SetOwnerTransform(XMFLOAT4X4 xmf4x4World);
 
 	void SetOwner(CGameObject *pOwner) { m_pOwner = pOwner; }
 	void SetParentModel(CModel *pModel) { m_pParentModel = pModel; }
@@ -32,8 +33,8 @@ public:
 	virtual void SetType(int nType) { m_nType |= nType; };
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

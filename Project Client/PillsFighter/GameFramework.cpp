@@ -276,6 +276,8 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	CreateCommandQueueAndList();
 	CreateRtvAndDsvDescriptorHeaps();
 	CreateSwapChain();
+	CreateEnvironmentMap();
+	CreateCubeMapCamera();
 
 	BuildObjects();
 
@@ -320,6 +322,15 @@ void CGameFramework::OnDestroy()
 	if (m_pdxgiSwapChain) m_pdxgiSwapChain->Release();
 	if (m_pd3dDevice) m_pd3dDevice->Release();
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
+
+	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
+	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
+
+	for (int i = 0; i < 6; i++)
+	{
+		m_pCubeMapCamera[i]->ReleaseShaderVariables();
+		delete m_pCubeMapCamera[i];
+	}
 
 	::ReleaseCapture();
 }
@@ -442,25 +453,111 @@ void CGameFramework::CreateCommandQueueAndList()
 
 void CGameFramework::CreateRtvAndDsvDescriptorHeaps()
 {
-	//렌더 타겟 서술자 힙(서술자의 개수는 스왑체인 버퍼의 개수)을 생성한다.
 	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
 	::ZeroMemory(&d3dDescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
-	d3dDescriptorHeapDesc.NumDescriptors = m_nSwapChainBuffers;
+	d3dDescriptorHeapDesc.NumDescriptors = m_nSwapChainBuffers + 6;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
 	HRESULT hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dRtvDescriptorHeap);
 
-	//렌더 타겟 서술자 힙의 원소의 크기를 저장한다. 
 	m_nRtvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	//깊이-스텐실 서술자 힙(서술자의 개수는 1)을 생성한다. 
-	d3dDescriptorHeapDesc.NumDescriptors = 1;
+	d3dDescriptorHeapDesc.NumDescriptors = 2;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	hResult = m_pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDsvDescriptorHeap);
 
-	//깊이-스텐실 서술자 힙의 원소의 크기를 저장한다. 
 	m_nDsvDescriptorIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+}
+
+void CGameFramework::CreateEnvironmentMap()
+{
+	m_nCubeMapWidth = m_nWndClientWidth / 6;
+	m_nCubeMapHeight = m_nWndClientHeight / 6;
+
+	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
+	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
+	d3dHeapPropertiesDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
+	d3dHeapPropertiesDesc.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	d3dHeapPropertiesDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	d3dHeapPropertiesDesc.CreationNodeMask = 1;
+	d3dHeapPropertiesDesc.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC d3dResourceDesc;
+	ZeroMemory(&d3dResourceDesc, sizeof(D3D12_RESOURCE_DESC));
+
+	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3dResourceDesc.Alignment = 0;
+	d3dResourceDesc.Width = m_nCubeMapWidth;
+	d3dResourceDesc.Height = m_nCubeMapHeight;
+	d3dResourceDesc.DepthOrArraySize = 6;
+	d3dResourceDesc.MipLevels = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dResourceDesc.SampleDesc.Count = (m_bMsaa4xEnable) ? 4 : 1;
+	d3dResourceDesc.SampleDesc.Quality = (m_bMsaa4xEnable) ? (m_nMsaa4xQualityLevels - 1) : 0;
+	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	
+	D3D12_CLEAR_VALUE d3dClear = { DXGI_FORMAT_R8G8B8A8_UNORM, { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+	m_pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dEnvirCube);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBuffers * m_nRtvDescriptorIncrementSize);
+
+	for (int i = 0; i < 6; i++)
+	{
+		D3D12_RENDER_TARGET_VIEW_DESC d3dDesc;
+		d3dDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+		d3dDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dDesc.Texture2DArray.MipSlice = 0;
+		d3dDesc.Texture2DArray.PlaneSlice = 0;
+		d3dDesc.Texture2DArray.FirstArraySlice = i;
+		d3dDesc.Texture2DArray.ArraySize = 1;
+
+		m_pd3dDevice->CreateRenderTargetView(m_pd3dEnvirCube, &d3dDesc, d3dRtvCPUDescriptorHandle);
+		m_d3dRrvEnvirCubeMapCPUHandle[i] = d3dRtvCPUDescriptorHandle;
+
+		d3dRtvCPUDescriptorHandle.ptr += m_nRtvDescriptorIncrementSize;
+	}
+}
+
+void CGameFramework::CreateCubeMapCamera()
+{
+	XMFLOAT3 xmf3Looks[6] = {
+		XMFLOAT3(1.0f, 0.0f, 0.0f),
+		XMFLOAT3(-1.0f, 0.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, -1.0f, 0.0f),
+		XMFLOAT3(0.0f, 0.0f, 1.0f),
+		XMFLOAT3(0.0f, 0.0f, -1.0f)
+	};
+
+	XMFLOAT3 xmf3Ups[6] = {
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, 0.0f, -1.0f),
+		XMFLOAT3(0.0f, 0.0f, 1.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f)
+	};
+
+	for (int i = 0; i < 6; i++)
+	{
+		XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks[i], xmf3Ups[i], true);
+
+		m_pCubeMapCamera[i] = new CCamera();
+
+		m_pCubeMapCamera[i]->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		m_pCubeMapCamera[i]->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+		m_pCubeMapCamera[i]->SetViewport(0, 0, m_nCubeMapWidth, m_nCubeMapHeight, 0.0f, 1.0f);
+		m_pCubeMapCamera[i]->SetScissorRect(0, 0, m_nCubeMapWidth, m_nCubeMapHeight);
+		m_pCubeMapCamera[i]->SetRight(xmf3Right);
+		m_pCubeMapCamera[i]->SetUp(xmf3Ups[i]);
+		m_pCubeMapCamera[i]->SetLook(xmf3Looks[i]);
+
+		m_pCubeMapCamera[i]->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
+	}
 }
 
 void CGameFramework::CreateRenderTargetViews()
@@ -513,7 +610,19 @@ void CGameFramework::CreateDepthStencilView()
 	d3dDepthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	d3dDepthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, &d3dDepthStencilViewDesc/*NULL*/, d3dDsvCPUDescriptorHandle);
+	m_pd3dDevice->CreateDepthStencilView(m_pd3dDepthStencilBuffer, &d3dDepthStencilViewDesc, d3dDsvCPUDescriptorHandle);
+
+	d3dDsvCPUDescriptorHandle.ptr += m_nDsvDescriptorIncrementSize;
+
+	// For Environment Map
+	d3dResourceDesc.Width = m_nCubeMapWidth;
+	d3dResourceDesc.Height = m_nCubeMapHeight;
+
+	m_pd3dDevice->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue, __uuidof(ID3D12Resource), (void **)&m_pd3dEnvirCubeDSBuffer);
+
+	m_pd3dDevice->CreateDepthStencilView(m_pd3dEnvirCubeDSBuffer, &d3dDepthStencilViewDesc, d3dDsvCPUDescriptorHandle);
+	m_d3dDsvEnvirCubeMapCPUHandle = d3dDsvCPUDescriptorHandle;
+
 }
 
 void CGameFramework::BuildScene(SCENEINFO *pSI)
@@ -524,19 +633,19 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 		{
 		case SCENE_NAME_COLONY:
 			m_pScene = new CColonyScene();
-			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 			break;
 		default:
 			m_pScene = new CScene();
-			m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 			break;
 		}
 	}
 	else
 	{
 		m_pScene = new CColonyScene();
-		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 	}
+
+	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+	m_pScene->SetEnvirMapAndSRV(m_pd3dDevice, m_pd3dEnvirCube);
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
 	pPlayer->SetMovingSpeed(100.0f);
@@ -620,8 +729,8 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_RBUTTONUP:
 		break;
 	case WM_MOUSEMOVE:
-		ptCursorPos.x = LOWORD(lParam);
-		ptCursorPos.y = HIWORD(lParam);
+		m_ptCursorPos.x = LOWORD(lParam);
+		m_ptCursorPos.y = HIWORD(lParam);
 		break;
 	default:
 		break;
@@ -935,16 +1044,37 @@ void CGameFramework::FrameAdvance()
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
+	if (m_pScene) m_pScene->PrepareRenderEffects(m_pd3dCommandList);
+
+	//Draw Environment Map
+	::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	for (int i = 0; i < 6; i++)
+	{
+		m_pCubeMapCamera[i]->SetPosition(m_pPlayer->GetPosition());
+		m_pCubeMapCamera[i]->GenerateViewMatrix();
+
+		m_pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
+		m_pd3dCommandList->ClearDepthStencilView(m_d3dDsvEnvirCubeMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+
+		m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvEnvirCubeMapCPUHandle[i], TRUE, &m_d3dDsvEnvirCubeMapCPUHandle);
+
+		if (m_pScene)
+		{
+			m_pScene->Render(m_pd3dCommandList, m_pCubeMapCamera[i]);
+		}
+	}
+	::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+	
+
 	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	d3dRtvCPUDescriptorHandle.ptr += (m_nSwapChainBufferIndex * m_nRtvDescriptorIncrementSize);
 
-	float pfClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
-	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle, pfClearColor/*Colors::Azure*/, 0, NULL);
+	m_pd3dCommandList->ClearRenderTargetView(d3dRtvCPUDescriptorHandle, Colors::Black, 0, NULL);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvCPUDescriptorHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
 	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvCPUDescriptorHandle, TRUE, &d3dDsvCPUDescriptorHandle);
@@ -966,6 +1096,9 @@ void CGameFramework::FrameAdvance()
 		if (m_pScene) m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
 		if (m_pPlayer) m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
+
+	if (m_pScene) m_pScene->AfterRenderEffects(m_pd3dCommandList);
+
 	//////////////////////////////////////////////////////////////////
 
 
@@ -984,8 +1117,8 @@ void CGameFramework::FrameAdvance()
 
 	::GetWindowRect(m_hWnd, &m_wndRect);
 
-	float Screenx = ((2.0f  * ptCursorPos.x) / m_nWndClientWidth) - 1;
-	float Screeny = -((2.0f * ptCursorPos.y) / m_nWndClientHeight) + 1;
+	float Screenx = ((2.0f  * m_ptCursorPos.x) / m_nWndClientWidth) - 1;
+	float Screeny = -((2.0f * m_ptCursorPos.y) / m_nWndClientHeight) + 1;
 
 #ifdef ON_NETWORKING
 	m_nFramePerSecond++;

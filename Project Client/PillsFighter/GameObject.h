@@ -108,9 +108,9 @@ protected:
 
 	bool							 m_Delete = FALSE;
 
-	int								m_nHitPoint;
-	int								m_nMaxHitPoint;
-	XMFLOAT3						serverPosition;
+	int								m_nHitPoint = 0;
+	int								m_nMaxHitPoint = 0;
+	XMFLOAT3						serverPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 public:
 	int GetHitPoint() { return m_nHitPoint; }
@@ -151,9 +151,10 @@ public:
 	virtual void ApplyToParticle(CParticle *pParticle);
 
 protected:
-	std::vector<CParticle*> m_vpParticles;
-	int					m_nState = 0x00;
-	int					m_nType = 0x00;
+	std::vector<CParticle*>		m_vpParticles;
+
+	int							m_nState = 0x00;
+	int							m_nType = 0x00;
 
 public:
 	int GetState() { return m_nState; }
@@ -164,6 +165,13 @@ public:
 
 public:
 	void UpdateInstanceShaderVariables(VS_VB_INSTANCE *pcbMappedGameObjects, int *pnIndex);
+
+protected:
+	CShader							*m_pShader = NULL;
+
+public:
+	void SetShader(CShader *pShader) { m_pShader = pShader; }
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,7 +297,7 @@ public:
 	~CSoundCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(CSound *pCallbackSound, FMOD::Sound *pfmodCallbackSound);
+	virtual void HandleCallback(UINT nSoundType);
 };
 
 class CRobotObject : public CAnimationObject
@@ -304,8 +312,8 @@ public:
 	virtual void EquipOnLeftHand(CWeapon *pWeapon);
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances = 1);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances = 1);
 
 	virtual void ChangeWeapon(int nSlotIndex);
 	virtual void ChangeWeaponByType(WEAPON_TYPE nType);
@@ -336,8 +344,14 @@ public:
 	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
 	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }
 
+protected:
+	CShader *m_pWeaponShader = NULL;
+
 public:
-	CRobotObjectSound *m_pSound = NULL;
+	void SetWeaponShader(CShader *pShader) { m_pWeaponShader = pShader; }
+
+protected:
+	FMOD::Channel *m_pChannelBooster = NULL;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
