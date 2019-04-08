@@ -113,6 +113,7 @@ void CMaterial::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList,
 	pcbMappedGameObject->m_Material.m_xmf4Diffuse = m_xmf4DiffuseColor;
 	pcbMappedGameObject->m_Material.m_xmf4Emissive = m_xmf4EmissiveColor;
 	pcbMappedGameObject->m_Material.m_xmf4Specular = m_xmf4SpecularColor;
+	pcbMappedGameObject->m_Material.m_fReflectionFactor = m_xmf4ReflectionColor.w;
 	pcbMappedGameObject->m_nTexturesMask = m_nType;
 }
 
@@ -122,6 +123,7 @@ void CMaterial::UpdateShaderVariable(VS_VB_INSTANCE* pcbMappedGameObject)
 	pcbMappedGameObject->m_Material.m_xmf4Diffuse = m_xmf4DiffuseColor;
 	pcbMappedGameObject->m_Material.m_xmf4Emissive = m_xmf4EmissiveColor;
 	pcbMappedGameObject->m_Material.m_xmf4Specular = m_xmf4SpecularColor;
+	pcbMappedGameObject->m_Material.m_fReflectionFactor = m_xmf4ReflectionColor.w;
 	pcbMappedGameObject->m_nTexturesMask = m_nType;
 }
 
@@ -437,8 +439,8 @@ void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCa
 		(*pnIndex)++;
 	}
 
-	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
-	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
+	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
+	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
 }
 
 void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* pd3dcbGameObject, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
@@ -470,7 +472,7 @@ void CModel::UpdateInstanceShaderVariables(VS_VB_INSTANCE *m_pcbMappedGameObject
 	if (m_pChild) m_pChild->UpdateInstanceShaderVariables(m_pcbMappedGameObjects, pnIndex);
 }
 
-void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex)
+void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, bool bSetTexture)
 {
 	if ((*pnIndex) == vd3dcbGameObject.size())
 		return;
@@ -487,7 +489,8 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 				if (m_ppMaterials[i])
 				{
 					m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, vcbMappedGameObject[*pnIndex]);
-					m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
+
+					if(bSetTexture) m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
 				}
 
 				m_pMesh->Render(pd3dCommandList, i);
@@ -497,11 +500,11 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 		(*pnIndex)++;
 	}
 
-	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
-	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex);
+	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
+	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
 }
 
-void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
+void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
 	if (m_pMesh)
 	{

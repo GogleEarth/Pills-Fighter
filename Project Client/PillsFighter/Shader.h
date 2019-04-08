@@ -73,7 +73,7 @@ class CObjectsShader : public CShader
 public:
 	CObjectsShader();
 	virtual ~CObjectsShader();
-	
+
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void ReleaseObjects();
 
@@ -81,20 +81,35 @@ public:
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	CModel						*m_pModel = NULL;
-
-	std::vector<CGameObject*>	m_vObjects;
+	int							m_nObjectGroup;
+	std::vector<CModel*>		m_vpModels;
+	std::vector<CGameObject*>	*m_pvpObjects = NULL;
 
 public:
-	std::vector<CGameObject*>* GetObjects() { return &m_vObjects; }
+	std::vector<CGameObject*>& GetObjects(int nGroup) { return m_pvpObjects[nGroup]; }
+	int GetGroups() { return m_nObjectGroup; }
 
 	void CheckDeleteObjects();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL) {};
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate = false, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
+		CRepository *pRepository, void *pContext = NULL) {};
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
+		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CStandardObjectsShader : public CObjectsShader
+{
+public:
+	CStandardObjectsShader();
+	virtual ~CStandardObjectsShader();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
+		CRepository *pRepository, void *pContext = NULL);
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct VS_VB_INSTANCE
 {
@@ -113,62 +128,18 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
 	virtual void ReleaseShaderVariables();
 
+	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	ID3D12Resource *m_pd3dcbGameObjects = NULL;
-	VS_VB_INSTANCE *m_pcbMappedGameObjects = NULL;
+	std::vector<ID3D12Resource*> m_vpd3dcbGameObjects;
+	std::vector<VS_VB_INSTANCE*> m_vpcbMappedGameObjects;
 };
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CBulletShader : public CObjectsShader
-{
-public:
-	CBulletShader();
-	virtual ~CBulletShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CBZKBulletShader : public CObjectsShader
-{
-public:
-	CBZKBulletShader();
-	virtual ~CBZKBulletShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CRepairItemShader : public CObjectsShader
-{
-public:
-	CRepairItemShader();
-	virtual ~CRepairItemShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CAmmoItemShader : public CObjectsShader
-{
-public:
-	CAmmoItemShader();
-	virtual ~CAmmoItemShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////
 
 class CObstacleShader : public CInstancingObjectsShader
 {
@@ -176,7 +147,7 @@ public:
 	CObstacleShader();
 	virtual ~CObstacleShader();
 
-	void InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName);
+	void InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup);
 
 	float ReadFloatFromFile(FILE *pInFile) {
 		float fValue = 0;
@@ -200,84 +171,47 @@ public:
 
 		return(nReads);
 	}
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+		CRepository *pRepository, void *pContext = NULL);
 };
 
-///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CHangarShader : public CObstacleShader
+class CSkinnedObjectsShader : public CObjectsShader
 {
 public:
-	CHangarShader() {};
-	virtual ~CHangarShader() {};
+	CSkinnedObjectsShader();
+	virtual ~CSkinnedObjectsShader();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 };
 
-class CDoubleSquareShader : public CObstacleShader
-{
-public:
-	CDoubleSquareShader() {};
-	virtual ~CDoubleSquareShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-class COctagonShader : public CObstacleShader
-{
-public:
-	COctagonShader() {};
-	virtual ~COctagonShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-class COctagonLongTierShader : public CObstacleShader
-{
-public:
-	COctagonLongTierShader() {};
-	virtual ~COctagonLongTierShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-class CSlopetopShader : public CObstacleShader
-{
-public:
-	CSlopetopShader() {};
-	virtual ~CSlopetopShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-class CSquareShader : public CObstacleShader
-{
-public:
-	CSquareShader() {};
-	virtual ~CSquareShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-class CSteepletopShader : public CObstacleShader
-{
-public:
-	CSteepletopShader() {};
-	virtual ~CSteepletopShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-class CWallShader : public CObstacleShader
-{
-public:
-	CWallShader() {};
-	virtual ~CWallShader() {};
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-};
-
-///////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CRobotObjectsShader : public CSkinnedObjectsShader
+{
+public:
+	CRobotObjectsShader();
+	virtual ~CRobotObjectsShader();
+
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+		CRepository *pRepository, void *pContext = NULL);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
+
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+protected:
+	CModel		*m_pGimGun = NULL;
+	CModel		*m_pBazooka = NULL;
+	CModel		*m_pMachineGun = NULL;
+
+	ID3D12RootSignature *m_pd3dSceneRootSignature = NULL;
+};
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CEffectShader : public CShader
 {
@@ -431,55 +365,6 @@ protected:
 
 	std::vector<CParticle*>			m_vpParticles;
 	int								m_nParticleIndex = 0;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CSkinnedObjectsShader : public CSkinnedAnimationShader
-{
-public:
-	CSkinnedObjectsShader();
-	virtual ~CSkinnedObjectsShader();
-
-	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
-	virtual void ReleaseObjects();
-
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-
-protected:
-	CModel						*m_pModel = NULL;
-
-	std::vector<CGameObject*>	m_vObjects;
-
-public:
-	std::vector<CGameObject*>* GetObjects() { return &m_vObjects; }
-
-	void CheckDeleteObjects();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL) {};
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate = false, void *pContext = NULL);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CGundamShader : public CSkinnedObjectsShader
-{
-public:
-	CGundamShader();
-	virtual ~CGundamShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate = false, void *pContext = NULL);
-
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-
-protected:
-	CModel		*m_pGimGun = NULL;
-	CModel		*m_pBazooka = NULL;
-	CModel		*m_pMachineGun = NULL;
-
-	ID3D12RootSignature *m_pd3dSceneRootSignature = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

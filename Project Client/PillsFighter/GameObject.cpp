@@ -370,7 +370,7 @@ void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
 	}
 }
 
-void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
 {
 	if(nInstances > 1)
 	{ 
@@ -396,7 +396,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
-		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i);
+		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, bSetTexture);
 	}
 }
 
@@ -694,12 +694,12 @@ CSkyBox::~CSkyBox()
 {
 }
 
-void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
 {
 	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
 	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
 
-	CGameObject::Render(pd3dCommandList, pCamera);
+	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, nInstances);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -859,14 +859,14 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
 }
 
-void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
+void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
 {
 	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
 
 	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
-	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera);
-	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera);
+	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
+	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
 }
 
 void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)

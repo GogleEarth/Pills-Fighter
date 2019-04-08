@@ -1046,8 +1046,26 @@ void CGameFramework::FrameAdvance()
 
 	if (m_pScene) m_pScene->PrepareRenderEffects(m_pd3dCommandList);
 	
+	int nFPS;
+#ifdef ON_NETWORKING
+	nFPS = m_nFramePerSecond;
+#else
+	nFPS = m_GameTimer.GetFPS();
+#endif
+
+	/*
+	최적화 우선순위. [ 쉬운 것 부터 천천히 ]
+	1. Set 횟수 줄이기
+	   - 현재 같은 쉐이더를 사용함에도 불구하고 쉐이더 클래스마다 Set하고 있음.
+	   - 쉐이더 변수 혹은 텍스처 등 한 번만 Set해도 되는 걸 찾기.
+
+	2. 기하 쉐이더를 사용하여 6면을 한 번에 그리기.
+	   - 이렇게 할 경우 쉐이더 코드를 전부 수정/추가해야 함.
+	   - 시간과 집중력이 필요한 작업.
+	*/
+
 	//Draw Environment Map
-	if (m_GameTimer.GetFPS() % 5 == 0)
+	if (nFPS % 5 == 0)
 	{
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 

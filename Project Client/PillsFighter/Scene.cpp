@@ -178,8 +178,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
 
-	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera);
-	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera);
+	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
+	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera, true);
 
 	for (int i = 0; i < m_nShaders; i++)
 	{
@@ -527,90 +527,38 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	//
 	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
 	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
 
-	CHangarShader *pHangarShader = new CHangarShader();
-	pHangarShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pHangarShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_HANGAR] = pHangarShader;
+	/* 그룹 1 [ Standard Shader ] */
+	CStandardObjectsShader *pStandardObjectsShader = new CStandardObjectsShader();
+	pStandardObjectsShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pStandardObjectsShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS] = pStandardObjectsShader;
 
-	CDoubleSquareShader *pDoubleSquareShader = new CDoubleSquareShader();
-	pDoubleSquareShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pDoubleSquareShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_DOUBLESQUARE] = pDoubleSquareShader;
+	/* 그룹 2 [ Instancing Shader ] */
+	CObstacleShader *pInstancingObstacleShader = new CObstacleShader();
+	pInstancingObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pInstancingObstacleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS] = pInstancingObstacleShader;
 
-	COctagonShader *pOctagonShader = new COctagonShader();
-	pOctagonShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pOctagonShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_OCTAGON] = pOctagonShader;
+	/* 그룹 3 [ Skinned Animation Shader ] */
+	CRobotObjectsShader *pSkinnedRobotShader = new CRobotObjectsShader();
+	pSkinnedRobotShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pSkinnedRobotShader->Initialize(pd3dDevice, pd3dCommandList, pRepository, m_pd3dGraphicsRootSignature);
+	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS] = pSkinnedRobotShader;
 
-	COctagonLongTierShader *pOctagonLTShader = new COctagonLongTierShader();
-	pOctagonLTShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pOctagonLTShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER] = pOctagonLTShader;
-
-	CSlopetopShader *pSlopetopShader = new CSlopetopShader();
-	pSlopetopShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pSlopetopShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_SLOPETOP] = pSlopetopShader;
-
-	CSquareShader *pSquareShader = new CSquareShader();
-	pSquareShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pSquareShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_SQUARE] = pSquareShader;
-
-	CSteepletopShader *pStellpletopShader = new CSteepletopShader();
-	pStellpletopShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pStellpletopShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_STEEPLETOP] = pStellpletopShader;
-
-	CWallShader *pWallShader = new CWallShader();
-	pWallShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pWallShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_WALL] = pWallShader;
-
-	CGundamShader *pGundamhader = new CGundamShader();
-	pGundamhader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pGundamhader->Initialize(pd3dDevice, pd3dCommandList, pRepository, m_pd3dGraphicsRootSignature);
-	m_ppShaders[INDEX_SHADER_ENEMY] = pGundamhader;
-
-	CBulletShader *pGGBulletShader = new CBulletShader();
-	pGGBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pGGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_GG_BULLET] = pGGBulletShader;
-
-	CBZKBulletShader *pBZKBulletShader = new CBZKBulletShader();
-	pBZKBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pBZKBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_BZK_BULLET] = pBZKBulletShader;
-
-	CBulletShader *pMGBulletShader = new CBulletShader();
-	pMGBulletShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pMGBulletShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_MG_BULLET] = pMGBulletShader;
-
-	CRepairItemShader *pRepairItemShader = new CRepairItemShader();
-	pRepairItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pRepairItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_REPAIR_ITEM] = pRepairItemShader;
-
-	CAmmoItemShader *pAmmoItemShader = new CAmmoItemShader();
-	pAmmoItemShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pAmmoItemShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_AMMO_ITEM] = pAmmoItemShader;
-
-	//
 	m_nEffectShaders = EFFECT_SHADER_INDEX;
 	m_ppEffectShaders = new CEffectShader*[m_nEffectShaders];
 
+	// 그룹 4 [ Fade Out Shader ]
 	CFadeOutShader *pFadeOutShader = new CFadeOutShader();
 	pFadeOutShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pFadeOutShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT] = pFadeOutShader;
 
+	// 그룹 5 [ Sprite Shader ]
 	CHitSpriteShader *pHitSpriteShader = new CHitSpriteShader();
 	pHitSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pHitSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
@@ -621,16 +569,20 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pExpSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE] = pExpSpriteShader;
 
-	//
+	// 그룹 6 [ Wire Shader ]
 	m_pWireShader = new CWireShader();
 	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 
 	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
 	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
 
+	// 그룹 7 [ Terrain Shader ]
 	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/Stage/HeightMap.raw"), 514, 514, 514, 514, xmf3Scale, xmf4Color);
+
+	// 그룹 8 [ SkyBox Shader ]
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
+	// 그룹 9 [ Particle Shader ]
 	m_pParticleShader = new CParticleShader();
 	m_pParticleShader->CreateShader(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 	m_pParticleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
@@ -653,9 +605,12 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pPlayer->SetScene(this);
 	}
 
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_GG_BULLET]); 
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_BZK_BULLET]); 
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_MG_BULLET]);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
+		m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
+		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
+		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
 
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
@@ -674,24 +629,24 @@ void CColonyScene::ReleaseUploadBuffers()
 void CColonyScene::CheckCollision()
 {
 #ifndef ON_NETWORKING
-	std::vector<CGameObject*> *vEnemys;
-	std::vector<CGameObject*> *vBullets;
-	std::vector<CGameObject*> *vBZKBullets;
-	std::vector<CGameObject*> *vMGBullets;
+	std::vector<CGameObject*> vEnemys;
+	std::vector<CGameObject*> vBullets;
+	std::vector<CGameObject*> vBZKBullets;
+	std::vector<CGameObject*> vMGBullets;
 
-	vEnemys = static_cast<CGundamShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
-	vBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_GG_BULLET])->GetObjects();
-	vBZKBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_BZK_BULLET])->GetObjects();
-	vMGBullets = static_cast<CBulletShader*>(m_ppShaders[INDEX_SHADER_MG_BULLET])->GetObjects();
+	vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_ENEMY);
+	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
+	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
+	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
 
-	for (const auto& Enemy : *vEnemys)
+	for (const auto& Enemy : vEnemys)
 	{
 		if (m_pPlayer->CollisionCheck(Enemy))
 		{
 			std::cout << "Collision Player By Enemy\n" << std::endl;
 		}
 
-		for (const auto& pBullet : *vBullets)
+		for (const auto& pBullet : vBullets)
 		{
 			if (!pBullet->IsDelete())
 			{
@@ -709,7 +664,7 @@ void CColonyScene::CheckCollision()
 			}
 		}
 
-		for (const auto& pBZKBullet : *vBZKBullets)
+		for (const auto& pBZKBullet : vBZKBullets)
 		{
 			if (!pBZKBullet->IsDelete())
 			{
@@ -728,7 +683,7 @@ void CColonyScene::CheckCollision()
 			}
 		}
 
-		for (const auto& pMGBullet : *vMGBullets)
+		for (const auto& pMGBullet : vMGBullets)
 		{
 			if (!pMGBullet->IsDelete())
 			{
@@ -756,58 +711,58 @@ void CColonyScene::CheckCollisionPlayer()
 {
 	std::vector<CGameObject*> *vObstacles;
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_DOUBLESQUARE])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_DOUBLESQUARE])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGON])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGON])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SLOPETOP])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SLOPETOP])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SQUARE])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SQUARE])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STEEPLETOP])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STEEPLETOP])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 
-	vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_WALL])->GetObjects();
-	for (const auto& Obstacle : *vObstacles)
-	{
-		m_pPlayer->MoveToCollision(Obstacle);
-	}
+	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_WALL])->GetObjects();
+	//for (const auto& Obstacle : *vObstacles)
+	//{
+	//	m_pPlayer->MoveToCollision(Obstacle);
+	//}
 }
 
 void CColonyScene::FindAimToTargetDistance()
 {
-	std::vector<CGameObject*> *vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_ENEMY])->GetObjects();
+	std::vector<CGameObject*> vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_ENEMY);
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -818,7 +773,7 @@ void CColonyScene::FindAimToTargetDistance()
 
 	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
 
-	for (const auto& Enemy : *vEnemys)
+	for (const auto& Enemy : vEnemys)
 	{
 		// 카메라 이동 X 단 목표가 되지 않음.
 		if (Enemy->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
@@ -836,144 +791,33 @@ void CColonyScene::FindAimToTargetDistance()
 		}
 	}
 
-	std::vector<CGameObject*> *vObstacles;
 
-	if (m_ppShaders[INDEX_SHADER_HANGAR])
+	if (m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS])
 	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
+		std::vector<CGameObject*> vObstacles;
+		CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
+
+		int nGroups = pObjectsShader->GetGroups();
+
+		for (int i = 0; i < nGroups; i++)
 		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+			vObstacles = pObjectsShader->GetObjects(i);
+
+			for (const auto& Obstacle : vObstacles)
 			{
-				if (fDistance > fTemp)
+				// 카메라 이동 O
+				if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
+					if (fDistance > fTemp)
+					{
+						fDistance = fTemp;
+						pTarget = Obstacle;
+					}
 				}
 			}
 		}
 	}
-
-	if (m_ppShaders[INDEX_SHADER_DOUBLESQUARE])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_DOUBLESQUARE])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_OCTAGON])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGON])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_SLOPETOP])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SLOPETOP])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_SQUARE])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SQUARE])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_STEEPLETOP])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STEEPLETOP])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_WALL])
-	{
-		vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_WALL])->GetObjects();
-		for (const auto& Obstacle : *vObstacles)
-		{
-			// 카메라 이동 O
-			if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Obstacle;
-				}
-			}
-		}
-	}
-
+	
 	if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 	{
 		if (fDistance > fTemp) fDistance = fTemp;
@@ -1055,51 +899,60 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		m_pObjects[CreateObjectInfo.Object_Index]->Delete();
 	}
 
+	CObjectsShader *pObjectsShader = NULL;
+
 	switch (CreateObjectInfo.Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
 		pGameObject = new CRobotObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_ENEMY])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_SKINND_OBJECTS];
+
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, SKINNED_OBJECT_INDEX_ENEMY, true, NULL);
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
 
 		break;
+	case OBJECT_TYPE_OBSTACLE:
+		printf("Do not Apply Insert Obstacle\n");
+		//((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		break;
 	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_MG_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
-		break;
-	case OBJECT_TYPE_OBSTACLE:
-		printf("Do not Apply Insert Obstacle\n");
-		//((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_MG_BULLET, true, NULL);
 		break;
 	case OBJECT_TYPE_ITEM_HEALING:
 		pGameObject = new RotateObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_REPAIR_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, NULL);
 		break;
 	case OBJECT_TYPE_BZK_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_BZK_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_BZK_BULLET, true, NULL);
 		break;
 	case OBJECT_TYPE_BEAM_BULLET:
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_GG_BULLET])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_GG_BULLET, true, NULL);
 		break;
 	case OBJECT_TYPE_ITEM_AMMO:
 		pGameObject = new RotateObject();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
-		((CObjectsShader*)m_ppShaders[INDEX_SHADER_AMMO_ITEM])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_AMMO_ITEM, true, NULL);
 		break;
 	}
 

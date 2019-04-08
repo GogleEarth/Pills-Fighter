@@ -33,7 +33,7 @@ public:
 	virtual void SetType(int nType) { m_nType |= nType; };
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, int nInstances = 1);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
 };
 
@@ -49,6 +49,7 @@ public:
 
 
 	CObjectsShader *m_pBulletShader = NULL;
+	int	m_nBulletGroup;
 
 	float m_fShotCoolTime = 0.0f;
 
@@ -60,7 +61,7 @@ public:
 	float GetReloadTime() { return m_fReloadTime; }
 	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
 	int GetReloadedAmmo() { return m_nReloadedAmmo; }
-	void SetBullet(CShader *Bullet) { m_pBulletShader = (CObjectsShader*)Bullet; }
+	void SetBullet(CShader *Bullet, int nGroup) { m_pBulletShader = (CObjectsShader*)Bullet; m_nBulletGroup = nGroup; }
 
 	virtual void Reload(int& nAmmo);
 

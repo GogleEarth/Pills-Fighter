@@ -83,7 +83,6 @@ protected:
 	float							m_fShininess = 0.0f;
 	float							m_fTransparency = 0.0f;
 
-
 	float							m_fSmoothness = 0.0f;
 	float							m_fSpecularHighlight = 0.0f;
 	float							m_fMetallic = 0.0f;
@@ -144,8 +143,8 @@ public:
 	void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* vd3dcbGameObject, CB_GAMEOBJECT_INFO* vcbMappedGameObject);
 
 	void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances = 1);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex);
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, bool bSetTexture = true);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances = 1);
 	void UpdateInstanceShaderVariables(VS_VB_INSTANCE *m_pcbMappedGameObjects, int *pnIndex);
 
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned);

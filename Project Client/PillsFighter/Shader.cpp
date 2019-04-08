@@ -253,16 +253,20 @@ CObjectsShader::CObjectsShader()
 
 CObjectsShader::~CObjectsShader()
 {
+	if (m_pvpObjects) delete[] m_pvpObjects;
 }
 
 void CObjectsShader::ReleaseObjects()
 {
-	if (m_vObjects.size())
+	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
+		if (m_pvpObjects[i].size())
 		{
-			delete *Object;
-			Object = m_vObjects.erase(Object);
+			for (auto& Object = m_pvpObjects[i].begin(); Object != m_pvpObjects[i].end();)
+			{
+				delete *Object;
+				Object = m_pvpObjects[i].erase(Object);
+			}
 		}
 	}
 }
@@ -271,55 +275,99 @@ void CObjectsShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
 	CheckDeleteObjects();
 
-	for (const auto& Object : m_vObjects)
+	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		Object->Animate(fTimeElapsed, pCamera);
+		for (const auto& Object : m_pvpObjects[i]) Object->Animate(fTimeElapsed, pCamera);
 	}
 }
 
 void CObjectsShader::CheckDeleteObjects()
 {
-	if (m_vObjects.size())
+	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
+		if (m_pvpObjects[i].size())
 		{
-			if ((*Object)->IsDelete())
+			for (auto& Object = m_pvpObjects[i].begin(); Object != m_pvpObjects[i].end();)
 			{
-				delete *Object;
+				if ((*Object)->IsDelete())
+				{
+					delete *Object;
 
-				Object = m_vObjects.erase(Object);
+					Object = m_pvpObjects[i].erase(Object);
+				}
+				else Object++;
 			}
-			else
-				Object++;
 		}
 	}
 }
 
-void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
+void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext)
 {
-	pObject->SetModel(m_pModel);
+	pObject->SetModel(m_vpModels[nGroup]);
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	if(bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
 
-	m_vObjects.emplace_back(pObject);
+	m_pvpObjects[nGroup].emplace_back(pObject);
 }
 
 void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	CShader::Render(pd3dCommandList, pCamera);
 
-	for (const auto& Object : m_vObjects)
+	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		Object->Render(pd3dCommandList, pCamera);
+		int nIndex = 0;
+
+		for (const auto& Object : m_pvpObjects[i])
+		{
+			if(nIndex == 0)
+				Object->Render(pd3dCommandList, pCamera, true);
+			else
+				Object->Render(pd3dCommandList, pCamera, false);
+
+			nIndex++;
+		}
 	}
 }
 
 void CObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	for (const auto& Object : m_vObjects)
+	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		Object->RenderWire(pd3dCommandList, pCamera);
+		for (const auto& Object : m_pvpObjects[i])
+		{
+			Object->RenderWire(pd3dCommandList, pCamera);
+		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+CStandardObjectsShader::CStandardObjectsShader()
+{
+
+}
+
+CStandardObjectsShader::~CStandardObjectsShader()
+{
+
+}
+
+void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_nObjectGroup = STANDARD_OBJECT_GROUP;
+	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.bin", false));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/BZK_Bullet.bin", false));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.bin", false));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.bin", false));
+
+	RotateObject *pObject = new RotateObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, pContext);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", false));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -347,231 +395,58 @@ D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreatePixelShader(ID3DBlob **ppd
 
 void CInstancingObjectsShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	m_pd3dcbGameObjects = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, static_cast<UINT>(sizeof(VS_VB_INSTANCE) * m_vObjects.size()), D3D12_HEAP_TYPE_UPLOAD,
-		D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+	ID3D12Resource* pd3dcbGameObject;
+	VS_VB_INSTANCE* pcbMappedGameObject;
 
-	m_pd3dcbGameObjects->Map(0, NULL, (void **)&m_pcbMappedGameObjects);
+	for (int i = 0; i < m_nObjectGroup; i++)
+	{
+		pd3dcbGameObject = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, static_cast<UINT>(sizeof(VS_VB_INSTANCE) * m_pvpObjects[i].size()), D3D12_HEAP_TYPE_UPLOAD,
+			D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+		pd3dcbGameObject->Map(0, NULL, (void **)&pcbMappedGameObject);
+
+		m_vpd3dcbGameObjects.emplace_back(pd3dcbGameObject);
+		m_vpcbMappedGameObjects.emplace_back(pcbMappedGameObject);
+	}
 }
 
-void CInstancingObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+void CInstancingObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex)
 {
-	pd3dCommandList->SetGraphicsRootShaderResourceView(ROOT_PARAMETER_INDEX_INSTANCE, m_pd3dcbGameObjects->GetGPUVirtualAddress());
+	pd3dCommandList->SetGraphicsRootShaderResourceView(ROOT_PARAMETER_INDEX_INSTANCE, m_vpd3dcbGameObjects[nIndex]->GetGPUVirtualAddress());
 
-	int nIndex = 0;
-	for (int i = 0; i < m_vObjects.size(); i++)
+	int nObjectIndex = 0;
+
+	for (const auto& pObject : m_pvpObjects[nIndex])
 	{
-		m_vObjects[i]->UpdateInstanceShaderVariables(m_pcbMappedGameObjects, &nIndex);
+		pObject->UpdateInstanceShaderVariables(m_vpcbMappedGameObjects[nIndex], &nObjectIndex);
 	}
 }
 
 void CInstancingObjectsShader::ReleaseShaderVariables()
 {
-	if (m_pd3dcbGameObjects) m_pd3dcbGameObjects->Unmap(0, NULL);
-	if (m_pd3dcbGameObjects) m_pd3dcbGameObjects->Release();
+	for (const auto& pd3dcb : m_vpd3dcbGameObjects)
+	{
+		pd3dcb->Unmap(0, NULL);
+		pd3dcb->Release();
+
+	}
+}
+
+void CInstancingObjectsShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 }
 
 void CInstancingObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	CShader::Render(pd3dCommandList, pCamera);
 
-	m_vObjects[0]->Render(pd3dCommandList, pCamera, static_cast<int>(m_vObjects.size()));
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-CSkinnedObjectsShader::CSkinnedObjectsShader()
-{
-
-}
-
-CSkinnedObjectsShader::~CSkinnedObjectsShader()
-{
-}
-
-void CSkinnedObjectsShader::ReleaseObjects()
-{
-	if (m_vObjects.size())
+	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
-		{
-			delete *Object;
-			Object = m_vObjects.erase(Object);
-		}
+		UpdateShaderVariables(pd3dCommandList, i);
+
+		m_pvpObjects[i][0]->Render(pd3dCommandList, pCamera, true, static_cast<int>(m_pvpObjects[i].size()));
 	}
-}
-
-void CSkinnedObjectsShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
-{
-	CheckDeleteObjects();
-
-	for (const auto& Object : m_vObjects)
-	{
-		Object->Animate(fTimeElapsed, pCamera);
-	}
-}
-
-void CSkinnedObjectsShader::CheckDeleteObjects()
-{
-	if (m_vObjects.size())
-	{
-		for (auto& Object = m_vObjects.begin(); Object != m_vObjects.end();)
-		{
-			if ((*Object)->IsDelete())
-			{
-				delete *Object;
-
-				Object = m_vObjects.erase(Object);
-			}
-			else
-				Object++;
-		}
-	}
-}
-
-void CSkinnedObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
-{
-	pObject->SetModel(m_pModel);
-	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	if(bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
-
-	m_vObjects.emplace_back(pObject);
-}
-
-void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	CSkinnedAnimationShader::Render(pd3dCommandList, pCamera);
-
-	for (const auto& Object : m_vObjects)
-	{
-		Object->Render(pd3dCommandList, pCamera);
-	}
-}
-
-void CSkinnedObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	for (const auto& Object : m_vObjects)
-	{
-		Object->RenderWire(pd3dCommandList, pCamera);
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-CGundamShader::CGundamShader()
-{
-}
-
-CGundamShader::~CGundamShader()
-{
-}
-
-void CGundamShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true);
-
-	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
-	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
-	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
-
-	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
-
-#ifndef ON_NETWORKING
-	CRobotObject *pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
-
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
-#endif
-}
-
-void CGundamShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, bool bPrepareRotate, void *pContext)
-{
-	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, bPrepareRotate, pContext);
-
-	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
-	pAnimationController->SetTrackAnimation(0, 0);
-	
-	pObject->SetAnimationController(pAnimationController);
-
-	CRobotObject *pRobot = (CRobotObject*)pObject;
-
-	CShader *pShader = new CShader();
-	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
-
-	pRobot->SetWeaponShader(pShader);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GIM_GUN);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
-}
-
-void CGundamShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	CSkinnedObjectsShader::Render(pd3dCommandList, pCamera);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-CBulletShader::CBulletShader()
-{
-}
-
-CBulletShader::~CBulletShader()
-{
-}
-
-void CBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.bin", false);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-CBZKBulletShader::CBZKBulletShader()
-{
-}
-
-CBZKBulletShader::~CBZKBulletShader()
-{
-}
-
-void CBZKBulletShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/BZK_Bullet.bin", false);
-}
-
-////////////////////////////////////////////////////////////
-
-CRepairItemShader::CRepairItemShader()
-{
-}
-
-CRepairItemShader::~CRepairItemShader()
-{
-}
-
-void CRepairItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.bin", false);
-
-	RotateObject *pObject = new RotateObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
-	
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, true, pContext);
-}
-
-////////////////////////////////////////////////////////////
-
-CAmmoItemShader::CAmmoItemShader()
-{
-}
-
-CAmmoItemShader::~CAmmoItemShader()
-{
-}
-
-void CAmmoItemShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", false);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -584,7 +459,7 @@ CObstacleShader::~CObstacleShader()
 {
 }
 
-void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName)
+void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup)
 {
 	CGameObject *pObject = new CGameObject();
 
@@ -602,7 +477,7 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 	XMFLOAT3 posLoader = XMFLOAT3(0, 0, 0);
 	XMFLOAT3 rotLoader = XMFLOAT3(0, 0, 0);
 
-	while (feof(pInFile) == 0)    
+	while (feof(pInFile) == 0)
 	{
 		ReadPosrotFromFile(pInFile, pstrToken);
 
@@ -610,49 +485,49 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 		{
 			switch (cycle) {
 			case 0:
-				nReads = LeftByteFromFile(pInFile, 2); 
+				nReads = LeftByteFromFile(pInFile, 2);
 				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1); 
+				nReads = LeftByteFromFile(pInFile, 1);
 				posLoader.x = loadedToken;
 				++cycle;
 				break;
 			case 1:
-				nReads = LeftByteFromFile(pInFile, 2); 
+				nReads = LeftByteFromFile(pInFile, 2);
 				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1); 
+				nReads = LeftByteFromFile(pInFile, 1);
 				posLoader.y = loadedToken;
 				++cycle;
 				break;
 			case 2:
-				nReads = LeftByteFromFile(pInFile, 2); 
+				nReads = LeftByteFromFile(pInFile, 2);
 				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1); 
+				nReads = LeftByteFromFile(pInFile, 1);
 				posLoader.z = loadedToken;
 				++cycle;
 				break;
 			case 3:
-				nReads = LeftByteFromFile(pInFile, 2); 
+				nReads = LeftByteFromFile(pInFile, 2);
 				loadedToken = ReadFloatFromFile(pInFile);
 				nReads = LeftByteFromFile(pInFile, 1);
 				rotLoader.x = loadedToken;
 				++cycle;
 				break;
 			case 4:
-				nReads = LeftByteFromFile(pInFile, 2); 
+				nReads = LeftByteFromFile(pInFile, 2);
 				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1); 
+				nReads = LeftByteFromFile(pInFile, 1);
 				rotLoader.y = loadedToken;
 				++cycle;
 				break;
 			case 5:
-				nReads = LeftByteFromFile(pInFile, 2); 
+				nReads = LeftByteFromFile(pInFile, 2);
 				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1); 
+				nReads = LeftByteFromFile(pInFile, 1);
 				rotLoader.z = loadedToken;
 				pObject = new CGameObject();
 				pObject->SetPosition(posLoader);
 				pObject->SetPrepareRotate(rotLoader.x, rotLoader.y, rotLoader.z);
-				InsertObject(pd3dDevice, pd3dCommandList, pObject, true);
+				InsertObject(pd3dDevice, pd3dCommandList, pObject, nGroup, true, NULL);
 				cycle = 0;
 				break;
 			}
@@ -666,70 +541,129 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 
 }
 
-//////////////////////////////////////////////////////////////////////
-
-void CHangarShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Hangar.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveHangarSelfData.bin");
+	m_nObjectGroup = INSTANCING_OBJECT_GROUP;
+	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Hangar.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveHangarSelfData.bin", INSTANCING_OBJECT_INDEX_HANGAR);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveDoubleSquareSelfData.bin", INSTANCING_OBJECT_INDEX_DOUBLESQUARE);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonSelfData.bin", INSTANCING_OBJECT_INDEX_OCTAGON);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonLongtierSelfData.bin", INSTANCING_OBJECT_INDEX_OCTAGONLONGTIER);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSlopeTopSelfData.bin", INSTANCING_OBJECT_INDEX_SLOPETOP);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSquareSelfData.bin", INSTANCING_OBJECT_INDEX_SQUARE);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSteepleTopSelfData.bin", INSTANCING_OBJECT_INDEX_STEEPLETOP);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", false));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin", INSTANCING_OBJECT_INDEX_WALL);
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CDoubleSquareShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveDoubleSquareSelfData.bin");
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+CSkinnedObjectsShader::CSkinnedObjectsShader()
+{
+
 }
 
-void COctagonShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+CSkinnedObjectsShader::~CSkinnedObjectsShader()
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonSelfData.bin");
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void COctagonLongTierShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+D3D12_INPUT_LAYOUT_DESC CSkinnedObjectsShader::CreateInputLayout()
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveOctagonLongtierSelfData.bin");
+	UINT nInputElementDescs = 7;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pd3dInputElementDescs[0] = { "POSITION", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "NORMAL", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "BINORMAL", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "TANGENT", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "TEXCOORD", 0,		DXGI_FORMAT_R32G32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[5] = { "BONEINDEX", 0,	DXGI_FORMAT_R32G32B32A32_UINT, 5, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[6] = { "BONEWEIGHT", 0,	DXGI_FORMAT_R32G32B32A32_FLOAT, 6, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
 }
 
-void CSlopetopShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSlopeTopSelfData.bin");
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
 }
 
-void CSquareShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
-{
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSquareSelfData.bin");
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+CRobotObjectsShader::CRobotObjectsShader()
+{
 }
 
-void CSteepletopShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+CRobotObjectsShader::~CRobotObjectsShader()
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/SaveSteepleTopSelfData.bin");
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CWallShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", false);
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin");
+	m_nObjectGroup = SKINNED_OBJECT_GROUP;
+	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
 
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true));
+
+	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
+	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
+	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false);
+
+	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
+
+#ifndef ON_NETWORKING
+	CRobotObject *pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ENEMY, true, pContext);
+#endif
+}
+
+void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext)
+{
+	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, nGroup, bPrepareRotate, pContext);
+
+	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
+	pAnimationController->SetTrackAnimation(0, 0);
+
+	pObject->SetAnimationController(pAnimationController);
+
+	CRobotObject *pRobot = (CRobotObject*)pObject;
+
+	CShader *pShader = new CShader();
+	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
+
+	pRobot->SetWeaponShader(pShader);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GIM_GUN);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
+}
+
+void CRobotObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CSkinnedObjectsShader::Render(pd3dCommandList, pCamera);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

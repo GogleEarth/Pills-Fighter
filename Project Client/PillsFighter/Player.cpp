@@ -47,12 +47,12 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CUserInterface *pUserInterface = new CUserInterface();
-	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	pUserInterface->SetPlayer(this);
+	//CUserInterface *pUserInterface = new CUserInterface();
+	//pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	//pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	//pUserInterface->SetPlayer(this);
 
-	m_pUserInterface = pUserInterface;
+	//m_pUserInterface = pUserInterface;
 
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)pContext;
 
@@ -201,7 +201,7 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 {
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
 
-	CRobotObject::Render(pd3dCommandList, pCamera);
+	CRobotObject::Render(pd3dCommandList, pCamera, true);
 }
 
 XMFLOAT4X4 CPlayer::GetToTarget()
@@ -491,7 +491,7 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 	return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
 }
 
-void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, void *pContext)
+void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, int nGroup)
 {
 	CWeapon *pWeapon = NULL;
 
@@ -499,15 +499,15 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 	{
 	case WEAPON_TYPE_OF_GIM_GUN:
 		pWeapon = new CGimGun();
-		if (pContext) ((CGimGun*)pWeapon)->SetBullet((CShader*)pContext);
+		if (pBulletShader) ((CGimGun*)pWeapon)->SetBullet(pBulletShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_BAZOOKA:
 		pWeapon = new CBazooka();
-		if (pContext) ((CBazooka*)pWeapon)->SetBullet((CShader*)pContext);
+		if (pBulletShader) ((CBazooka*)pWeapon)->SetBullet(pBulletShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_MACHINEGUN:
 		pWeapon = new CMachineGun();
-		if (pContext) ((CMachineGun*)pWeapon)->SetBullet((CShader*)pContext);
+		if (pBulletShader) ((CMachineGun*)pWeapon)->SetBullet(pBulletShader, nGroup);
 		break;
 	default:
 		exit(1);

@@ -4,13 +4,14 @@ struct MATERIAL
 	float4				m_cDiffuse;
 	float4				m_cSpecular; //a = power
 	float4				m_cEmissive;
+	float				m_cReflectionFactor;
 };
 
 cbuffer cbGameObjectInfo : register(b0)
 {
 	matrix		gmtxGameObject : packoffset(c0);
 	MATERIAL	gMaterial : packoffset(c4);
-	uint		gnTexturesMask : packoffset(c8);
+	uint		gnTexturesMask : packoffset(c8.y);
 };
 
 cbuffer cbCameraInfo : register(b1)
@@ -78,6 +79,7 @@ float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
 	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
 	float4 cCubeColor = gtxtEnvirCubeTexture.Sample(gssClamp, input.reflection);
+	cCubeColor.w = gMaterial.m_cReflectionFactor;
 
 	// 임시 텍스처 배열 인덱스는 0
 	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);

@@ -34,7 +34,7 @@ void CWeapon::Animate(float fTimeElapsed, CCamera *pCamera)
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }
 
-void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
+void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
 {
 	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
 
@@ -94,7 +94,7 @@ void CGun::Shot()
 	pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
 	pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
 
-	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet);
+	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 #else
 	pPlayer->IsShotable(true);
 #endif
