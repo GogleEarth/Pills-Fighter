@@ -47,12 +47,12 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	//CUserInterface *pUserInterface = new CUserInterface();
-	//pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	//pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	//pUserInterface->SetPlayer(this);
+	CUserInterface *pUserInterface = new CUserInterface();
+	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	pUserInterface->SetPlayer(this);
 
-	//m_pUserInterface = pUserInterface;
+	m_pUserInterface = pUserInterface;
 
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)pContext;
 

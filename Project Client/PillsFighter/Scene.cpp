@@ -470,6 +470,12 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[5]; // t6: Texture Cube
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.ShaderRegister = 9;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -590,8 +596,6 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false); 
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false); 
-
-	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -615,6 +619,11 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
+}
+
+void CColonyScene::StartScene()
+{
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
 void CColonyScene::ReleaseUploadBuffers()
@@ -923,6 +932,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_MG_BULLET, true, NULL);
 		break;
@@ -937,6 +947,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_BZK_BULLET, true, NULL);
 		break;
@@ -944,6 +955,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
 
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_GG_BULLET, true, NULL);
 		break;
@@ -987,9 +999,11 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	}

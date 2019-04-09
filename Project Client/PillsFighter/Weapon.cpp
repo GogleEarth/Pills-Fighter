@@ -79,7 +79,7 @@ void CGun::Reload(int& nAmmo)
 	else nAmmo = 0;
 }
 
-void CGun::Shot()
+void CGun::Shot(FMOD::Sound *pFmodSound)
 {
 	CPlayer *pPlayer = (CPlayer*)m_pOwner;
 
@@ -94,6 +94,7 @@ void CGun::Shot()
 	pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
 	pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
 
+	gFmodSound.PlayFMODSound(pFmodSound);
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 #else
 	pPlayer->IsShotable(true);
@@ -145,7 +146,7 @@ void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 	{
 		if (m_fShotCoolTime <= 0.0f)
 		{
-			Shot();
+			Shot(gFmodSound.m_pSoundGGShot);
 
 			m_nShotCount++;
 		}
@@ -162,13 +163,6 @@ void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 	}
 
 	CGun::Animate(ElapsedTime, pCamera);
-}
-
-void CGimGun::Shot()
-{
-	CGun::Shot();
-
-	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,17 +187,11 @@ void CBazooka::Attack()
 {
 	if (m_nReloadedAmmo > 0 && m_fShotCoolTime <= 0.0f)
 	{
-		Shot();
+		Shot(gFmodSound.m_pSoundBZKShot);
 		SetShotCoolTime();
 	}
 }
 
-void CBazooka::Shot()
-{
-	CGun::Shot();
-
-	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
-}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -226,14 +214,7 @@ void CMachineGun::Attack()
 {
 	if (m_nReloadedAmmo > 0 && m_fShotCoolTime <= 0.0f)
 	{
-		Shot();
+		Shot(gFmodSound.m_pSoundMGShot);
 		SetShotCoolTime();
 	}
-}
-
-void CMachineGun::Shot()
-{
-	CGun::Shot();
-
-	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
 }

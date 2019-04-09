@@ -116,7 +116,8 @@ protected:
 public:
 	void SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnvirCube);
 	void SetEnvirMap(ID3D12GraphicsCommandList *pd3dCommandList);
-
+	
+	virtual void StartScene() {};
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
 	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo) {}
@@ -147,6 +148,8 @@ public:
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
+
+	virtual void StartScene();
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);

@@ -203,6 +203,8 @@ void CGameFramework::InitNetwork()
 				retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
 				if (retval == SOCKET_ERROR)
 					std::cout << "소켓에러\n";
+				else
+					m_pScene->StartScene();
 				break;
 			}
 		}

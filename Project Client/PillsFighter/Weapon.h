@@ -67,7 +67,7 @@ public:
 
 public:
 	virtual void Attack() {};
-	virtual void Shot();
+	virtual void Shot(FMOD::Sound *pFmodSound);
 
 	virtual void SetReloadTime() {}
 	virtual void SetShotCoolTime() {}
@@ -106,7 +106,6 @@ public:
 	virtual void SetType();
 
 	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
-	virtual void Shot();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +127,6 @@ public:
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 5; }
 
 	virtual void SetType();
-	virtual void Shot();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,5 +148,4 @@ public:
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
 
 	virtual void SetType();
-	virtual void Shot();
 };
