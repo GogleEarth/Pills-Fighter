@@ -712,6 +712,25 @@ void CColonyScene::CheckCollision()
 		}
 	}
 #endif
+	
+	std::vector<CGameObject*> vObstacles;
+	CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
+
+	int nGroups = pObjectsShader->GetGroups();
+	for (int i = 0; i < nGroups; i++)
+	{
+		vObstacles = pObjectsShader->GetObjects(i);
+
+		for (const auto& Obstacle : vObstacles)
+		{
+			// 카메라 이동 O
+			if (m_pPlayer->CollisionCheck(Obstacle))
+			{
+				std::cout << "Collision Player By Building\n" << std::endl;
+				m_pPlayer->MoveToCollision(Obstacle);
+			}
+		}
+	}
 
 	FindAimToTargetDistance();
 }
