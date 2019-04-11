@@ -183,3 +183,18 @@ void CCamera::SetLookAt(XMFLOAT3& xmf3LookAt)
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
 	m_xmf3Right = Vector3::CrossProduct(m_xmf3Look, m_xmf3Up, true);
 }
+
+
+void CCamera::UpdateForMinimap(XMFLOAT3& xmf3LookAt)
+{
+	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
+	m_xmf3Position.x = xmf3PlayerPos.x;
+	m_xmf3Position.y = xmf3PlayerPos.y + 500;
+	m_xmf3Position.z = xmf3PlayerPos.z;
+
+	if (m_pPlayer)
+	{
+		m_xmf3Up = Vector3::Normalize(xmf3LookAt);
+		m_xmf3Right = Vector3::CrossProduct(m_xmf3Look, m_xmf3Up, true);
+	}
+}

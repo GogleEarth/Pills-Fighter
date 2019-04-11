@@ -68,6 +68,7 @@ public:
 
 public:
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
+	CPlayer *GetPlayer() { return m_pPlayer; }
 	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
 	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 

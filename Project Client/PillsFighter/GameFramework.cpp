@@ -285,6 +285,9 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 
 	BuildObjects();
 
+	m_pMiniMapCamera->SetPlayer(m_pScene->GetPlayer());
+
+
 	POINT pt;
 	pt.x = FRAME_BUFFER_WIDTH / 2;
 	pt.y = FRAME_BUFFER_HEIGHT / 2;
@@ -1152,7 +1155,7 @@ void CGameFramework::FrameAdvance()
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		if (m_pMiniMapCamera) {
-			m_pMiniMapCamera->SetPosition(XMFLOAT3(m_pPlayer->GetPosition().x, m_pPlayer->GetPosition().y + 500, m_pPlayer->GetPosition().z));
+			m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
 			m_pMiniMapCamera->GenerateViewMatrix();
 		}
 		
