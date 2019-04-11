@@ -210,12 +210,6 @@ void CScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	if (m_pd3dcbLights)
-	{
-		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
-		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
-	}
-
 	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera, true);
 
 	for (int i = 0; i < m_nShaders; i++)
