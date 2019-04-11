@@ -308,6 +308,12 @@ void CScene::SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnv
 
 }
 
+void CScene::SetMinimapSRV(ID3D12Device *pd3dDevice, CTexture *pd3dTexture)
+{
+	CScene::CreateShaderResourceViews(pd3dDevice, pd3dTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+}
+
 D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;

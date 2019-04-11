@@ -123,6 +123,9 @@ public: // Network
 	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo) {}
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
+
+public:
+	void SetMinimapSRV(ID3D12Device *pd3dDevice, CTexture *pd3dTexture);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

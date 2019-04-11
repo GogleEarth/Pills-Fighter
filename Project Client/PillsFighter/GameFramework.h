@@ -157,4 +157,14 @@ public: // for Network
 	float m_fFPSTimeElapsed = 0.0f;
 	int m_nFramePerSecond = 0;
 	volatile bool gamestart = false;
+
+
+public:
+	void CreateMinimapMap();
+
+private:
+	ID3D12Resource			*m_pd3dMinimapRsc;
+	CTexture				*screenCaptureTexture = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvMinimapCPUHandle;
+
 };

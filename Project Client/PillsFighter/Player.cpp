@@ -8,7 +8,7 @@
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CRobotObject()
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pMinimap, void *pContext) : CRobotObject()
 {
 	m_pCamera = SetCamera(0.0f);
 
@@ -49,7 +49,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, pMinimap);
 	pUserInterface->SetPlayer(this);
 
 	m_pUserInterface = pUserInterface;

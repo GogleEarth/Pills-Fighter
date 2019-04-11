@@ -1660,7 +1660,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 4;
+	m_nTextures = 5;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
@@ -1679,7 +1679,9 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nUIRect = 4;
+	m_ppTextures[4] = (CTexture*)pContext;
+
+	m_nUIRect = 5;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Base UI
@@ -1697,8 +1699,12 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	xmf2Center = CalculateCenter(0.417187f, 0.456250f, 0.257778f, -0.257778f);
 	xmf2Size = CalculateSize(0.417187f, 0.456250f, 0.257778f, -0.257778f);
-
 	m_ppUIRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = CalculateCenter(0.63f, 0.9f, 0.9f, 0.4f);
+	xmf2Size = CalculateSize(0.63f, 0.9f, 0.9f, 0.4f);
+	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -1722,7 +1728,12 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
 	if (m_ppTextures[3]) m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[3]->Render(pd3dCommandList, 0);
-	
+
+	// Draw Minimap
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+	if (m_ppTextures[4]) m_ppTextures[4]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[4]->Render(pd3dCommandList, 0);
+
 	// Draw Base UI
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 	if (m_ppTextures[0]) m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);

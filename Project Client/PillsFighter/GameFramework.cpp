@@ -280,6 +280,7 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	CreateSwapChain();
 	CreateEnvironmentMap();
 	CreateCubeMapCamera();
+	CreateMinimapMap();
 
 	BuildObjects();
 
@@ -327,6 +328,8 @@ void CGameFramework::OnDestroy()
 
 	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
 	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
+
+	if (m_pd3dMinimapRsc) m_pd3dMinimapRsc->Release();
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -457,7 +460,7 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
 	::ZeroMemory(&d3dDescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
-	d3dDescriptorHeapDesc.NumDescriptors = m_nSwapChainBuffers + 6;
+	d3dDescriptorHeapDesc.NumDescriptors = m_nSwapChainBuffers + 6 + 1;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
@@ -523,6 +526,32 @@ void CGameFramework::CreateEnvironmentMap()
 		d3dRtvCPUDescriptorHandle.ptr += m_nRtvDescriptorIncrementSize;
 	}
 }
+
+void CGameFramework::CreateMinimapMap()
+{
+	screenCaptureTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+
+	D3D12_CLEAR_VALUE d3dClear = { DXGI_FORMAT_R8G8B8A8_UNORM, { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+	m_pd3dMinimapRsc = screenCaptureTexture->CreateTexture(m_pd3dDevice, m_pd3dCommandList, m_nWndClientWidth, m_nWndClientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, 0);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvCPUDescriptorHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	d3dRtvCPUDescriptorHandle.ptr += (8 * m_nRtvDescriptorIncrementSize);
+
+	//
+	D3D12_RENDER_TARGET_VIEW_DESC d3dDesc;
+	d3dDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	d3dDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dDesc.Texture2D.MipSlice = 0;
+	d3dDesc.Texture2D.PlaneSlice = 0;
+
+	m_pd3dDevice->CreateRenderTargetView(m_pd3dMinimapRsc, &d3dDesc, d3dRtvCPUDescriptorHandle);
+	m_d3dRtvMinimapCPUHandle = d3dRtvCPUDescriptorHandle;
+
+	d3dRtvCPUDescriptorHandle.ptr += m_nRtvDescriptorIncrementSize;
+}
+
+
 
 void CGameFramework::CreateCubeMapCamera()
 {
@@ -649,7 +678,10 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 	m_pScene->SetEnvirMapAndSRV(m_pd3dDevice, m_pd3dEnvirCube);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
+	// 렌더타겟의 내용을 텍스쳐로 만들기
+	m_pScene->SetMinimapSRV(m_pd3dDevice, screenCaptureTexture);
+
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, screenCaptureTexture, m_pScene->GetTerrain());
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
 
@@ -1087,6 +1119,24 @@ void CGameFramework::FrameAdvance()
 			}
 		}
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+	}
+
+	// Draw Minimap
+	{
+		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		m_pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
+		m_pd3dCommandList->ClearDepthStencilView(m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+		m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+		if (m_pCamera) m_pCamera->GenerateViewMatrix();
+
+		if (m_pScene)
+		{
+			m_pScene->Render(m_pd3dCommandList, m_pCamera); // 이 카메라를 위에서 보는애로 하고, 그릴 때 평면 위에 점으로 그리도록 하기
+		}
+
+		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
 
 	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
