@@ -161,10 +161,12 @@ public: // for Network
 
 public:
 	void CreateMinimapMap();
-
+	void CreateMiniMapCamera();
 private:
-	ID3D12Resource			*m_pd3dMinimapRsc;
-	CTexture				*screenCaptureTexture = NULL;
+	ID3D12Resource					*m_pd3dMinimapRsc;
+	CTexture						*screenCaptureTexture = NULL;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvMinimapCPUHandle;
+
+	CCamera							*m_pMiniMapCamera;
 
 };

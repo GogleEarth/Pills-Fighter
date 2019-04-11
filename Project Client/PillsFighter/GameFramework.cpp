@@ -281,6 +281,7 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	CreateEnvironmentMap();
 	CreateCubeMapCamera();
 	CreateMinimapMap();
+	CreateMiniMapCamera();
 
 	BuildObjects();
 
@@ -337,6 +338,10 @@ void CGameFramework::OnDestroy()
 		delete m_pCubeMapCamera[i];
 	}
 
+	if (m_pMiniMapCamera) {
+		m_pMiniMapCamera->ReleaseShaderVariables();
+		delete m_pMiniMapCamera;
+	}
 	::ReleaseCapture();
 }
 
@@ -589,7 +594,28 @@ void CGameFramework::CreateCubeMapCamera()
 
 		m_pCubeMapCamera[i]->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
 	}
+
 }
+
+void CGameFramework::CreateMiniMapCamera()
+{
+	m_pMiniMapCamera = new CCamera();
+
+	XMFLOAT3 xmf3Looks = XMFLOAT3(0.0f, -1.0f, 0.0f);
+	XMFLOAT3 xmf3Ups = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks, xmf3Ups, true);
+
+	m_pMiniMapCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	m_pMiniMapCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+	m_pMiniMapCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
+	m_pMiniMapCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	m_pMiniMapCamera->SetRight(xmf3Right);
+	m_pMiniMapCamera->SetUp(xmf3Ups);
+	m_pMiniMapCamera->SetLook(xmf3Looks);
+
+	m_pMiniMapCamera->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
+}
+
 
 void CGameFramework::CreateRenderTargetViews()
 {
@@ -1125,15 +1151,18 @@ void CGameFramework::FrameAdvance()
 	{
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
+		if (m_pMiniMapCamera) {
+			m_pMiniMapCamera->SetPosition(XMFLOAT3(m_pPlayer->GetPosition().x, m_pPlayer->GetPosition().y + 500, m_pPlayer->GetPosition().z));
+			m_pMiniMapCamera->GenerateViewMatrix();
+		}
+		
 		m_pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
 		m_pd3dCommandList->ClearDepthStencilView(m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 		m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-		if (m_pCamera) m_pCamera->GenerateViewMatrix();
-
+		
 		if (m_pScene)
 		{
-			m_pScene->Render(m_pd3dCommandList, m_pCamera); // 이 카메라를 위에서 보는애로 하고, 그릴 때 평면 위에 점으로 그리도록 하기
+			m_pScene->MinimapRender(m_pd3dCommandList, m_pMiniMapCamera); // 그릴 때 평면 위에 점들로 그리도록 하기
 		}
 
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);

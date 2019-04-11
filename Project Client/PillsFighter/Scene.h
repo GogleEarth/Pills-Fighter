@@ -126,6 +126,8 @@ public: // Network
 
 public:
 	void SetMinimapSRV(ID3D12Device *pd3dDevice, CTexture *pd3dTexture);
+	virtual void MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
