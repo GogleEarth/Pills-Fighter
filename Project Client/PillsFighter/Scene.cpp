@@ -674,7 +674,7 @@ void CColonyScene::CheckCollision()
 	std::vector<CGameObject*> vBZKBullets;
 	std::vector<CGameObject*> vMGBullets;
 
-	vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_ENEMY);
+	vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
 	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
 	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
 	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
@@ -821,7 +821,7 @@ void CColonyScene::CheckCollisionPlayer()
 
 void CColonyScene::FindAimToTargetDistance()
 {
-	std::vector<CGameObject*> vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_ENEMY);
+	std::vector<CGameObject*> vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -968,7 +968,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_SKINND_OBJECTS];
 
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, SKINNED_OBJECT_INDEX_ENEMY, true, NULL);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, SKINNED_OBJECT_INDEX_GM, true, NULL);
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());

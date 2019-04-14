@@ -203,9 +203,6 @@ void CGameFramework::InitNetwork()
 				retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
 				if (retval == SOCKET_ERROR)
 					std::cout << "소켓에러\n";
-				else
-					m_pScene->StartScene();
-				break;
 			}
 		}
 	}
@@ -485,8 +482,8 @@ void CGameFramework::CreateRtvAndDsvDescriptorHeaps()
 
 void CGameFramework::CreateEnvironmentMap()
 {
-	m_nCubeMapWidth = m_nWndClientWidth / 6;
-	m_nCubeMapHeight = m_nWndClientHeight / 6;
+	m_nCubeMapWidth = CUBE_MAP_WIDTH;
+	m_nCubeMapHeight = CUBE_MAP_HEIGHT;
 
 	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
 	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
@@ -719,6 +716,7 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pCamera = m_pPlayer->GetCamera();
 
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList);
+	m_pScene->StartScene();
 }
 
 void CGameFramework::BuildObjects()
@@ -1150,26 +1148,26 @@ void CGameFramework::FrameAdvance()
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
 
-	// Draw Minimap
-	{
-		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	//// Draw Minimap
+	//{
+	//	::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		if (m_pMiniMapCamera) {
-			m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
-			m_pMiniMapCamera->GenerateViewMatrix();
-		}
-		
-		m_pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
-		m_pd3dCommandList->ClearDepthStencilView(m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-		m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-		
-		if (m_pScene)
-		{
-			m_pScene->MinimapRender(m_pd3dCommandList, m_pMiniMapCamera); // 그릴 때 평면 위에 점들로 그리도록 하기
-		}
+	//	if (m_pMiniMapCamera) {
+	//		m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
+	//		m_pMiniMapCamera->GenerateViewMatrix();
+	//	}
+	//	
+	//	m_pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
+	//	m_pd3dCommandList->ClearDepthStencilView(m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+	//	m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	//	
+	//	if (m_pScene)
+	//	{
+	//		m_pScene->MinimapRender(m_pd3dCommandList, m_pMiniMapCamera); // 그릴 때 평면 위에 점들로 그리도록 하기
+	//	}
 
-		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
-	}
+	//	::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+	//}
 
 	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 

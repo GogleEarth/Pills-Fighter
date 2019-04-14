@@ -625,7 +625,8 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	m_nObjectGroup = SKINNED_OBJECT_GROUP;
 	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
 
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/GM/GM.bin", true));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", true));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", true));
 
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", false);
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", false);
@@ -637,7 +638,12 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	CRobotObject *pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ENEMY, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
+
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
 #endif
 }
 
@@ -645,10 +651,24 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 {
 	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, nGroup, bPrepareRotate, pContext);
 
-	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
-	pAnimationController->SetTrackAnimation(0, 0);
+	bool bHasAni = false;
+	switch (nGroup)
+	{
+	case SKINNED_OBJECT_INDEX_GM:
+		bHasAni = true;
+		break;
+	case SKINNED_OBJECT_INDEX_GUNDAM:
+		bHasAni = true;
+		break;
+	}
 
-	pObject->SetAnimationController(pAnimationController);
+	if (bHasAni)
+	{
+		CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
+		pAnimationController->SetTrackAnimation(0, 0);
+
+		pObject->SetAnimationController(pAnimationController);
+	}
 
 	CRobotObject *pRobot = (CRobotObject*)pObject;
 
