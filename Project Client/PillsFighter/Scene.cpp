@@ -2,7 +2,8 @@
 #include "Scene.h"
 #include "Repository.h"
 
-ID3D12DescriptorHeap *CScene::m_pd3dDescriptorHeap = NULL;
+ID3D12DescriptorHeap	*CScene::m_pd3dDescriptorHeap = NULL;
+ID3D12RootSignature		*CScene::m_pd3dGraphicsRootSignature = NULL;
 
 D3D12_CPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvCPUDescriptorStartHandle;
 D3D12_GPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvGPUDescriptorStartHandle;
@@ -23,23 +24,42 @@ CScene::~CScene()
 
 void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
-	CreateDescriptorHeaps(pd3dDevice, pd3dCommandList, SCENE_DESCIPTOR_HEAP_COUNT);
+	BuildLightsAndMaterials();
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_pFontShader = new CFontShader();
+	m_pFontShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+}
+
+void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+}
+
+void CScene::AddFont(ID3D12Device *pd3dDevice, CFont *pFont)
+{
+	pFont->SetSrv(pd3dDevice);
+	m_vpFonts.emplace_back(pFont);
+}
+
+CTextObject* CScene::AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+{
+	CFont *pFont = NULL;
+
+	for (const auto& Font : m_vpFonts)
+	{
+		if (!strcmp(Font->GetName(), pstrFont))
+		{
+			pFont = Font;
+			break;
+		}
+	}
+
+	return (pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color));
 }
 
 void CScene::ReleaseObjects()
 {
-	if (m_pd3dGraphicsRootSignature)
-	{
-		m_pd3dGraphicsRootSignature->Release();
-		m_pd3dGraphicsRootSignature = NULL;
-	}
-
-	if (m_pd3dDescriptorHeap)
-	{
-		m_pd3dDescriptorHeap->Release();
-		m_pd3dDescriptorHeap = NULL;
-	}
-
 	if (m_pLights)
 	{
 		delete m_pLights;
@@ -56,6 +76,12 @@ void CScene::ReleaseObjects()
 	{
 		delete m_pTerrain;
 		m_pTerrain = NULL;
+	}
+
+	if (m_pFontShader)
+	{
+		delete m_pFontShader;
+		m_pFontShader = NULL;
 	}
 
 	if (m_pWireShader)
@@ -159,9 +185,6 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
-	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
-
 	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvGPUEnvirCubeDescriptorHandle);
 
 	if (pCamera)
@@ -177,6 +200,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
+
 
 	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
 	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera, true);
@@ -232,6 +256,16 @@ void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCa
 	}
 }
 
+void CScene::RenderFont(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
+
+	for (const auto& pFont : m_vpFonts)
+	{
+		pFont->Render(pd3dCommandList);
+	}
+}
+
 void CScene::PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pd3dGraphicsRootSignature) pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
@@ -254,22 +288,6 @@ void CScene::AfterRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pParticleShader) m_pParticleShader->AfterRender(pd3dCommandList);
-}
-
-void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
-{
-	if (!m_pd3dDescriptorHeap)
-	{
-		D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
-		d3dDescriptorHeapDesc.NumDescriptors = nViews;
-		d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		d3dDescriptorHeapDesc.NodeMask = 0;
-		pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
-
-		m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	}
 }
 
 D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
@@ -336,51 +354,12 @@ void CScene::SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnv
 void CScene::SetMinimapSRV(ID3D12Device *pd3dDevice, CTexture *pd3dTexture)
 {
 	CScene::CreateShaderResourceViews(pd3dDevice, pd3dTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
+// statics
+
+void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
-
-	if (pTexture)
-	{
-		int nTextures = pTexture->GetTextures();
-		int nTextureType = pTexture->GetTextureType();
-
-		for (int i = 0; i < nTextures; i++)
-		{
-			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
-			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
-			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
-			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
-			m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-
-			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
-			m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-		}
-	}
-
-	return d3dSrvGPUDescriptorHandle;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-CColonyScene::CColonyScene() : CScene()
-{
-	for (int i = 0; i < MAX_NUM_OBJECT; i++)
-		m_pObjects[i] = NULL;
-
-}
-
-CColonyScene::~CColonyScene()
-{
-}
-
-ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
-{
-	ID3D12RootSignature *pd3dGraphicsRootSignature = NULL;
-
 	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[6];
 
 	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -400,7 +379,7 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 	pd3dDescriptorRanges[2].BaseShaderRegister = 5; //t5: Normal
 	pd3dDescriptorRanges[2].RegisterSpace = 0;
 	pd3dDescriptorRanges[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	
+
 	pd3dDescriptorRanges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[3].NumDescriptors = 1;
 	pd3dDescriptorRanges[3].BaseShaderRegister = 6; //t6: Skybox
@@ -547,23 +526,89 @@ ID3D12RootSignature *CColonyScene::CreateGraphicsRootSignature(ID3D12Device *pd3
 	ID3DBlob *pd3dSignatureBlob = NULL;
 	ID3DBlob *pd3dErrorBlob = NULL;
 	D3D12SerializeRootSignature(&d3dRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &pd3dSignatureBlob, &pd3dErrorBlob);
-	pd3dDevice->CreateRootSignature(0, pd3dSignatureBlob->GetBufferPointer(), pd3dSignatureBlob->GetBufferSize(), __uuidof(ID3D12RootSignature), (void **)&pd3dGraphicsRootSignature);
+	pd3dDevice->CreateRootSignature(0, pd3dSignatureBlob->GetBufferPointer(), pd3dSignatureBlob->GetBufferSize(), __uuidof(ID3D12RootSignature), (void **)&m_pd3dGraphicsRootSignature);
 	if (pd3dSignatureBlob) pd3dSignatureBlob->Release();
 	if (pd3dErrorBlob) pd3dErrorBlob->Release();
+}
 
-	return(pd3dGraphicsRootSignature);
+void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
+	d3dDescriptorHeapDesc.NumDescriptors = nViews;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	d3dDescriptorHeapDesc.NodeMask = 0;
+	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
+
+	m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+
+	if (pTexture)
+	{
+		int nTextures = pTexture->GetTextures();
+		int nTextureType = pTexture->GetTextureType();
+
+		for (int i = 0; i < nTextures; i++)
+		{
+			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
+			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
+			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
+			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
+			m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+
+			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
+			m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		}
+	}
+
+	return d3dSrvGPUDescriptorHandle;
+}
+
+void CScene::ReleaseDescHeapAndGraphicsRootSign()
+{
+	if (m_pd3dGraphicsRootSignature)
+	{
+		m_pd3dGraphicsRootSignature->Release();
+		m_pd3dGraphicsRootSignature = NULL;
+	}
+
+	if (m_pd3dDescriptorHeap)
+	{
+		m_pd3dDescriptorHeap->Release();
+		m_pd3dDescriptorHeap = NULL;
+	}
+}
+
+void CScene::SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
+	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
+}
+
+
+//////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CColonyScene::CColonyScene() : CScene()
+{
+	for (int i = 0; i < MAX_NUM_OBJECT; i++)
+		m_pObjects[i] = NULL;
+
+}
+
+CColonyScene::~CColonyScene()
+{
 }
 
 void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
-
-	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
-
-	BuildLightsAndMaterials();
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
+	
 	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
 	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
@@ -631,6 +676,8 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList);
+
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
 

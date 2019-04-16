@@ -850,3 +850,68 @@ float4 PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET
 
 	return(cColor);
 }
+
+////////////////////////////////////////////
+
+struct VS_FONT_IN
+{
+	float2 pos : POSITION;
+	float2 size : SIZE;
+	float2 uvPos : UVPOSITION;
+	float2 uvSize : UVSIZE;
+	float4 color : COLOR;
+};
+
+VS_FONT_IN VSFont(VS_FONT_IN input)
+{
+	return input;
+}
+
+struct GS_FONT_OUT
+{
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
+	float4 color : COLOR;
+};
+
+[maxvertexcount(4)]
+void GSFont(point VS_FONT_IN input[1], inout TriangleStream<GS_FONT_OUT> outStream)
+{
+	float fWidth = input[0].size.x;
+	float fHeight = input[0].size.y;
+	float2 pos = input[0].pos;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(pos.x, pos.y, 0.0f, 1.0f);
+	fVertices[1] = float4(pos.x + fWidth, pos.y, 0.0f, 1.0f);
+	fVertices[2] = float4(pos.x, pos.y - fHeight, 0.0f, 1.0f);
+	fVertices[3] = float4(pos.x + fWidth, pos.y - fHeight, 0.0f, 1.0f);
+
+	float fUVWidth = input[0].uvSize.x;
+	float fUVHeight = input[0].uvSize.y;
+	float2 uvPos = input[0].uvPos;
+
+	float2 fUvs[4];
+	fUvs[0] = float2(uvPos.x, uvPos.y);
+	fUvs[1] = float2(uvPos.x + fUVWidth, uvPos.y);
+	fUvs[2] = float2(uvPos.x, uvPos.y + fUVHeight);
+	fUvs[3] = float2(uvPos.x + fUVWidth, uvPos.y + fUVHeight);
+
+	for (int i = 0; i < 4; i++)
+	{
+		GS_FONT_OUT output;
+
+		output.position = fVertices[i];
+		output.uv = fUvs[i];
+		output.color = input[0].color;
+
+		outStream.Append(output);
+	}
+}
+ 
+float4 PSFont(GS_FONT_OUT input) : SV_TARGET
+{
+	float4 fColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	return fColor *input.color;
+}

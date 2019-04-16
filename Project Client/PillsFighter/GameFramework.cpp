@@ -330,7 +330,7 @@ void CGameFramework::OnDestroy()
 	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
 	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
 
-	if (m_pd3dMinimapRsc) m_pd3dMinimapRsc->Release();
+	//if (screenCaptureTexture) delete screenCaptureTexture;
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -701,6 +701,9 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 		m_pScene = new CColonyScene();
 	}
 
+	CScene::CreateGraphicsRootSignature(m_pd3dDevice);
+	CScene::CreateDescriptorHeaps(m_pd3dDevice, m_pd3dCommandList, SCENE_DESCIPTOR_HEAP_COUNT);
+
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 	m_pScene->SetEnvirMapAndSRV(m_pd3dDevice, m_pd3dEnvirCube);
 
@@ -715,6 +718,9 @@ void CGameFramework::BuildScene(SCENEINFO *pSI)
 	m_pScene->SetPlayer(pPlayer);
 	m_pCamera = m_pPlayer->GetCamera();
 
+	m_pScene->AddFont(m_pd3dDevice, &m_Arial);
+	m_pScene->AddFont(m_pd3dDevice, &m_HumanMagic);
+
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList);
 	m_pScene->StartScene();
 }
@@ -724,7 +730,9 @@ void CGameFramework::BuildObjects()
 	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
 	m_pRepository = new CRepository();
-	//씬 객체를 생성하고 씬에 포함될 게임 객체들을 생성한다. 
+
+	m_Arial.Initialize(m_pd3dDevice, m_pd3dCommandList, "./Resource/Font/Arial.fnt");
+	m_HumanMagic.Initialize(m_pd3dDevice, m_pd3dCommandList, "./Resource/Font/휴먼매직체.fnt");
 	
 #ifdef ON_NETWORKING
 	InitNetwork();
@@ -732,19 +740,17 @@ void CGameFramework::BuildObjects()
 	BuildScene();
 #endif
 
-	//씬 객체를 생성하기 위하여 필요한 그래픽 명령 리스트들을 명령 큐에 추가한다. 
 	m_pd3dCommandList->Close();
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
 
-	//그래픽 명령 리스트들이 모두 실행될 때까지 기다린다. 
 	WaitForGpuComplete();
 
-	//그래픽 리소스들을 생성하는 과정에 생성된 업로드 버퍼들을 소멸시킨다. 
 	if (m_pScene) m_pScene->ReleaseUploadBuffers();
 	if (m_pPlayer) m_pPlayer->ReleaseUploadBuffers();
-
-	if(m_pRepository) m_pRepository->ReleaseUploadBuffers();
+	if (m_pRepository) m_pRepository->ReleaseUploadBuffers();
+	m_Arial.ReleaseUploadBuffers();
+	m_HumanMagic.ReleaseUploadBuffers();
 
 	::pDevice = m_pd3dDevice;
 	::pCommandList = m_pd3dCommandList;
@@ -754,6 +760,8 @@ void CGameFramework::ReleaseObjects()
 {
 	if (m_pPlayer) delete m_pPlayer;
 
+	CScene::ReleaseDescHeapAndGraphicsRootSign();
+
 	if (m_pScene)
 	{
 		m_pScene->ReleaseObjects();
@@ -761,6 +769,9 @@ void CGameFramework::ReleaseObjects()
 	}
 
 	if (m_pRepository) delete m_pRepository;
+
+	m_Arial.Destroy();
+	m_HumanMagic.Destroy();
 }
 
 void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -1100,6 +1111,9 @@ void CGameFramework::FrameAdvance()
 
 	ProcessInput();
 
+	m_Arial.CheckUsingTexts();
+	m_HumanMagic.CheckUsingTexts();
+
 	AnimateObjects(m_fElapsedTime);
 
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
@@ -1114,16 +1128,7 @@ void CGameFramework::FrameAdvance()
 	nFPS = m_GameTimer.GetFPS();
 #endif
 
-	/*
-	최적화 우선순위. [ 쉬운 것 부터 천천히 ]
-	1. Set 횟수 줄이기
-	   - 현재 같은 쉐이더를 사용함에도 불구하고 쉐이더 클래스마다 Set하고 있음.
-	   - 쉐이더 변수 혹은 텍스처 등 한 번만 Set해도 되는 걸 찾기.
-
-	2. 기하 쉐이더를 사용하여 6면을 한 번에 그리기.
-	   - 이렇게 할 경우 쉐이더 코드를 전부 수정/추가해야 함.
-	   - 시간과 집중력이 필요한 작업.
-	*/
+	CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
 
 	//Draw Environment Map
 	if (nFPS % 5 == 0)
@@ -1148,26 +1153,26 @@ void CGameFramework::FrameAdvance()
 		::TransitionResourceState(m_pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
 
-	//// Draw Minimap
-	//{
-	//	::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	// Draw Minimap
+	{
+		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	//	if (m_pMiniMapCamera) {
-	//		m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
-	//		m_pMiniMapCamera->GenerateViewMatrix();
-	//	}
-	//	
-	//	m_pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
-	//	m_pd3dCommandList->ClearDepthStencilView(m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-	//	m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-	//	
-	//	if (m_pScene)
-	//	{
-	//		m_pScene->MinimapRender(m_pd3dCommandList, m_pMiniMapCamera); // 그릴 때 평면 위에 점들로 그리도록 하기
-	//	}
+		if (m_pMiniMapCamera) {
+			m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
+			m_pMiniMapCamera->GenerateViewMatrix();
+		}
+		
+		m_pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
+		m_pd3dCommandList->ClearDepthStencilView(m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+		m_pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+		
+		if (m_pScene)
+		{
+			m_pScene->MinimapRender(m_pd3dCommandList, m_pMiniMapCamera); // 그릴 때 평면 위에 점들로 그리도록 하기
+		}
 
-	//	::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
-	//}
+		::TransitionResourceState(m_pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+	}
 
 	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -1199,7 +1204,11 @@ void CGameFramework::FrameAdvance()
 		if (m_pPlayer) m_pPlayer->RenderWire(m_pd3dCommandList, m_pCamera);
 	}
 
-	if (m_pScene) m_pScene->AfterRenderEffects(m_pd3dCommandList);
+	if (m_pScene)
+	{
+		m_pScene->RenderFont(m_pd3dCommandList);
+		m_pScene->AfterRenderEffects(m_pd3dCommandList);
+	}
 
 	//////////////////////////////////////////////////////////////////
 

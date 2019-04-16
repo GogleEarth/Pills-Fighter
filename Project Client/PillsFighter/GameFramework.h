@@ -107,7 +107,7 @@ protected:
 
 	int								m_nCubeMapWidth;
 	int								m_nCubeMapHeight;
-	ID3D12Resource					*m_pd3dEnvirCube;
+	ID3D12Resource					*m_pd3dEnvirCube = NULL;
 	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
@@ -117,6 +117,10 @@ protected:
 public:
 	void CreateEnvironmentMap();
 	void CreateCubeMapCamera();
+
+protected:
+	CFont							m_Arial;
+	CFont							m_HumanMagic;
 
 public: // for Network
 	HANDLE m_hThread;
@@ -163,10 +167,10 @@ public:
 	void CreateMinimapMap();
 	void CreateMiniMapCamera();
 private:
-	ID3D12Resource					*m_pd3dMinimapRsc;
+	ID3D12Resource					*m_pd3dMinimapRsc = NULL;
 	CTexture						*screenCaptureTexture = NULL;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvMinimapCPUHandle;
 
-	CCamera							*m_pMiniMapCamera;
+	CCamera							*m_pMiniMapCamera = NULL;
 
 };

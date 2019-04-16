@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "Player.h"
 #include "Sound.h"
+#include "Font.h"
 
 class CRepository;
 class CSound;
@@ -38,7 +39,7 @@ public:
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void ReleaseObjects();
-	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseUploadBuffers();
 
 	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
@@ -51,6 +52,7 @@ public:
 
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderFont(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -61,17 +63,26 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
 	virtual void ReleaseShaderVariables() {};
 
-	virtual ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice) { return NULL; };
-
+	static void CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
 	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement);
+	static void ReleaseDescHeapAndGraphicsRootSign();
+	static void SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList);
+
+protected:
+	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
+
+	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
+
+	static ID3D12RootSignature				*m_pd3dGraphicsRootSignature;
 
 public:
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
 	CPlayer *GetPlayer() { return m_pPlayer; }
 	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
-	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 
+	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandleForHeapStart() { return(m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart()); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandleForHeapStart() { return(m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart()); }
 
@@ -83,13 +94,6 @@ public:
 	float GetToTargetDistance() { return m_fCameraToTarget; }
 
 protected:
-	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
-
-	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
-	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
-
-	ID3D12RootSignature					*m_pd3dGraphicsRootSignature = NULL;
-
 	LIGHTS								*m_pLights = NULL;
 	ID3D12Resource						*m_pd3dcbLights = NULL;
 	LIGHTS								*m_pcbMappedLights = NULL;
@@ -107,6 +111,7 @@ protected:
 	int									m_nEffectShaders = 0;
 	CEffectShader						**m_ppEffectShaders = NULL;
 
+
 protected:
 	float			m_fGravAcc = 9.8f;
 	float			m_fCameraToTarget = 0.0f;
@@ -116,9 +121,17 @@ protected:
 
 public:
 	void SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnvirCube);
-	void SetEnvirMap(ID3D12GraphicsCommandList *pd3dCommandList);
 	
 	virtual void StartScene() {};
+
+public:
+	void AddFont(ID3D12Device *pd3dDevice, CFont *pFont);
+	CTextObject* AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+
+protected:
+	CFontShader							*m_pFontShader = NULL;
+	std::vector<CFont*>					m_vpFonts;
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
 	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo) {}
@@ -138,8 +151,6 @@ class CColonyScene : public CScene
 public:
 	CColonyScene();
 	virtual ~CColonyScene();
-
-	virtual ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
