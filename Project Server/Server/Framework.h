@@ -11,6 +11,12 @@ struct Client_INFO
 	SOCKET socket;
 };
 
+struct Client_arg
+{
+	SOCKET socket;
+	int id;
+};
+
 class Framework
 {
 	WSADATA wsa;
@@ -54,7 +60,7 @@ public:
 	static DWORD WINAPI Update(LPVOID arg);
 	DWORD Update_Process(CScene* pScene);
 	static DWORD WINAPI client_thread(LPVOID arg);
-	DWORD client_process(SOCKET arg);
+	DWORD client_process(Client_arg* arg);
 	// 충돌 체크를 검사한다.
 	void CheckCollision(CScene* pScene);
 };
@@ -63,6 +69,7 @@ struct Arg
 {
 	Framework* pthis;
 	SOCKET client_socket;
+	int id;
 };
 
 struct Update_Arg

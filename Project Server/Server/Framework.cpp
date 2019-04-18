@@ -100,76 +100,84 @@ void Framework::main_loop()
 			}
 			else
 			{
-				memcpy(buf, &count, sizeof(int));
-				retval = send(client_sock, buf, sizeof(int), 0);
-				if (retval == SOCKET_ERROR)
+				if (!game_start)
 				{
-					std::cout << "main_loop ERROR : ";
-					err_display("send()");
-					break;
+					memcpy(buf, &count, sizeof(int));
+					retval = send(client_sock, buf, sizeof(int), 0);
+					if (retval == SOCKET_ERROR)
+					{
+						std::cout << "main_loop ERROR : ";
+						err_display("send()");
+						break;
+					}
+
+					SCENEINFO sinfo = SCENE_NAME_COLONY;
+					retval = send(client_sock, (char*)&sinfo, sizeof(SCENEINFO), 0);
+
+					PKT_PLAYER_INFO pktdata;
+					PKT_CREATE_OBJECT anotherpktdata;
+					std::cout << count << std::endl;
+					pktdata.ID = count;
+					pktdata.WorldMatrix = m_pScene->m_pObjects[count]->m_xmf4x4World;
+					m_pScene->m_pObjects[count]->m_bPlay = true;
+					std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
+					pktdata.IsShooting = false;
+					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
+
+					for (int i = 0; i < MAX_CLIENT; ++i)
+					{
+						if (i != count)
+						{
+							anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+							anotherpktdata.Object_Index = i;
+							anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+							retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+						}
+					}
+
+					std::cout << clients.size() << "\n";
+					if (clients.size() > 0)
+					{
+						PKT_ID pid_pin = PKT_ID_PLAYER_IN;
+						PKT_PLAYER_IN pkt_pin;
+						for (int i = 0; i < count; ++i)
+						{
+							pkt_pin.id = i;
+							std::cout << i << "번쨰 플레이어 정보 정보 보냄\n";
+							retval = send(client_sock, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
+							retval = send(client_sock, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
+						}
+						for (auto client : clients)
+						{
+							pkt_pin.id = count;
+							std::cout << count << "번쨰 플레이어 정보 정보 입장\n";
+							retval = send(client.socket, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
+							retval = send(client.socket, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
+						}
+					}
+
+					Client_INFO info;
+					info.id = count;
+					info.socket = client_sock;
+					m.lock();
+					clients.emplace_back(Client_INFO{ count, client_sock });
+					m.unlock();
+
+					Arg* arg = new Arg;
+					arg->pthis = this;
+					arg->client_socket = client_sock;
+					arg->id = count;
+
+					client_Event[count] = CreateEvent(NULL, FALSE, FALSE, NULL);
+					thread[count] = CreateThread(
+						NULL, 0, client_thread,
+						(LPVOID)arg, 0, NULL);
+					count++;
 				}
-
-				SCENEINFO sinfo = SCENE_NAME_COLONY;
-				retval = send(client_sock, (char*)&sinfo, sizeof(SCENEINFO), 0);
-
-				PKT_PLAYER_INFO pktdata;
-				PKT_CREATE_OBJECT anotherpktdata;
-				std::cout << count << std::endl;
-				pktdata.ID = count;
-				pktdata.WorldMatrix = m_pScene->m_pObjects[count]->m_xmf4x4World;
-				m_pScene->m_pObjects[count]->m_bPlay = true;
-				std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
-				pktdata.IsShooting = false;
-				retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
-
-				for (int i = 0; i < MAX_CLIENT; ++i)
+				else
 				{
-					if (i != count)
-					{
-						anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
-						anotherpktdata.Object_Index = i;
-						anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
-						retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
-					}
+					closesocket(client_sock);
 				}
-
-				std::cout << clients.size() << "\n";
-				if (clients.size() > 0)
-				{
-					PKT_ID pid_pin = PKT_ID_PLAYER_IN;
-					PKT_PLAYER_IN pkt_pin;
-					for (int i = 0; i < count; ++i)
-					{
-						pkt_pin.id = i;
-						std::cout << i << "번쨰 플레이어 정보 정보 보냄\n";
-						retval = send(client_sock, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
-						retval = send(client_sock, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
-					}
-					for (auto client : clients)
-					{
-						pkt_pin.id = count;
-						std::cout << count << "번쨰 플레이어 정보 정보 입장\n";
-						retval = send(client.socket, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
-						retval = send(client.socket, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
-					}
-				}
-
-				Client_INFO info;
-				info.id = count;
-				info.socket = client_sock;
-				m.lock();
-				clients.emplace_back(Client_INFO{ count, client_sock });
-				m.unlock();
-
-				Arg* arg = new Arg;
-				arg->pthis = this;
-				arg->client_socket = client_sock;
-
-				client_Event[count] = CreateEvent(NULL, FALSE, FALSE, NULL);
-				thread[count] = CreateThread(
-					NULL, 0, client_thread,
-					(LPVOID)arg, 0, NULL);
-				count++;
 			}
 		}
 	}
@@ -504,48 +512,70 @@ DWORD Framework::Update_Process(CScene* pScene)
 DWORD __stdcall Framework::client_thread(LPVOID arg)
 {
 	Arg* t_arg = (Arg*)arg;
+	Client_arg* c_arg = new Client_arg;
+	c_arg->id = t_arg->id;
+	std::cout << "id : " << c_arg->id << "\n";
+	c_arg->socket = t_arg->client_socket;
 	std::cout << ((Arg*)arg)->pthis << std::endl;
-	return t_arg->pthis->client_process(t_arg->client_socket);
+	return t_arg->pthis->client_process(c_arg);
 }
 
-DWORD Framework::client_process(SOCKET arg)
+DWORD Framework::client_process(Client_arg* arg)
 {
-	SOCKET client_socket = arg;
+	SOCKET client_socket = arg->socket;
 	int retval;
 
 	PKT_ID iPktID;
 	int nPktSize = 0;
 
 	char* buf;
+	bool Player_out = false;
+	std::cout << "id : " << arg->id << "\n";
 
 	while (true)
 	{
-		// 데이터 받기 # 패킷 식별 ID
-		retval = recvn(client_socket, (char*)&iPktID, sizeof(PKT_ID), 0);
-		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
-
-		// 데이터 받기 # 패킷 구조체 - SIZE 결정
-		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
-		else if (iPktID == PKT_ID_GAME_STATE) game_start = true;// 오브젝트 업데이트 정보
-		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
-
-		// 데이터 받기 # 패킷 구조체 - 결정
-
-		if (iPktID != PKT_ID_GAME_STATE)
+		if (!Player_out)
 		{
-			buf = new char[nPktSize];
-			retval = recvn(client_socket, buf, nPktSize, 0);
-			if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
-			
-			msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID,
-				((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting,
-				((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
-				((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Animation,
-				((PKT_PLAYER_INFO*)buf)->isChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
+			// 데이터 받기 # 패킷 식별 ID
+			retval = recvn(client_socket, (char*)&iPktID, sizeof(PKT_ID), 0);
+			if (retval == SOCKET_ERROR)
+			{
+				std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
+				Player_out = true;
+				
+				closesocket(client_socket);
 
-			SetEvent(client_Event[((PKT_PLAYER_INFO*)buf)->ID]);
-			WaitForSingleObject(Event, INFINITE);
-		}	
+				SetEvent(client_Event[arg->id]);
+				WaitForSingleObject(Event, INFINITE);
+			}
+			else
+			{
+				// 데이터 받기 # 패킷 구조체 - SIZE 결정
+				if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
+				else if (iPktID == PKT_ID_GAME_STATE) game_start = true;// 오브젝트 업데이트 정보
+				else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
+
+				// 데이터 받기 # 패킷 구조체 - 결정
+
+				if (iPktID != PKT_ID_GAME_STATE)
+				{
+					buf = new char[nPktSize];
+					retval = recvn(client_socket, buf, nPktSize, 0);
+					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
+
+					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID,
+						((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting,
+						((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
+						((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Animation,
+						((PKT_PLAYER_INFO*)buf)->isChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
+
+					SetEvent(client_Event[arg->id]);
+					WaitForSingleObject(Event, INFINITE);
+				}
+			}
+		}
+		SetEvent(client_Event[arg->id]);
+		WaitForSingleObject(Event, INFINITE);
 	}
 
 	return 0;
