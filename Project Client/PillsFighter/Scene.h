@@ -39,12 +39,12 @@ public:
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void ReleaseObjects();
-	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	virtual void ReleaseUploadBuffers();
 
-	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
-	virtual bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-	virtual bool ProcessInput(UCHAR *pKeysBuffer);
+	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual void ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime);
 
 	virtual void CheckCollision() {}
 	virtual void CheckCollisionPlayer() {}
@@ -54,8 +54,8 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderFont(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void AfterRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void BuildLightsAndMaterials() {}
 
@@ -63,11 +63,17 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {};
 	virtual void ReleaseShaderVariables() {};
 
+public:
 	static void CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
-	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews);
+	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement);
-	static void ReleaseDescHeapAndGraphicsRootSign();
+	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType);
+	static void ReleaseDescHeapsAndGraphicsRootSign();
 	static void SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	static void CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice);
+	static void CreateRenderTargetView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_RTV_DIMENSION d3dRtvDimension, int nViews, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle);
+	static void CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle);
 
 protected:
 	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
@@ -77,17 +83,22 @@ protected:
 
 	static ID3D12RootSignature				*m_pd3dGraphicsRootSignature;
 
+	static ID3D12DescriptorHeap				*m_pd3dRtvDescriptorHeap;
+	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvCPUDesciptorStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dRtvGPUDesciptorStartHandle;
+
+	static ID3D12DescriptorHeap				*m_pd3dDsvDescriptorHeap;
+	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvCPUDesciptorStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dDsvGPUDesciptorStartHandle;
+
+	int								m_nFPS = 0;
+
 public:
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
 	CPlayer *GetPlayer() { return m_pPlayer; }
 	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
 
 	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandleForHeapStart() { return(m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart()); }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandleForHeapStart() { return(m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart()); }
-
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUSrvDescriptorStartHandle() { return(m_d3dSrvCPUDescriptorStartHandle); }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUSrvDescriptorStartHandle() { return(m_d3dSrvGPUDescriptorStartHandle); }
 
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
 
@@ -111,17 +122,13 @@ protected:
 	int									m_nEffectShaders = 0;
 	CEffectShader						**m_ppEffectShaders = NULL;
 
+	CUserInterface						*m_pUserInterface = NULL;
 
 protected:
 	float			m_fGravAcc = 9.8f;
 	float			m_fCameraToTarget = 0.0f;
 
-	ID3D12Resource	*m_pd3dEnvirCube = NULL;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_d3dSrvGPUEnvirCubeDescriptorHandle;
-
 public:
-	void SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnvirCube);
-	
 	virtual void StartScene() {};
 
 public:
@@ -129,8 +136,12 @@ public:
 	CTextObject* AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
 
 protected:
-	CFontShader							*m_pFontShader = NULL;
-	std::vector<CFont*>					m_vpFonts;
+	CFontShader						*m_pFontShader = NULL;
+	std::vector<CFont*>				m_vpFonts;
+
+protected:
+	BOOL							m_LButtonDown = FALSE;
+	BOOL							m_bRenderWire = FALSE;
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
@@ -138,10 +149,22 @@ public: // Network
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
 
-public:
-	void SetMinimapSRV(ID3D12Device *pd3dDevice, CTexture *pd3dTexture);
-	virtual void MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+};
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CLobbyScene : public CScene
+{
+public:
+	CLobbyScene();
+	virtual ~CLobbyScene();
+	
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+
+	virtual void StartScene();
+
+protected:
+	CLobbyShader *m_pLobbyShader = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,8 +175,13 @@ public:
 	CColonyScene();
 	virtual ~CColonyScene();
 
+	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual void ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime);
+
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
-	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseObjects();
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	virtual void ReleaseUploadBuffers();
 
 	virtual void CheckCollision();
@@ -167,6 +195,44 @@ public:
 	virtual void ReleaseShaderVariables();
 
 	virtual void StartScene();
+
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	void CreateEnvironmentMap(ID3D12Device *pd3dDevice);
+	void CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice);
+
+protected:
+	ID3D12Resource					*m_pd3dEnvirCube = NULL;
+	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvEnvirCubeMapGPUHandle;
+
+	CCamera							*m_pCubeMapCamera[6];
+
+	D3D12_VIEWPORT 					m_d3dEMViewport;
+	D3D12_RECT						m_d3dEMScissorRect;
+
+public:
+	void CreateMinimapMap(ID3D12Device *pd3dDevice);
+	void CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice);
+	void MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList);
+
+protected:
+	ID3D12Resource					*m_pd3dMinimapRsc = NULL;
+	ID3D12Resource					*m_pd3dMinimapDepthStencilBuffer = NULL;
+	CTexture						*screenCaptureTexture = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvMinimapCPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvMinimapCPUHandle;
+
+	CCamera							*m_pMiniMapCamera = NULL;
+
+	D3D12_VIEWPORT 					m_d3dMMViewport;
+	D3D12_RECT						m_d3dMMScissorRect;
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);

@@ -2,11 +2,19 @@
 #include "Scene.h"
 #include "Repository.h"
 
-ID3D12DescriptorHeap	*CScene::m_pd3dDescriptorHeap = NULL;
-ID3D12RootSignature		*CScene::m_pd3dGraphicsRootSignature = NULL;
+ID3D12DescriptorHeap			*CScene::m_pd3dDescriptorHeap = NULL;
+ID3D12RootSignature				*CScene::m_pd3dGraphicsRootSignature = NULL;
 
-D3D12_CPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvCPUDescriptorStartHandle;
-D3D12_GPU_DESCRIPTOR_HANDLE	CScene::m_d3dSrvGPUDescriptorStartHandle;
+D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvCPUDescriptorStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvGPUDescriptorStartHandle;
+
+ID3D12DescriptorHeap			*CScene::m_pd3dRtvDescriptorHeap;
+D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dRtvCPUDesciptorStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dRtvGPUDesciptorStartHandle;
+
+ID3D12DescriptorHeap			*CScene::m_pd3dDsvDescriptorHeap;
+D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvCPUDesciptorStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvGPUDesciptorStartHandle;
 
 extern CFMODSound gFmodSound;
 
@@ -32,7 +40,7 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pFontShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 }
 
-void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 }
 
@@ -128,6 +136,12 @@ void CScene::ReleaseObjects()
 		m_pParticleShader = NULL;
 	}
 
+	if (m_pUserInterface)
+	{
+		m_pUserInterface->ReleaseShaderVariables();
+		delete m_pUserInterface;
+	}
+
 	ReleaseShaderVariables();
 }
 
@@ -139,21 +153,19 @@ void CScene::ReleaseUploadBuffers()
 	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
 	for (int i = 0; i < m_nEffectShaders; i++) if(m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
 	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
+	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
 }
 
-bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+void CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	return(false);
 }
 
-bool CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+void CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	return(false);
 }
 
-bool CScene::ProcessInput(UCHAR *pKeysBuffer)
+void CScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
 {
-	return(false);
 }
 
 void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
@@ -185,11 +197,9 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvGPUEnvirCubeDescriptorHandle);
-
 	if (pCamera)
 	{
-		pCamera->SetViewportsAndScissorRects(pd3dCommandList);
+		pCamera->GenerateViewMatrix();
 		pCamera->UpdateShaderVariables(pd3dCommandList);
 	}
 
@@ -200,8 +210,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
-
-
+	
 	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
 	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera, true);
 
@@ -218,41 +227,23 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	}
 
 	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
+
+	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
+
+	m_nFPS = (m_nFPS + 1) % 5;
 }
-
-
-void CScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
-	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
-
-	if (pCamera)
-	{
-		pCamera->SetViewportsAndScissorRects(pd3dCommandList);
-		pCamera->UpdateShaderVariables(pd3dCommandList);
-	}
-
-	UpdateShaderVariables(pd3dCommandList);
-
-	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera, true);
-
-	for (int i = 0; i < m_nShaders; i++)
-	{
-		if (m_ppShaders[i])
-			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
-	}
-
-}
-
 
 void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if(m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
-
-	for (int i = 0; i < m_nShaders; i++)
+	if (m_bRenderWire)
 	{
-		if(m_ppShaders[i])
-			m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
+		if (m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
+
+		for (int i = 0; i < m_nShaders; i++)
+		{
+			if (m_ppShaders[i])
+				m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
+		}
 	}
 }
 
@@ -266,10 +257,8 @@ void CScene::RenderFont(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
-void CScene::PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
+void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_pd3dGraphicsRootSignature) pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
-
 	for (int i = 0; i < m_nEffectShaders; i++)
 	{
 		if (m_ppEffectShaders[i])
@@ -279,7 +268,7 @@ void CScene::PrepareRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
 	if (m_pParticleShader) m_pParticleShader->PrepareRender(pd3dCommandList);
 }
 
-void CScene::AfterRenderEffects(ID3D12GraphicsCommandList *pd3dCommandList)
+void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	for (int i = 0; i < m_nEffectShaders; i++)
 	{
@@ -329,31 +318,6 @@ D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3
 		break;
 	}
 	return(d3dShaderResourceViewDesc);
-}
-
-void CScene::SetEnvirMapAndSRV(ID3D12Device *pd3dDevice, ID3D12Resource	*pd3dEnvirCube)
-{
-	D3D12_SHADER_RESOURCE_VIEW_DESC d3dSRVDesc;
-	d3dSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	d3dSRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	d3dSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-	d3dSRVDesc.TextureCube.MostDetailedMip = 0;
-	d3dSRVDesc.TextureCube.MipLevels = 1;
-	d3dSRVDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-
-	pd3dDevice->CreateShaderResourceView(pd3dEnvirCube, &d3dSRVDesc, m_d3dSrvCPUDescriptorStartHandle);
-	m_pd3dEnvirCube = pd3dEnvirCube;
-
-	m_d3dSrvGPUEnvirCubeDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
-
-	m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-	m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-
-}
-
-void CScene::SetMinimapSRV(ID3D12Device *pd3dDevice, CTexture *pd3dTexture)
-{
-	CScene::CreateShaderResourceViews(pd3dDevice, pd3dTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 }
 
 // statics
@@ -531,7 +495,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	if (pd3dErrorBlob) pd3dErrorBlob->Release();
 }
 
-void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nViews)
+void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
 	d3dDescriptorHeapDesc.NumDescriptors = nViews;
@@ -569,7 +533,25 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 	return d3dSrvGPUDescriptorHandle;
 }
 
-void CScene::ReleaseDescHeapAndGraphicsRootSign()
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+
+	if (pd3dResource)
+	{
+		D3D12_RESOURCE_DESC d3dResourceDesc = pd3dResource->GetDesc();
+		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nSrvType);
+
+		pd3dDevice->CreateShaderResourceView(pd3dResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
+
+		m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+	}
+
+	return d3dSrvGPUDescriptorHandle;
+}
+
+void CScene::ReleaseDescHeapsAndGraphicsRootSign()
 {
 	if (m_pd3dGraphicsRootSignature)
 	{
@@ -582,6 +564,18 @@ void CScene::ReleaseDescHeapAndGraphicsRootSign()
 		m_pd3dDescriptorHeap->Release();
 		m_pd3dDescriptorHeap = NULL;
 	}
+
+	if (m_pd3dRtvDescriptorHeap)
+	{
+		m_pd3dRtvDescriptorHeap->Release();
+		m_pd3dRtvDescriptorHeap = NULL;
+	}
+
+	if (m_pd3dDsvDescriptorHeap)
+	{
+		m_pd3dDsvDescriptorHeap->Release();
+		m_pd3dDsvDescriptorHeap = NULL;
+	}
 }
 
 void CScene::SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -590,8 +584,106 @@ void CScene::SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3
 	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
 }
 
+void CScene::CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
+	::ZeroMemory(&d3dDescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
+	d3dDescriptorHeapDesc.NumDescriptors = 6 + 1;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	d3dDescriptorHeapDesc.NodeMask = 0;
+	HRESULT hResult = pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dRtvDescriptorHeap);
+	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-//////////
+	d3dDescriptorHeapDesc.NumDescriptors = 2;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	hResult = pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDsvDescriptorHeap);
+	m_d3dDsvCPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dDsvGPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+void CScene::CreateRenderTargetView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_RTV_DIMENSION d3dRtvDimension, int nViews, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle)
+{
+	D3D12_RENDER_TARGET_VIEW_DESC d3dDesc;
+	d3dDesc.ViewDimension = d3dRtvDimension;
+	d3dDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	for (int i = 0; i < nViews; i++)
+	{
+		switch (d3dRtvDimension)
+		{
+		case D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D:
+			d3dDesc.Texture2D.MipSlice = 0;
+			d3dDesc.Texture2D.PlaneSlice = 0;
+			break;
+		case D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2DARRAY:
+			d3dDesc.Texture2DArray.MipSlice = 0;
+			d3dDesc.Texture2DArray.PlaneSlice = 0;
+			d3dDesc.Texture2DArray.FirstArraySlice = i;
+			d3dDesc.Texture2DArray.ArraySize = 1;
+			break;
+		}
+
+		pd3dDevice->CreateRenderTargetView(pd3dResource, &d3dDesc, m_d3dRtvCPUDesciptorStartHandle);
+		pd3dSaveCPUHandle[i] = m_d3dRtvCPUDesciptorStartHandle;
+
+		m_d3dRtvCPUDesciptorStartHandle.ptr += ::gnRtvDescriptorIncrementSize;
+		m_d3dRtvGPUDesciptorStartHandle.ptr += ::gnRtvDescriptorIncrementSize;
+	}
+}
+
+void CScene::CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle)
+{
+	D3D12_DEPTH_STENCIL_VIEW_DESC d3dDepthStencilViewDesc;
+	::ZeroMemory(&d3dDepthStencilViewDesc, sizeof(D3D12_DEPTH_STENCIL_VIEW_DESC));
+	d3dDepthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dDepthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	d3dDepthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	pd3dDevice->CreateDepthStencilView(pd3dResource, &d3dDepthStencilViewDesc, m_d3dDsvCPUDesciptorStartHandle);
+	(*pd3dSaveCPUHandle) = m_d3dDsvCPUDesciptorStartHandle;
+
+	m_d3dDsvCPUDesciptorStartHandle.ptr += ::gnDsvDescriptorIncrementSize;
+	m_d3dDsvGPUDesciptorStartHandle.ptr += ::gnDsvDescriptorIncrementSize;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CLobbyScene::CLobbyScene()
+{
+
+}
+
+CLobbyScene::~CLobbyScene()
+{
+
+}
+
+void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
+{
+	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
+
+	/*
+	로그인한 유저 ID 표시, 로봇 선택, 게임시작 UI
+	*/
+	
+	m_nShaders = LOBBY_SHADER_INDEX;
+	m_ppShaders = new CShader*[m_nShaders];
+	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
+
+	CLobbyShader *pLobbyShader = new CLobbyShader();
+	pLobbyShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pLobbyShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+
+	m_ppShaders[INDEX_LOBBY_SHADER_UI] = pLobbyShader;
+}
+
+void CLobbyScene::StartScene()
+{
+	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CColonyScene::CColonyScene() : CScene()
@@ -603,6 +695,79 @@ CColonyScene::CColonyScene() : CScene()
 
 CColonyScene::~CColonyScene()
 {
+}
+
+void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+{
+	switch (nMessageID)
+	{
+	case WM_LBUTTONDOWN:
+		if (::GetCapture() == hWnd)
+		{
+			if (!m_LButtonDown) m_pPlayer->PrepareAttack(m_pPlayer->GetRHWeapon());
+
+			m_LButtonDown = TRUE;
+		}
+		break;
+	case WM_LBUTTONUP:
+	{
+		m_LButtonDown = FALSE;
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+{
+	switch (nMessageID)
+	{
+	case VK_SPACE:
+		m_pPlayer->DeactivationBooster();
+		break;
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case '1':
+			m_pPlayer->ChangeWeapon(0);
+			break;
+		case '2':
+			m_pPlayer->ChangeWeapon(1);
+			break;
+		case '3':
+			m_pPlayer->ChangeWeapon(2);
+			break;
+		case 'B':
+			m_bRenderWire = !m_bRenderWire;
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void CColonyScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
+{
+	ULONG dwDirection = 0;
+
+	if (pKeysBuffer['W'] & 0xF0) dwDirection |= DIR_FORWARD;
+	if (pKeysBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
+	if (pKeysBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
+	if (pKeysBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
+	if (pKeysBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
+	if (pKeysBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
+
+	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * fElapsedTime);
+	else m_pPlayer->ChangeAnimation(ANIMATION_STATE_IDLE);
+
+	if (m_LButtonDown)
+	{
+		if (m_pPlayer) m_pPlayer->Attack(m_pPlayer->GetRHWeapon());
+	}
 }
 
 void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
@@ -674,9 +839,38 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false); 
 }
 
-void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CColonyScene::ReleaseObjects()
 {
-	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList);
+	CScene::ReleaseObjects();
+
+	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
+	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
+
+	for (int i = 0; i < 6; i++)
+	{
+		m_pCubeMapCamera[i]->ReleaseShaderVariables();
+		delete m_pCubeMapCamera[i];
+	}
+
+	if (screenCaptureTexture) delete screenCaptureTexture;
+
+	if (m_pMiniMapCamera) {
+		m_pMiniMapCamera->ReleaseShaderVariables();
+		delete m_pMiniMapCamera;
+	}
+
+	if (m_pd3dMinimapDepthStencilBuffer) m_pd3dMinimapDepthStencilBuffer->Release();
+}
+
+void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
+
+	CreateEnvironmentMap(pd3dDevice);
+	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
+
+	CreateMinimapMap(pd3dDevice);
+	CreateMiniMapCamera(pd3dDevice, pd3dCommandList);
 
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
@@ -697,11 +891,276 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
+
+	CUserInterface *pUserInterface = new CUserInterface();
+	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, screenCaptureTexture);
+	pUserInterface->SetPlayer(m_pPlayer);
+
+	m_pUserInterface = pUserInterface;
 }
 
 void CColonyScene::StartScene()
 {
 	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
+}
+
+void CColonyScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
+{
+	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
+	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
+	d3dHeapPropertiesDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
+	d3dHeapPropertiesDesc.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	d3dHeapPropertiesDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	d3dHeapPropertiesDesc.CreationNodeMask = 1;
+	d3dHeapPropertiesDesc.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC d3dResourceDesc;
+	ZeroMemory(&d3dResourceDesc, sizeof(D3D12_RESOURCE_DESC));
+
+	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3dResourceDesc.Alignment = 0;
+	d3dResourceDesc.Width = CUBE_MAP_WIDTH;
+	d3dResourceDesc.Height = CUBE_MAP_HEIGHT;
+	d3dResourceDesc.DepthOrArraySize = 6;
+	d3dResourceDesc.MipLevels = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dResourceDesc.SampleDesc.Count = 1;
+	d3dResourceDesc.SampleDesc.Quality = 0;
+	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+	D3D12_CLEAR_VALUE d3dClear = { DXGI_FORMAT_R8G8B8A8_UNORM, { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dEnvirCube);
+
+	d3dResourceDesc.DepthOrArraySize = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	d3dClear.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dClear.DepthStencil.Depth = 1.0f;
+	d3dClear.DepthStencil.Stencil = 0;
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dEnvirCubeDSBuffer);
+
+	CreateRtvDsvSrvEnvironmentMap(pd3dDevice);
+}
+
+void CColonyScene::CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice)
+{
+	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle); 
+	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dEnvirCubeDSBuffer, &m_d3dDsvEnvirCubeMapCPUHandle);
+	m_d3dSrvEnvirCubeMapGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dEnvirCube, RESOURCE_TEXTURE_CUBE);
+}
+
+void CColonyScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT3 xmf3Looks[6] = {
+		XMFLOAT3(1.0f, 0.0f, 0.0f),
+		XMFLOAT3(-1.0f, 0.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, -1.0f, 0.0f),
+		XMFLOAT3(0.0f, 0.0f, 1.0f),
+		XMFLOAT3(0.0f, 0.0f, -1.0f)
+	};
+
+	XMFLOAT3 xmf3Ups[6] = {
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, 0.0f, -1.0f),
+		XMFLOAT3(0.0f, 0.0f, 1.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 0.0f)
+	};
+
+	m_d3dEMViewport = { 0.0f, 0.0f, float(CUBE_MAP_WIDTH), float(CUBE_MAP_HEIGHT), 0.0f, 1.0f };
+	m_d3dEMScissorRect = { 0, 0, CUBE_MAP_WIDTH, CUBE_MAP_HEIGHT };
+
+	for (int i = 0; i < 6; i++)
+	{
+		XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks[i], xmf3Ups[i], true);
+
+		m_pCubeMapCamera[i] = new CCamera();
+
+		m_pCubeMapCamera[i]->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		m_pCubeMapCamera[i]->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+		m_pCubeMapCamera[i]->SetRight(xmf3Right);
+		m_pCubeMapCamera[i]->SetUp(xmf3Ups[i]);
+		m_pCubeMapCamera[i]->SetLook(xmf3Looks[i]);
+
+		m_pCubeMapCamera[i]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	}
+
+}
+
+///////////////////////////////////////////////////////////////////////// 미니맵
+void CColonyScene::CreateMinimapMap(ID3D12Device *pd3dDevice)
+{
+	// 렌더 타겟, 텍스처로 사용될 리소스를 생성.
+	screenCaptureTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+
+	D3D12_CLEAR_VALUE d3dClear = { DXGI_FORMAT_R8G8B8A8_UNORM, { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+	m_pd3dMinimapRsc = screenCaptureTexture->CreateTexture(pd3dDevice, NULL, MINIMAP_BUFFER_WIDTH, MINIMAP_BUFFER_HEIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, 0);
+
+	// 렌더 타겟과 함께 Set해줘야하는 깊이 스텐실 버퍼를 생성. 
+	// [ 기존에 프레임워크에 있었을 때는 후면 버퍼의 깊이 스텐실 버퍼 크기[w, h]와 미니맵 리소스의 크기가 같아서 미니맵용 깊이 스텐실 버퍼를 따로 만들지 않고 Clear 해주면서 재사용했었음. ]
+	D3D12_RESOURCE_DESC d3dResourceDesc;
+	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3dResourceDesc.Alignment = 0;
+	d3dResourceDesc.Width = MINIMAP_BUFFER_WIDTH;
+	d3dResourceDesc.Height = MINIMAP_BUFFER_HEIGHT;
+	d3dResourceDesc.DepthOrArraySize = 1;
+	d3dResourceDesc.MipLevels = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dResourceDesc.SampleDesc.Count = 1;
+	d3dResourceDesc.SampleDesc.Quality = 0;
+	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	D3D12_HEAP_PROPERTIES d3dHeapProperties;
+	::ZeroMemory(&d3dHeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
+	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	d3dHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	d3dHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	d3dHeapProperties.CreationNodeMask = 1;
+	d3dHeapProperties.VisibleNodeMask = 1;
+
+	d3dClear.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dClear.DepthStencil.Depth = 1.0f;
+	d3dClear.DepthStencil.Stencil = 0;
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dMinimapDepthStencilBuffer);
+
+	// 미니맵 리소스의 렌더 타겟 뷰, 깊이 스텐실 뷰, 쉐이더 리소스 뷰를 생성.
+	CreateRtvDsvSrvMiniMap(pd3dDevice);
+}
+
+// 미니맵 카메라 생성
+void CColonyScene::CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_d3dMMViewport = { 0.0f, 0.0f, float(MINIMAP_BUFFER_WIDTH), float(MINIMAP_BUFFER_HEIGHT), 0.0f, 1.0f };
+	m_d3dMMScissorRect = { 0, 0, MINIMAP_BUFFER_WIDTH, MINIMAP_BUFFER_HEIGHT };
+
+	m_pMiniMapCamera = new CCamera();
+
+	XMFLOAT3 xmf3Looks = XMFLOAT3(0.0f, -1.0f, 0.0f);
+	XMFLOAT3 xmf3Ups = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks, xmf3Ups, true);
+
+	m_pMiniMapCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	m_pMiniMapCamera->SetPlayer(m_pPlayer);
+	m_pMiniMapCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+	m_pMiniMapCamera->SetRight(xmf3Right);
+	m_pMiniMapCamera->SetUp(xmf3Ups);
+	m_pMiniMapCamera->SetLook(xmf3Looks);
+
+	m_pMiniMapCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CColonyScene::CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice)
+{
+	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dMinimapRsc, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRtvMinimapCPUHandle);
+	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dMinimapDepthStencilBuffer, &m_d3dDsvMinimapCPUHandle);
+	CScene::CreateShaderResourceViews(pd3dDevice, screenCaptureTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+}
+
+void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	if (m_pMiniMapCamera) {
+		m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
+		m_pMiniMapCamera->GenerateViewMatrix();
+		m_pMiniMapCamera->UpdateShaderVariables(pd3dCommandList);
+	}
+
+	pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
+	pd3dCommandList->ClearDepthStencilView(m_d3dDsvMinimapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+	pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_d3dDsvMinimapCPUHandle);
+
+	pd3dCommandList->RSSetViewports(1, &m_d3dMMViewport);
+	pd3dCommandList->RSSetScissorRects(1, &m_d3dMMScissorRect);
+
+	UpdateShaderVariables(pd3dCommandList);
+
+	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pMiniMapCamera, true);
+
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		if (m_ppShaders[i])
+			m_ppShaders[i]->Render(pd3dCommandList, m_pMiniMapCamera);
+	}
+
+	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+}
+/////////////////////////////////////////////////////////////////////////
+
+void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	for (int i = 0; i < 6; i++)
+	{
+		m_pCubeMapCamera[i]->SetPosition(m_pPlayer->GetPosition());
+		m_pCubeMapCamera[i]->GenerateViewMatrix();
+		m_pCubeMapCamera[i]->UpdateShaderVariables(pd3dCommandList);
+
+		pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
+		pd3dCommandList->ClearDepthStencilView(m_d3dDsvEnvirCubeMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+
+		pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvEnvirCubeMapCPUHandle[i], TRUE, &m_d3dDsvEnvirCubeMapCPUHandle);
+
+		pd3dCommandList->RSSetViewports(1, &m_d3dEMViewport);
+		pd3dCommandList->RSSetScissorRects(1, &m_d3dEMScissorRect);
+
+		UpdateShaderVariables(pd3dCommandList);
+
+		if (m_pd3dcbLights)
+		{
+			D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
+			pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
+		}
+
+		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i], true);
+		if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i], true);
+
+		for (int i = 0; i < m_nShaders; i++)
+		{
+			if (m_ppShaders[i])
+				m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		}
+
+		for (int i = 0; i < m_nEffectShaders; i++)
+		{
+			if (m_ppEffectShaders[i])
+				m_ppEffectShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		}
+
+		if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+
+	}
+	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+}
+
+void CColonyScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	CScene::PrepareRender(pd3dCommandList);
+
+	if (m_nFPS % 5 == 0)
+	{
+		RenderCubeMap(pd3dCommandList);
+	}
+
+	MinimapRender(pd3dCommandList);
+}
+
+void CColonyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
+
+	CScene::Render(pd3dCommandList, pCamera);
 }
 
 void CColonyScene::ReleaseUploadBuffers()
@@ -815,7 +1274,7 @@ void CColonyScene::CheckCollision()
 
 void CColonyScene::CheckCollisionPlayer()
 {
-	std::vector<CGameObject*> *vObstacles;
+	//std::vector<CGameObject*> *vObstacles;
 
 	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
 	//for (const auto& Obstacle : *vObstacles)

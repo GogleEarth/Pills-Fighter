@@ -190,16 +190,16 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 				else if (!strncmp(pstrToken, "pad", 3)) // padding=
 				{
 					char pstrValue = pstrToken[8];
-					m_fTopPadding = atof(&pstrValue) / FRAME_BUFFER_WIDTH;
+					m_fTopPadding = (float)(atof(&pstrValue) / FRAME_BUFFER_WIDTH);
 
 					pstrValue = pstrToken[10];
-					m_fRightPadding = atof(&pstrValue) / FRAME_BUFFER_WIDTH;
+					m_fRightPadding = (float)(atof(&pstrValue) / FRAME_BUFFER_WIDTH);
 
 					pstrValue = pstrToken[12];
-					m_fBottomPadding = atof(&pstrValue) / FRAME_BUFFER_WIDTH;
+					m_fBottomPadding = (float)(atof(&pstrValue) / FRAME_BUFFER_WIDTH);
 
 					pstrValue = pstrToken[14];
-					m_fLeftPadding = atof(&pstrValue) / FRAME_BUFFER_WIDTH;
+					m_fLeftPadding = (float)(atof(&pstrValue) / FRAME_BUFFER_WIDTH);
 				}
 				else if (!strncmp(pstrToken, "spa", 3)) // spacing=
 				{
@@ -218,13 +218,13 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 				{
 					char *pstr = &pstrToken[11];
 
-					m_fLineHeight = atof(pstr) / FRAME_BUFFER_HEIGHT;
+					m_fLineHeight = (float)(atof(pstr) / FRAME_BUFFER_HEIGHT);
 				}
 				else if (!strncmp(pstrToken, "base=", 5)) // base=
 				{
 					char *pstr = &pstrToken[5];
 
-					m_fBaseHeight = atof(pstr) / FRAME_BUFFER_HEIGHT;
+					m_fBaseHeight = (float)(atof(pstr) / FRAME_BUFFER_HEIGHT);
 				}
 				else if (!strncmp(pstrToken, "scaleW", 6)) // scaleW=
 				{
@@ -422,7 +422,7 @@ CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT
 
 	XMFLOAT2 xmf2ChPosition = xmf2Position;
 
-	int nLength = strlen(pstrText);
+	int nLength = (int)strlen(pstrText);
 	CFontVertex *pFontVertices = new CFontVertex[nLength];
 
 	for (int i = 0; i < nLength; i++)

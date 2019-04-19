@@ -8,7 +8,7 @@
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pMinimap, void *pContext) : CRobotObject()
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CRobotObject()
 {
 	m_pCamera = SetCamera(0.0f);
 
@@ -47,13 +47,6 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	CUserInterface *pUserInterface = new CUserInterface();
-	pUserInterface->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
-	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, pMinimap);
-	pUserInterface->SetPlayer(this);
-
-	m_pUserInterface = pUserInterface;
-
 	CHeightMapTerrain *pTerrain = (CHeightMapTerrain *)pContext;
 
 	SetPlayerUpdatedContext(pTerrain);
@@ -73,7 +66,6 @@ CPlayer::~CPlayer()
 	ReleaseShaderVariables();
 
 	if (m_pCamera) delete m_pCamera;
-	if (m_pUserInterface) delete m_pUserInterface;
 
 }
 
@@ -87,12 +79,10 @@ void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 void CPlayer::ReleaseShaderVariables()
 {
 	if (m_pCamera) m_pCamera->ReleaseShaderVariables();
-	if (m_pUserInterface) m_pUserInterface->ReleaseShaderVariables();
 }
 
 void CPlayer::ReleaseUploadBuffers()
 {
-	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
 
 	CGameObject::ReleaseUploadBuffers();
 }
@@ -110,8 +100,6 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	m_pCamera->SetTimeLag(0.0f);
 	m_pCamera->SetOffset(CAMERA_POSITION);
 	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
-	m_pCamera->SetViewport(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 0.0f, 1.0f);
-	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
 	Update(fTimeElapsed);
 
@@ -199,8 +187,6 @@ void CPlayer::Rotate(float x, float y, float z)
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
-
 	CRobotObject::Render(pd3dCommandList, pCamera, true);
 }
 

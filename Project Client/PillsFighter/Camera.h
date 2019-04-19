@@ -30,9 +30,6 @@ protected:
 	XMFLOAT4X4 						m_xmf4x4View;
 	XMFLOAT4X4 						m_xmf4x4Projection;
 
-	D3D12_VIEWPORT 					m_d3dViewport;
-	D3D12_RECT						m_d3dScissorRect;
-
 	CPlayer							*m_pPlayer = NULL;
 
 	ID3D12Resource					*m_pd3dcbCamera = NULL;
@@ -49,10 +46,6 @@ public:
 
 	void GenerateViewMatrix();
 	void GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle);
-
-	void SetViewport(int xTopLeft, int yTopLeft, int nWidth, int nHeight, float fMinZ = 0.0f, float fMaxZ = 1.0f);
-	void SetScissorRect(LONG xLeft, LONG yTop, LONG xRight, LONG yBottom);
-	virtual void SetViewportsAndScissorRects(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 	CPlayer *GetPlayer() { return(m_pPlayer); }
@@ -80,8 +73,6 @@ public:
 
 	XMFLOAT4X4 GetViewMatrix() { return(m_xmf4x4View); }
 	XMFLOAT4X4 GetProjectionMatrix() { return(m_xmf4x4Projection); }
-	D3D12_VIEWPORT GetViewport() { return(m_d3dViewport); }
-	D3D12_RECT GetScissorRect() { return(m_d3dScissorRect); }
 
 	virtual void Move(const XMFLOAT3& xmf3Shift) { m_xmf3Position.x += xmf3Shift.x; m_xmf3Position.y += xmf3Shift.y; m_xmf3Position.z += xmf3Shift.z; }
 

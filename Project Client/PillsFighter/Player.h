@@ -27,7 +27,7 @@ protected:
 	CCamera *m_pCamera = NULL;
 
 public:
-	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pMinimap, void *pContext = NULL);
+	CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext = NULL);
 	virtual ~CPlayer();
 
 	CCamera *GetCamera() { return(m_pCamera); }
@@ -58,7 +58,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	CShader				*m_pUserInterface = NULL;
+	//CShader				*m_pUserInterface = NULL;
 
 protected:
 	int					m_nBoosterGauge = 100;
