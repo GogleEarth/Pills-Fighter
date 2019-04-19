@@ -44,6 +44,11 @@ void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 {
 }
 
+void CScene::MoveCursor(float x, float y)
+{
+	if(m_pCursor) m_pCursor->MoveCursorPos(x, y);
+}
+
 void CScene::AddFont(ID3D12Device *pd3dDevice, CFont *pFont)
 {
 	pFont->SetSrv(pd3dDevice);
@@ -140,6 +145,16 @@ void CScene::ReleaseObjects()
 	{
 		m_pUserInterface->ReleaseShaderVariables();
 		delete m_pUserInterface;
+	}
+
+	if (m_pCursor)
+	{
+		delete m_pCursor;
+	}
+
+	for (const auto& pFont : m_vpFonts)
+	{
+		pFont->ClearTexts();
 	}
 
 	ReleaseShaderVariables();
@@ -449,6 +464,11 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.Num32BitValues = 2;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.ShaderRegister = 10;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
@@ -648,6 +668,18 @@ void CScene::CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd
 	m_d3dDsvGPUDesciptorStartHandle.ptr += ::gnDsvDescriptorIncrementSize;
 }
 
+void CScene::ResetDescriptorHeapHandles()
+{
+	m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+	m_d3dDsvCPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dDsvGPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CLobbyScene::CLobbyScene()
@@ -664,24 +696,164 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 {
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
 
-	/*
-	로그인한 유저 ID 표시, 로봇 선택, 게임시작 UI
-	*/
+	m_pLobbyShader = new CLobbyShader();
+	m_pLobbyShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	m_pLobbyShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+
+	m_nTextures = 3;
+	m_ppTextures = new CTexture*[m_nTextures];
+
+	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Base.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/GameStart.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGameStart.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_nUIRect = 2;
+	m_ppUIRects = new CRect*[m_nUIRect];
+
+	// Base UI
+	XMFLOAT2 xmf2Center = CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
+	XMFLOAT2 xmf2Size = CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
+	m_ppUIRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.514688f, 0.902500f, -0.672778f, -0.816111f);
+	xmf2Size = ::CalculateSize(0.514688f, 0.902500f, -0.672778f, -0.816111f);
+	m_ppUIRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	m_pCursor = new CCursor(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+}
+
+void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+{
+	switch (nMessageID)
+	{
+	case WM_LBUTTONUP:
+		MouseClick();
+		break;
+	default:
+		break;
+	}
+}
+
+void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	JoinPlayer("First Player");
+	JoinPlayer("Second Player");
+	JoinPlayer("Third Player");
+	JoinPlayer("Fourth Player");
+	JoinPlayer("Fifth Player");
+	JoinPlayer("Sixth Player");
+	JoinPlayer("Seventh Player");
+	JoinPlayer("Ehighth Player");
+
+	XMFLOAT2 xmf2Center = ::CalculateCenter(0.504688f, 0.922500f, -0.652778f, -0.836111f, true);
+	XMFLOAT2 xmf2Size = ::CalculateSize(0.504688f, 0.922500f, -0.652778f, -0.836111f, true);
+
+	m_StartButton.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_StartButton.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+}
+
+void CLobbyScene::ReleaseObjects()
+{
+	CScene::ReleaseObjects();
 	
-	m_nShaders = LOBBY_SHADER_INDEX;
-	m_ppShaders = new CShader*[m_nShaders];
-	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
+	for (int i = 0; i < m_nUIRect; i++)
+	{
+		if (m_ppUIRects[i])
+			delete m_ppUIRects[i];
+	}
 
-	CLobbyShader *pLobbyShader = new CLobbyShader();
-	pLobbyShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pLobbyShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	for (int i = 0; i < m_nTextures; i++)
+	{
+		if (m_ppTextures[i])
+			delete m_ppTextures[i];
+	}
 
-	m_ppShaders[INDEX_LOBBY_SHADER_UI] = pLobbyShader;
+	if (m_pLobbyShader) delete m_pLobbyShader;
+}
+
+void CLobbyScene::ReleaseUploadBuffers()
+{
+	CScene::ReleaseUploadBuffers();
+
+	if (m_ppUIRects)
+	{
+		for (int i = 0; i < m_nUIRect; i++)
+		{
+			if (m_ppUIRects[i]) m_ppUIRects[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < m_nTextures; i++)
+		{
+			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	if (m_pCursor) m_pCursor->ReleaseUploadBuffer();
+}
+
+int CLobbyScene::MouseClick()
+{
+	if (m_pCursor->CollisionCheck(m_StartButton))
+	{
+		return MOUSE_CLICK_TYPE_START;
+	}
+}
+
+void CLobbyScene::CheckCollision()
+{
+	if (m_pCursor->CollisionCheck(m_StartButton)) m_bHLStartButton = true;
+	else m_bHLStartButton = false;
 }
 
 void CLobbyScene::StartScene()
 {
 	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
+}
+
+void CLobbyScene::JoinPlayer(const char *pstrPlayerName)
+{
+	XMFLOAT2 xmf2Pos;
+	xmf2Pos.x = -0.862500f;
+	xmf2Pos.y = 0.400000f;
+
+	xmf2Pos.x += (m_nNumPlayer / 4) * 0.7f;
+	xmf2Pos.y += (m_nNumPlayer % 4) * -0.375f;
+
+	AddText("휴먼매직체", pstrPlayerName, xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
+
+	m_nNumPlayer++;
+}
+
+void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CScene::Render(pd3dCommandList, pCamera);
+
+	if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, pCamera);
+
+	m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[0]->Render(pd3dCommandList, 0);
+
+	if(m_bHLStartButton)
+		m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[1]->Render(pd3dCommandList, 0);
+	
+	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

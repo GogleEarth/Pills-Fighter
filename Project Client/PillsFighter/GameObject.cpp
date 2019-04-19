@@ -1329,3 +1329,66 @@ void CParticle::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
 	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
 	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+CCursor::CCursor(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature)
+{
+	m_xmf2CursorPos = XMFLOAT2(0.0f, 0.0f);
+
+	m_pMesh = new CRect(pd3dDevice, pd3dCommandList, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(0.0128f, 0.072f));
+
+	m_pShader = new CCursorShader();
+	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+
+	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Cursor.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+}
+
+CCursor::~CCursor()
+{
+	if (m_pMesh) delete m_pMesh;
+	if (m_pTexture) delete m_pTexture;
+	if (m_pShader) delete m_pShader;
+}
+
+void CCursor::ReleaseUploadBuffer()
+{
+	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
+	if (m_pTexture) m_pTexture->ReleaseUploadBuffers();
+}
+
+bool CCursor::CollisionCheck(BoundingBox& xmAABB)
+{
+	return(xmAABB.Contains(Vector3::XMFloat3ToVector(XMFLOAT3(m_xmf2ScreenPos.x, m_xmf2ScreenPos.y, 1.0f))));
+}
+
+void CCursor::MoveCursorPos(float x, float y)
+{
+	x *= CURSOR_SENSITIVITY_X;
+	y *= CURSOR_SENSITIVITY_Y;
+
+	m_xmf2CursorPos.x = (m_xmf2CursorPos.x + x) > gnWndClientWidth ? gnWndClientWidth : (m_xmf2CursorPos.x + x) > 0 ? (m_xmf2CursorPos.x + x) : 0;
+	m_xmf2CursorPos.y = (m_xmf2CursorPos.y + y) > gnWndClientHeight ? gnWndClientHeight : (m_xmf2CursorPos.y + y) > 0 ? (m_xmf2CursorPos.y + y) : 0;
+
+	m_xmf2ScreenPos.x = ((2.0f  * m_xmf2CursorPos.x) / gnWndClientWidth) - 1;
+	m_xmf2ScreenPos.y = -((2.0f * m_xmf2CursorPos.y) / gnWndClientHeight) + 1;
+}
+
+void CCursor::UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_CURSOR_INFO, 2, &m_xmf2ScreenPos, 0);
+}
+
+void CCursor::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UpdateShaderVariable(pd3dCommandList);
+
+	if (m_pShader) m_pShader->Render(pd3dCommandList, NULL);
+
+	if (m_pTexture) m_pTexture->UpdateShaderVariables(pd3dCommandList);
+
+	if (m_pMesh) m_pMesh->Render(pd3dCommandList, 0);
+}

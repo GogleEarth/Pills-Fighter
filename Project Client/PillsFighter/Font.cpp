@@ -106,6 +106,14 @@ void CFont::ReleaseUploadBuffers()
 	if (m_pFontTexture) m_pFontTexture->ReleaseUploadBuffers();
 }
 
+void CFont::ClearTexts()
+{
+	for (const auto& pTextObject : m_vpTextObjects)
+	{
+		pTextObject->Release();
+	}
+}
+
 void CFont::Destroy()
 {
 	while (!m_qpTempTextObjects.empty())
@@ -485,7 +493,6 @@ CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT
 
 void CFont::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-
 	m_pFontTexture->UpdateShaderVariables(pd3dCommandList);
 
 	for (const auto& pTextObject : m_vpTextObjects)

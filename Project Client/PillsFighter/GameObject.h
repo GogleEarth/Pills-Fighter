@@ -566,3 +566,29 @@ public:
 	void Delete() { m_bDelete = true; }
 	int IsDelete() { return m_bDelete; }
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+class CCursor
+{
+public:
+	CCursor(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual ~CCursor();
+
+	void ReleaseUploadBuffer();
+	
+	void MoveCursorPos(float x, float y);
+	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
+	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	bool CollisionCheck(BoundingBox& xmAABB);
+
+protected:
+
+	CMesh *m_pMesh;
+	CTexture *m_pTexture;
+	CShader *m_pShader;
+
+	XMFLOAT2 m_xmf2CursorPos;
+	XMFLOAT2 m_xmf2ScreenPos;
+};

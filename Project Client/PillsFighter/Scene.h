@@ -74,6 +74,7 @@ public:
 	static void CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice);
 	static void CreateRenderTargetView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_RTV_DIMENSION d3dRtvDimension, int nViews, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle);
 	static void CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle);
+	static void ResetDescriptorHeapHandles();
 
 protected:
 	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
@@ -91,7 +92,7 @@ protected:
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvCPUDesciptorStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dDsvGPUDesciptorStartHandle;
 
-	int								m_nFPS = 0;
+	int										m_nFPS = 0;
 
 public:
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
@@ -143,6 +144,13 @@ protected:
 	BOOL							m_LButtonDown = FALSE;
 	BOOL							m_bRenderWire = FALSE;
 
+protected:
+	CCursor							*m_pCursor = NULL;
+
+public:
+	void MoveCursor(float x, float y);
+	virtual int MouseClick() { return 0; };
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
 	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo) {}
@@ -158,13 +166,36 @@ class CLobbyScene : public CScene
 public:
 	CLobbyScene();
 	virtual ~CLobbyScene();
-	
-	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 
+	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+	virtual void ReleaseObjects();
+	virtual void ReleaseUploadBuffers();
+
+	virtual void CheckCollision();
 	virtual void StartScene();
 
+	void JoinPlayer(const char *pstrPlayerName);
+	virtual int MouseClick();
+
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
 protected:
-	CLobbyShader *m_pLobbyShader = NULL;
+	CLobbyShader	*m_pLobbyShader = NULL;
+
+	int				m_nNumPlayer = 0;
+
+	BoundingBox		m_StartButton;
+	bool			m_bHLStartButton = false;
+	
+protected:
+	int								m_nUIRect = 0;
+	CRect							**m_ppUIRects = NULL;
+
+	int								m_nTextures;
+	CTexture						**m_ppTextures = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

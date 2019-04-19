@@ -409,10 +409,10 @@ void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tria
 	float fHalfH = input[0].size.y;
 
 	float4 fVertices[4];
-	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[0] = float4(input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
 
 	float2 fUVs[4];
 	fUVs[0] = float2(0.0f, 1.0f);
@@ -435,22 +435,23 @@ void GS_UI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tria
 void GS_UI_Bar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float yPos = float(giValue) / float(giMaxValue);
-	float2 vUp = float2(0.0f, yPos);
+	float2 vValueByUp = float2(0.0f, 1.0f - yPos);
+	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
 
 	float4 fVertices[4];
-	fVertices[0] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[1] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[2] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[3] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[0] = float4(input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center - fHalfW * vRight - fHalfH * vValueByUp, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center + fHalfW * vRight - fHalfH * vValueByUp, 0.0f, 1.0f);
 
 	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, yPos);
-	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, yPos);
-	fUVs[3] = float2(1.0f, 0.0f);
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 1.0f - yPos);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 1.0f - yPos);
 
 	GS_UI_OUT output;
 
@@ -914,4 +915,42 @@ float4 PSFont(GS_FONT_OUT input) : SV_TARGET
 	float4 fColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	return fColor *input.color;
+}
+
+////////////////////////////////////////////////////////////////
+
+cbuffer cbCursorInfo : register(b10)
+{
+	float2 gvCursorPos;
+}
+
+[maxvertexcount(4)]
+void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(gvCursorPos + input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(gvCursorPos + input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[2] = float4(gvCursorPos + input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(gvCursorPos + input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
 }

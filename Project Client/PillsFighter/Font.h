@@ -70,6 +70,7 @@ public:
 	void CheckUsingTexts();
 	void Destroy();
 	void ReleaseUploadBuffers();
+	void ClearTexts();
 
 	CFontCharacter* GetChar(char c);
 	const char* GetName() { return m_pstrName; }
@@ -114,5 +115,7 @@ protected:
 프레임 워크에서 Font 객체 Initialize 해준 후 ( 파일 로드 ) 사용할 폰트를 Scene에 AddFont 해주면 씬에서 사용 준비 끝.
 Scene의 AddText()한 후 리턴한 FontObject를 받아 놓으면 일단 글씨가 렌더링 됨.
 다 사용했을 경우 FontObject의 Release함수를 호출해 주면 끝.
+호출 안하면 게임 끝날 때까지 없어지지 않고. 게임이 끝나면 알아서 Release함.
+다시 말해서 중간에 없어져야되는 글자는 받아놓고 특정 조건에 맞춰서 Release해줘야 됨.
 SetText()의 Position은 스크린 좌표 ( -1.0 ~ 1.0 )
 */

@@ -19,9 +19,6 @@ private:
 	HINSTANCE						m_hInstance;
 	HWND							m_hWnd;
 
-	int								m_nWndClientWidth;
-	int								m_nWndClientHeight;
-
 	IDXGIFactory4					*m_pdxgiFactory = NULL;
 	IDXGISwapChain3					*m_pdxgiSwapChain = NULL;
 	ID3D12Device					*m_pd3dDevice = NULL;
@@ -33,10 +30,8 @@ private:
 	UINT							m_nSwapChainBufferIndex;
 
 	ID3D12Resource					*m_ppd3dRenderTargetBuffers[m_nSwapChainBuffers];
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvCPUHandle[2];
 
 	ID3D12Resource					*m_pd3dDepthStencilBuffer = NULL;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvCPUHandle;
 
 	ID3D12CommandQueue				*m_pd3dCommandQueue = NULL;
 	ID3D12CommandAllocator			*m_pd3dCommandAllocator = NULL;
@@ -54,7 +49,6 @@ private:
 	_TCHAR							m_pszCaption[70];
 
 	POINT							m_ptOldCursorPos;
-	RECT							m_wndRect;
 	POINT							m_ptCursorPos;
 
 	CScene							*m_pScene = NULL;
@@ -63,12 +57,7 @@ private:
 	CCamera							*m_pCamera = NULL;
 
 	ID3D12DescriptorHeap			*m_pd3dRtvDescriptorHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvCPUDesciptorStartHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dRtvGPUDesciptorStartHandle;
-
 	ID3D12DescriptorHeap			*m_pd3dDsvDescriptorHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvCPUDesciptorStartHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dDsvGPUDesciptorStartHandle;
 
 public:
 	CGameFramework();
@@ -90,7 +79,7 @@ public:
 
 	//렌더링할 메쉬와 게임 객체를 생성하고 소멸하는 함수이다. 
 	void BuildObjects();
-	void BuildScene(SCENEINFO *pSI = NULL);
+	void BuildScene(int nSceneType = 0);
 	void BuildColonyScene();
 	void BuildLobbyScene();
 	void ReleaseObjects();
