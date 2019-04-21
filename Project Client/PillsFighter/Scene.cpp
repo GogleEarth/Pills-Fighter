@@ -1223,7 +1223,7 @@ void CColonyScene::CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pMiniMapCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
 	m_pMiniMapCamera->SetPlayer(m_pPlayer);
-	m_pMiniMapCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+	m_pMiniMapCamera->GenerateProjectionMatrix(1.01f, 5000.0f, 1.0f, 60.0f);
 	m_pMiniMapCamera->SetRight(xmf3Right);
 	m_pMiniMapCamera->SetUp(xmf3Ups);
 	m_pMiniMapCamera->SetLook(xmf3Looks);
@@ -1257,13 +1257,8 @@ void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pMiniMapCamera, true);
-
-	for (int i = 0; i < m_nShaders; i++)
-	{
-		if (m_ppShaders[i])
-			m_ppShaders[i]->Render(pd3dCommandList, m_pMiniMapCamera);
-	}
+	if (m_ppShaders[2])
+		m_ppShaders[2]->Render(pd3dCommandList, m_pMiniMapCamera);
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
