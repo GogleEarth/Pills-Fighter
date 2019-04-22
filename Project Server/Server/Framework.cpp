@@ -111,29 +111,29 @@ void Framework::main_loop()
 						break;
 					}
 
-					SCENEINFO sinfo = SCENE_NAME_COLONY;
-					retval = send(client_sock, (char*)&sinfo, sizeof(SCENEINFO), 0);
+					//SCENEINFO sinfo = SCENE_NAME_COLONY;
+					//retval = send(client_sock, (char*)&sinfo, sizeof(SCENEINFO), 0);
 
-					PKT_PLAYER_INFO pktdata;
-					PKT_CREATE_OBJECT anotherpktdata;
-					std::cout << count << std::endl;
-					pktdata.ID = count;
-					pktdata.WorldMatrix = m_pScene->m_pObjects[count]->m_xmf4x4World;
-					m_pScene->m_pObjects[count]->m_bPlay = true;
-					std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
-					pktdata.IsShooting = false;
-					retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
+					//PKT_PLAYER_INFO pktdata;
+					//PKT_CREATE_OBJECT anotherpktdata;
+					//std::cout << count << std::endl;
+					//pktdata.ID = count;
+					//pktdata.WorldMatrix = m_pScene->m_pObjects[count]->m_xmf4x4World;
+					//m_pScene->m_pObjects[count]->m_bPlay = true;
+					//std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
+					//pktdata.IsShooting = false;
+					//retval = send(client_sock, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
 
-					for (int i = 0; i < MAX_CLIENT; ++i)
-					{
-						if (i != count)
-						{
-							anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
-							anotherpktdata.Object_Index = i;
-							anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
-							retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
-						}
-					}
+					//for (int i = 0; i < MAX_CLIENT; ++i)
+					//{
+					//	if (i != count)
+					//	{
+					//		anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+					//		anotherpktdata.Object_Index = i;
+					//		anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+					//		retval = send(client_sock, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+					//	}
+					//}
 
 					std::cout << clients.size() << "\n";
 					if (clients.size() > 0)
@@ -159,6 +159,7 @@ void Framework::main_loop()
 					Client_INFO info;
 					info.id = count;
 					info.socket = client_sock;
+					info.load_complete = false;
 					m.lock();
 					clients.emplace_back(Client_INFO{ count, client_sock });
 					m.unlock();
@@ -272,6 +273,52 @@ DWORD Framework::Update_Process(CScene* pScene)
 	retval = Send_msg((char*)&pstateid, sizeof(PKT_ID), 0);
 	retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
 
+	//로딩끝날때까지 대기
+	int load_count;
+	while (true)
+	{
+		load_count = 0;
+		m.lock();
+		for (auto d : clients)
+		{
+			if (d.load_complete)
+				load_count++;
+		}
+		m.unlock();
+		if (load_count == playernum)
+			break;
+	}
+
+	PKT_ID Loadcomplete = PKT_ID_LOAD_COMPLETE_ALL;
+	retval = Send_msg((char*)&Loadcomplete, sizeof(PKT_ID), 0);
+
+	m.lock();
+	for (auto d : clients)
+	{
+		PKT_PLAYER_INFO pktdata;
+		PKT_CREATE_OBJECT anotherpktdata;
+		//std::cout << count << std::endl;
+		pktdata.ID = d.id;
+		pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
+		m_pScene->m_pObjects[d.id]->m_bPlay = true;
+		//std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
+		pktdata.IsShooting = false;
+		for (int i = 0; i < playernum; ++i)
+		{
+			if (i != d.id)
+			{
+				anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+				anotherpktdata.Object_Index = i;
+				anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+				retval = send(d.socket, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
+				retval = send(d.socket, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+			}
+		}
+	}
+	m.unlock();
+
+	game_start = false;
+
 	while (true)
 	{
 		WaitForMultipleObjects(playernum, client_Event, TRUE, INFINITE);
@@ -330,7 +377,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 			//std::cout << "Player_id : " << pkt.ID << std::endl;
 			//std::cout << "Player_position : " << pkt.WorldMatrix._41 << " " << pkt.WorldMatrix._42 << " " << pkt.WorldMatrix._43 << std::endl;
 			//std::cout << "Player_Weapon : " << pkt.Player_Weapon << std::endl;
-			//std::cout << "Player_Frame : " << pkt.Current_Frame << std::endl;
 
 			pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
@@ -553,11 +599,19 @@ DWORD Framework::client_process(Client_arg* arg)
 				// 데이터 받기 # 패킷 구조체 - SIZE 결정
 				if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
 				else if (iPktID == PKT_ID_GAME_STATE) game_start = true;// 오브젝트 업데이트 정보
+				else if (iPktID == PKT_ID_LOAD_COMPLETE)
+				{
+					std::cout << arg->id << "번 플레이어 로드완료\n";
+					//m.lock();
+					clients[arg->id].load_complete = true;
+					//m.unlock();
+					continue;
+				}
 				else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
 
 				// 데이터 받기 # 패킷 구조체 - 결정
 
-				if (iPktID != PKT_ID_GAME_STATE)
+				if (iPktID == PKT_ID_PLAYER_INFO)
 				{
 					buf = new char[nPktSize];
 					retval = recvn(client_socket, buf, nPktSize, 0);
@@ -574,8 +628,11 @@ DWORD Framework::client_process(Client_arg* arg)
 				}
 			}
 		}
-		SetEvent(client_Event[arg->id]);
-		WaitForSingleObject(Event, INFINITE);
+		if (!game_start)
+		{
+			SetEvent(client_Event[arg->id]);
+			WaitForSingleObject(Event, INFINITE);
+		}
 	}
 
 	return 0;

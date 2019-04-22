@@ -9,6 +9,7 @@ struct Client_INFO
 {
 	int id;
 	SOCKET socket;
+	bool load_complete;
 };
 
 struct Client_arg
