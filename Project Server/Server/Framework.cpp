@@ -266,12 +266,12 @@ DWORD Framework::Update_Process(CScene* pScene)
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
-	PKT_GAME_STATE pstate;
-	pstate.game_state = GAME_STATE_GAME_START;
-	pstate.num_player = playernum;
-	PKT_ID pstateid = PKT_ID_GAME_STATE;
-	retval = Send_msg((char*)&pstateid, sizeof(PKT_ID), 0);
-	retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
+	//PKT_GAME_STATE pstate;
+	//pstate.game_state = GAME_STATE_GAME_START;
+	//pstate.num_player = playernum;
+	//PKT_ID pstateid = PKT_ID_GAME_STATE;
+	//retval = Send_msg((char*)&pstateid, sizeof(PKT_ID), 0);
+	//retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
 
 	//로딩끝날때까지 대기
 	int load_count;
@@ -488,11 +488,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt_u = update_msg_queue.front();
 			update_msg_queue.pop();
 
+			std::cout << pkt_u.Object_Index << "번 오브젝트 업데이트 \n";
+
 			PKT_ID pid_u = PKT_ID_UPDATE_OBJECT;
 			retval = Send_msg((char*)&pid_u, sizeof(PKT_ID), 0);
 
 			retval = Send_msg((char*)&pkt_u, sizeof(PKT_UPDATE_OBJECT), 0);
-			//std::cout << "오브젝트 삭제 패킷 전송\n";
+
 		}
 
 		// 오브젝트 삭제 패킷 보내기
