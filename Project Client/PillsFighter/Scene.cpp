@@ -697,7 +697,7 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pLobbyShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pLobbyShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
-	m_nTextures = 11;
+	m_nTextures = 13;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
@@ -712,6 +712,13 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGameStart.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
+	m_ppTextures[11] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[11]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Ready.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[11], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[12] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[12]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLReady.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[12], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_ppTextures[3] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Left.dds", 0);
@@ -883,7 +890,14 @@ int CLobbyScene::MouseClick()
 {
 	if (m_pCursor->CollisionCheck(m_StartButton))
 	{
-		return MOUSE_CLICK_TYPE_START;
+		if (m_nPlayerIndex == 0)
+		{
+			return MOUSE_CLICK_TYPE_START;
+		}
+		else
+		{
+			// Process Ready
+		}
 	}
 	if (m_pCursor->CollisionCheck(m_SelectLeft))
 	{
@@ -940,10 +954,21 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[0]->Render(pd3dCommandList, 0);
 
-	if(m_bHLStartButton)
-		m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
+
+	if (m_bHLStartButton)
+	{
+		if(m_nPlayerIndex == 0)
+			m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
+		else
+			m_ppTextures[12]->UpdateShaderVariables(pd3dCommandList);
+	}
 	else
-		m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
+	{
+		if (m_nPlayerIndex == 0)
+			m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
+		else
+			m_ppTextures[11]->UpdateShaderVariables(pd3dCommandList);
+	}
 	m_ppUIRects[1]->Render(pd3dCommandList, 0);
 
 	if (m_bHLSelectLeft)
