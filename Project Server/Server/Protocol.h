@@ -1,14 +1,6 @@
 #pragma once
 
-#define ON_NETWORKING
-
-#define SERVERIP	"127.0.0.1"
-//#define SERVERIP	"192.168.103.222"
-#define SERVERPORT	9000
-#define WM_SOCKET WM_USER+1
-#define MAX_BUFFER 1024
-#define MAX_PACKET 256
-
+///////////////////////////////////////for network
 typedef enum PKT_ID
 {
 	PKT_ID_PLAYER_INFO,
@@ -108,50 +100,51 @@ typedef struct PKT_PLAYER_INFO
 	int				State;
 }PKT_PLAYER_INFO;
 
+
 typedef struct PKT_PLAYER_LIFE
 {
-	char		PktSize;
-	char		PktId;
-	int			ID;
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		ID;
 	DWORD		HP;
 	DWORD		AMMO;
 }PKT_PLAYER_LIFE;
 
 typedef struct PKT_CREATE_OBJECT
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	OBJECT_TYPE	Object_Type;
 	XMFLOAT4X4	WorldMatrix;
-	int			Object_Index;
+	BYTE		Object_Index;
 }PKT_CREATE_OBJECT;
 
 typedef struct PKT_DELETE_OBJECT
 {
-	char		PktSize;
-	char		PktId;
-	int			Object_Index;
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		Object_Index;
 }PKT_DELETE_OBJECT;
 
 struct PKT_TIME_INFO
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	float		elapsedtime;
 };
 
 struct PKT_UPDATE_OBJECT
 {
-	char		PktSize;
-	char		PktId;
-	int			Object_Index;
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		Object_Index;
 	XMFLOAT3	Object_Position;
 };
 
 struct PKT_CREATE_EFFECT
 {
-	char					PktSize;
-	char					PktId;
+	BYTE					PktSize;
+	BYTE					PktId;
 	XMFLOAT3				xmf3Position;
 	EFFECT_TYPE				efType;
 	EFFECT_ANIMATION_TYPE	EftAnitType;
@@ -159,37 +152,36 @@ struct PKT_CREATE_EFFECT
 
 struct PKT_GAME_STATE
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	GAME_STATE	game_state;
 	char		num_player;
 };
 
 typedef struct PKT_PLAYER_IN
 {
-	char		PktSize;
-	char		PktId;
-	int			id;
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		id;
 }PKT_PLAYER_IN, PKT_PLAYER_OUT, PKT_CLIENTID;
 
 struct PKT_ROBBY_PLAYER_INFO
 {
-	char		PktSize;
-	char		PktId;
-	int			id;
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		id;
 	char		selected_robot;
 };
 
-struct PKT_GAME_START
+typedef struct PKT_GAME_START
 {
-	char PktSize;
-	char PktID;
-};
-
-struct PKT_LOAD_COMPLETE
-{
-	char PktSize;
-	char PktID;
-};
+	BYTE PktSize;
+	BYTE PktID;
+}PKT_GAME_START, PKT_LOAD_COMPLETE, PKT_SEND_COMPLETE;
 
 #define MAX_NUM_OBJECT 2000
+
+#define SERVERIP	"127.0.0.1"
+#define SERVERPORT	9000
+#define ROBBYSERVERIP	"127.0.0.1"
+#define ROBBYSERVERPORT	9001

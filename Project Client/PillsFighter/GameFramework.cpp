@@ -852,11 +852,11 @@ void CGameFramework::recvn()
 	char *pBuf = m_RecvBuf;
 	int nPacketsize = 0;
 
-	if (m_nPacketSize > 0) nPacketsize = (int)m_pPacketBuffer[0];
+	if (m_nPacketSize > 0) nPacketsize = m_pPacketBuffer[0];
 
 	while (nRest > 0)
 	{
-		if (nPacketsize == 0) nPacketsize = (int)pBuf[0];
+		if (nPacketsize == 0) nPacketsize = pBuf[0];
 
 		int nRequired = nPacketsize - m_nPacketSize;
 

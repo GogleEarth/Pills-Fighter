@@ -164,6 +164,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Protocol.h" />
     <ClInclude Include="Protocol_Robby.h" />
     <ClInclude Include="Repository.h" />
     <ClInclude Include="Scene.h" />

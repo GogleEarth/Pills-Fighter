@@ -103,8 +103,8 @@ void Framework::main_loop()
 				if (!game_start)
 				{
 					PKT_CLIENTID pkt_cid;
-					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
-					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
+					pkt_cid.PktId = PKT_ID_PLAYER_ID;
+					pkt_cid.PktSize = sizeof(PKT_CLIENTID);
 					pkt_cid.id = count;
 					if (send(client_sock, (char*)&pkt_cid, pkt_cid.PktSize, 0) == SOCKET_ERROR)
 					{
@@ -140,8 +140,8 @@ void Framework::main_loop()
 					if (clients.size() > 0)
 					{
 						PKT_PLAYER_IN pkt_pin;
-						pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
-						pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
+						pkt_pin.PktId = PKT_ID_PLAYER_IN;
+						pkt_pin.PktSize = sizeof(PKT_PLAYER_IN);
 						for (int i = 0; i < count; ++i)
 						{
 							pkt_pin.id = i;
@@ -284,8 +284,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 	}
 
 	PKT_LOAD_COMPLETE pktgamestate;
-	pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
-	pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
+	pktgamestate.PktID = PKT_ID_LOAD_COMPLETE_ALL;
+	pktgamestate.PktSize = sizeof(PKT_LOAD_COMPLETE);
 	retval = Send_msg((char*)&pktgamestate, pktgamestate.PktSize, 0);
 	std::cout << "전원 로드 완료\n";
 
@@ -293,8 +293,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 	for (auto d : clients)
 	{
 		PKT_PLAYER_INFO pktdata;
-		pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
-		pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
+		pktdata.PktId = PKT_ID_PLAYER_INFO;
+		pktdata.PktSize = sizeof(PKT_PLAYER_INFO);
 		PKT_CREATE_OBJECT anotherpktdata;
 		//std::cout << count << std::endl;
 		pktdata.ID = d.id;
@@ -306,8 +306,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 		{
 			if (i != d.id)
 			{
-				anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
-				anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+				anotherpktdata.PktId = PKT_ID_CREATE_OBJECT;
+				anotherpktdata.PktSize = sizeof(PKT_CREATE_OBJECT);
 				anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
 				anotherpktdata.Object_Index = i;
 				anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
@@ -331,7 +331,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		//서버의 시간을 모든 플레이어에게 보내줌
 		PKT_ID id_time = PKT_ID_TIME_INFO;
 		PKT_TIME_INFO server_time;
-		server_time.PktId = (char)PKT_ID_TIME_INFO;
+		server_time.PktId = PKT_ID_TIME_INFO;
 		server_time.PktSize = sizeof(PKT_TIME_INFO);
 		server_time.elapsedtime = elapsed_time;
 		retval = Send_msg((char*)&server_time, server_time.PktSize, 0);
@@ -349,16 +349,16 @@ DWORD Framework::Update_Process(CScene* pScene)
 			if (pScene->m_pObjects[i] != NULL)
 			{
 				PKT_UPDATE_OBJECT updateobj;
-				updateobj.PktId = (char)PKT_ID_UPDATE_OBJECT;
-				updateobj.PktSize = (char)sizeof(PKT_UPDATE_OBJECT);
+				updateobj.PktId = PKT_ID_UPDATE_OBJECT;
+				updateobj.PktSize = sizeof(PKT_UPDATE_OBJECT);
 				updateobj.Object_Index = i;
 				updateobj.Object_Position = pScene->m_pObjects[i]->GetPosition();
 				update_msg_queue.push(updateobj);
 				if (pScene->m_pObjects[i]->IsDelete())
 				{
 					PKT_DELETE_OBJECT pkt_d;
-					pkt_d.PktId = (char)PKT_ID_DELETE_OBJECT;
-					pkt_d.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
+					pkt_d.PktId = PKT_ID_DELETE_OBJECT;
+					pkt_d.PktSize = sizeof(PKT_DELETE_OBJECT);
 					pkt_d.Object_Index = i;
 					delete_msg_queue.push(pkt_d);
 				}
@@ -392,8 +392,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 			{
 				//std::cout << "총알생성\n";
 				PKT_CREATE_OBJECT bulletpkt;
-				bulletpkt.PktId = (char)PKT_ID_CREATE_OBJECT;
-				bulletpkt.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+				bulletpkt.PktId = PKT_ID_CREATE_OBJECT;
+				bulletpkt.PktSize = sizeof(PKT_CREATE_OBJECT);
 				if (pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
 					bulletpkt.Object_Type = OBJECT_TYPE_MACHINE_BULLET;
 				else if (pkt.Player_Weapon == WEAPON_TYPE_BAZOOKA)
@@ -431,8 +431,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 		{
 			//std::cout << "아이템 생성\n";
 			PKT_CREATE_OBJECT bulletpkt;
-			bulletpkt.PktId = (char)PKT_ID_CREATE_OBJECT;
-			bulletpkt.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+			bulletpkt.PktId = PKT_ID_CREATE_OBJECT;
+			bulletpkt.PktSize = sizeof(PKT_CREATE_OBJECT);
 			bulletpkt.Object_Type = OBJECT_TYPE_ITEM_HEALING;
 			bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 5.0f, 0.0f, 1.0f };
 			bulletpkt.Object_Index = pScene->GetIndex();
@@ -454,8 +454,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 			{
 				//std::cout << "아이템 생성\n";
 				PKT_CREATE_OBJECT bulletpkt;
-				bulletpkt.PktId = (char)PKT_ID_CREATE_OBJECT;
-				bulletpkt.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+				bulletpkt.PktId = PKT_ID_CREATE_OBJECT;
+				bulletpkt.PktSize = sizeof(PKT_CREATE_OBJECT);
 				bulletpkt.Object_Type = OBJECT_TYPE_ITEM_AMMO;
 				if(i == 0)
 					bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f };
@@ -538,8 +538,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 		}
 
 		PKT_SEND_COMPLETE pkt_cpl;
-		pkt_cpl.PktID = (char)PKT_ID_SEND_COMPLETE;
-		pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
+		pkt_cpl.PktID = PKT_ID_SEND_COMPLETE;
+		pkt_cpl.PktSize = sizeof(PKT_SEND_COMPLETE);
 		retval = Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
 		//std::cout << "패킷 전송 완료\n";
 
@@ -681,24 +681,24 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							XMFLOAT3 position = Bullet->GetPosition();
 							pktCDE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCDE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCDE.PktSize = sizeof(PKT_CREATE_EFFECT);
 							pktCDE.efType = EFFECT_TYPE_HIT_FONT;
 							pktCDE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCDE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
 							pktCDE.xmf3Position.y += 20.0f;
 							effect_msg_queue.push(pktCDE);
 							pktCE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCE.PktSize = sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_EXPLOSION;
 							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
-							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
-							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
+							pktDO.PktId = PKT_ID_DELETE_OBJECT;
+							pktDO.PktSize = sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Bullet->index;
 							delete_msg_queue.push(pktDO);
-							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
-							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
+							pktLF.PktId = PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = Bullet->hp;
 							life_msg_queue.push(pktLF);
@@ -750,17 +750,17 @@ void Framework::CheckCollision(CScene* pScene)
 							spawn_item = false;
 							XMFLOAT3 position = Item->GetPosition();
 							pktCE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCE.PktSize = sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_HIT;
 							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
-							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
-							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
+							pktDO.PktId = PKT_ID_DELETE_OBJECT;
+							pktDO.PktSize = sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Item->index;
 							delete_msg_queue.push(pktDO);
-							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
-							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
+							pktLF.PktId = PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = -50;
 							pktLF.AMMO = 0;
@@ -789,17 +789,17 @@ void Framework::CheckCollision(CScene* pScene)
 							spawn_ammo[Item->m_iId-ITEM_AMMO1] = false;
 							XMFLOAT3 position = Item->GetPosition();
 							pktCE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCE.PktSize = sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_HIT;
 							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
-							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
-							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
+							pktDO.PktId = PKT_ID_DELETE_OBJECT;
+							pktDO.PktSize = sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Item->index;
 							delete_msg_queue.push(pktDO);
-							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
-							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
+							pktLF.PktId = PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = 0;
 							pktLF.AMMO = 100;
