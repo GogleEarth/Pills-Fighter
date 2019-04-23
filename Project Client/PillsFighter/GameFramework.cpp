@@ -583,8 +583,6 @@ void CGameFramework::WaitForGpuComplete()
 
 void CGameFramework::FrameAdvance()
 {
-	m_fElapsedTime = 0.0f;
-
 	ProcessInput();
 
 #ifdef ON_NETWORKING
@@ -608,6 +606,7 @@ void CGameFramework::FrameAdvance()
 				printf("Send Player Info Complete\n");
 		}
 	}
+
 	SendToServer();
 #else
 	m_GameTimer.Tick(60.0f);
@@ -689,6 +688,7 @@ void CGameFramework::FrameAdvance()
 		m_fFPSTimeElapsed = 0.0f;
 	}
 
+	m_fElapsedTime = 0.0f;
 	_itow_s(m_fFrameRate, m_pszCaption + strlen(GAME_TITLE), 37, 10);
 	wcscat_s(m_pszCaption + strlen(GAME_TITLE), 37, _T(" FPS)"));
 #else
@@ -750,7 +750,6 @@ void CGameFramework::MoveToNextFrame()
 void CGameFramework::ProcessPacket()
 {
 	char nType = m_pPacketBuffer[1];
-	printf("%d\n", nType);
 
 	switch (nType)
 	{
@@ -867,7 +866,6 @@ void CGameFramework::ProcessPacket()
 void CGameFramework::recvn()
 {
 	int nRest = recv(m_Socket, m_RecvBuf, MAX_BUFFER, 0);
-	printf("Recv : %d\n", nRest);
 
 	char *pBuf = m_RecvBuf;
 	int nPacketsize = 0;
@@ -969,11 +967,8 @@ void CGameFramework::SendToServer()
 
 		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (retval = send(m_Socket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
-		{
 			printf("Send Player Info Error\n");
-		}
-		else
-			printf("Send Player Info Complete\n");
+
 		m_bSend_Complete = false;
 	}
 }
@@ -992,8 +987,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Game Start Error\n");
-		else
-			printf("Send Game Start Complete\n");
+
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE:
@@ -1006,79 +1000,11 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
-		else
-			printf("Send Load Complete Complete\n");
+
 		break;
 	}
 	default:
 		break;
 	}
 	
-}
-
-void CGameFramework::InitNetwork()
-{
-	// 클라이언트 아이디 받기
-	//retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
-	//if (retval == SOCKET_ERROR) err_display("recvn");
-
-	////
-	//FrameworkThread *sFT = new FrameworkThread;
-	//sFT->pGFW = this;
-	//sFT->sock = m_sock;
-	//m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
-
-	//
-
-	//// 씬 정보 받기
-	//SCENEINFO SceneInfo;
-
-	//retval = recvn(m_sock, (char*)&SceneInfo, sizeof(SCENEINFO), 0);
-	//if (retval == SOCKET_ERROR)	err_display("recv()");
-
-	//// 씬에서의 오브젝트 초기정보(위치, .. 등등) 받기 [ 다른 플레이어의 초기 위치 ]
-	//// 자신의 씬에서의 위치
-	//PKT_PLAYER_INFO pktPlayerInfo;
-	//retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
-
-	//int nSceneType;
-	//if (SceneInfo == SCENE_NAME::SCENE_NAME_COLONY)
-	//	nSceneType = SCENE_TYPE_COLONY;
-
-	//BuildScene(nSceneType);
-	//m_pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
-
-	//for (int i = 0; i < 7; ++i)
-	//{
-	//	// 다른 클라이언트 플레이어 정보
-	//	PKT_CREATE_OBJECT pktCreateObject;
-	//	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
-
-	//	CreateObject(pktCreateObject);
-	//}
-
-	//FrameworkThread *sFT = new FrameworkThread;
-	//sFT->pGFW = this;
-	//sFT->sock = m_sock;
-	//m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
-
-	//if (m_Client_Info == 0)
-	//{
-	//	while (true)
-	//	{
-	//		std::string gamestart;
-	//		std::cout << "게임시작하려면 'start'를 입력 : ";
-	//		std::cin >> gamestart;
-	//		if (gamestart == "start")
-	//		{
-	//			PKT_ID pid = PKT_ID_GAME_STATE;
-	//			retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
-	//			if (retval == SOCKET_ERROR)
-	//				std::cout << "소켓에러\n";
-	//			break;
-	//		}
-	//	}
-	//}
-
-	//while (!gamestart);
 }
