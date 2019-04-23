@@ -95,7 +95,7 @@ enum BULLET_TYPE
 
 typedef struct PKT_PLAYER_INFO
 {
-	char			PktSize;
+	int				PktSize;
 	char			PktId;
 	int				ID;
 	XMFLOAT4X4		WorldMatrix;

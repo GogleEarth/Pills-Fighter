@@ -262,12 +262,10 @@ DWORD Framework::Update_Process(CScene* pScene)
 	int retval;
 	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
 
-	//PKT_GAME_STATE pstate;
-	//pstate.game_state = GAME_STATE_GAME_START;
-	//pstate.num_player = playernum;
-	//PKT_ID pstateid = PKT_ID_GAME_STATE;
-	//retval = Send_msg((char*)&pstateid, sizeof(PKT_ID), 0);
-	//retval = Send_msg((char*)&pstate, sizeof(PKT_GAME_STATE), 0);
+	PKT_GAME_START pktgamestart;
+	pktgamestart.PktID = PKT_ID_GAME_START;
+	pktgamestart.PktSize = sizeof(PKT_GAME_START);
+	Send_msg((char*)&pktgamestart, pktgamestart.PktSize, 0);
 
 	//로딩끝날때까지 대기
 	int load_count;
@@ -285,12 +283,11 @@ DWORD Framework::Update_Process(CScene* pScene)
 			break;
 	}
 
-	PKT_GAME_STATE pktgamestate;
-	pktgamestate.PktId = (char)PKT_ID_GAME_STATE;
+	PKT_LOAD_COMPLETE pktgamestate;
+	pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
 	pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
-	pktgamestate.game_state = GAME_STATE_LOAD_COMPLETE;
-	pktgamestate.num_player = playernum;
 	retval = Send_msg((char*)&pktgamestate, pktgamestate.PktSize, 0);
+	std::cout << "전원 로드 완료\n";
 
 	m.lock();
 	for (auto d : clients)
@@ -541,8 +538,10 @@ DWORD Framework::Update_Process(CScene* pScene)
 			retval = Send_msg((char*)&pkt_ce, pkt_ce.PktSize, 0);
 		}
 
-		PKT_ID pid_cpl = PKT_ID_SEND_COMPLETE;
-		retval = Send_msg((char*)&pid_cpl, sizeof(PKT_ID), 0);
+		PKT_SEND_COMPLETE pkt_cpl;
+		pkt_cpl.PktID = (char)PKT_ID_SEND_COMPLETE;
+		pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
+		retval = Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
 		//std::cout << "패킷 전송 완료\n";
 
 		SetEvent(Event);
@@ -580,7 +579,7 @@ DWORD Framework::client_process(Client_arg* arg)
 			retval = recvn(client_socket, (char*)&iPktID, sizeof(PKT_ID), 0);
 			if (retval == SOCKET_ERROR)
 			{
-				std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
+				std::cout << "소켓 에러 : " << arg->id << "번 플레이어\n";
 				Player_out = true;
 				
 				closesocket(client_socket);
@@ -592,16 +591,9 @@ DWORD Framework::client_process(Client_arg* arg)
 			{
 				// 데이터 받기 # 패킷 구조체 - SIZE 결정
 				if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
-				else if (iPktID == PKT_ID_GAME_STATE) game_start = true;// 오브젝트 업데이트 정보
-				else if (iPktID == PKT_ID_LOAD_COMPLETE)
-				{
-					std::cout << arg->id << "번 플레이어 로드완료\n";
-					//m.lock();
-					clients[arg->id].load_complete = true;
-					//m.unlock();
-					continue;
-				}
-				else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
+				else if (iPktID == PKT_ID_GAME_START) nPktSize = sizeof(PKT_GAME_START); 
+				else if (iPktID == PKT_ID_LOAD_COMPLETE) nPktSize = sizeof(PKT_LOAD_COMPLETE);
+				else std::cout << "[ERROR] 패킷 ID 식별 불가 ID : " << iPktID << std::endl;
 
 				// 데이터 받기 # 패킷 구조체 - 결정
 
@@ -610,8 +602,8 @@ DWORD Framework::client_process(Client_arg* arg)
 					buf = new char[nPktSize];
 					retval = recvn(client_socket, buf, nPktSize, 0);
 					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
-
-					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->PktId,((PKT_PLAYER_INFO*)buf)->PktSize,((PKT_PLAYER_INFO*)buf)->ID,
+					std::cout << retval << "바이트 받음(플레이어 정보)\n";
+					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->PktSize, ((PKT_PLAYER_INFO*)buf)->PktId, ((PKT_PLAYER_INFO*)buf)->ID,
 						((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting,
 						((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
 						((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Animation,
@@ -619,6 +611,24 @@ DWORD Framework::client_process(Client_arg* arg)
 
 					SetEvent(client_Event[arg->id]);
 					WaitForSingleObject(Event, INFINITE);
+				}
+				else if (iPktID == PKT_ID_GAME_START)
+				{
+					buf = new char[nPktSize];
+					retval = recvn(client_socket, buf, nPktSize, 0);
+					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
+					game_start = true;
+				}
+				else if (iPktID == PKT_ID_LOAD_COMPLETE)
+				{
+					buf = new char[nPktSize];
+					retval = recvn(client_socket, buf, nPktSize, 0);
+					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
+					std::cout << arg->id << "번 플레이어 로드완료\n";
+					//m.lock();
+					clients[arg->id].load_complete = true;
+					//m.unlock();
+					continue;
 				}
 			}
 		}

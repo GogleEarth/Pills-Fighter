@@ -835,6 +835,11 @@ void CGameFramework::ProcessPacket()
 
 		break;
 	}
+	case PKT_ID_SEND_COMPLETE:
+	{
+		m_bSend_Complete = true;
+		break;
+	}
 	break;
 	}
 }
@@ -905,11 +910,12 @@ void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
 
 void CGameFramework::SendToServer()
 {
-	if (m_pPlayer)
+	if (m_pPlayer && m_bDrawScene && m_bSend_Complete)
 	{
+		int retval;
 		PKT_PLAYER_INFO pktPlayerInfo;
-
-		pktPlayerInfo.PktId = PKT_ID_PLAYER_INFO;
+		PKT_ID id = PKT_ID_PLAYER_INFO;
+		pktPlayerInfo.PktId = (char)PKT_ID_PLAYER_INFO;
 		pktPlayerInfo.PktSize = sizeof(PKT_PLAYER_INFO);
 
 		pktPlayerInfo.ID = m_nClinetIndex;
@@ -941,12 +947,14 @@ void CGameFramework::SendToServer()
 
 		pktPlayerInfo.State = m_pPlayer->GetState();
 
-		if (send(m_Socket, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0) == SOCKET_ERROR)
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		if (retval = send(m_Socket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
 		{
 			printf("Send Player Info Error\n");
 		}
 		else
 			printf("Send Player Info Complete\n");
+		m_bSend_Complete = false;
 	}
 }
 
@@ -957,9 +965,11 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 	case PKT_ID_GAME_START:
 	{
 		PKT_GAME_START pktToServer;
-		pktToServer.PktID = PKT_ID_GAME_START;
+		PKT_ID id = PKT_ID_GAME_START;
+		pktToServer.PktID = (char)PKT_ID_GAME_START;
 		pktToServer.PktSize = sizeof(pktToServer);
 
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Game Start Error\n");
 		else
@@ -969,9 +979,11 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 	case PKT_ID_LOAD_COMPLETE:
 	{
 		PKT_LOAD_COMPLETE pktToServer;
-		pktToServer.PktID = PKT_ID_LOAD_COMPLETE;
+		PKT_ID id = PKT_ID_LOAD_COMPLETE;
+		pktToServer.PktID = (char)PKT_ID_LOAD_COMPLETE;
 		pktToServer.PktSize = sizeof(pktToServer);
 
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 		else

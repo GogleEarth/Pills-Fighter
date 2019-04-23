@@ -120,6 +120,7 @@ protected: // for Network
 
 	int		m_nClinetIndex = -1;
 	bool	m_bDrawScene = true;
+	bool	m_bSend_Complete = true;
 
 	float	m_fElapsedTime = 0.0f;
 	float	m_fFrameRate = 0.0f;
