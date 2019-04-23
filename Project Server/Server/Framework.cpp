@@ -140,7 +140,7 @@ void Framework::main_loop()
 					if (clients.size() > 0)
 					{
 						PKT_PLAYER_IN pkt_pin;
-						pkt_pin.id = (char)PKT_ID_PLAYER_IN;
+						pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
 						pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 						for (int i = 0; i < count; ++i)
 						{

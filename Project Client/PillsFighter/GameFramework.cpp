@@ -730,6 +730,7 @@ void CGameFramework::MoveToNextFrame()
 void CGameFramework::ProcessPacket()
 {
 	char nType = m_pPacketBuffer[1];
+	printf("%d\n", nType);
 
 	switch (nType)
 	{
@@ -840,9 +841,10 @@ void CGameFramework::ProcessPacket()
 
 void CGameFramework::recvn()
 {
-	int nRest = recv(m_Socket, m_Buf, MAX_BUFFER, 0);
+	int nRest = recv(m_Socket, m_RecvBuf, MAX_BUFFER, 0);
+	printf("Recv : %d\n", nRest);
 
-	char *pBuf = m_Buf;
+	char *pBuf = m_RecvBuf;
 	int nPacketsize = 0;
 
 	if (m_nPacketSize > 0) nPacketsize = (int)m_pPacketBuffer[0];
@@ -943,6 +945,8 @@ void CGameFramework::SendToServer()
 		{
 			printf("Send Player Info Error\n");
 		}
+		else
+			printf("Send Player Info Complete\n");
 	}
 }
 
@@ -958,6 +962,8 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Game Start Error\n");
+		else
+			printf("Send Game Start Complete\n");
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE:
@@ -968,6 +974,8 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
+		else
+			printf("Send Load Complete Complete\n");
 		break;
 	}
 	default:

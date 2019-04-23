@@ -113,7 +113,7 @@ protected:
 protected: // for Network
 	SOCKET	m_Socket;
 
-	char	m_Buf[MAX_BUFFER];
+	char	m_RecvBuf[MAX_BUFFER];
 
 	int		m_nPacketSize = 0;
 	char	m_pPacketBuffer[MAX_PACKET];
