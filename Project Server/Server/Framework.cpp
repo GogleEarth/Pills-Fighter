@@ -106,7 +106,7 @@ void Framework::main_loop()
 					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
 					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
 					pkt_cid.id = count;
-					if (send(client_sock, (char*)&pkt_cid, pkt_cid.PktSize, 0))
+					if (send(client_sock, (char*)&pkt_cid, pkt_cid.PktSize, 0) == SOCKET_ERROR)
 					{
 						std::cout << "main_loop ERROR : ";
 						err_display("send()");
