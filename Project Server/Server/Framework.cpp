@@ -138,30 +138,25 @@ void Framework::main_loop()
 					std::cout << clients.size() << "\n";
 					if (clients.size() > 0)
 					{
-						PKT_ID pid_pin = PKT_ID_PLAYER_IN;
 						PKT_PLAYER_IN pkt_pin;
+						pkt_pin.id = (char)PKT_ID_PLAYER_IN;
+						pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 						for (int i = 0; i < count; ++i)
 						{
 							pkt_pin.id = i;
 							std::cout << i << "번쨰 플레이어 정보 정보 보냄\n";
-							retval = send(client_sock, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
-							retval = send(client_sock, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
+							retval = send(client_sock, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 						}
 						for (auto client : clients)
 						{
 							pkt_pin.id = count;
 							std::cout << count << "번쨰 플레이어 정보 정보 입장\n";
-							retval = send(client.socket, (char*)&pid_pin, sizeof(PKT_PLAYER_IN), 0);
-							retval = send(client.socket, (char*)&pkt_pin, sizeof(PKT_PLAYER_IN), 0);
+							retval = send(client.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 						}
 					}
 
-					Client_INFO info;
-					info.id = count;
-					info.socket = client_sock;
-					info.load_complete = false;
 					m.lock();
-					clients.emplace_back(Client_INFO{ count, client_sock });
+					clients.emplace_back(Client_INFO{ count, client_sock, false });
 					m.unlock();
 
 					Arg* arg = new Arg;
@@ -296,6 +291,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 	for (auto d : clients)
 	{
 		PKT_PLAYER_INFO pktdata;
+		pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
+		pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
 		PKT_CREATE_OBJECT anotherpktdata;
 		//std::cout << count << std::endl;
 		pktdata.ID = d.id;
@@ -307,11 +304,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 		{
 			if (i != d.id)
 			{
+				anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
+				anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
 				anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
 				anotherpktdata.Object_Index = i;
 				anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
-				retval = send(d.socket, (char*)&pktdata, sizeof(PKT_PLAYER_INFO), 0);
-				retval = send(d.socket, (char*)&anotherpktdata, sizeof(PKT_CREATE_OBJECT), 0);
+				retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
+				retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
 			}
 		}
 	}
@@ -330,9 +329,10 @@ DWORD Framework::Update_Process(CScene* pScene)
 		//서버의 시간을 모든 플레이어에게 보내줌
 		PKT_ID id_time = PKT_ID_TIME_INFO;
 		PKT_TIME_INFO server_time;
+		server_time.PktId = (char)PKT_ID_TIME_INFO;
+		server_time.PktSize = sizeof(PKT_TIME_INFO);
 		server_time.elapsedtime = elapsed_time;
-		retval = Send_msg((char*)&id_time, sizeof(PKT_ID), 0);
-		retval = Send_msg((char*)&server_time, sizeof(PKT_TIME_INFO), 0);
+		retval = Send_msg((char*)&server_time, server_time.PktSize, 0);
 		if (!spawn_item)
 			item_cooltime += server_time.elapsedtime;
 		for (int i = 0; i < 2; ++i)
@@ -347,12 +347,16 @@ DWORD Framework::Update_Process(CScene* pScene)
 			if (pScene->m_pObjects[i] != NULL)
 			{
 				PKT_UPDATE_OBJECT updateobj;
+				updateobj.PktId = (char)PKT_ID_UPDATE_OBJECT;
+				updateobj.PktSize = (char)sizeof(PKT_UPDATE_OBJECT);
 				updateobj.Object_Index = i;
 				updateobj.Object_Position = pScene->m_pObjects[i]->GetPosition();
 				update_msg_queue.push(updateobj);
 				if (pScene->m_pObjects[i]->IsDelete())
 				{
 					PKT_DELETE_OBJECT pkt_d;
+					pkt_d.PktId = (char)PKT_ID_DELETE_OBJECT;
+					pkt_d.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 					pkt_d.Object_Index = i;
 					delete_msg_queue.push(pkt_d);
 				}
@@ -367,9 +371,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			//std::cout << "플레이어 큐 크기 : " << msg_queue.size() << std::endl;
 			PKT_PLAYER_INFO pkt;
 			if (msg_queue.empty())
-			{
 				break;
-			}
 
 			pkt = msg_queue.front();
 			msg_queue.pop();
@@ -382,16 +384,15 @@ DWORD Framework::Update_Process(CScene* pScene)
 			XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
 
 			// 플레이어의 정보 전송
-			PKT_ID pid = PKT_ID_PLAYER_INFO;
-			retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-			retval = Send_msg((char*)&pkt, sizeof(pkt), 0);
+			retval = Send_msg((char*)&pkt, pkt.PktSize, 0);
 
 			// 어떤 플레이어가 총알을 발사중인 상태이면 그 플레이어의 총알을 만드는 패킷을 전송
 			if (pkt.IsShooting == TRUE)
 			{
 				//std::cout << "총알생성\n";
-				pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
+				bulletpkt.PktId = (char)PKT_ID_CREATE_OBJECT;
+				bulletpkt.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
 				if (pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
 					bulletpkt.Object_Type = OBJECT_TYPE_MACHINE_BULLET;
 				else if (pkt.Player_Weapon == WEAPON_TYPE_BAZOOKA)
@@ -400,8 +401,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 					bulletpkt.Object_Type = OBJECT_TYPE_BEAM_BULLET;
 				bulletpkt.WorldMatrix = pkt.BulletWorldMatrix;
 				bulletpkt.Object_Index = pScene->GetIndex();
-				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+				retval = Send_msg((char*)&bulletpkt, bulletpkt.PktSize, 0);
 
 				CGameObject* bullet;
 				if (pkt.Player_Weapon == WEAPON_TYPE_MACHINE_GUN)
@@ -429,13 +429,13 @@ DWORD Framework::Update_Process(CScene* pScene)
 		if(item_cooltime >= ITEM_HEALING_COOLTIME && !spawn_item)
 		{
 			//std::cout << "아이템 생성\n";
-			PKT_ID pid = PKT_ID_CREATE_OBJECT;
 			PKT_CREATE_OBJECT bulletpkt;
+			bulletpkt.PktId = (char)PKT_ID_CREATE_OBJECT;
+			bulletpkt.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
 			bulletpkt.Object_Type = OBJECT_TYPE_ITEM_HEALING;
 			bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 5.0f, 0.0f, 1.0f };
 			bulletpkt.Object_Index = pScene->GetIndex();
-			retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-			retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+			retval = Send_msg((char*)&bulletpkt, bulletpkt.PktSize, 0);
 
 			CGameObject* item = new CGameObject;
 			item->m_Object_Type = OBJECT_TYPE_ITEM_HEALING;
@@ -452,16 +452,16 @@ DWORD Framework::Update_Process(CScene* pScene)
 			if (ammo_item_cooltime[i] >= ITEM_AMMO_COOLTIME && !spawn_ammo[i])
 			{
 				//std::cout << "아이템 생성\n";
-				PKT_ID pid = PKT_ID_CREATE_OBJECT;
 				PKT_CREATE_OBJECT bulletpkt;
+				bulletpkt.PktId = (char)PKT_ID_CREATE_OBJECT;
+				bulletpkt.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
 				bulletpkt.Object_Type = OBJECT_TYPE_ITEM_AMMO;
 				if(i == 0)
 					bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f };
 				else
 					bulletpkt.WorldMatrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 5.0f, 0.0f, 1.0f };
 				bulletpkt.Object_Index = pScene->GetIndex();
-				retval = Send_msg((char*)&pid, sizeof(PKT_ID), 0);
-				retval = Send_msg((char*)&bulletpkt, sizeof(PKT_CREATE_OBJECT), 0);
+				retval = Send_msg((char*)&bulletpkt, bulletpkt.PktSize, 0);
 
 				CGameObject* item = new CGameObject;
 				item->m_Object_Type = OBJECT_TYPE_ITEM_AMMO;
@@ -488,12 +488,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt_u = update_msg_queue.front();
 			update_msg_queue.pop();
 
-			std::cout << pkt_u.Object_Index << "번 오브젝트 업데이트 \n";
-
-			PKT_ID pid_u = PKT_ID_UPDATE_OBJECT;
-			retval = Send_msg((char*)&pid_u, sizeof(PKT_ID), 0);
-
-			retval = Send_msg((char*)&pkt_u, sizeof(PKT_UPDATE_OBJECT), 0);
+			//std::cout << pkt_u.Object_Index << "번 오브젝트 업데이트 \n";
+			retval = Send_msg((char*)&pkt_u, pkt_u.PktSize, 0);
 
 		}
 
@@ -508,10 +504,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt_d = delete_msg_queue.front();
 			delete_msg_queue.pop();
 
-			PKT_ID pid_d = PKT_ID_DELETE_OBJECT;
-			retval = Send_msg((char*)&pid_d, sizeof(PKT_ID), 0);
-
-			retval = Send_msg((char*)&pkt_d, sizeof(PKT_DELETE_OBJECT), 0);
+			retval = Send_msg((char*)&pkt_d, pkt_d.PktSize, 0);
 			//std::cout << "오브젝트 삭제 패킷 전송\n";
 		}
 
@@ -526,10 +519,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt_l = life_msg_queue.front();
 			life_msg_queue.pop();
 
-			PKT_ID pid_l = PKT_ID_PLAYER_LIFE;
-			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
-
-			retval = Send_msg((char*)&pkt_l, sizeof(PKT_PLAYER_LIFE), 0);
+			retval = Send_msg((char*)&pkt_l, pkt_l.PktSize, 0);
 		}
 
 		// 이펙트 생성 패킷 보내기
@@ -543,10 +533,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pkt_ce = effect_msg_queue.front();
 			effect_msg_queue.pop();
 
-			PKT_ID pid_l = PKT_ID_CREATE_EFFECT;
-			retval = Send_msg((char*)&pid_l, sizeof(PKT_ID), 0);
-			//std::cout << pkt_ce.efType << " " << pkt_ce.xmf3Position.x << std::endl;
-			retval = Send_msg((char*)&pkt_ce, sizeof(PKT_CREATE_EFFECT), 0);
+			retval = Send_msg((char*)&pkt_ce, pkt_ce.PktSize, 0);
 		}
 
 		PKT_ID pid_cpl = PKT_ID_SEND_COMPLETE;
@@ -619,7 +606,7 @@ DWORD Framework::client_process(Client_arg* arg)
 					retval = recvn(client_socket, buf, nPktSize, 0);
 					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 
-					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->ID,
+					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->PktId,((PKT_PLAYER_INFO*)buf)->PktSize,((PKT_PLAYER_INFO*)buf)->ID,
 						((PKT_PLAYER_INFO*)buf)->WorldMatrix, ((PKT_PLAYER_INFO*)buf)->IsShooting,
 						((PKT_PLAYER_INFO*)buf)->BulletWorldMatrix, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
 						((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Animation,
@@ -679,17 +666,25 @@ void Framework::CheckCollision(CScene* pScene)
 						if (Bullet->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
 						{
 							XMFLOAT3 position = Bullet->GetPosition();
-							pktCE.efType = EFFECT_TYPE_HIT_FONT;
-							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+							pktCDE.PktId = PKT_ID_CREATE_EFFECT;
+							pktCDE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCDE.efType = EFFECT_TYPE_HIT_FONT;
+							pktCDE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCDE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
 							pktCDE.xmf3Position.y += 20.0f;
 							effect_msg_queue.push(pktCDE);
+							pktCE.PktId = PKT_ID_CREATE_EFFECT;
+							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_EXPLOSION;
 							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
+							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
+							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Bullet->index;
 							delete_msg_queue.push(pktDO);
+							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = Bullet->hp;
 							life_msg_queue.push(pktLF);
@@ -740,12 +735,18 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							spawn_item = false;
 							XMFLOAT3 position = Item->GetPosition();
+							pktCE.PktId = PKT_ID_CREATE_EFFECT;
+							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_HIT;
 							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
+							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
+							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Item->index;
 							delete_msg_queue.push(pktDO);
+							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = -50;
 							pktLF.AMMO = 0;
@@ -773,12 +774,18 @@ void Framework::CheckCollision(CScene* pScene)
 						{
 							spawn_ammo[Item->m_iId-ITEM_AMMO1] = false;
 							XMFLOAT3 position = Item->GetPosition();
+							pktCE.PktId = PKT_ID_CREATE_EFFECT;
+							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_HIT;
 							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 							pktCE.xmf3Position = position;
 							effect_msg_queue.push(pktCE);
+							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
+							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Item->index;
 							delete_msg_queue.push(pktDO);
+							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
 							pktLF.HP = 0;
 							pktLF.AMMO = 100;
