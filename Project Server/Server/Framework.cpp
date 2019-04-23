@@ -297,6 +297,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 		pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
 		PKT_CREATE_OBJECT anotherpktdata;
 		//std::cout << count << std::endl;
+		pktdata.ID = d.id;
 		pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
 		m_pScene->m_pObjects[d.id]->m_bPlay = true;
 		//std::cout << pktdata.ID << " : " << pktdata.WorldMatrix._41 << ", " << pktdata.WorldMatrix._42 << ", " << pktdata.WorldMatrix._43 << std::endl;
