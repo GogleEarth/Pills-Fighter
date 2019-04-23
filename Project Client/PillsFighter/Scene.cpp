@@ -1900,7 +1900,7 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		if (((PKT_PLAYER_INFO*)pktData)->isChangeWeapon)
 		{
 			CRobotObject *pObject = (CRobotObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeWeaponByType(((PKT_PLAYER_INFO*)pktData)->Player_Weapon);
+			pObject->ChangeWeaponByType((WEAPON_TYPE)((PKT_PLAYER_INFO*)pktData)->Player_Weapon);
 		}
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetState(((PKT_PLAYER_INFO*)pktData)->State);
 		break;
