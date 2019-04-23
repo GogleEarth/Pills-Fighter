@@ -29,10 +29,13 @@ class Framework
 	HANDLE client_Event[MAX_CLIENT];
 	std::mutex m;
 	std::queue<PKT_PLAYER_INFO> msg_queue;
+	std::mutex playerinfomutex;
 	std::queue<PKT_PLAYER_LIFE> life_msg_queue;
 	std::queue<PKT_DELETE_OBJECT> delete_msg_queue;
 	std::queue<PKT_UPDATE_OBJECT> update_msg_queue;
 	std::queue<PKT_CREATE_EFFECT> effect_msg_queue;
+	std::queue<PKT_SHOOT> shoot_msg_queue;
+	std::mutex shootmutex;
 	std::vector<Client_INFO> clients;
 	int count = 0;
 	CModel PlayerMesh;

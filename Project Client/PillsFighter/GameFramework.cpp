@@ -585,14 +585,34 @@ void CGameFramework::FrameAdvance()
 {
 	m_fElapsedTime = 0.0f;
 
+	ProcessInput();
+
 #ifdef ON_NETWORKING
+	if (m_pPlayer)
+	{
+		if (m_pPlayer->IsShotable() && m_bDrawScene && m_bSend_Complete)
+		{
+			//총알 생성 패킷 보내기
+			PKT_SHOOT pktShoot;
+			PKT_ID id = PKT_ID_SHOOT;
+			pktShoot.PktId = (char)PKT_ID_SHOOT;
+			pktShoot.PktSize = sizeof(PKT_SHOOT);
+			pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
+			pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget();
+			send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+			if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
+			{
+				printf("Send Player Info Error\n");
+			}
+			else
+				printf("Send Player Info Complete\n");
+		}
+	}
 	SendToServer();
 #else
 	m_GameTimer.Tick(60.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
-
-	ProcessInput();
 
 	m_Arial.CheckUsingTexts();
 	m_HumanMagic.CheckUsingTexts();
@@ -924,7 +944,7 @@ void CGameFramework::SendToServer()
 
 		if (m_pPlayer->IsShotable())
 		{
-			pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
+			//pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
 			pktPlayerInfo.IsShooting = TRUE;
 			m_pPlayer->IsShotable(false);
 		}

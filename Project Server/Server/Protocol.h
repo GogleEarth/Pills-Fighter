@@ -1,6 +1,5 @@
 #pragma once
 
-///////////////////////////////////////for network
 typedef enum PKT_ID
 {
 	PKT_ID_PLAYER_INFO,
@@ -18,7 +17,8 @@ typedef enum PKT_ID
 	PKT_ID_LOAD_COMPLETE,
 	PKT_ID_LOAD_COMPLETE_ALL,
 	PKT_ID_PLAYER_ID,
-	PKT_ID_GAME_START
+	PKT_ID_GAME_START,
+	PKT_ID_SHOOT
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -92,7 +92,6 @@ typedef struct PKT_PLAYER_INFO
 	BYTE			ID;
 	XMFLOAT4X4		WorldMatrix;
 	BOOL			IsShooting;
-	XMFLOAT4X4		BulletWorldMatrix;
 	WEAPON_TYPE		Player_Weapon;
 	BOOL			isChangeWeapon;
 	ANIMATION_TYPE	Player_Animation;
@@ -100,51 +99,50 @@ typedef struct PKT_PLAYER_INFO
 	int				State;
 }PKT_PLAYER_INFO;
 
-
 typedef struct PKT_PLAYER_LIFE
 {
-	BYTE		PktSize;
-	BYTE		PktId;
-	BYTE		ID;
+	char		PktSize;
+	char		PktId;
+	int			ID;
 	DWORD		HP;
 	DWORD		AMMO;
 }PKT_PLAYER_LIFE;
 
 typedef struct PKT_CREATE_OBJECT
 {
-	BYTE		PktSize;
-	BYTE		PktId;
+	char		PktSize;
+	char		PktId;
 	OBJECT_TYPE	Object_Type;
 	XMFLOAT4X4	WorldMatrix;
-	BYTE		Object_Index;
+	int			Object_Index;
 }PKT_CREATE_OBJECT;
 
 typedef struct PKT_DELETE_OBJECT
 {
-	BYTE		PktSize;
-	BYTE		PktId;
-	BYTE		Object_Index;
+	char		PktSize;
+	char		PktId;
+	int			Object_Index;
 }PKT_DELETE_OBJECT;
 
 struct PKT_TIME_INFO
 {
-	BYTE		PktSize;
-	BYTE		PktId;
+	char		PktSize;
+	char		PktId;
 	float		elapsedtime;
 };
 
 struct PKT_UPDATE_OBJECT
 {
-	BYTE		PktSize;
-	BYTE		PktId;
-	BYTE		Object_Index;
+	char		PktSize;
+	char		PktId;
+	int			Object_Index;
 	XMFLOAT3	Object_Position;
 };
 
 struct PKT_CREATE_EFFECT
 {
-	BYTE					PktSize;
-	BYTE					PktId;
+	char					PktSize;
+	char					PktId;
 	XMFLOAT3				xmf3Position;
 	EFFECT_TYPE				efType;
 	EFFECT_ANIMATION_TYPE	EftAnitType;
@@ -152,32 +150,41 @@ struct PKT_CREATE_EFFECT
 
 struct PKT_GAME_STATE
 {
-	BYTE		PktSize;
-	BYTE		PktId;
+	char		PktSize;
+	char		PktId;
 	GAME_STATE	game_state;
 	char		num_player;
 };
 
 typedef struct PKT_PLAYER_IN
 {
-	BYTE		PktSize;
-	BYTE		PktId;
-	BYTE		id;
+	char		PktSize;
+	char		PktId;
+	int			id;
 }PKT_PLAYER_IN, PKT_PLAYER_OUT, PKT_CLIENTID;
 
 struct PKT_ROBBY_PLAYER_INFO
 {
-	BYTE		PktSize;
-	BYTE		PktId;
-	BYTE		id;
+	char		PktSize;
+	char		PktId;
+	int			id;
 	char		selected_robot;
 };
 
 typedef struct PKT_GAME_START
 {
-	BYTE PktSize;
-	BYTE PktID;
+	char PktSize;
+	char PktID;
 }PKT_GAME_START, PKT_LOAD_COMPLETE, PKT_SEND_COMPLETE;
+
+struct PKT_SHOOT
+{
+	BYTE			PktSize;
+	BYTE			PktId;
+	BYTE			ID;
+	WEAPON_TYPE		Player_Weapon;
+	XMFLOAT4X4		BulletWorldMatrix;
+};
 
 #define MAX_NUM_OBJECT 2000
 
