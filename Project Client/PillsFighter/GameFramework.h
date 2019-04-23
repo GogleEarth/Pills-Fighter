@@ -64,7 +64,7 @@ public:
 	~CGameFramework();
 
 	//프레임워크를 초기화하는 함수이다(주 윈도우가 생성되면 호출된다).
-	bool OnCreate(HINSTANCE hInstance, HWND hMainWnd);
+	bool OnCreate(HINSTANCE hInstance, HWND hMainWnd, SOCKET sock);
 	void OnDestroy();
 
 	//스왑 체인, 디바이스, 서술자 힙, 명령 큐/할당자/리스트를 생성하는 함수이다. 
@@ -108,44 +108,36 @@ protected:
 	CFont							m_Arial;
 	CFont							m_HumanMagic;
 
-public: // for Network
-	HANDLE m_hThread;
-	SOCKET m_sock;
+	int	m_nCharacterIndex = 0;
 
-	std::mutex m_Mutex;
-	std::vector<PKT_PLAYER_INFO*> m_vMsgPlayerInfo;
-	std::vector<PKT_PLAYER_LIFE*> m_vMsgPlayerLife;
-	std::vector<PKT_CREATE_OBJECT*> m_vMsgCreateObject;
-	std::vector<PKT_DELETE_OBJECT*> m_vMsgDeleteObject;
-	std::vector<PKT_TIME_INFO*> m_vMsgTimeInfo;
-	std::vector<PKT_UPDATE_OBJECT*> m_vMsgUpdateInfo;
-	std::vector<PKT_CREATE_EFFECT*> m_vMsgCreateEffect;
+protected: // for Network
+	SOCKET	m_Socket;
+
+	char	m_Buf[MAX_BUFFER];
+
+	int		m_nPacketSize = 0;
+	char	m_pPacketBuffer[MAX_PACKET];
+
+	int		m_nClinetIndex = -1;
+	bool	m_bDrawScene = true;
+
+	float	m_fElapsedTime = 0.0f;
+	float	m_fFrameRate = 0.0f;
+	float	m_fFPSTimeElapsed = 0.0f;
+	int		m_nFramePerSecond = 0;
+
+public:
+	void recvn();
+	void ProcessPacket();
+	void SendToServer();
+	void SendToServer(PKT_ID pktID);
+	void OnProcessingSocketMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	void CreateObject(PKT_CREATE_OBJECT *pCreateObjectInfo);
+	void CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo);
 
 	//통신
-	CLIENTID m_Client_Info;
 	PKT_PLAYER_INFO m_Client_Player_Info;
-	float m_fElapsedTime = 0.0f;
 	HANDLE hEvent;
-	bool SendComplete = false;
-	bool initsend = false;
-	void CloseNetwork();
-
-	void err_quit(char* msg);
-	void err_display(char* msg);
-	int recvn(SOCKET s, char * buf, int len, int flags);
 
 	void InitNetwork();
-	static DWORD WINAPI recvThread(LPVOID arg);
-	DWORD ThreadFunc(LPVOID arg);
-
-	void CreateObject(PKT_CREATE_OBJECT CreateObjectInfo);
-	void CreateEffect(PKT_CREATE_EFFECT CreateEffectInfo);
-	void ProcessNetwork();
-
-	char *buf;
-
-	float m_fFrameRate = 0.0f;
-	float m_fFPSTimeElapsed = 0.0f;
-	int m_nFramePerSecond = 0;
-	volatile bool gamestart = false;
 };

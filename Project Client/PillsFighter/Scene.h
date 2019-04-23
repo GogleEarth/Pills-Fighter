@@ -52,7 +52,6 @@ public:
 
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderFont(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -152,10 +151,12 @@ public:
 	virtual int MouseClick() { return 0; };
 
 public: // Network
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo) {}
-	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo) {}
-	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo) {}
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo) {}
+	virtual void DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo) {}
+	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
+	virtual void JoinPlayer(int nIndex, const char *pstrPlayerName) {};
+	virtual void SetPlayerIndex(int nIndex) {}
 
 };
 
@@ -177,7 +178,8 @@ public:
 	virtual void CheckCollision();
 	virtual void StartScene();
 
-	void JoinPlayer(const char *pstrPlayerName);
+	virtual void JoinPlayer(int nIndex, const char *pstrPlayerName);
+	virtual void SetPlayerIndex(int nIndex);
 	virtual int MouseClick();
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -185,10 +187,17 @@ public:
 protected:
 	CLobbyShader	*m_pLobbyShader = NULL;
 
-	int				m_nNumPlayer = 0;
+	int				m_nPlayerIndex = 0;
+	int				m_nChoiceCharactor = 0;
 
 	BoundingBox		m_StartButton;
 	bool			m_bHLStartButton = false;
+
+	BoundingBox		m_SelectLeft;
+	bool			m_bHLSelectLeft = false;
+
+	BoundingBox		m_SelectRight;
+	bool			m_bHLSelectRight = false;
 	
 protected:
 	int								m_nUIRect = 0;
@@ -266,9 +275,9 @@ protected:
 	D3D12_RECT						m_d3dMMScissorRect;
 
 public: // Network
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo);
-	virtual void DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo);
-	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo);
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
+	virtual void DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo);
+	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo);
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 
 protected:

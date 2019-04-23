@@ -1,6 +1,13 @@
 #pragma once
 
-//#define ON_NETWORKING
+#define ON_NETWORKING
+
+#define SERVERIP	"127.0.0.1"
+//#define SERVERIP	"192.168.103.222"
+#define SERVERPORT	9000
+#define WM_SOCKET WM_USER+1
+#define MAX_BUFFER 1024
+#define MAX_PACKET 256
 
 typedef enum PKT_ID
 {
@@ -13,7 +20,13 @@ typedef enum PKT_ID
 	PKT_ID_UPDATE_OBJECT,
 	PKT_ID_CREATE_EFFECT,
 	PKT_ID_GAME_STATE,
-	PKT_ID_PLAYER_IN
+	PKT_ID_PLAYER_IN,
+	PKT_ID_PLAYER_OUT,
+	PKT_ID_ROBBY_PLAYER_INFO,
+	PKT_ID_LOAD_COMPLETE,
+	PKT_ID_LOAD_COMPLETE_ALL,
+	PKT_ID_PLAYER_ID,
+	PKT_ID_GAME_START
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -27,30 +40,29 @@ typedef enum OBJECT_TYPE
 	OBJECT_TYPE_ITEM_AMMO
 }OBJECT_TYPE;
 
-typedef enum EFFECT_TYPE
-{
-	EFFECT_TYPE_WORD_HIT,
-	EFFECT_TYPE_EXPLOSION,
-	EFFECT_TYPE_HIT
-}EFFECT_TYPE;
-
-typedef enum EFFECT_ANIMATION_TYPE
-{
-	EFFECT_ANIMATION_TYPE_ONE,
-	EFFECT_ANIMATION_TYPE_LOOP
-}EFFECT_ANIMATION_TYPE;
-
 typedef enum SCENE_NAME
 {
 	SCENE_NAME_COLONY
 }SCENE_NAME;
 
-typedef enum GAME_STATE
+enum GAME_STATE
 {
-	GAME_STATE_START,
-	GAME_STATE_END
-}GAME_STATE;
+	GAME_STATE_GAME_START,
+	GAME_STATE_GAME_OVER,
+	GAME_STATE_LOAD_COMPLETE
+};
+typedef enum EFFECT_TYPE
+{
+	EFFECT_TYPE_HIT_FONT,
+	EFFECT_TYPE_EXPLOSION,
+	EFFECT_TYPE_HIT
+}EFFECT_TYPE;
 
+enum EFFECT_ANIMATION_TYPE
+{
+	EFFECT_ANIMATION_TYPE_ONE,
+	EFFECT_ANIMATION_TYPE_LOOP
+};
 enum WEAPON_TYPE
 {
 	WEAPON_TYPE_MACHINE_GUN,
@@ -74,8 +86,17 @@ enum ANIMATION_TYPE
 	ANIMATION_TYPE_GM_GUN_STAND
 };
 
+enum BULLET_TYPE
+{
+	BULLET_TYPE_MACHINE_GUN,
+	BULLET_TYPE_BAZOOKA,
+	BULLET_TYPE_BEAM_RIFLE
+};
+
 typedef struct PKT_PLAYER_INFO
 {
+	char			PktId;
+	char			PktSize;
 	int				ID;
 	XMFLOAT4X4		WorldMatrix;
 	BOOL			IsShooting;
@@ -89,13 +110,17 @@ typedef struct PKT_PLAYER_INFO
 
 typedef struct PKT_PLAYER_LIFE
 {
-	int		ID;
-	DWORD	HP;
-	DWORD	AMMO;
+	char		PktId;
+	char		PktSize;
+	int			ID;
+	DWORD		HP;
+	DWORD		AMMO;
 }PKT_PLAYER_LIFE;
 
 typedef struct PKT_CREATE_OBJECT
 {
+	char		PktId;
+	char		PktSize;
 	OBJECT_TYPE	Object_Type;
 	XMFLOAT4X4	WorldMatrix;
 	int			Object_Index;
@@ -103,36 +128,68 @@ typedef struct PKT_CREATE_OBJECT
 
 typedef struct PKT_DELETE_OBJECT
 {
-	int Object_Index;
+	char		PktId;
+	char		PktSize;
+	int			Object_Index;
 }PKT_DELETE_OBJECT;
 
-typedef struct PKT_TIME_INFO
+struct PKT_TIME_INFO
 {
-	float ElapsedTime;
-}PKT_TIME_INFO;
+	char		PktId;
+	char		PktSize;
+	float		elapsedtime;
+};
 
-typedef struct PKT_UPDATE_OBJECT
+struct PKT_UPDATE_OBJECT
 {
-	int Object_Index;
-	XMFLOAT3 Object_Position;
-}PKT_UPDATE_OBJECT;
+	char		PktId;
+	char		PktSize;
+	int			Object_Index;
+	XMFLOAT3	Object_Position;
+};
 
-typedef struct PKT_CREATE_EFFECT
+struct PKT_CREATE_EFFECT
 {
-	XMFLOAT3 xmf3Position;
-	EFFECT_TYPE nEffectType;
-	EFFECT_ANIMATION_TYPE nEffectAniType;
-}PKT_CREATE_EFFECT;
+	char					PktId;
+	char					PktSize;
+	XMFLOAT3				xmf3Position;
+	EFFECT_TYPE				efType;
+	EFFECT_ANIMATION_TYPE	EftAnitType;
+};
 
 struct PKT_GAME_STATE
 {
-	GAME_STATE game_state;
-	char num_player;
+	char		PktId;
+	char		PktSize;
+	GAME_STATE	game_state;
+	char		num_player;
 };
 
-struct PKT_PLAYER_IN
+typedef struct PKT_PLAYER_IN
 {
-	int id;
+	char		PktId;
+	char		PktSize;
+	int			id;
+}PKT_PLAYER_IN, PKT_PLAYER_OUT, PKT_CLIENTID;
+
+struct PKT_ROBBY_PLAYER_INFO
+{
+	char		PktId;
+	char		PktSize;
+	int			id;
+	char		selected_robot;
+};
+
+struct PKT_GAME_START
+{
+	char PktID;
+	char PktSize;
+};
+
+struct PKT_LOAD_COMPLETE
+{
+	char PktID;
+	char PktSize;
 };
 
 typedef SCENE_NAME SCENEINFO;

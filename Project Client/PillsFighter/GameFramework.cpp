@@ -36,10 +36,11 @@ CGameFramework::~CGameFramework()
 {
 }
 
-bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
+bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd, SOCKET sock)
 {
 	m_hInstance = hInstance;
 	m_hWnd = hMainWnd;
+	m_Socket = sock;
 
 	CreateDirect3DDevice();
 	CreateCommandQueueAndList();
@@ -65,9 +66,9 @@ void CGameFramework::OnDestroy()
 {
 	ReleaseObjects();
 
-	CloseNetwork();
-
 	::CloseHandle(m_hFenceEvent);
+	::closesocket(m_Socket);
+	WSACleanup();
 
 #if defined(_DEBUG)
 	if (m_pd3dDebugController) m_pd3dDebugController->Release();
@@ -91,6 +92,7 @@ void CGameFramework::OnDestroy()
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
 
 	::ReleaseCapture();
+
 }
 
 void CGameFramework::CreateSwapChain()
@@ -295,7 +297,6 @@ void CGameFramework::BuildScene(int nSceneType)
 		break;
 	}
 	
-
 	m_pScene->AddFont(m_pd3dDevice, &m_Arial);
 	m_pScene->AddFont(m_pd3dDevice, &m_HumanMagic);
 
@@ -352,7 +353,6 @@ void CGameFramework::BuildObjects()
 	m_d3dViewport = { 0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT), 0.0f, 1.0f };
 	m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
 
-
 	m_pd3dCommandList->Close();
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
@@ -365,11 +365,7 @@ void CGameFramework::BuildObjects()
 	::pDevice = m_pd3dDevice;
 	::pCommandList = m_pd3dCommandList;
 
-#ifdef ON_NETWORKING
-	InitNetwork();
-#else
 	BuildScene(SCENE_TYPE_LOBBY);
-#endif
 }
 
 void CGameFramework::ReleaseObjects()
@@ -413,10 +409,19 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 			switch (m_pScene->MouseClick())
 			{
 			case MOUSE_CLICK_TYPE_START:
-				m_pScene->ReleaseObjects();
-				delete m_pScene;
+#ifdef ON_NETWORKING
+				SendToServer(PKT_ID_GAME_START);
+#else
+				if (m_pScene)
+				{
+					m_pScene->ReleaseObjects();
+					delete m_pScene;
+
+					m_pScene = NULL;
+				}
 
 				BuildScene(SCENE_TYPE_COLONY);
+#endif
 				break;
 			}
 		}
@@ -581,7 +586,7 @@ void CGameFramework::FrameAdvance()
 	m_fElapsedTime = 0.0f;
 
 #ifdef ON_NETWORKING
-	ProcessNetwork();
+	SendToServer();
 #else
 	m_GameTimer.Tick(60.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
@@ -605,38 +610,40 @@ void CGameFramework::FrameAdvance()
 	nFPS = m_GameTimer.GetFPS();
 #endif
 
-	CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
-
-	if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList);
-
-	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	d3dRtvHandle.ptr += m_nSwapChainBufferIndex * ::gnRtvDescriptorIncrementSize;
-
-	m_pd3dCommandList->ClearRenderTargetView(d3dRtvHandle, Colors::Black, 0, NULL);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_pd3dCommandList->ClearDepthStencilView(d3dDsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-
-	m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvHandle, TRUE, &d3dDsvHandle);
-
-	m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
-	m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
-
-	if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
-
-	if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
-
-	if (m_pScene)
+	if (m_bDrawScene)
 	{
-		m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
-		m_pScene->RenderFont(m_pd3dCommandList);
+		CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
 
-		m_pScene->AfterRender(m_pd3dCommandList);
+		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList);
+
+		::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		d3dRtvHandle.ptr += m_nSwapChainBufferIndex * ::gnRtvDescriptorIncrementSize;
+
+		m_pd3dCommandList->ClearRenderTargetView(d3dRtvHandle, Colors::Black, 0, NULL);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_pd3dCommandList->ClearDepthStencilView(d3dDsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+
+		m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvHandle, TRUE, &d3dDsvHandle);
+
+		m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
+		m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
+
+		if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
+
+		if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
+
+		if (m_pScene)
+		{
+			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
+
+			m_pScene->AfterRender(m_pd3dCommandList);
+		}
+
+		::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	}
-
-	::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 	hResult = m_pd3dCommandList->Close();
 
@@ -720,345 +727,318 @@ void CGameFramework::MoveToNextFrame()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CGameFramework::ProcessNetwork()
+void CGameFramework::ProcessPacket()
 {
-	auto start = std::chrono::high_resolution_clock::now();
+	char nType = m_pPacketBuffer[1];
 
-	if (TRUE)
+	switch (nType)
+	{
+	case PKT_ID_PLAYER_INFO:
+	{
+		PKT_PLAYER_INFO *pPacket = (PKT_PLAYER_INFO*)m_pPacketBuffer;
+		if (pPacket->ID != m_nClinetIndex)
+			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)pPacket);
+
+		break;
+	}
+	case PKT_ID_TIME_INFO:
+	{
+		PKT_TIME_INFO *pPacket = (PKT_TIME_INFO*)m_pPacketBuffer;
+
+		m_fElapsedTime += pPacket->elapsedtime;
+		break;
+	}
+	case PKT_ID_PLAYER_LIFE:
+	{
+		PKT_PLAYER_LIFE *pPacket = (PKT_PLAYER_LIFE*)m_pPacketBuffer;
+
+		if (pPacket->ID == m_nClinetIndex)
+		{
+			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - pPacket->HP);
+			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
+			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
+			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
+		}
+		else
+			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)pPacket);
+
+		break;
+	}
+	case PKT_ID_CREATE_OBJECT:
+	{
+		PKT_CREATE_OBJECT *pPacket = (PKT_CREATE_OBJECT*)m_pPacketBuffer;
+
+		CreateObject(pPacket);
+		break;
+	}
+	case PKT_ID_UPDATE_OBJECT:
+	{
+		PKT_UPDATE_OBJECT *pPacket = (PKT_UPDATE_OBJECT*)m_pPacketBuffer;
+
+		m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)pPacket);
+		break;
+	}
+	case PKT_ID_DELETE_OBJECT:
+	{
+		PKT_DELETE_OBJECT *pPacket = (PKT_DELETE_OBJECT*)m_pPacketBuffer;
+
+		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)pPacket);
+		break;
+	}
+	case PKT_ID_CREATE_EFFECT:
+	{
+		PKT_CREATE_EFFECT *pPacket = (PKT_CREATE_EFFECT*)m_pPacketBuffer;
+
+		CreateEffect(pPacket);
+		break;
+	}
+	case PKT_ID_PLAYER_IN:
+	{
+		PKT_PLAYER_IN *pPacket = (PKT_PLAYER_IN*)m_pPacketBuffer;
+
+		char pstrid[32];
+		sprintf(pstrid, "%d", pPacket->id);
+
+		m_pScene->JoinPlayer(pPacket->id, pstrid);
+		break;
+	}
+	case PKT_ID_PLAYER_ID:
+	{
+		PKT_CLIENTID *pPacket = (PKT_CLIENTID*)m_pPacketBuffer;
+
+		m_nClinetIndex = pPacket->id;
+		m_pScene->SetPlayerIndex(m_nClinetIndex);
+
+		break;
+	}
+	case PKT_ID_GAME_START:
+	{
+		if (m_pScene)
+		{
+			m_pScene->ReleaseObjects();
+			delete m_pScene;
+
+			m_pScene = NULL;
+		}
+
+		BuildScene(SCENE_TYPE_COLONY);
+
+		m_bDrawScene = false;
+
+		SendToServer(PKT_ID_LOAD_COMPLETE);
+		break;
+	}
+	case PKT_ID_LOAD_COMPLETE_ALL:
+	{
+		m_bDrawScene = true;
+
+		break;
+	}
+	break;
+	}
+}
+
+void CGameFramework::recvn()
+{
+	int nRest = recv(m_Socket, m_Buf, MAX_BUFFER, 0);
+
+	char *pBuf = m_Buf;
+	int nPacketsize = 0;
+
+	if (m_nPacketSize > 0) nPacketsize = (int)m_pPacketBuffer[0];
+
+	while (nRest > 0)
+	{
+		if (nPacketsize == 0) nPacketsize = (int)pBuf[0];
+
+		int nRequired = nPacketsize - m_nPacketSize;
+
+		if (nRequired <= nRest)
+		{
+			memcpy(m_pPacketBuffer + m_nPacketSize, pBuf, nRequired);
+
+			ProcessPacket();
+
+			nRest -= nRequired;
+			pBuf += nRequired;
+
+			nPacketsize = 0;
+			m_nPacketSize = 0;
+		}
+		else
+		{
+			memcpy(m_pPacketBuffer + m_nPacketSize, pBuf, nRest);
+			nRest = 0;
+			m_nPacketSize += nRest;
+		}
+	}
+}
+
+void CGameFramework::OnProcessingSocketMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+{
+	switch (WSAGETSELECTEVENT(lParam))
+	{
+	case FD_READ:
+	{
+		recvn();
+		break;
+	}
+	case FD_CLOSE:
+	{
+		printf("Do not Connect\n");
+		PostQuitMessage(0);
+	}
+	}
+}
+
+void CGameFramework::CreateObject(PKT_CREATE_OBJECT *pCreateObjectInfo)
+{
+	m_pScene->InsertObject(m_pd3dDevice, m_pd3dCommandList, pCreateObjectInfo);
+}
+
+void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
+{
+	m_pScene->CreateEffect(m_pd3dDevice, m_pd3dCommandList, pCreateEffectInfo);
+}
+
+void CGameFramework::SendToServer()
+{
+	if (m_pPlayer)
 	{
 		PKT_PLAYER_INFO pktPlayerInfo;
-		int retval;
 
-		pktPlayerInfo.ID = m_Client_Info;
+		pktPlayerInfo.PktId = PKT_ID_PLAYER_INFO;
+		pktPlayerInfo.PktSize = sizeof(PKT_PLAYER_INFO);
+
+		pktPlayerInfo.ID = m_nClinetIndex;
+
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
+
 		if (m_pPlayer->IsShotable())
 		{
 			pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
 			pktPlayerInfo.IsShooting = TRUE;
 			m_pPlayer->IsShotable(false);
 		}
-		else pktPlayerInfo.IsShooting = 0;
+		else
+		{
+			pktPlayerInfo.IsShooting = 0;
+		}
 
 		pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
+
 		pktPlayerInfo.isChangeWeapon = m_pPlayer->GetWeaponChanged();
+
 		if (pktPlayerInfo.isChangeWeapon) m_pPlayer->SetWeaponChanged(FALSE);
+
 		pktPlayerInfo.Player_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState());
+
 		pktPlayerInfo.isChangeAnimation = m_pPlayer->GetAnimationChanged();
+
 		if (pktPlayerInfo.isChangeAnimation) m_pPlayer->SetAnimationChanged(FALSE);
+
 		pktPlayerInfo.State = m_pPlayer->GetState();
 
-
-		PKT_ID pid = PKT_ID_PLAYER_INFO;
-		retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
-
-		retval = send(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
-		if (retval == SOCKET_ERROR)	err_display("send");
-	}
-
-	WaitForSingleObject(hEvent, INFINITE);
-
-	m_Mutex.lock();
-	for (const auto& TimeInfo : m_vMsgTimeInfo)
-	{
-		m_fElapsedTime += TimeInfo->ElapsedTime;
-
-		delete TimeInfo;
-	}
-	m_vMsgTimeInfo.clear();
-	m_Mutex.unlock();
-
-	m_Mutex.lock();
-
-	for (auto& PlayerInfo : m_vMsgPlayerInfo)
-	{
-		if (PlayerInfo->ID != m_Client_Info)
-
-			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)PlayerInfo);
-
-		delete PlayerInfo;
-	}
-	m_vMsgPlayerInfo.clear();
-
-	for (auto& PlayerLife : m_vMsgPlayerLife)
-	{
-		if (PlayerLife->ID == m_Client_Info)
+		if (send(m_Socket, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0) == SOCKET_ERROR)
 		{
-			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - PlayerLife->HP);
-			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, PlayerLife->AMMO);
-			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, PlayerLife->AMMO);
-			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, PlayerLife->AMMO);
+			printf("Send Player Info Error\n");
 		}
-		else
-			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)PlayerLife);
-
-		delete PlayerLife;
 	}
-	m_vMsgPlayerLife.clear();
-
-	for (auto& CreateInfo : m_vMsgCreateObject)
-	{
-		CreateObject(*CreateInfo);
-
-		delete CreateInfo;
-	}
-	m_vMsgCreateObject.clear();
-
-	for (auto& UpdateInfo : m_vMsgUpdateInfo)
-	{
-		m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)UpdateInfo);
-
-		delete UpdateInfo;
-	}
-	m_vMsgUpdateInfo.clear();
-
-	for (auto& DelteInfo : m_vMsgDeleteObject)
-	{
-		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)DelteInfo);
-
-		delete DelteInfo;
-	}
-	m_vMsgDeleteObject.clear();
-
-	for (auto& CreateInfo : m_vMsgCreateEffect)
-	{
-		CreateEffect(*CreateInfo);
-
-		delete CreateInfo;
-	}
-	m_vMsgCreateEffect.clear();
-
-	m_Mutex.unlock();
-	SendComplete = false;
-
-	ResetEvent(hEvent);
 }
 
-DWORD WINAPI CGameFramework::recvThread(LPVOID arg)
+void CGameFramework::SendToServer(PKT_ID pktID)
 {
-	FrameworkThread* pFT = (FrameworkThread*)arg;
-
-	DWORD retval = pFT->pGFW->ThreadFunc((LPVOID)pFT->sock);
-
-	delete pFT;
-
-	return retval;
-}
-
-void CGameFramework::err_quit(char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(FLAG, NULL, WSAGetLastError(), LANG, (LPTSTR)&lpMsgBuf, 0, NULL);
-	MessageBox(NULL, (LPCTSTR)lpMsgBuf, (LPCWSTR)msg, MB_ICONERROR);
-	LocalFree(lpMsgBuf);
-
-	exit(1);
-}
-
-void CGameFramework::err_display(char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(FLAG, NULL, WSAGetLastError(), LANG, (LPTSTR)&lpMsgBuf, 0, NULL);
-	printf("[%s] %s", msg, (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}
-
-int CGameFramework::recvn(SOCKET s, char * buf, int len, int flags)
-{
-	int received;
-	char* ptr = buf;
-	int left = len;
-
-	while (left > 0)
+	switch (pktID)
 	{
-		received = recv(s, ptr, left, flags);
-		if (received == SOCKET_ERROR)
-			return SOCKET_ERROR;
-		else if (received == 0)
-			break;
-		left -= received;
-		ptr += received;
-	}
-
-	return (len - left);
-}
-
-DWORD CGameFramework::ThreadFunc(LPVOID arg)
-{
-	SOCKET socket = (SOCKET)arg;
-
-	int retval;
-
-	PKT_ID iPktID;
-	int nPktSize = 0;
-
-	char* buf;
-
-	while (true)
+	case PKT_ID_GAME_START:
 	{
-		// 데이터 받기 # 패킷 식별 ID
-		retval = recvn(socket, (char*)&iPktID, sizeof(PKT_ID), 0);
-		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 식별 ID" << std::endl;
+		PKT_GAME_START pktToServer;
+		pktToServer.PktID = PKT_ID_GAME_START;
+		pktToServer.PktSize = sizeof(pktToServer);
 
-		// 데이터 받기 # 패킷 구조체 - SIZE 결정
-		m_Mutex.lock();
-		if (iPktID == PKT_ID_PLAYER_INFO) nPktSize = sizeof(PKT_PLAYER_INFO); // 플레이어 정보 [ 행렬, 상태 ]
-		else if (iPktID == PKT_ID_PLAYER_LIFE) nPktSize = sizeof(PKT_PLAYER_LIFE); // 플레이어 정보 [ 체력 ]
-		else if (iPktID == PKT_ID_CREATE_OBJECT) nPktSize = sizeof(PKT_CREATE_OBJECT); // 오브젝트 정보 [ 생성 ]
-		else if (iPktID == PKT_ID_DELETE_OBJECT) nPktSize = sizeof(PKT_DELETE_OBJECT); // 오브젝트 정보 [ 삭제 ]
-		else if (iPktID == PKT_ID_TIME_INFO) nPktSize = sizeof(PKT_TIME_INFO); // 서버 시간 정보 
-		else if (iPktID == PKT_ID_UPDATE_OBJECT) nPktSize = sizeof(PKT_UPDATE_OBJECT); // 이펙트  정보 [ 생성 ]
-		else if (iPktID == PKT_ID_SEND_COMPLETE)
-		{
-			SetEvent(hEvent);
-			m_Mutex.unlock();
-			continue;
-		}
-		else if (iPktID == PKT_ID_CREATE_EFFECT)  nPktSize = sizeof(PKT_CREATE_EFFECT); // 오브젝트 업데이트 정보
-		else if (iPktID == PKT_ID_PLAYER_IN) nPktSize = sizeof(PKT_PLAYER_IN); // 룸 플레이어정보
-		else if (iPktID == PKT_ID_GAME_STATE) nPktSize = sizeof(PKT_GAME_STATE);
-		else std::cout << "[ERROR] 패킷 ID 식별 불가" << std::endl;
-
-		// 데이터 받기 # 패킷 구조체 - 결정
-		buf = new char[nPktSize];
-		retval = recvn(socket, buf, nPktSize, 0);
-		if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
-
-		if (iPktID == PKT_ID_PLAYER_INFO) m_vMsgPlayerInfo.emplace_back((PKT_PLAYER_INFO*)buf); // 플레이어 정보 [ 행렬, 상태 ]
-		else if (iPktID == PKT_ID_PLAYER_LIFE) m_vMsgPlayerLife.emplace_back((PKT_PLAYER_LIFE*)buf); // 플레이어 정보 [ 체력 ]
-		else if (iPktID == PKT_ID_CREATE_OBJECT) m_vMsgCreateObject.emplace_back((PKT_CREATE_OBJECT*)buf); // 오브젝트 정보 [ 생성 ]
-		else if (iPktID == PKT_ID_DELETE_OBJECT) m_vMsgDeleteObject.emplace_back((PKT_DELETE_OBJECT*)buf); // 오브젝트 정보 [ 삭제 ]
-		else if (iPktID == PKT_ID_TIME_INFO) m_vMsgTimeInfo.emplace_back((PKT_TIME_INFO*)buf); // 서버 시간 정보 
-		else if (iPktID == PKT_ID_UPDATE_OBJECT)
-		{
-			//std::cout << ((PKT_UPDATE_OBJECT*)buf)->Object_Index << " : " << ((PKT_UPDATE_OBJECT*)buf)->Object_Position.y << std::endl;
-			m_vMsgUpdateInfo.emplace_back((PKT_UPDATE_OBJECT*)buf); // 오브젝트 업데이트 정보
-		}
-		else if (iPktID == PKT_ID_CREATE_EFFECT)  m_vMsgCreateEffect.emplace_back((PKT_CREATE_EFFECT*)buf); // 이펙트  정보 [ 생성 ]
-		else if (iPktID == PKT_ID_PLAYER_IN)
-		{
-			std::cout << "\n" << ((PKT_PLAYER_IN*)buf)->id << "번 플레이어 접속\n";
-		}
-		else if (iPktID == PKT_ID_GAME_STATE)
-		{
-			gamestart = true;
-			if (((PKT_GAME_STATE*)buf)->game_state == GAME_STATE_START)
-				for (int i = 0; i < 8 - ((PKT_GAME_STATE*)buf)->num_player; i++)
-				{
-					PKT_DELETE_OBJECT pktDO;
-					pktDO.Object_Index = ((PKT_GAME_STATE*)buf)->num_player + i;
-
-					m_pScene->DeleteObject(pktDO);
-				}
-		}
-		m_Mutex.unlock();
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Game Start Error\n");
+		break;
 	}
+	case PKT_ID_LOAD_COMPLETE:
+	{
+		PKT_LOAD_COMPLETE pktToServer;
+		pktToServer.PktID = PKT_ID_LOAD_COMPLETE;
+		pktToServer.PktSize = sizeof(pktToServer);
+
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Load Complete Error\n");
+		break;
+	}
+	default:
+		break;
+	}
+	
 }
 
 void CGameFramework::InitNetwork()
 {
-	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	//// for Networking
-	WSADATA wsa;
-	if (WSAStartup(WS22, &wsa) != 0)
-		return;
-
-	int retval;
-
-	while (true)
-	{
-		// socket()
-		m_sock = socket(AF_INET, SOCK_STREAM, 0);
-		if (m_sock == INVALID_SOCKET)
-			err_display("socket()");
-
-		// connect()
-		SOCKADDR_IN serveraddr;
-		ZeroMemory(&serveraddr, sizeof(serveraddr));
-		serveraddr.sin_family = AF_INET;
-		serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
-		serveraddr.sin_port = htons(SERVERPORT);
-		retval = connect(m_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
-		if (retval == SOCKET_ERROR)
-		{
-			err_display("connect()");
-			continue;
-		}
-
-		break;
-	}
-
 	// 클라이언트 아이디 받기
-	retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
-	if (retval == SOCKET_ERROR) err_display("recvn");
+	//retval = recvn(m_sock, (char*)&m_Client_Info, sizeof(CLIENTID), 0);
+	//if (retval == SOCKET_ERROR) err_display("recvn");
 
-	// 씬 정보 받기
-	SCENEINFO SceneInfo;
+	////
+	//FrameworkThread *sFT = new FrameworkThread;
+	//sFT->pGFW = this;
+	//sFT->sock = m_sock;
+	//m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
 
-	retval = recvn(m_sock, (char*)&SceneInfo, sizeof(SCENEINFO), 0);
-	if (retval == SOCKET_ERROR)	err_display("recv()");
+	//
 
-	// 씬에서의 오브젝트 초기정보(위치, .. 등등) 받기 [ 다른 플레이어의 초기 위치 ]
-	// 자신의 씬에서의 위치
-	PKT_PLAYER_INFO pktPlayerInfo;
-	retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
+	//// 씬 정보 받기
+	//SCENEINFO SceneInfo;
 
-	int nSceneType;
-	if (SceneInfo == SCENE_NAME::SCENE_NAME_COLONY)
-		nSceneType = SCENE_TYPE_COLONY;
+	//retval = recvn(m_sock, (char*)&SceneInfo, sizeof(SCENEINFO), 0);
+	//if (retval == SOCKET_ERROR)	err_display("recv()");
 
-	BuildScene(nSceneType);
-	m_pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
+	//// 씬에서의 오브젝트 초기정보(위치, .. 등등) 받기 [ 다른 플레이어의 초기 위치 ]
+	//// 자신의 씬에서의 위치
+	//PKT_PLAYER_INFO pktPlayerInfo;
+	//retval = recvn(m_sock, (char*)&pktPlayerInfo, sizeof(PKT_PLAYER_INFO), 0);
 
-	for (int i = 0; i < 7; ++i)
-	{
-		// 다른 클라이언트 플레이어 정보
-		PKT_CREATE_OBJECT pktCreateObject;
-		retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
+	//int nSceneType;
+	//if (SceneInfo == SCENE_NAME::SCENE_NAME_COLONY)
+	//	nSceneType = SCENE_TYPE_COLONY;
 
-		CreateObject(pktCreateObject);
-	}
+	//BuildScene(nSceneType);
+	//m_pPlayer->SetWorldTransf(pktPlayerInfo.WorldMatrix);
 
-	FrameworkThread *sFT = new FrameworkThread;
-	sFT->pGFW = this;
-	sFT->sock = m_sock;
-	m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
+	//for (int i = 0; i < 7; ++i)
+	//{
+	//	// 다른 클라이언트 플레이어 정보
+	//	PKT_CREATE_OBJECT pktCreateObject;
+	//	retval = recvn(m_sock, (char*)&pktCreateObject, sizeof(PKT_CREATE_OBJECT), 0);
 
-	if (m_Client_Info == 0)
-	{
-		while (true)
-		{
-			std::string gamestart;
-			std::cout << "게임시작하려면 'start'를 입력 : ";
-			std::cin >> gamestart;
-			if (gamestart == "start")
-			{
-				PKT_ID pid = PKT_ID_GAME_STATE;
-				retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
-				if (retval == SOCKET_ERROR)
-					std::cout << "소켓에러\n";
-				break;
-			}
-		}
-	}
+	//	CreateObject(pktCreateObject);
+	//}
 
-	while (!gamestart);
-}
+	//FrameworkThread *sFT = new FrameworkThread;
+	//sFT->pGFW = this;
+	//sFT->sock = m_sock;
+	//m_hThread = CreateThread(NULL, 0, recvThread, (LPVOID)sFT, 0, NULL);
 
-void CGameFramework::CloseNetwork()
-{
-	closesocket(m_sock);
-	CloseHandle(hEvent);
+	//if (m_Client_Info == 0)
+	//{
+	//	while (true)
+	//	{
+	//		std::string gamestart;
+	//		std::cout << "게임시작하려면 'start'를 입력 : ";
+	//		std::cin >> gamestart;
+	//		if (gamestart == "start")
+	//		{
+	//			PKT_ID pid = PKT_ID_GAME_STATE;
+	//			retval = send(m_sock, (char*)&pid, sizeof(PKT_ID), 0);
+	//			if (retval == SOCKET_ERROR)
+	//				std::cout << "소켓에러\n";
+	//			break;
+	//		}
+	//	}
+	//}
 
-	WSACleanup();
-}
-
-void CGameFramework::CreateObject(PKT_CREATE_OBJECT CreateObjectInfo)
-{
-	m_pScene->InsertObject(m_pd3dDevice, m_pd3dCommandList, CreateObjectInfo);
-}
-
-void CGameFramework::CreateEffect(PKT_CREATE_EFFECT CreateEffectInfo)
-{
-	m_pScene->CreateEffect(m_pd3dDevice, m_pd3dCommandList, CreateEffectInfo);
+	//while (!gamestart);
 }

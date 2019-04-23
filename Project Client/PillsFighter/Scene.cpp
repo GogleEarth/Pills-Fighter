@@ -245,6 +245,13 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
 
+	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
+
+	for (const auto& pFont : m_vpFonts)
+	{
+		pFont->Render(pd3dCommandList);
+	}
+
 	m_nFPS = (m_nFPS + 1) % 5;
 }
 
@@ -259,16 +266,6 @@ void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCa
 			if (m_ppShaders[i])
 				m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
 		}
-	}
-}
-
-void CScene::RenderFont(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
-
-	for (const auto& pFont : m_vpFonts)
-	{
-		pFont->Render(pd3dCommandList);
 	}
 }
 
@@ -700,25 +697,57 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pLobbyShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pLobbyShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
-	m_nTextures = 3;
+	m_nTextures = 11;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Base.dds", 0);
-
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/GameStart.dds", 0);
-
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGameStart.dds", 0);
-
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nUIRect = 2;
+
+	m_ppTextures[3] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Left.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[4] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLLeft.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[4], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[5] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[5]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Right.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[5], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[6] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[6]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLRight.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[6], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+
+	m_ppTextures[7] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[7]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gim.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[7], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[8] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[8]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGim.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[8], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[9] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[9]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gundam.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[9], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[10] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[10]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGundam.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[10], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+
+	m_nUIRect = 6;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Base UI
@@ -730,6 +759,30 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	xmf2Size = ::CalculateSize(0.514688f, 0.902500f, -0.672778f, -0.816111f);
 	m_ppUIRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+	// Left
+	xmf2Center = ::CalculateCenter(0.514688f, 0.701564f, -0.430556f, -0.555556f);
+	xmf2Size = ::CalculateSize(0.514688f, 0.701564f, -0.430556f, -0.555556f);
+	m_ppUIRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	// Right
+	xmf2Center = ::CalculateCenter(0.718750f, 0.902500f, -0.430556f, -0.555556f);
+	xmf2Size = ::CalculateSize(0.718750f, 0.902500f, -0.430556f, -0.555556f);
+	m_ppUIRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	// First : Gim
+	xmf2Center = ::CalculateCenter(0.514688f, 0.632813f, -0.188889f, -0.322222f);
+	xmf2Size = ::CalculateSize(0.514688f, 0.632813f, -0.188889f, -0.322222f);
+	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	// Second : Gundam
+	xmf2Center = ::CalculateCenter(0.646875f, 0.770313f, -0.188889f, -0.322222f);
+	xmf2Size = ::CalculateSize(0.646875f, 0.770313f, -0.188889f, -0.322222f);
+	m_ppUIRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	// Third : ???
+	//xmf2Center = ::CalculateCenter(0.784375f, 0.902500f, -0.188889f, -0.322222f);
+	//xmf2Size = ::CalculateSize(0.784375f, 0.902500f, -0.188889f, -0.322222f);
+
 	m_pCursor = new CCursor(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 }
 
@@ -738,7 +791,7 @@ void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 	switch (nMessageID)
 	{
 	case WM_LBUTTONUP:
-		MouseClick();
+		//MouseClick();
 		break;
 	default:
 		break;
@@ -747,20 +800,41 @@ void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
-	JoinPlayer("First Player");
-	JoinPlayer("Second Player");
-	JoinPlayer("Third Player");
-	JoinPlayer("Fourth Player");
-	JoinPlayer("Fifth Player");
-	JoinPlayer("Sixth Player");
-	JoinPlayer("Seventh Player");
-	JoinPlayer("Ehighth Player");
+	//JoinPlayer("First Player");
+	//JoinPlayer("Second Player");
+	//JoinPlayer("Third Player");
+	//JoinPlayer("Fourth Player");
+	//JoinPlayer("Fifth Player");
+	//JoinPlayer("Sixth Player");
+	//JoinPlayer("Seventh Player");
+	//JoinPlayer("Ehighth Player");
 
-	XMFLOAT2 xmf2Center = ::CalculateCenter(0.504688f, 0.922500f, -0.652778f, -0.836111f, true);
-	XMFLOAT2 xmf2Size = ::CalculateSize(0.504688f, 0.922500f, -0.652778f, -0.836111f, true);
+	XMFLOAT2 xmf2Center = ::CalculateCenter(0.514688f, 0.902500f, -0.672778f, -0.816111f, true);
+	XMFLOAT2 xmf2Size = ::CalculateSize(0.514688f, 0.902500f, -0.672778f, -0.816111f, true);
 
 	m_StartButton.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
 	m_StartButton.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(0.514688f, 0.701564f, -0.430556f, -0.555556f, true);
+	xmf2Size = ::CalculateSize(0.514688f, 0.701564f, -0.430556f, -0.555556f, true);
+
+	m_SelectLeft.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_SelectLeft.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(0.718750f, 0.902500f, -0.430556f, -0.555556f, true);
+	xmf2Size = ::CalculateSize(0.718750f, 0.902500f, -0.430556f, -0.555556f, true);
+
+	m_SelectRight.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_SelectRight.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+}
+
+void CLobbyScene::SetPlayerIndex(int nIndex)
+{
+	char id[32];
+	sprintf(id, "%d", nIndex);
+
+	m_nPlayerIndex = nIndex;
+	JoinPlayer(nIndex, id);
 }
 
 void CLobbyScene::ReleaseObjects()
@@ -811,12 +885,28 @@ int CLobbyScene::MouseClick()
 	{
 		return MOUSE_CLICK_TYPE_START;
 	}
+	if (m_pCursor->CollisionCheck(m_SelectLeft))
+	{
+		m_nChoiceCharactor = (m_nChoiceCharactor - 1) > 0 ? m_nChoiceCharactor - 1 : 0;
+	}
+	if (m_pCursor->CollisionCheck(m_SelectRight))
+	{
+		m_nChoiceCharactor = (m_nChoiceCharactor + 1) < MAX_CHARACTERS ? m_nChoiceCharactor + 1 : MAX_CHARACTERS - 1;
+	}
+
+	return 0;
 }
 
 void CLobbyScene::CheckCollision()
 {
 	if (m_pCursor->CollisionCheck(m_StartButton)) m_bHLStartButton = true;
 	else m_bHLStartButton = false;
+
+	if (m_pCursor->CollisionCheck(m_SelectLeft)) m_bHLSelectLeft = true;
+	else m_bHLSelectLeft = false;
+
+	if (m_pCursor->CollisionCheck(m_SelectRight)) m_bHLSelectRight = true;
+	else m_bHLSelectRight = false;
 }
 
 void CLobbyScene::StartScene()
@@ -824,24 +914,27 @@ void CLobbyScene::StartScene()
 	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
-void CLobbyScene::JoinPlayer(const char *pstrPlayerName)
+void CLobbyScene::JoinPlayer(int nIndex, const char *pstrPlayerName)
 {
 	XMFLOAT2 xmf2Pos;
 	xmf2Pos.x = -0.862500f;
 	xmf2Pos.y = 0.400000f;
 
-	xmf2Pos.x += (m_nNumPlayer / 4) * 0.7f;
-	xmf2Pos.y += (m_nNumPlayer % 4) * -0.375f;
+	xmf2Pos.x += (nIndex / 4) * 0.7f;
+	xmf2Pos.y += (nIndex % 4) * -0.375f;
 
-	AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
+	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	if (nIndex == m_nPlayerIndex)
+	{
+		xmf4Color.x = 1.0f;
+		xmf4Color.z = 0.0f;
+	}
 
-	m_nNumPlayer++;
+	AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
 }
 
 void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CScene::Render(pd3dCommandList, pCamera);
-
 	if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, pCamera);
 
 	m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
@@ -852,7 +945,33 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	else
 		m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[1]->Render(pd3dCommandList, 0);
-	
+
+	if (m_bHLSelectLeft)
+		m_ppTextures[4]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[2]->Render(pd3dCommandList, 0);
+
+	if (m_bHLSelectRight)
+		m_ppTextures[6]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[5]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[3]->Render(pd3dCommandList, 0);
+
+	if (m_nChoiceCharactor == 0)
+		m_ppTextures[8]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[7]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[4]->Render(pd3dCommandList, 0);
+
+	if (m_nChoiceCharactor == 1)
+		m_ppTextures[10]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[9]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[5]->Render(pd3dCommandList, 0);
+
+	CScene::Render(pd3dCommandList, pCamera);
+
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
 }
 
@@ -1257,8 +1376,17 @@ void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	if (m_ppShaders[2])
+	//if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pMiniMapCamera, true);
+
+	//for (int i = 0; i < m_nShaders; i++)
+	//{
+	//	if (m_ppShaders[i])
+	//		m_ppShaders[i]->Render(pd3dCommandList, m_pMiniMapCamera);
+	//}
+
+	if(m_ppShaders[2])
 		m_ppShaders[2]->Render(pd3dCommandList, m_pMiniMapCamera);
+		
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
@@ -1621,23 +1749,23 @@ void CColonyScene::ReleaseShaderVariables()
 
 //////////////////////////////// for Networking
 
-void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT CreateObjectInfo)
+void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo)
 {
 	CGameObject* pGameObject = NULL;
-	//pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+	//pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
-	if (m_pObjects[CreateObjectInfo.Object_Index])
+	if (m_pObjects[pCreateObjectInfo->Object_Index])
 	{
-		m_pObjects[CreateObjectInfo.Object_Index]->Delete();
+		m_pObjects[pCreateObjectInfo->Object_Index]->Delete();
 	}
 
 	CObjectsShader *pObjectsShader = NULL;
 
-	switch (CreateObjectInfo.Object_Type)
+	switch (pCreateObjectInfo->Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
 		pGameObject = new CRobotObject();
-		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_SKINND_OBJECTS];
 
@@ -1653,7 +1781,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		break;
 	case OBJECT_TYPE_MACHINE_BULLET:
 		pGameObject = new Bullet();
-		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
@@ -1661,14 +1789,14 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		break;
 	case OBJECT_TYPE_ITEM_HEALING:
 		pGameObject = new RotateObject();
-		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, NULL);
 		break;
 	case OBJECT_TYPE_BZK_BULLET:
 		pGameObject = new Bullet();
-		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
@@ -1676,7 +1804,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		break;
 	case OBJECT_TYPE_BEAM_BULLET:
 		pGameObject = new Bullet();
-		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
@@ -1684,50 +1812,50 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		break;
 	case OBJECT_TYPE_ITEM_AMMO:
 		pGameObject = new RotateObject();
-		pGameObject->SetWorldTransf(CreateObjectInfo.WorldMatrix);
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_AMMO_ITEM, true, NULL);
 		break;
 	}
 
-	m_pObjects[CreateObjectInfo.Object_Index] = pGameObject;
+	m_pObjects[pCreateObjectInfo->Object_Index] = pGameObject;
 }
 
-void CColonyScene::DeleteObject(PKT_DELETE_OBJECT DeleteObjectInfo)
+void CColonyScene::DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo)
 {
-	if (m_pObjects[DeleteObjectInfo.Object_Index])
+	if (m_pObjects[pDeleteObjectInfo->Object_Index])
 	{
-		if (m_pObjects[DeleteObjectInfo.Object_Index]->GetType() & OBJECT_TYPE_ROBOT)
+		if (m_pObjects[pDeleteObjectInfo->Object_Index]->GetType() & OBJECT_TYPE_ROBOT)
 		{
-			std::vector<CParticle*> vpParticles = ((CRobotObject*)m_pObjects[DeleteObjectInfo.Object_Index])->GetParticles();
+			std::vector<CParticle*> vpParticles = ((CRobotObject*)m_pObjects[pDeleteObjectInfo->Object_Index])->GetParticles();
 			for (CParticle *pParticle : vpParticles) pParticle->Delete();
 		}
-		m_pObjects[DeleteObjectInfo.Object_Index]->Delete();
-		m_pObjects[DeleteObjectInfo.Object_Index] = NULL;
+		m_pObjects[pDeleteObjectInfo->Object_Index]->Delete();
+		m_pObjects[pDeleteObjectInfo->Object_Index] = NULL;
 	}
 }
 
-void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT CreateEffectInfo)
+void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo)
 {
-	EFFECT_TYPE nEffectType = CreateEffectInfo.nEffectType;
-	EFFECT_ANIMATION_TYPE nEffectAniType = CreateEffectInfo.nEffectAniType;
+	EFFECT_TYPE nEffectType = pCreateEffectInfo->efType;
+	EFFECT_ANIMATION_TYPE nEffectAniType = pCreateEffectInfo->EftAnitType;
 	CEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
 	float fSize = (float)(rand() % 2000) / 100.0f;
 
 	switch (nEffectType)
 	{
-	case EFFECT_TYPE::EFFECT_TYPE_WORD_HIT:
-		((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(0.04f, 0.02f));
+	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
+		((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
-		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
-		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(CreateEffectInfo.xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	}
 }
@@ -1757,13 +1885,16 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_CREATE_OBJECT:
 		break;
 	case PKT_ID_DELETE_OBJECT:
-		DeleteObject(*((PKT_DELETE_OBJECT*)pktData));
+		DeleteObject(((PKT_DELETE_OBJECT*)pktData));
 		break;
 	case PKT_ID_TIME_INFO:
 		break;
 	case PKT_ID_UPDATE_OBJECT:
-		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
-		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
+		if (((PKT_UPDATE_OBJECT*)pktData)->Object_Index)
+		{
+			XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
+			m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
+		}
 		break;
 	case PKT_ID_CREATE_EFFECT:
 		break;
