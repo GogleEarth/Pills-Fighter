@@ -102,9 +102,11 @@ void Framework::main_loop()
 			{
 				if (!game_start)
 				{
-					memcpy(buf, &count, sizeof(int));
-					retval = send(client_sock, buf, sizeof(int), 0);
-					if (retval == SOCKET_ERROR)
+					PKT_CLIENTID pkt_cid;
+					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
+					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
+					pkt_cid.id = count;
+					if (send(client_sock, (char*)&pkt_cid, pkt_cid.PktSize, 0))
 					{
 						std::cout << "main_loop ERROR : ";
 						err_display("send()");
@@ -135,7 +137,6 @@ void Framework::main_loop()
 					//	}
 					//}
 
-					std::cout << clients.size() << "\n";
 					if (clients.size() > 0)
 					{
 						PKT_PLAYER_IN pkt_pin;
@@ -284,8 +285,12 @@ DWORD Framework::Update_Process(CScene* pScene)
 			break;
 	}
 
-	PKT_ID Loadcomplete = PKT_ID_LOAD_COMPLETE_ALL;
-	retval = Send_msg((char*)&Loadcomplete, sizeof(PKT_ID), 0);
+	PKT_GAME_STATE pktgamestate;
+	pktgamestate.PktId = (char)PKT_ID_GAME_STATE;
+	pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
+	pktgamestate.game_state = GAME_STATE_LOAD_COMPLETE;
+	pktgamestate.num_player = playernum;
+	retval = Send_msg((char*)&pktgamestate, pktgamestate.PktSize, 0);
 
 	m.lock();
 	for (auto d : clients)
