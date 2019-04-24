@@ -67,6 +67,16 @@ public:
 	DWORD client_process(Client_arg* arg);
 	// 충돌 체크를 검사한다.
 	void CheckCollision(CScene* pScene);
+	void SendCreateEffect(CScene* pScene);
+	void SendPlayerInfo(CScene* pScene);
+	void SendUpfateObject(CScene* pScene);
+	void SendDeleteObject(CScene* pScene);
+	void SendPlayerLife(CScene* pScene);
+	void SendCreateBullet(CScene* pScene);
+	void SendCreateHeal(CScene* pScene);
+	void SendCreateAmmo(CScene* pScene);
+	void SendTime(CScene* pScene);
+	void UpdateScene(CScene* pScene);
 };
 
 struct Arg

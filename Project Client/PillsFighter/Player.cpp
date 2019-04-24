@@ -200,7 +200,7 @@ XMFLOAT4X4 CPlayer::GetToTarget()
 		xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
 		xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
 
-	XMFLOAT3 xmf3Position = Vector3::Add(GetPosition(), XMFLOAT3(0.0f, 5.0f, 0.0f));
+	XMFLOAT3 xmf3Position = Vector3::Add(GetPosition(), XMFLOAT3(0.0f, 10.0f, 0.0f));
 	XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
 	XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3DestPos, xmf3Position));
 	XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);

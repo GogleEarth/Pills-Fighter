@@ -136,7 +136,11 @@ void CGameObject::Animate(float fTimeElapsed)
 		|| m_Object_Type == OBJECT_TYPE_BZK_BULLET
 		|| m_Object_Type == OBJECT_TYPE_BEAM_BULLET)
 	{
-		if (m_ElapsedTime >= m_DurationTime)
+		if (m_xmf3Position.y <= 0.0f)
+		{
+			Delete();
+		}
+		else if (m_ElapsedTime >= m_DurationTime)
 		{
 			Delete();
 		}

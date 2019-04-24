@@ -586,26 +586,6 @@ void CGameFramework::FrameAdvance()
 	ProcessInput();
 
 #ifdef ON_NETWORKING
-	if (m_pPlayer)
-	{
-		if (m_pPlayer->IsShotable() && m_bDrawScene && m_bSend_Complete)
-		{
-			//총알 생성 패킷 보내기
-			PKT_SHOOT pktShoot;
-			PKT_ID id = PKT_ID_SHOOT;
-			pktShoot.PktId = (char)PKT_ID_SHOOT;
-			pktShoot.PktSize = sizeof(PKT_SHOOT);
-			pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
-			pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget();
-			send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-			if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
-			{
-				printf("Send Player Info Error\n");
-			}
-			else
-				printf("Send Player Info Complete\n");
-		}
-	}
 
 	SendToServer();
 #else
@@ -928,6 +908,22 @@ void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
 
 void CGameFramework::SendToServer()
 {
+	if (m_pPlayer && m_pPlayer->IsShotable() && m_bDrawScene && m_bSend_Complete)
+	{
+		//총알 생성 패킷 보내기
+		PKT_SHOOT pktShoot;
+		PKT_ID id = PKT_ID_SHOOT;
+		pktShoot.PktId = (char)PKT_ID_SHOOT;
+		pktShoot.PktSize = sizeof(PKT_SHOOT);
+		pktShoot.ID = m_nClinetIndex;
+		pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
+		pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget();
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
+		{
+			printf("Send Shoot Error\n");
+		}
+	}
 	if (m_pPlayer && m_bDrawScene && m_bSend_Complete)
 	{
 		int retval;
