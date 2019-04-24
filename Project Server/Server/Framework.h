@@ -25,8 +25,6 @@ class Framework
 
 	HANDLE thread[MAX_CLIENT];
 	HANDLE update_thread;
-	HANDLE Event;
-	HANDLE client_Event[MAX_CLIENT];
 	std::mutex m;
 	std::queue<PKT_PLAYER_INFO> msg_queue;
 	std::mutex playerinfomutex;
@@ -53,7 +51,7 @@ public:
 	CScene* m_pScene;
 	Framework();
 	~Framework();
-	int Build();
+	void Build();
 	void Release();
 	void main_loop();
 	//int CreateThread();

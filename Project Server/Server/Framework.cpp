@@ -15,11 +15,9 @@ Framework::~Framework()
 {
 }
 
-int Framework::Build()
+void Framework::Build()
 {
 	int retval;
-
-	Event = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	game_start = false;
 
@@ -28,7 +26,7 @@ int Framework::Build()
 
 	// 윈속 초기화
 	if (WSAStartup(WS22, &wsa) != 0)
-		return 1;
+		return;
 
 	// socket()
 	listen_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -72,7 +70,6 @@ void Framework::Release()
 void Framework::main_loop()
 {
 	int addrlen;
-	char buf[sizeof(int)];
 	int retval;
 
 	Update_Arg* arg = new Update_Arg;
@@ -142,7 +139,6 @@ void Framework::main_loop()
 					arg->client_socket = client_sock;
 					arg->id = count;
 
-					client_Event[count] = CreateEvent(NULL, FALSE, FALSE, NULL);
 					thread[count] = CreateThread(
 						NULL, 0, client_thread,
 						(LPVOID)arg, 0, NULL);
