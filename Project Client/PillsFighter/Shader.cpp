@@ -1522,6 +1522,11 @@ D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBl
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
 }
 
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderMinimap(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI_MINIMAP", "ps_5_1", ppd3dShaderBlob));
+}
+
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
 {
 	UINT nInputElementDescs = 2;
@@ -1583,6 +1588,10 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderBar(&pd3dGeometryShaderBlob);
 
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBar);
+
+	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderMinimap(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateMinimap);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
@@ -1749,7 +1758,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	// Draw Minimap
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+	if (m_pd3dPipelineStateMinimap) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimap);
 	if (m_pMinimap)
 	{
 		m_pMinimap->UpdateShaderVariables(pd3dCommandList);

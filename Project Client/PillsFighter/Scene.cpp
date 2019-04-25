@@ -1401,14 +1401,6 @@ void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	//if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pMiniMapCamera, true);
-
-	//for (int i = 0; i < m_nShaders; i++)
-	//{
-	//	if (m_ppShaders[i])
-	//		m_ppShaders[i]->Render(pd3dCommandList, m_pMiniMapCamera);
-	//}
-
 	if(m_ppShaders[2])
 		m_ppShaders[2]->Render(pd3dCommandList, m_pMiniMapCamera);
 		

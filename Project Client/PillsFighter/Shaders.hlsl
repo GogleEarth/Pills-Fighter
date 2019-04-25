@@ -472,6 +472,16 @@ float4 PS_UI(GS_UI_OUT input) : SV_TARGET
 	return(cColor);
 }
 
+float4 PS_UI_MINIMAP(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	float2 centerpos = float2(0.5f, 0.5f);
+	cColor = (distance(input.uv, centerpos) < 0.5) ? cColor : 0;
+
+	return(cColor);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
