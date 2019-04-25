@@ -161,7 +161,6 @@ void CCamera::UpdateForMinimap(XMFLOAT3& xmf3LookAt)
 {
 	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
 	m_xmf3Position.x = xmf3PlayerPos.x;
-	m_xmf3Position.y = xmf3PlayerPos.y + 500;
 	m_xmf3Position.z = xmf3PlayerPos.z;
 
 	if (m_pPlayer)

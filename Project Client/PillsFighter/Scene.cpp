@@ -1371,6 +1371,7 @@ void CColonyScene::CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pMiniMapCamera->SetRight(xmf3Right);
 	m_pMiniMapCamera->SetUp(xmf3Ups);
 	m_pMiniMapCamera->SetLook(xmf3Looks);
+	m_pMiniMapCamera->SetPosition(XMFLOAT3(0, 500, 0));
 
 	m_pMiniMapCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
