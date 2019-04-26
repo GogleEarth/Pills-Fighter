@@ -34,6 +34,8 @@ class Framework
 	std::queue<PKT_CREATE_EFFECT> effect_msg_queue;
 	std::queue<PKT_SHOOT> shoot_msg_queue;
 	std::mutex shootmutex;
+	std::queue<PKT_ROBBY_PLAYER_INFO> robby_player_msg_queue;
+	std::mutex robbyplayermutex;
 	std::vector<Client_INFO> clients;
 	int count = 0;
 	CModel PlayerMesh;
@@ -75,6 +77,7 @@ public:
 	void SendCreateAmmo(CScene* pScene);
 	void SendTime(CScene* pScene);
 	void UpdateScene(CScene* pScene);
+	void PlayGame(CScene* pScene);
 };
 
 struct Arg

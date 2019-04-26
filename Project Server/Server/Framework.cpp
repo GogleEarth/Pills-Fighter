@@ -220,9 +220,19 @@ DWORD __stdcall Framework::Update(LPVOID arg)
 
 DWORD Framework::Update_Process(CScene* pScene)
 {
+	//robby 처리
 	while (true)
 	{
-		//std::cout << "게임시작 대기중\n";
+		robbyplayermutex.lock();
+		if (robby_player_msg_queue.size() > 0)
+		{
+			PKT_ROBBY_PLAYER_INFO RPIpkt;
+			RPIpkt = robby_player_msg_queue.front();
+			robby_player_msg_queue.pop();
+			Send_msg((char*)&RPIpkt, RPIpkt.PktSize, 0);
+		}
+		robbyplayermutex.unlock();
+
 		if (game_start)
 		{
 			playernum = count;
@@ -240,7 +250,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 	pktgamestart.PktSize = sizeof(PKT_GAME_START);
 	Send_msg((char*)&pktgamestart, pktgamestart.PktSize, 0);
 
-	//로딩끝날때까지 대기
+	//모든 플레이어의 로딩끝날때까지 대기
 	int load_count;
 	while (true)
 	{
@@ -291,51 +301,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 	game_start = false;
 
-	while (true)
-	{
-		m_GameTimer.Tick(60.0f);
-		elapsed_time = m_GameTimer.GetTimeElapsed();
-
-		//서버의 시간을 모든 플레이어에게 보내줌
-		SendTime(pScene);
-
-		// 씬의 오브젝트 애니메이트
-		UpdateScene(pScene);
-
-		// 충돌 처리
-		CheckCollision(pScene);
-
-		// 플레이어 정보 보내기
-		SendPlayerInfo(pScene);
-
-		// 총알 생성 보내기
-		SendCreateBullet(pScene);
-
-		// 회복 아이템 생성 패킷 보내기(60초마다 생성)
-		SendCreateHeal(pScene);
-
-		// 잔탄 아이템 생성 패킷 보내기(10초마다 생성)
-		SendCreateAmmo(pScene);
-
-
-		// 오브젝트 업데이트 패킷 보내기
-		SendUpfateObject(pScene);
-
-		// 오브젝트 삭제 패킷 보내기
-		SendDeleteObject(pScene);
-
-		// 플레이어 체력/잔탄 변경 패킷 보내기
-		SendPlayerLife(pScene);
-
-		// 이펙트 생성 패킷 보내기
-		SendCreateEffect(pScene);
-
-		PKT_SEND_COMPLETE pkt_cpl;
-		pkt_cpl.PktID = (char)PKT_ID_SEND_COMPLETE;
-		pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
-		retval = Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
-		//std::cout << "패킷 전송 완료\n";
-	}
+	PlayGame(pScene);
 }
 
 DWORD __stdcall Framework::client_thread(LPVOID arg)
@@ -373,9 +339,6 @@ DWORD Framework::client_process(Client_arg* arg)
 				Player_out = true;
 
 				closesocket(client_socket);
-
-				//SetEvent(client_Event[arg->id]);
-				//WaitForSingleObject(Event, INFINITE);
 			}
 			else
 			{
@@ -384,16 +347,16 @@ DWORD Framework::client_process(Client_arg* arg)
 				else if (iPktID == PKT_ID_GAME_START) nPktSize = sizeof(PKT_GAME_START);
 				else if (iPktID == PKT_ID_LOAD_COMPLETE) nPktSize = sizeof(PKT_LOAD_COMPLETE);
 				else if (iPktID == PKT_ID_SHOOT) nPktSize = sizeof(PKT_SHOOT);
+				else if (iPktID == PKT_ID_ROBBY_PLAYER_INFO) nPktSize = sizeof(PKT_ROBBY_PLAYER_INFO);
 				else std::cout << "[ERROR] 패킷 ID 식별 불가 ID : " << iPktID << std::endl;
 
 				// 데이터 받기 # 패킷 구조체 - 결정
+				buf = new char[nPktSize];
+				retval = recvn(client_socket, buf, nPktSize, 0);
+				if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 
 				if (iPktID == PKT_ID_PLAYER_INFO)
 				{
-					buf = new char[nPktSize];
-					retval = recvn(client_socket, buf, nPktSize, 0);
-					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
-					//std::cout << retval << "바이트 받음(플레이어 정보)\n";
 					playerinfomutex.lock();
 					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->PktSize, ((PKT_PLAYER_INFO*)buf)->PktId,
 						((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix,
@@ -402,14 +365,9 @@ DWORD Framework::client_process(Client_arg* arg)
 						((PKT_PLAYER_INFO*)buf)->isChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
 					playerinfomutex.unlock();
 
-					//SetEvent(client_Event[arg->id]);
-					//WaitForSingleObject(Event, INFINITE);
 				}
 				else if (iPktID == PKT_ID_SHOOT)
 				{
-					buf = new char[nPktSize];
-					retval = recvn(client_socket, buf, nPktSize, 0);
-					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 					shootmutex.lock();
 					shoot_msg_queue.push(PKT_SHOOT{ ((PKT_SHOOT*)buf)->PktSize, ((PKT_SHOOT*)buf)->PktId,
 						((PKT_SHOOT*)buf)->ID,  ((PKT_SHOOT*)buf)->Player_Weapon, ((PKT_SHOOT*)buf)->BulletWorldMatrix });
@@ -417,28 +375,24 @@ DWORD Framework::client_process(Client_arg* arg)
 				}
 				else if (iPktID == PKT_ID_GAME_START)
 				{
-					buf = new char[nPktSize];
-					retval = recvn(client_socket, buf, nPktSize, 0);
-					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 					game_start = true;
 				}
 				else if (iPktID == PKT_ID_LOAD_COMPLETE)
 				{
-					buf = new char[nPktSize];
-					retval = recvn(client_socket, buf, nPktSize, 0);
-					if (retval == SOCKET_ERROR)	std::cout << "[ERROR] 데이터 받기 # 패킷 구조체 - 결정" << std::endl;
 					std::cout << arg->id << "번 플레이어 로드완료\n";
-					//m.lock();
+					m.lock();
 					clients[arg->id].load_complete = true;
-					//m.unlock();
+					m.unlock();
 					continue;
 				}
+				else if (iPktID == PKT_ID_ROBBY_PLAYER_INFO)
+				{
+					robbyplayermutex.lock();
+					robby_player_msg_queue.push(PKT_ROBBY_PLAYER_INFO{ ((PKT_ROBBY_PLAYER_INFO*)buf)->PktSize, ((PKT_ROBBY_PLAYER_INFO*)buf)->PktId,
+						((PKT_ROBBY_PLAYER_INFO*)buf)->id,  ((PKT_ROBBY_PLAYER_INFO*)buf)->selected_robot });
+					robbyplayermutex.unlock();
+				}
 			}
-		}
-		if (!game_start)
-		{
-			//SetEvent(client_Event[arg->id]);
-			//WaitForSingleObject(Event, INFINITE);
 		}
 	}
 
@@ -890,5 +844,54 @@ void Framework::UpdateScene(CScene * pScene)
 				}
 			}
 		}
+	}
+}
+
+void Framework::PlayGame(CScene * pScene)
+{
+	while (true)
+	{
+		m_GameTimer.Tick(60.0f);
+		elapsed_time = m_GameTimer.GetTimeElapsed();
+
+		//서버의 시간을 모든 플레이어에게 보내줌
+		SendTime(pScene);
+
+		// 씬의 오브젝트 애니메이트
+		UpdateScene(pScene);
+
+		// 충돌 처리
+		CheckCollision(pScene);
+
+		// 플레이어 정보 보내기
+		SendPlayerInfo(pScene);
+
+		// 총알 생성 보내기
+		SendCreateBullet(pScene);
+
+		// 회복 아이템 생성 패킷 보내기(60초마다 생성)
+		SendCreateHeal(pScene);
+
+		// 잔탄 아이템 생성 패킷 보내기(10초마다 생성)
+		SendCreateAmmo(pScene);
+
+
+		// 오브젝트 업데이트 패킷 보내기
+		SendUpfateObject(pScene);
+
+		// 오브젝트 삭제 패킷 보내기
+		SendDeleteObject(pScene);
+
+		// 플레이어 체력/잔탄 변경 패킷 보내기
+		SendPlayerLife(pScene);
+
+		// 이펙트 생성 패킷 보내기
+		SendCreateEffect(pScene);
+
+		PKT_SEND_COMPLETE pkt_cpl;
+		pkt_cpl.PktID = (char)PKT_ID_SEND_COMPLETE;
+		pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
+		Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
+		//std::cout << "패킷 전송 완료\n";
 	}
 }
