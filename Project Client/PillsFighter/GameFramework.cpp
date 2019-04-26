@@ -802,6 +802,13 @@ void CGameFramework::ProcessPacket()
 		m_pScene->JoinPlayer(pPacket->id, pstrid);
 		break;
 	}
+	case PKT_ID_PLAYER_OUT:
+	{
+		PKT_PLAYER_OUT *pPacket = (PKT_PLAYER_OUT*)m_pPacketBuffer;
+
+		m_pScene->LeavePlayer(pPacket->id, true);
+		break;
+	}
 	case PKT_ID_PLAYER_ID:
 	{
 		PKT_CLIENTID *pPacket = (PKT_CLIENTID*)m_pPacketBuffer;

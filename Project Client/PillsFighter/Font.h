@@ -38,13 +38,13 @@ public:
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void SetText(CFontVertex *pFontVertex, int nLength);
+	virtual void SetText(const char *pstrText, CFontVertex *pFontVertex, int nLength);
 
 	virtual void Release();
 	virtual bool IsUsed() { return m_bUse; }
 
-private:
 	virtual void FreeText();
+	char* GetText() { return m_pText; }
 
 protected:
 #define MAX_TEXT_LENGTH 100
@@ -56,6 +56,7 @@ protected:
 	D3D12_VERTEX_BUFFER_VIEW	m_d3dFontView;
 
 	bool						m_bUse = false;
+	char						m_pText[MAX_TEXT_LENGTH];
 };
 
 class CFont
@@ -78,7 +79,9 @@ public:
 
 	void SetSrv(ID3D12Device *pd3dDevice);
 
+	void CreateText(int nLength, CFontVertex* pFontVertices, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
 	CTextObject* SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+	void ChangeText(CTextObject *pTextObject, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:

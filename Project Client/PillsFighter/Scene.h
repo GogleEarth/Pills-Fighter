@@ -134,6 +134,7 @@ public:
 public:
 	void AddFont(ID3D12Device *pd3dDevice, CFont *pFont);
 	CTextObject* AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+	void ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
 
 protected:
 	CFontShader						*m_pFontShader = NULL;
@@ -156,6 +157,7 @@ public: // Network
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
 	virtual void JoinPlayer(int nIndex, const char *pstrPlayerName) {};
+	virtual void LeavePlayer(int nSlotIndex, bool isPlayerIndex) {};
 	virtual void SetPlayerIndex(int nIndex) {}
 
 };
@@ -179,17 +181,24 @@ public:
 	virtual void StartScene();
 
 	virtual void JoinPlayer(int nIndex, const char *pstrPlayerName);
+	virtual void LeavePlayer(int nSlotIndex, bool isPlayerIndex);
 	virtual void SetPlayerIndex(int nIndex);
 	virtual int MouseClick();
+
+	XMFLOAT2 GetPlayerTextPosition();
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	CLobbyShader	*m_pLobbyShader = NULL;
+	CLobbyShader					*m_pLobbyShader = NULL;
 
-	int				m_nPlayerIndex = 0;
-	int				m_nChoiceCharactor = 0;
+	int								m_nMyIndex = 0;
+	int								m_nChoiceCharactor = 0;
+	int								m_nPlayers = 0;
+	CTextObject						*m_ppTextObjects[8] = { NULL };
+	std::unordered_map<int, int>	m_umPlayerInfo; // SlotIndex, ServerIndex
 
+protected:
 	BoundingBox		m_StartButton;
 	bool			m_bHLStartButton = false;
 
@@ -199,6 +208,10 @@ protected:
 	BoundingBox		m_SelectRight;
 	bool			m_bHLSelectRight = false;
 	
+	BoundingBox		m_PlayerSlots[8];
+
+	std::vector<char*> m_vstrPlayerNames;
+
 protected:
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;

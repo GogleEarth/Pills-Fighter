@@ -35,12 +35,20 @@ void CAnimation::SetTimePosition(float fTrackTimePosition)
 	case ANIMATION_TYPE_LOOP:
 	{	
 		m_fAnimationTimePosition = fmod(fTrackTimePosition, m_pfKeyFrameTransformTimes[m_nKeyFrameTransforms - 1]); // m_fPosition = fTrackPosition - int(fTrackPosition / m_pfKeyFrameTransformTimes[m_nKeyFrameTransforms-1]) * m_pfKeyFrameTransformTimes[m_nKeyFrameTransforms-1];
-	//	m_fPosition = fmod(fTrackPosition, m_fLength); //if (m_fPosition < 0) m_fPosition += m_fLength;
+
+		TCHAR pstrDebug[256] = { 0 };
+		_stprintf_s(pstrDebug, 256, _T("Length : %f, Time Position : %f\n"), m_fAnimationLength, m_fAnimationTimePosition);
+		OutputDebugString(pstrDebug);
+		//	m_fPosition = fmod(fTrackPosition, m_fLength); //if (m_fPosition < 0) m_fPosition += m_fLength;
 	//	m_fPosition = fTrackPosition - int(fTrackPosition / m_fLength) * m_fLength;
 		break;
 	}
 	case ANIMATION_TYPE_ONCE:
+	{
+		m_fAnimationTimePosition = m_fAnimationTimePosition > m_fAnimationLength ? m_fAnimationLength : m_fAnimationTimePosition;
+
 		break;
+	}
 	case ANIMATION_TYPE_PINGPONG:
 		break;
 	}
@@ -187,7 +195,11 @@ void CAnimationController::SetTrackAnimation(int nAnimationTrackIndex, int nAnim
 {
 	if (m_pAnimationSet && (nAnimationIndex < m_pAnimationSet->GetAnimationCount()))
 	{
-		if (m_pAnimationTracks) m_pAnimationTracks[nAnimationTrackIndex].SetAnimation(m_pAnimationSet->GetAnimation(nAnimationIndex));
+		if (m_pAnimationTracks)
+		{
+			m_pAnimationTracks[nAnimationTrackIndex].SetAnimation(m_pAnimationSet->GetAnimation(nAnimationIndex));
+			m_pAnimationTracks[nAnimationTrackIndex].SetAnimationState(nAnimationIndex);
+		}
 	}
 }
 
@@ -211,6 +223,11 @@ void CAnimationController::SetTrackWeight(int nAnimationTrack, float fWeight)
 	if (m_pAnimationTracks) m_pAnimationTracks[nAnimationTrack].SetWeight(fWeight);
 }
 
+void CAnimationController::SetTrackAnimationType(int nAnimationTrack, int nType)
+{
+	if (m_pAnimationTracks) m_pAnimationTracks[nAnimationTrack].SetAnimationType(nType);
+}
+
 void CAnimationController::AdvanceTime(float fTimeElapsed)
 {
 	m_fTime += fTimeElapsed;
@@ -221,25 +238,27 @@ void CAnimationController::AdvanceTime(float fTimeElapsed)
 		{
 			CModel *pFrame = m_pAnimationSet->GetCachedFrame(i);
 			pFrame->SetToParent(Matrix4x4::Zero());
+			m_xmf4x4BoneTransforms[i] = Matrix4x4::Zero();
 		}
 
 		for (int j = 0; j < m_nAnimationTracks; j++)
 		{
-			float fPosition = m_pAnimationTracks[j].GetPosition();
-			float fSpeed = m_pAnimationTracks[j].GetSpeed();
-			float fNewPosition = fPosition + (fTimeElapsed * fSpeed);
-			m_pAnimationTracks[j].SetPosition(fNewPosition);
-
-			CAnimation *pAnimation = m_pAnimationTracks[j].GetAnimation();
-			pAnimation->SetTimePosition(fPosition);
-
 			if (m_pAnimationTracks[j].IsEnable())
 			{
+				float fPosition = m_pAnimationTracks[j].GetPosition();
+				float fSpeed = m_pAnimationTracks[j].GetSpeed();
+				float fNewPosition = fPosition + (fTimeElapsed * fSpeed);
+				m_pAnimationTracks[j].SetPosition(fNewPosition);
+
+				CAnimation *pAnimation = m_pAnimationTracks[j].GetAnimation();
+				pAnimation->SetTimePosition(fPosition);
+
 				for (int i = 0; i < m_pAnimationSet->GetAnimationFrames(); i++)
 				{
 					CModel *pFrame = m_pAnimationSet->GetCachedFrame(i);
-					pFrame->SetToParent(Matrix4x4::Add(pFrame->GetToParent(), Matrix4x4::Scale(pAnimation->GetSRT(i), m_pAnimationTracks[j].GetWeight())));
-					m_xmf4x4BoneTransforms[i] = pFrame->GetToParent();
+					XMFLOAT4X4 xmf4x4Transform = Matrix4x4::Scale(pAnimation->GetSRT(i), m_pAnimationTracks[j].GetWeight());
+					pFrame->SetToParent(Matrix4x4::Add(pFrame->GetToParent(), xmf4x4Transform));
+					m_xmf4x4BoneTransforms[i] = Matrix4x4::Add(m_xmf4x4BoneTransforms[i], xmf4x4Transform);
 				}
 			}
 		}

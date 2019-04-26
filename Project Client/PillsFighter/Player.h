@@ -58,18 +58,16 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 protected:
-	//CShader				*m_pUserInterface = NULL;
-
-protected:
 	int					m_nBoosterGauge = 100;
 	float				m_fElapsedBGConsumeTime = 0.0f;
 	float				m_fElapsedBGChargeTime = 0.0f;
 	float				m_fKeepBoosteringTime = 0.0f;
-	float				m_fMaxBoosterPower = 5.0f;
+	float				m_fMaxSpeed = 5.0f;
+	float				m_fBoosterBasicForce = 3.0f;
 	bool				m_bChargeBG = false;
 
 	float				m_fGravAcc;
-	float				m_fMass = 10.0f;
+	float				m_fMass = 15.0f;
 
 	float				m_fVelocityY = 0.0f;
 	float				m_fAccelerationY = 0.0f;
@@ -92,6 +90,7 @@ public:
 	void ProcessHitPoint();
 	void ProcessGravity(float fTimeElapsed);
 
+	void SetAnimationIdle();
 protected:
 	CScene			*m_pScene = NULL;
 

@@ -282,7 +282,7 @@ protected:
 	BOOL	m_bAnimationChanged = FALSE;
 
 public:
-	void ChangeAnimation(int nState);
+	void ChangeAnimation(int nIndex, int nState);
 	int GetAnimationState() { return m_nAnimationState; }
 	BOOL GetAnimationChanged() { return m_bAnimationChanged; }
 	void SetAnimationChanged(BOOL bAnimationChagned) { m_bAnimationChanged = bAnimationChagned; }

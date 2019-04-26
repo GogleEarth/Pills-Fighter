@@ -71,6 +71,22 @@ CTextObject* CScene::AddText(const char *pstrFont, const char *pstrText, XMFLOAT
 	return (pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color));
 }
 
+void CScene::ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+{
+	CFont *pFont = NULL;
+
+	for (const auto& Font : m_vpFonts)
+	{
+		if (!strcmp(Font->GetName(), pstrFont))
+		{
+			pFont = Font;
+			break;
+		}
+	}
+
+	pFont->ChangeText(pTextObject, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color);
+}
+
 void CScene::ReleaseObjects()
 {
 	if (m_pLights)
@@ -795,44 +811,75 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	switch (nMessageID)
-	{
-	case WM_LBUTTONUP:
-		//MouseClick();
-		break;
-	default:
-		break;
-	}
 }
 
 void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
-	//JoinPlayer("First Player");
-	//JoinPlayer("Second Player");
-	//JoinPlayer("Third Player");
-	//JoinPlayer("Fourth Player");
-	//JoinPlayer("Fifth Player");
-	//JoinPlayer("Sixth Player");
-	//JoinPlayer("Seventh Player");
-	//JoinPlayer("Ehighth Player");
+	JoinPlayer(0, "1 : First Player");
+	JoinPlayer(1, "2 : Second Player");
+	JoinPlayer(2, "3 : Third Player");
+	JoinPlayer(3, "4 : Fourth Player");
+	JoinPlayer(4, "5 : Fifth Player");
+	JoinPlayer(5, "6 : Sixth Player");
+	JoinPlayer(6, "7 : Seventh Player");
+	JoinPlayer(7, "8 : Ehighth Player");
 
 	XMFLOAT2 xmf2Center = ::CalculateCenter(0.514688f, 0.902500f, -0.672778f, -0.816111f, true);
 	XMFLOAT2 xmf2Size = ::CalculateSize(0.514688f, 0.902500f, -0.672778f, -0.816111f, true);
-
 	m_StartButton.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
 	m_StartButton.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
 
 	xmf2Center = ::CalculateCenter(0.514688f, 0.701564f, -0.430556f, -0.555556f, true);
 	xmf2Size = ::CalculateSize(0.514688f, 0.701564f, -0.430556f, -0.555556f, true);
-
 	m_SelectLeft.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
 	m_SelectLeft.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
 
 	xmf2Center = ::CalculateCenter(0.718750f, 0.902500f, -0.430556f, -0.555556f, true);
 	xmf2Size = ::CalculateSize(0.718750f, 0.902500f, -0.430556f, -0.555556f, true);
-
 	m_SelectRight.Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
 	m_SelectRight.Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	// left Slots
+	xmf2Center = ::CalculateCenter(-0.898437f, -0.289063f, 0.591667f, 0.308333f, true);
+	xmf2Size = ::CalculateSize(-0.898437f, -0.289063f, 0.591667f, 0.308333f, true);
+	m_PlayerSlots[0].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[0].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(-0.898437f, -0.289063f, 0.213889f, -0.075f, true);
+	xmf2Size = ::CalculateSize(-0.898437f, -0.289063f, 0.213889f, -0.075f, true);
+	m_PlayerSlots[2].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[2].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(-0.898437f, -0.289063f, -0.163889f, -0.447222f, true);
+	xmf2Size = ::CalculateSize(-0.898437f, -0.289063f, -0.163889f, -0.447222f, true);
+	m_PlayerSlots[4].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[4].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(-0.898437f, -0.289063f, -0.536111f, -0.811111f, true);
+	xmf2Size = ::CalculateSize(-0.898437f, -0.289063f, -0.536111f, -0.811111f, true);
+	m_PlayerSlots[6].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[6].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	// right slots
+	xmf2Center = ::CalculateCenter(-0.206250f, 0.4f, 0.591667f, 0.308333f, true);
+	xmf2Size = ::CalculateSize(-0.206250f, 0.4f, 0.591667f, 0.308333f, true);
+	m_PlayerSlots[1].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[1].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(-0.206250f, 0.4f, 0.213889f, -0.075f, true);
+	xmf2Size = ::CalculateSize(-0.206250f, 0.4f, 0.213889f, -0.075f, true);
+	m_PlayerSlots[3].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[3].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(-0.206250f, 0.4f, -0.163889f, -0.447222f, true);
+	xmf2Size = ::CalculateSize(-0.206250f, 0.4f, -0.163889f, -0.447222f, true);
+	m_PlayerSlots[5].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[5].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
+
+	xmf2Center = ::CalculateCenter(-0.206250f, 0.4f, -0.536111f, -0.811111f, true);
+	xmf2Size = ::CalculateSize(-0.206250f, 0.4f, -0.536111f, -0.811111f, true);
+	m_PlayerSlots[7].Center = XMFLOAT3(xmf2Center.x, xmf2Center.y, 1.0f);
+	m_PlayerSlots[7].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
 }
 
 void CLobbyScene::SetPlayerIndex(int nIndex)
@@ -840,7 +887,7 @@ void CLobbyScene::SetPlayerIndex(int nIndex)
 	char id[32];
 	sprintf(id, "%d", nIndex);
 
-	m_nPlayerIndex = nIndex;
+	m_nMyIndex = nIndex;
 	JoinPlayer(nIndex, id);
 }
 
@@ -890,7 +937,7 @@ int CLobbyScene::MouseClick()
 {
 	if (m_pCursor->CollisionCheck(m_StartButton))
 	{
-		if (m_nPlayerIndex == 0)
+		if (m_nMyIndex == 0)
 		{
 			return MOUSE_CLICK_TYPE_START;
 		}
@@ -906,6 +953,14 @@ int CLobbyScene::MouseClick()
 	if (m_pCursor->CollisionCheck(m_SelectRight))
 	{
 		m_nChoiceCharactor = (m_nChoiceCharactor + 1) < MAX_CHARACTERS ? m_nChoiceCharactor + 1 : MAX_CHARACTERS - 1;
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (m_pCursor->CollisionCheck(m_PlayerSlots[i]))
+		{
+			LeavePlayer(m_umPlayerInfo[i], false);
+		}
 	}
 
 	return 0;
@@ -928,23 +983,72 @@ void CLobbyScene::StartScene()
 	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
-void CLobbyScene::JoinPlayer(int nIndex, const char *pstrPlayerName)
+XMFLOAT2 CLobbyScene::GetPlayerTextPosition()
 {
 	XMFLOAT2 xmf2Pos;
-	xmf2Pos.x = -0.862500f;
 	xmf2Pos.y = 0.400000f;
 
-	xmf2Pos.x += (nIndex / 4) * 0.7f;
-	xmf2Pos.y += (nIndex % 4) * -0.375f;
+	if(m_nPlayers % 2 == 0)
+		xmf2Pos.x = -0.862500f;
+	else
+		xmf2Pos.x = -0.862500f + 0.7f;
+
+	xmf2Pos.y += ((int)(m_nPlayers / 2)) * -0.375f;
+	
+	return xmf2Pos;
+}
+
+void CLobbyScene::JoinPlayer(int nIndex, const char *pstrPlayerName)
+{
+	m_umPlayerInfo[m_nPlayers] = nIndex;
+
+	XMFLOAT2 xmf2Pos = GetPlayerTextPosition();
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (nIndex == m_nPlayerIndex)
+	if (nIndex == m_nMyIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
 	}
 
-	AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
+	m_ppTextObjects[m_nPlayers++] = AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
+}
+
+void CLobbyScene::LeavePlayer(int nSlotIndex, bool isPlayerIndex)
+{
+	if (isPlayerIndex)
+	{
+		const auto& i = m_umPlayerInfo.find(nSlotIndex);
+		nSlotIndex = i->first;
+	}
+
+	if (!m_ppTextObjects[nSlotIndex])
+		return;
+
+	m_ppTextObjects[nSlotIndex]->Release();
+	m_ppTextObjects[nSlotIndex] = NULL;
+	m_nPlayers = 0;
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (m_ppTextObjects[i])
+		{
+			m_umPlayerInfo[m_nPlayers] = i;
+
+			XMFLOAT2 xmf2Pos = GetPlayerTextPosition();
+
+			XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+
+			if (i == m_nMyIndex)
+			{
+				xmf4Color.x = 1.0f;
+				xmf4Color.z = 0.0f;
+			}
+
+			ChangeText(m_ppTextObjects[i], "ÈÞ¸Õ¸ÅÁ÷Ã¼", m_ppTextObjects[i]->GetText(), xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
+			m_nPlayers++;
+		}
+	}
 }
 
 void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -954,17 +1058,16 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[0]->Render(pd3dCommandList, 0);
 
-
 	if (m_bHLStartButton)
 	{
-		if(m_nPlayerIndex == 0)
+		if(m_nMyIndex == 0)
 			m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
 		else
 			m_ppTextures[12]->UpdateShaderVariables(pd3dCommandList);
 	}
 	else
 	{
-		if (m_nPlayerIndex == 0)
+		if (m_nMyIndex == 0)
 			m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
 		else
 			m_ppTextures[11]->UpdateShaderVariables(pd3dCommandList);
@@ -1039,9 +1142,13 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 {
 	switch (nMessageID)
 	{
-	case VK_SPACE:
-		m_pPlayer->DeactivationBooster();
-		break;
+	case WM_KEYUP:
+		switch (wParam)
+		{
+		case VK_SPACE:
+			m_pPlayer->DeactivationBooster();
+			break;
+		}
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
@@ -1078,7 +1185,7 @@ void CColonyScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
 	if (pKeysBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 
 	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * fElapsedTime);
-	else m_pPlayer->ChangeAnimation(ANIMATION_STATE_IDLE);
+	else m_pPlayer->SetAnimationIdle();
 
 	if (m_LButtonDown)
 	{
@@ -1888,7 +1995,7 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		if (((PKT_PLAYER_INFO*)pktData)->isChangeAnimation)
 		{
 			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeAnimation(((PKT_PLAYER_INFO*)pktData)->Player_Animation);
+			pObject->ChangeAnimation(0, ((PKT_PLAYER_INFO*)pktData)->Player_Animation);
 		}
 		if (((PKT_PLAYER_INFO*)pktData)->isChangeWeapon)
 		{

@@ -38,8 +38,9 @@ void CTextObject::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 	pd3dCommandList->DrawInstanced(m_nCharacter, 1, 0, 0);
 }
 
-void CTextObject::SetText(CFontVertex *pFontVertex, int nLength)
+void CTextObject::SetText(const char *pstrText, CFontVertex *pFontVertex, int nLength)
 {
+	strcpy_s(m_pText, MAX_TEXT_LENGTH, pstrText);
 	m_nCharacter = nLength;
 	m_pCharacters = pFontVertex;
 	m_bUse = true;
@@ -417,7 +418,7 @@ float CFont::GetKerning(char cFirst, char cSecond)
 	return 0;
 }
 
-CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+void CFont::CreateText(int nLength, CFontVertex* pFontVertices, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
 {
 	float fPaddingW = (m_fLeftPadding + m_fRightPadding) * xmf2Padding.x;
 	float fPaddingH = (m_fTopPadding + m_fBottomPadding) * xmf2Padding.y;
@@ -429,9 +430,6 @@ CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT
 	xmf2Position.y += fStartY;
 
 	XMFLOAT2 xmf2ChPosition = xmf2Position;
-
-	int nLength = (int)strlen(pstrText);
-	CFontVertex *pFontVertices = new CFontVertex[nLength];
 
 	for (int i = 0; i < nLength; i++)
 	{
@@ -460,7 +458,7 @@ CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT
 
 		XMFLOAT2 xmf2Pos;
 		xmf2Pos.x = xmf2ChPosition.x + ((pFontchar->xOffset + fKerning) * xmf2Scale.x);
-		xmf2Pos.y = xmf2ChPosition.y - ( pFontchar->yOffset * xmf2Scale.y);
+		xmf2Pos.y = xmf2ChPosition.y - (pFontchar->yOffset * xmf2Scale.y);
 
 		XMFLOAT2 xmf2UVSize;
 		xmf2UVSize.x = pFontchar->tw;
@@ -480,15 +478,35 @@ CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT
 
 		chPrev = ch;
 	}
+}
+
+CTextObject* CFont::SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+{
+	int nLength = (int)strlen(pstrText);
+	CFontVertex *pFontVertices = new CFontVertex[nLength];
+
+	CreateText(nLength, pFontVertices, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color);
 
 	CTextObject* pTextObject = m_qpTempTextObjects.front();
 	m_qpTempTextObjects.pop();
 
-	pTextObject->SetText(pFontVertices, nLength);
+	pTextObject->SetText(pstrText, pFontVertices, nLength);
 
 	m_vpTextObjects.emplace_back(pTextObject);
 
 	return pTextObject;
+}
+
+void CFont::ChangeText(CTextObject *pTextObject, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+{
+	pTextObject->FreeText();
+
+	int nLength = (int)strlen(pstrText);
+	CFontVertex *pFontVertices = new CFontVertex[nLength];
+
+	CreateText(nLength, pFontVertices, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color);
+
+	pTextObject->SetText(pstrText, pFontVertices, nLength);
 }
 
 void CFont::Render(ID3D12GraphicsCommandList *pd3dCommandList)

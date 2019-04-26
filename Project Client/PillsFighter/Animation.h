@@ -60,8 +60,11 @@ public:
 	void SetCallbackKeys(int nCallbackKeys);
 	void SetCallbackKey(int nKeyIndex, float fTime, UINT nSoundType);
 	void SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler);
+	void SetAnimationType(int nType) { m_nAnimationType = nType; }
 
 	UINT GetCallbackData();
+	float GetLength() { return m_fAnimationLength; }
+	int GetAnimationType() { return m_nAnimationType; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,24 +106,29 @@ public:
 	virtual ~CAnimationTrack() {};
 
 protected:
-	BOOL 			m_bEnable = true;
+	bool 			m_bEnable = true;
 	float 			m_fSpeed = 1.0f;
 	float 			m_fPosition = 0.0f;
 	float 			m_fWeight = 1.0f;
 
 	CAnimation 		*m_pAnimation = NULL;
+	int				m_nAnimationState;
 
 public:
 	void SetAnimation(CAnimation *pAnimation) { m_pAnimation = pAnimation; }
+	void SetAnimationState(int nState) { m_nAnimationState = nState; }
 	void SetEnable(bool bEnable) { m_bEnable = bEnable; }
 	void SetSpeed(float fSpeed) { m_fSpeed = fSpeed; }
 	void SetWeight(float fWeight) { m_fWeight = fWeight; }
 	void SetPosition(float fPosition) { m_fPosition = fPosition; }
+	void SetAnimationType(int nType) { m_pAnimation->SetAnimationType(nType); }
 
 	float GetPosition() { return m_fPosition; }
 	float GetSpeed() { return m_fSpeed; }
 	float GetWeight() {	return m_fWeight; }
+	float GetLength() { return m_pAnimation->GetLength(); }
 	CAnimation* GetAnimation() { return m_pAnimation; }
+	int GetTrackAnimationState() { return m_nAnimationState; }
 	bool IsEnable() { return m_bEnable; }
 };
 
@@ -150,6 +158,7 @@ public:
 	void SetTrackPosition(int nAnimationTrack, float fPosition);
 	void SetTrackSpeed(int nAnimationTrack, float fSpeed);
 	void SetTrackWeight(int nAnimationTrack, float fWeight);
+	void SetTrackAnimationType(int nAnimationTrack, int nType);
 
 	void AdvanceTime(float fElapsedTime);
 	void ApplyTransform();
@@ -157,4 +166,7 @@ public:
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
 	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, UINT nSoundType);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
+
+	int GetTrackAnimationState(int nAnimationTrackIndex) { return m_pAnimationTracks[nAnimationTrackIndex].GetTrackAnimationState(); }
+	CAnimationTrack* GetAnimationTrack(int nAnimationTrackIndex) { return &m_pAnimationTracks[nAnimationTrackIndex]; }
 };

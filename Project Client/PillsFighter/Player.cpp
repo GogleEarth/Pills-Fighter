@@ -18,8 +18,9 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	AddPrepareRotate(0.0f, 180.0f, 0.0f);
 
 	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", true);
-	m_pAnimationController = new CAnimationController(1, pModel->GetAnimationSet());
+	m_pAnimationController = new CAnimationController(2, pModel->GetAnimationSet());
 	m_pAnimationController->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
+	m_pAnimationController->SetTrackEnable(1, false);
 
 	CAnimationCallbackHandler *pAnimationCallbackHandler = new CSoundCallbackHandler();
 
@@ -115,26 +116,29 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_FORWARD)
 		{
-			ChangeAnimation(ANIMATION_STATE_WALK_FORWARD);
+			if(!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_FORWARD);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
 		}
 		if (dwDirection & DIR_BACKWARD)
 		{
-			ChangeAnimation(ANIMATION_STATE_WALK_BACKWARD);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_BACKWARD);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			ChangeAnimation(ANIMATION_STATE_WALK_RIGHT);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_RIGHT);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			ChangeAnimation(ANIMATION_STATE_WALK_LEFT);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_LEFT);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 		}
 
-		if (dwDirection & DIR_UP) ActivationBooster();
+		if (dwDirection & DIR_UP)
+		{
+			ActivationBooster();
+		}
 
 		//if (dwDirection & DIR_DOWN);
 
@@ -229,7 +233,10 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 		SetVelocity(fPlayerVelocity);
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
+
+		m_nState |= OBJECT_STATE_ONGROUND;
 	}
+	else m_nState &= ~OBJECT_STATE_ONGROUND;
 }
 
 void CPlayer::OnCameraUpdateCallback(float fTimeElapsed)
@@ -258,10 +265,25 @@ void CPlayer::ProcessHitPoint()
 	}
 }
 
+void CPlayer::SetAnimationIdle()
+{
+	if (m_nState & OBJECT_STATE_ONGROUND)
+	{
+		ChangeAnimation(0, ANIMATION_STATE_IDLE);
+		m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
+	}
+}
+
 void CPlayer::ActivationBooster()
 {
 	if (!(m_nState & OBJECT_STATE_BOOSTERING) && m_nBoosterGauge > 0)
 	{
+		if (m_nState & OBJECT_STATE_ONGROUND)
+		{
+			ChangeAnimation(0, ANIMATION_STATE_JUMP);
+			m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_ONCE);
+		}
+
 		m_nState |= OBJECT_STATE_BOOSTERING;
 		m_bChargeBG = false;
 		SetElapsedBGConsumeTime();
@@ -277,20 +299,30 @@ void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 {
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
+		if (m_pAnimationController->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
+		{
+			CAnimationTrack *pAnimationTrack = m_pAnimationController->GetAnimationTrack(0);
+			
+			if (pAnimationTrack->GetPosition() >= pAnimationTrack->GetLength())
+			{
+				ChangeAnimation(0, ANIMATION_STATE_JUMP_LOOP);
+				m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
+			}
+		}
+
 		if (m_fElapsedBGConsumeTime <= 0.0f)
 		{
 			SetElapsedBGConsumeTime();
-			m_nBoosterGauge = ((m_nBoosterGauge - 5) <= 0) ? 0 : m_nBoosterGauge - 5;
+			m_nBoosterGauge -= 5;
 		}
 		else m_fElapsedBGConsumeTime -= fTimeElapsed;
 
-		if (m_nBoosterGauge == 0)
+		if (m_nBoosterGauge <= 0)
 		{
 			DeactivationBooster();
 			m_nBoosterGauge = 0;
 		}
-		else
-			m_fKeepBoosteringTime += fTimeElapsed;
+		else m_fKeepBoosteringTime += fTimeElapsed;
 	}
 	else
 	{
@@ -331,11 +363,14 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		float fBoosterPower = m_fGravity * ( (m_fKeepBoosteringTime > m_fMaxBoosterPower) ? m_fMaxBoosterPower : m_fKeepBoosteringTime);
+		float fBoosterPower = m_fGravity * m_fKeepBoosteringTime * m_fBoosterBasicForce;
+
 		m_fAccelerationY += fBoosterPower;
 	}
 
 	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
+	if (m_fVelocityY > m_fMaxSpeed) m_fVelocityY = m_fMaxSpeed;
+
 	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 }
 
