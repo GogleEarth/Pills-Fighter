@@ -6,7 +6,13 @@
 Framework::Framework()
 {
 	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
 		thread[i] = NULL;
+		clients[i].id = i;
+		clients[i].socket = NULL;
+		clients[i].load_complete = false;
+		clients[i].enable = false;
+	}
 
 	count = 0;
 }
@@ -103,7 +109,11 @@ void Framework::main_loop()
 					PKT_CLIENTID pkt_cid;
 					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
 					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
-					pkt_cid.id = count;
+					int id = findindex();
+					if (id != -1)
+						pkt_cid.id = id;
+					else
+						std::cout << "풀방임.\n";
 					if (send(client_sock, (char*)&pkt_cid, pkt_cid.PktSize, 0) == SOCKET_ERROR)
 					{
 						std::cout << "main_loop ERROR : ";
@@ -111,33 +121,51 @@ void Framework::main_loop()
 						break;
 					}
 
-					if (clients.size() > 0)
+
+					m.lock();
+					int numclients = searchenables();
+					m.unlock();
+
+					if (numclients > 0)
 					{
 						PKT_PLAYER_IN pkt_pin;
 						pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
 						pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
-						for (int i = 0; i < count; ++i)
+						for (int i = 0; i < MAX_CLIENT; ++i)
 						{
-							pkt_pin.id = i;
-							std::cout << i << "번쨰 플레이어 정보 정보 보냄\n";
-							retval = send(client_sock, (char*)&pkt_pin, pkt_pin.PktSize, 0);
+							m.lock();
+							bool enable = clients[i].enable;
+							m.unlock();
+							if (enable)
+							{
+								pkt_pin.id = i;
+								std::cout << i << "번쨰 플레이어 정보를 새로 들어온 클라이언트에게 보냄\n";
+								retval = send(client_sock, (char*)&pkt_pin, pkt_pin.PktSize, 0);
+							}
 						}
+						m.lock();
 						for (auto client : clients)
 						{
-							pkt_pin.id = count;
-							std::cout << count << "번쨰 플레이어 정보 정보 입장\n";
-							retval = send(client.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
+							if (client.enable)
+							{
+								pkt_pin.id = id;
+								std::cout << id << "번쨰 플레이어의 입장 다른 플레이어에게 알려줌\n";
+								retval = send(client.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
+							}
 						}
+						m.unlock();
 					}
 
 					m.lock();
-					clients.emplace_back(Client_INFO{ count, client_sock, false });
+					clients[id].id = id;
+					clients[id].enable = true;
+					clients[id].socket = client_sock;
 					m.unlock();
 
 					Arg* arg = new Arg;
 					arg->pthis = this;
 					arg->client_socket = client_sock;
-					arg->id = count;
+					arg->id = id;
 
 					thread[count] = CreateThread(
 						NULL, 0, client_thread,
@@ -206,7 +234,8 @@ int Framework::Send_msg(char * buf, int len, int flags)
 	m.lock();
 	for (auto d : clients)
 	{
-		send(d.socket, buf, len, flags);
+		if(d.enable)
+			send(d.socket, buf, len, flags);
 	}
 	m.unlock();
 	return 0;
@@ -220,88 +249,93 @@ DWORD __stdcall Framework::Update(LPVOID arg)
 
 DWORD Framework::Update_Process(CScene* pScene)
 {
-	//robby 처리
 	while (true)
 	{
-		robbyplayermutex.lock();
-		if (robby_player_msg_queue.size() > 0)
+		//robby 처리
+		while (true)
 		{
-			PKT_ROBBY_PLAYER_INFO RPIpkt;
-			RPIpkt = robby_player_msg_queue.front();
-			robby_player_msg_queue.pop();
-			Send_msg((char*)&RPIpkt, RPIpkt.PktSize, 0);
-		}
-		robbyplayermutex.unlock();
+			robbyplayermutex.lock();
+			if (robby_player_msg_queue.size() > 0)
+			{
+				PKT_ROBBY_PLAYER_INFO RPIpkt;
+				RPIpkt = robby_player_msg_queue.front();
+				robby_player_msg_queue.pop();
+				Send_msg((char*)&RPIpkt, RPIpkt.PktSize, 0);
+			}
+			robbyplayermutex.unlock();
 
-		if (game_start)
+			if (game_start)
+			{
+				playernum = count;
+				count = -1;
+				std::cout << "게임 시작!\n";
+				break;
+			}
+		}
+
+		int retval;
+		CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
+
+		PKT_GAME_START pktgamestart;
+		pktgamestart.PktID = PKT_ID_GAME_START;
+		pktgamestart.PktSize = sizeof(PKT_GAME_START);
+		Send_msg((char*)&pktgamestart, pktgamestart.PktSize, 0);
+
+		//모든 플레이어의 로딩끝날때까지 대기
+		int load_count;
+		while (true)
 		{
-			playernum = count;
-			count = -1;
-			std::cout << "게임 시작!\n";
-			break;
+			load_count = 0;
+			m.lock();
+			for (auto d : clients)
+			{
+				if (d.load_complete)
+					load_count++;
+			}
+			m.unlock();
+			if (load_count == playernum)
+				break;
 		}
-	}
 
-	int retval;
-	CGameObject** Objects = pScene->GetObjects(OBJECT_TYPE_OBSTACLE);
+		PKT_LOAD_COMPLETE pktgamestate;
+		pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
+		pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
+		retval = Send_msg((char*)&pktgamestate, pktgamestate.PktSize, 0);
+		std::cout << "전원 로드 완료\n";
 
-	PKT_GAME_START pktgamestart;
-	pktgamestart.PktID = PKT_ID_GAME_START;
-	pktgamestart.PktSize = sizeof(PKT_GAME_START);
-	Send_msg((char*)&pktgamestart, pktgamestart.PktSize, 0);
-
-	//모든 플레이어의 로딩끝날때까지 대기
-	int load_count;
-	while (true)
-	{
-		load_count = 0;
 		m.lock();
 		for (auto d : clients)
 		{
-			if (d.load_complete)
-				load_count++;
-		}
-		m.unlock();
-		if (load_count == playernum)
-			break;
-	}
-
-	PKT_LOAD_COMPLETE pktgamestate;
-	pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
-	pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
-	retval = Send_msg((char*)&pktgamestate, pktgamestate.PktSize, 0);
-	std::cout << "전원 로드 완료\n";
-
-	m.lock();
-	for (auto d : clients)
-	{
-		PKT_PLAYER_INFO pktdata;
-		pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
-		pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
-		PKT_CREATE_OBJECT anotherpktdata;
-		pktdata.ID = d.id;
-		pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
-		m_pScene->m_pObjects[d.id]->m_bPlay = true;
+			PKT_PLAYER_INFO pktdata;
+			pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
+			pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
+			PKT_CREATE_OBJECT anotherpktdata;
+			pktdata.ID = d.id;
+			pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
+			m_pScene->m_pObjects[d.id]->m_bPlay = true;
 			pktdata.IsShooting = false;
-		for (int i = 0; i < playernum; ++i)
-		{
-			if (i != d.id)
+			for (int i = 0; i < playernum; ++i)
 			{
-				anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
-				anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
-				anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
-				anotherpktdata.Object_Index = i;
-				anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
-				retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
-				retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
+				if (i != d.id)
+				{
+					anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
+					anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+					anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+					anotherpktdata.Object_Index = i;
+					anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+					retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
+					retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
+				}
 			}
 		}
+		m.unlock();
+
+		game_start = false;
+
+		PlayGame(pScene);
 	}
-	m.unlock();
 
-	game_start = false;
-
-	PlayGame(pScene);
+	return 0;
 }
 
 DWORD __stdcall Framework::client_thread(LPVOID arg)
@@ -335,10 +369,20 @@ DWORD Framework::client_process(Client_arg* arg)
 			retval = recvn(client_socket, (char*)&iPktID, sizeof(PKT_ID), 0);
 			if (retval == SOCKET_ERROR)
 			{
-				std::cout << "소켓 에러 : " << arg->id << "번 플레이어\n";
+				std::cout << "소켓 에러 : " << arg->id << "번 플레이어 나감\n";
 				Player_out = true;
-
+				m.lock();
+				clients[arg->id].enable = false;
+				m.unlock();
 				closesocket(client_socket);
+				PKT_PLAYER_OUT playerout;
+				playerout.id = arg->id;
+				playerout.PktId = PKT_ID_PLAYER_OUT;
+				playerout.PktSize = sizeof(PKT_PLAYER_OUT);
+				Send_msg((char*)&playerout, playerout.PktSize, 0);
+				std::cout << arg->id << "번 플레이어 스레드 종료\n";
+				m_pScene->m_pObjects[arg->id]->m_bPlay = false;
+				return 0;
 			}
 			else
 			{
@@ -599,6 +643,28 @@ void Framework::CheckCollision(CScene* pScene)
 			}
 		}
 	}
+}
+
+int Framework::findindex()
+{
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		bool enable = clients[i].enable;
+		if(enable == false)
+			return i;
+	}
+	return -1;
+}
+
+int Framework::searchenables()
+{
+	int returnvalue = 0;
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		if (clients[i].enable)
+			returnvalue++;
+	}
+	return returnvalue;
 }
 
 void Framework::SendCreateEffect(CScene* pScene)

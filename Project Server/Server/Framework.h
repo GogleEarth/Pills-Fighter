@@ -10,6 +10,7 @@ struct Client_INFO
 	int id;
 	SOCKET socket;
 	bool load_complete;
+	bool enable;
 };
 
 struct Client_arg
@@ -25,18 +26,24 @@ class Framework
 
 	HANDLE thread[MAX_CLIENT];
 	HANDLE update_thread;
+
+	Client_INFO clients[MAX_CLIENT];
 	std::mutex m;
+
 	std::queue<PKT_PLAYER_INFO> msg_queue;
 	std::mutex playerinfomutex;
+
 	std::queue<PKT_PLAYER_LIFE> life_msg_queue;
 	std::queue<PKT_DELETE_OBJECT> delete_msg_queue;
 	std::queue<PKT_UPDATE_OBJECT> update_msg_queue;
 	std::queue<PKT_CREATE_EFFECT> effect_msg_queue;
+
 	std::queue<PKT_SHOOT> shoot_msg_queue;
 	std::mutex shootmutex;
+
 	std::queue<PKT_ROBBY_PLAYER_INFO> robby_player_msg_queue;
 	std::mutex robbyplayermutex;
-	std::vector<Client_INFO> clients;
+
 	int count = 0;
 	CModel PlayerMesh;
 	CModel BulletMesh;
@@ -51,22 +58,30 @@ class Framework
 	float elapsed_time;
 public:
 	CScene* m_pScene;
+
 	Framework();
 	~Framework();
+
 	void Build();
 	void Release();
 	void main_loop();
-	//int CreateThread();
+
 	void err_quit(char* msg);
 	void err_display(char* msg);
 	int recvn(SOCKET s, char* buf, int len, int flags);
 	int Send_msg(char* buf, int len, int flags);
+
 	static DWORD WINAPI Update(LPVOID arg);
 	DWORD Update_Process(CScene* pScene);
 	static DWORD WINAPI client_thread(LPVOID arg);
 	DWORD client_process(Client_arg* arg);
+
 	// 충돌 체크를 검사한다.
 	void CheckCollision(CScene* pScene);
+
+	int findindex();
+	int searchenables();
+
 	void SendCreateEffect(CScene* pScene);
 	void SendPlayerInfo(CScene* pScene);
 	void SendUpfateObject(CScene* pScene);
