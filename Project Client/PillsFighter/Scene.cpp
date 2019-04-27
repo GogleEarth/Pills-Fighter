@@ -815,6 +815,7 @@ void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
+#ifndef ON_NETWORKING
 	JoinPlayer(0, "1 : First Player");
 	JoinPlayer(1, "2 : Second Player");
 	JoinPlayer(2, "3 : Third Player");
@@ -823,6 +824,7 @@ void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 	JoinPlayer(5, "6 : Sixth Player");
 	JoinPlayer(6, "7 : Seventh Player");
 	JoinPlayer(7, "8 : Ehighth Player");
+#endif
 
 	XMFLOAT2 xmf2Center = ::CalculateCenter(0.514688f, 0.902500f, -0.672778f, -0.816111f, true);
 	XMFLOAT2 xmf2Size = ::CalculateSize(0.514688f, 0.902500f, -0.672778f, -0.816111f, true);
@@ -955,6 +957,7 @@ int CLobbyScene::MouseClick()
 		m_nChoiceCharactor = (m_nChoiceCharactor + 1) < MAX_CHARACTERS ? m_nChoiceCharactor + 1 : MAX_CHARACTERS - 1;
 	}
 
+#ifndef ON_NETWORKING
 	for (int i = 0; i < 8; i++)
 	{
 		if (m_pCursor->CollisionCheck(m_PlayerSlots[i]))
@@ -962,6 +965,7 @@ int CLobbyScene::MouseClick()
 			LeavePlayer(m_umPlayerInfo[i], false);
 		}
 	}
+#endif
 
 	return 0;
 }
