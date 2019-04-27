@@ -16,6 +16,8 @@ ID3D12DescriptorHeap			*CScene::m_pd3dDsvDescriptorHeap;
 D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvCPUDesciptorStartHandle;
 D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvGPUDesciptorStartHandle;
 
+int								CScene::m_nPlayerRobotType = SKINNED_OBJECT_INDEX_GM;
+
 extern CFMODSound gFmodSound;
 
 CScene::CScene()
@@ -807,6 +809,40 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	//xmf2Size = ::CalculateSize(0.784375f, 0.902500f, -0.188889f, -0.322222f);
 
 	m_pCursor = new CCursor(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+
+	// left
+	xmf2Center = ::CalculateCenter(-0.414063f, -0.289063f, 0.591667f, 0.308333f);
+	xmf2Size = ::CalculateSize(-0.414063f, -0.289063f, 0.591667f, 0.308333f);
+	m_ppPlayerRobotRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(-0.414063f, -0.289063f, 0.213889f, -0.075f);
+	xmf2Size = ::CalculateSize(-0.414063f, -0.289063f, 0.213889f, -0.075f);
+	m_ppPlayerRobotRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(-0.414063f, -0.289063f, -0.163889f, -0.447222f);
+	xmf2Size = ::CalculateSize(-0.414063f, -0.289063f, -0.163889f, -0.447222f);
+	m_ppPlayerRobotRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(-0.414063f, -0.289063f, -0.536111f, -0.811111f);
+	xmf2Size = ::CalculateSize(-0.414063f, -0.289063f, -0.536111f, -0.811111f);
+	m_ppPlayerRobotRects[6] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	// right
+	xmf2Center = ::CalculateCenter(0.278125f, 0.4f, 0.591667f, 0.308333f);
+	xmf2Size = ::CalculateSize(0.278125f, 0.4f, 0.591667f, 0.308333f);
+	m_ppPlayerRobotRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.278125f, 0.4f, 0.213889f, -0.075f);
+	xmf2Size = ::CalculateSize(0.278125f, 0.4f, 0.213889f, -0.075f);
+	m_ppPlayerRobotRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.278125f, 0.4f, -0.163889f, -0.447222f);
+	xmf2Size = ::CalculateSize(0.278125f, 0.4f, -0.163889f, -0.447222f);
+	m_ppPlayerRobotRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.278125f, 0.4f, -0.536111f, -0.811111f);
+	xmf2Size = ::CalculateSize(0.278125f, 0.4f, -0.536111f, -0.811111f);
+	m_ppPlayerRobotRects[7] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -884,13 +920,18 @@ void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 	m_PlayerSlots[7].Extents = XMFLOAT3(xmf2Size.x, xmf2Size.y, 1.0f);
 }
 
-void CLobbyScene::SetPlayerIndex(int nIndex)
+void CLobbyScene::SetPlayerIndex(int nServerIndex)
 {
 	char id[32];
-	sprintf(id, "%d", nIndex);
+	sprintf(id, "%d", nServerIndex);
 
-	m_nMyIndex = nIndex;
-	JoinPlayer(nIndex, id);
+	m_nMyIndex = nServerIndex;
+	JoinPlayer(nServerIndex, id);
+}
+
+void CLobbyScene::ChangeSelectRobot(int nServerIndex, int nRobotType)
+{
+	m_umPlayerInfo[nServerIndex].nRobotType = nRobotType;
 }
 
 void CLobbyScene::ReleaseObjects()
@@ -907,6 +948,12 @@ void CLobbyScene::ReleaseObjects()
 	{
 		if (m_ppTextures[i])
 			delete m_ppTextures[i];
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (m_ppPlayerRobotRects[i])
+			delete m_ppPlayerRobotRects[i];
 	}
 
 	if (m_pLobbyShader) delete m_pLobbyShader;
@@ -932,6 +979,12 @@ void CLobbyScene::ReleaseUploadBuffers()
 		}
 	}
 
+	for (int i = 0; i < 8; i++)
+	{
+		if (m_ppPlayerRobotRects[i])
+			m_ppPlayerRobotRects[i]->ReleaseUploadBuffers();
+	}
+
 	if (m_pCursor) m_pCursor->ReleaseUploadBuffer();
 }
 
@@ -951,10 +1004,16 @@ int CLobbyScene::MouseClick()
 	if (m_pCursor->CollisionCheck(m_SelectLeft))
 	{
 		m_nChoiceCharactor = (m_nChoiceCharactor - 1) > 0 ? m_nChoiceCharactor - 1 : 0;
+		CScene::m_nPlayerRobotType = m_nChoiceCharactor;
+
+		return MOUSE_CLICK_SELECT_ROBOT;
 	}
 	if (m_pCursor->CollisionCheck(m_SelectRight))
 	{
 		m_nChoiceCharactor = (m_nChoiceCharactor + 1) < MAX_CHARACTERS ? m_nChoiceCharactor + 1 : MAX_CHARACTERS - 1;
+		CScene::m_nPlayerRobotType = m_nChoiceCharactor;
+
+		return MOUSE_CLICK_SELECT_ROBOT;
 	}
 
 #ifndef ON_NETWORKING
@@ -962,7 +1021,14 @@ int CLobbyScene::MouseClick()
 	{
 		if (m_pCursor->CollisionCheck(m_PlayerSlots[i]))
 		{
-			LeavePlayer(m_umPlayerInfo[i], false);
+			int nServerIndex = -1;
+			for (const auto& info : m_umPlayerInfo)
+				if (info.second.nSlotIndex == i)
+					nServerIndex = info.first;
+
+			if (nServerIndex == -1) continue;
+
+			LeavePlayer(nServerIndex);
 		}
 	}
 #endif
@@ -992,66 +1058,65 @@ XMFLOAT2 CLobbyScene::GetPlayerTextPosition()
 	XMFLOAT2 xmf2Pos;
 	xmf2Pos.y = 0.400000f;
 
-	if(m_nPlayers % 2 == 0)
+	if(m_nCurrentSlotIndex % 2 == 0)
 		xmf2Pos.x = -0.862500f;
 	else
 		xmf2Pos.x = -0.862500f + 0.7f;
 
-	xmf2Pos.y += ((int)(m_nPlayers / 2)) * -0.375f;
+	xmf2Pos.y += ((int)(m_nCurrentSlotIndex / 2)) * -0.378f;
 	
+	m_nCurrentSlotIndex++;
+
 	return xmf2Pos;
 }
 
-void CLobbyScene::JoinPlayer(int nIndex, const char *pstrPlayerName)
+void CLobbyScene::JoinPlayer(int nServerIndex, const char *pstrPlayerName)
 {
-	m_umPlayerInfo[m_nPlayers] = nIndex;
+	m_umPlayerInfo[nServerIndex].nSlotIndex = m_nCurrentSlotIndex;
+	m_umPlayerInfo[nServerIndex].nRobotType = SKINNED_OBJECT_INDEX_GM;
 
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition();
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (nIndex == m_nMyIndex)
+	if (nServerIndex == m_nMyIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
 	}
 
-	m_ppTextObjects[m_nPlayers++] = AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
+	m_ppTextObjects[nServerIndex] = AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(0.8f, 0.8f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
 }
 
-void CLobbyScene::LeavePlayer(int nSlotIndex, bool isPlayerIndex)
+void CLobbyScene::LeavePlayer(int nServerIndex)
 {
-	if (isPlayerIndex)
-	{
-		const auto& i = m_umPlayerInfo.find(nSlotIndex);
-		nSlotIndex = i->first;
-	}
-
-	if (!m_ppTextObjects[nSlotIndex])
+	int nSlotIndex = m_umPlayerInfo[nServerIndex].nSlotIndex;
+	
+	if (!m_ppTextObjects[nServerIndex])
 		return;
 
-	m_ppTextObjects[nSlotIndex]->Release();
-	m_ppTextObjects[nSlotIndex] = NULL;
-	m_nPlayers = 0;
+	m_ppTextObjects[nServerIndex]->Release();
+	m_ppTextObjects[nServerIndex] = NULL;
+	m_nCurrentSlotIndex = 0;
 
-	for (int i = 0; i < 8; i++)
+	m_umPlayerInfo.erase(nServerIndex);
+
+	for (auto& playerinfo : m_umPlayerInfo)
 	{
-		if (m_ppTextObjects[i])
+		int nServerIndex = playerinfo.first;
+
+		playerinfo.second.nSlotIndex = m_nCurrentSlotIndex;
+
+		XMFLOAT2 xmf2Pos = GetPlayerTextPosition();
+
+		XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+
+		if (nServerIndex == m_nMyIndex)
 		{
-			m_umPlayerInfo[m_nPlayers] = i;
-
-			XMFLOAT2 xmf2Pos = GetPlayerTextPosition();
-
-			XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-
-			if (i == m_nMyIndex)
-			{
-				xmf4Color.x = 1.0f;
-				xmf4Color.z = 0.0f;
-			}
-
-			ChangeText(m_ppTextObjects[i], "ÈÞ¸Õ¸ÅÁ÷Ã¼", m_ppTextObjects[i]->GetText(), xmf2Pos, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
-			m_nPlayers++;
+			xmf4Color.x = 1.0f;
+			xmf4Color.z = 0.0f;
 		}
+
+		ChangeText(m_ppTextObjects[nServerIndex], "ÈÞ¸Õ¸ÅÁ÷Ã¼", m_ppTextObjects[nServerIndex]->GetText(), xmf2Pos, XMFLOAT2(0.8f, 0.8f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
 	}
 }
 
@@ -1090,17 +1155,33 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 		m_ppTextures[5]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[3]->Render(pd3dCommandList, 0);
 
-	if (m_nChoiceCharactor == 0)
+	if (m_nChoiceCharactor == SKINNED_OBJECT_INDEX_GM)
 		m_ppTextures[8]->UpdateShaderVariables(pd3dCommandList);
 	else
 		m_ppTextures[7]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[4]->Render(pd3dCommandList, 0);
 
-	if (m_nChoiceCharactor == 1)
+	if (m_nChoiceCharactor == SKINNED_OBJECT_INDEX_GUNDAM)
 		m_ppTextures[10]->UpdateShaderVariables(pd3dCommandList);
 	else
 		m_ppTextures[9]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[5]->Render(pd3dCommandList, 0);
+
+	for (auto& playerinfo : m_umPlayerInfo)
+	{
+		int nServerIndex = playerinfo.first;
+		int nSlotIndex = playerinfo.second.nSlotIndex;
+		int nRobotType = playerinfo.second.nRobotType;
+
+		if (!m_ppTextObjects[nServerIndex]) continue;
+
+		if (nRobotType == SKINNED_OBJECT_INDEX_GM)
+			m_ppTextures[7]->UpdateShaderVariables(pd3dCommandList);
+		else if (nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
+			m_ppTextures[9]->UpdateShaderVariables(pd3dCommandList);
+
+		m_ppPlayerRobotRects[nSlotIndex]->Render(pd3dCommandList, 0);
+	}
 
 	CScene::Render(pd3dCommandList, pCamera);
 
@@ -1898,7 +1979,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_SKINND_OBJECTS];
 
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, SKINNED_OBJECT_INDEX_GM, true, NULL);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, pCreateObjectInfo->Robot_Type, true, NULL);
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());

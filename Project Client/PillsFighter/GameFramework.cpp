@@ -320,7 +320,7 @@ void CGameFramework::BuildColonyScene()
 
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
-	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain());
+	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain(), m_pScene->GetPlayerRobotType());
 	pPlayer->SetMovingSpeed(100.0f);
 	pPlayer->SetHitPoint(100);
 
@@ -366,6 +366,7 @@ void CGameFramework::BuildObjects()
 	::pCommandList = m_pd3dCommandList;
 
 	BuildScene(SCENE_TYPE_LOBBY);
+	//BuildScene(SCENE_TYPE_COLONY);
 }
 
 void CGameFramework::ReleaseObjects()
@@ -423,6 +424,13 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 				BuildScene(SCENE_TYPE_COLONY);
 #endif
 				break;
+			}
+			case MOUSE_CLICK_SELECT_ROBOT:
+			{
+#ifdef ON_NETWORKING
+				SendToServer(PKT_ID_LOBBY_PLAYER_INFO);
+#endif
+
 			}
 		}
 		break;
@@ -806,7 +814,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_PLAYER_OUT *pPacket = (PKT_PLAYER_OUT*)m_pPacketBuffer;
 
-		m_pScene->LeavePlayer(pPacket->id, true);
+//		m_pScene->LeavePlayer(pPacket->id, true);
 		break;
 	}
 	case PKT_ID_PLAYER_ID:
@@ -844,6 +852,13 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_SEND_COMPLETE:
 	{
 		m_bSend_Complete = true;
+		break;
+	}
+	case PKT_ID_LOBBY_PLAYER_INFO:
+	{
+		PKT_LOBBY_PLAYER_INFO *pPacket = (PKT_LOBBY_PLAYER_INFO*)m_pPacketBuffer;
+
+		m_pScene->ChangeSelectRobot(pPacket->id, pPacket->selected_robot);
 		break;
 	}
 	break;
@@ -1004,6 +1019,18 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
+		break;
+	}
+	case PKT_ID_LOBBY_PLAYER_INFO:
+	{
+		PKT_LOBBY_PLAYER_INFO pktToServer;
+		pktToServer.id = m_nClinetIndex;
+		pktToServer.PktId = PKT_ID_LOBBY_PLAYER_INFO;
+		pktToServer.PktSize = sizeof(pktToServer);
+		pktToServer.selected_robot = m_pScene->GetPlayerRobotType();
+
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send LOBBY Player Info Error\n");
 		break;
 	}
 	default:

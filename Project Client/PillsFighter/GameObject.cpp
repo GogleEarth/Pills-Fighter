@@ -726,7 +726,6 @@ void CAnimationObject::ChangeAnimation(int nIndex, int nState)
 	if (nState != m_nAnimationState)
 	{
 		m_nAnimationState = nState;
-		m_pAnimationController->SetTrackPosition(nIndex, 0.0f);
 		m_pAnimationController->SetTrackAnimation(nIndex, nState);
 
 		m_bAnimationChanged = TRUE;
@@ -765,6 +764,7 @@ void CRobotObject::OnPrepareAnimate()
 	m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
 	m_pLeftNozzle = m_pModel->FindFrame("Bone001");
 	m_pRightNozzle = m_pModel->FindFrame("Bone002");
+	m_pMuzzle = m_pModel->FindFrame("FirePoint");
 }
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
@@ -788,6 +788,7 @@ void CRobotObject::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList
 	pWeapon->SetModel(pWeaponModel);
 	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pWeapon->SetType(nType);
+	pWeapon->AddPrepareRotate(180.0f, 90.0f, -90.0f);
 
 	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
 

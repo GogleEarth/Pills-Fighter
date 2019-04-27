@@ -8,7 +8,7 @@
 
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
-CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext) : CRobotObject()
+CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext, int nRobotType) : CRobotObject()
 {
 	m_pCamera = SetCamera(0.0f);
 
@@ -17,7 +17,21 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	AddPrepareRotate(0.0f, 180.0f, 0.0f);
 
-	CModel *pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", true);
+	CModel *pModel;
+
+	switch (nRobotType)
+	{
+	case SKINNED_OBJECT_INDEX_GM:
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", true);
+		break;
+	case SKINNED_OBJECT_INDEX_GUNDAM:
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", true);
+		break;
+	default:
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", true);
+		break;
+	}
+
 	m_pAnimationController = new CAnimationController(2, pModel->GetAnimationSet());
 	m_pAnimationController->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 	m_pAnimationController->SetTrackEnable(1, false);
@@ -204,7 +218,7 @@ XMFLOAT4X4 CPlayer::GetToTarget()
 		xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
 		xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
 
-	XMFLOAT3 xmf3Position = Vector3::Add(GetPosition(), XMFLOAT3(0.0f, 10.0f, 0.0f));
+	XMFLOAT3 xmf3Position = m_pMuzzle->GetPosition();
 	XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
 	XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3DestPos, xmf3Position));
 	XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
@@ -539,6 +553,7 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pWeapon->Initialize();
 	pWeapon->SetForCreate(pd3dDevice, pd3dCommandList);
+	pWeapon->AddPrepareRotate(180.0f, 90.0f, -90.0f);
 
 	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
 
