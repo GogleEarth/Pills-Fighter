@@ -254,15 +254,15 @@ DWORD Framework::Update_Process(CScene* pScene)
 		//robby 처리
 		while (true)
 		{
-			robbyplayermutex.lock();
-			if (robby_player_msg_queue.size() > 0)
+			lobbyplayermutex.lock();
+			if (lobby_player_msg_queue.size() > 0)
 			{
-				PKT_ROBBY_PLAYER_INFO RPIpkt;
-				RPIpkt = robby_player_msg_queue.front();
-				robby_player_msg_queue.pop();
+				PKT_LOBBY_PLAYER_INFO RPIpkt;
+				RPIpkt = lobby_player_msg_queue.front();
+				lobby_player_msg_queue.pop();
 				Send_msg((char*)&RPIpkt, RPIpkt.PktSize, 0);
 			}
-			robbyplayermutex.unlock();
+			lobbyplayermutex.unlock();
 
 			if (game_start)
 			{
@@ -313,6 +313,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 			pktdata.ID = d.id;
 			pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
 			m_pScene->m_pObjects[d.id]->m_bPlay = true;
+			m_pScene->m_pObjects[d.id]->m_iId = d.id;
 			pktdata.IsShooting = false;
 			for (int i = 0; i < playernum; ++i)
 			{
@@ -331,6 +332,9 @@ DWORD Framework::Update_Process(CScene* pScene)
 		m.unlock();
 
 		game_start = false;
+
+		BlueScore = 100;
+		RedScore = 100;
 
 		PlayGame(pScene);
 	}
@@ -391,7 +395,7 @@ DWORD Framework::client_process(Client_arg* arg)
 				else if (iPktID == PKT_ID_GAME_START) nPktSize = sizeof(PKT_GAME_START);
 				else if (iPktID == PKT_ID_LOAD_COMPLETE) nPktSize = sizeof(PKT_LOAD_COMPLETE);
 				else if (iPktID == PKT_ID_SHOOT) nPktSize = sizeof(PKT_SHOOT);
-				else if (iPktID == PKT_ID_ROBBY_PLAYER_INFO) nPktSize = sizeof(PKT_ROBBY_PLAYER_INFO);
+				else if (iPktID == PKT_ID_LOBBY_PLAYER_INFO) nPktSize = sizeof(PKT_LOBBY_PLAYER_INFO);
 				else std::cout << "[ERROR] 패킷 ID 식별 불가 ID : " << iPktID << std::endl;
 
 				// 데이터 받기 # 패킷 구조체 - 결정
@@ -429,12 +433,12 @@ DWORD Framework::client_process(Client_arg* arg)
 					m.unlock();
 					continue;
 				}
-				else if (iPktID == PKT_ID_ROBBY_PLAYER_INFO)
+				else if (iPktID == PKT_ID_LOBBY_PLAYER_INFO)
 				{
-					robbyplayermutex.lock();
-					robby_player_msg_queue.push(PKT_ROBBY_PLAYER_INFO{ ((PKT_ROBBY_PLAYER_INFO*)buf)->PktSize, ((PKT_ROBBY_PLAYER_INFO*)buf)->PktId,
-						((PKT_ROBBY_PLAYER_INFO*)buf)->id,  ((PKT_ROBBY_PLAYER_INFO*)buf)->selected_robot });
-					robbyplayermutex.unlock();
+					lobbyplayermutex.lock();
+					lobby_player_msg_queue.push(PKT_LOBBY_PLAYER_INFO{ ((PKT_LOBBY_PLAYER_INFO*)buf)->PktSize, ((PKT_LOBBY_PLAYER_INFO*)buf)->PktId,
+						((PKT_LOBBY_PLAYER_INFO*)buf)->id,  ((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot });
+					lobbyplayermutex.unlock();
 				}
 			}
 		}
@@ -508,39 +512,33 @@ void Framework::CheckCollision(CScene* pScene)
 							pktLF.HP = Bullet->hp;
 							life_msg_queue.push(pktLF);
 							Bullet->Delete();
+
+							pScene->m_pObjects[k]->hp -= Bullet->hp;
+							if (pScene->m_pObjects[k]->hp <= 0)
+							{
+								if (pScene->m_pObjects[k]->m_iId % 2)
+								{
+									RedScore -= 5;
+								}
+								else
+								{
+									BlueScore -= 5;
+								}
+
+								PKT_SCORE scorepkt;
+								scorepkt.PktSize = sizeof(PKT_SCORE);
+								scorepkt.PktId = PKT_ID_SCORE;
+								scorepkt.BlueScore = BlueScore;
+								scorepkt.RedScore = RedScore;
+								Send_msg((char*)&scorepkt, scorepkt.PktSize, 0);
+								pScene->m_pObjects[k]->hp = PLAYER_HP;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-
-	//// 총알과 바닥
-	//for (const auto& Bullet : vPlayerBulletObjects)
-	//{
-	//	if (!Bullet->IsDelete())
-	//	{
-	//		std::cout << "총알 y좌표 : " << Bullet->GetPosition().y << std::endl;
-	//		if (Bullet->GetPosition().y < 0.0f);
-	//		{
-	//			XMFLOAT3 position = Bullet->GetPosition();
-	//			pktCE.PktId = PKT_ID_CREATE_EFFECT;
-	//			pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-	//			if (Bullet->m_Object_Type == OBJECT_TYPE_BZK_BULLET)
-	//				pktCE.efType = EFFECT_TYPE_EXPLOSION;
-	//			else
-	//				pktCE.efType = EFFECT_TYPE_HIT;
-	//			pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-	//			pktCE.xmf3Position = position;
-	//			effect_msg_queue.push(pktCE);
-	//			pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
-	//			pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
-	//			pktDO.Object_Index = Bullet->index;
-	//			delete_msg_queue.push(pktDO);
-	//			Bullet->Delete();
-	//		}
-	//	}
-	//}
 
 	//// 플레이어의 총알과 장애물의 충돌처리
 	//for (const auto& Bullet : vPlayerBulletObjects)
@@ -917,47 +915,50 @@ void Framework::PlayGame(CScene * pScene)
 {
 	while (true)
 	{
-		m_GameTimer.Tick(60.0f);
-		elapsed_time = m_GameTimer.GetTimeElapsed();
+		if (BlueScore > 0 && RedScore > 0)
+		{
+			m_GameTimer.Tick(60.0f);
+			elapsed_time = m_GameTimer.GetTimeElapsed();
 
-		//서버의 시간을 모든 플레이어에게 보내줌
-		SendTime(pScene);
+			//서버의 시간을 모든 플레이어에게 보내줌
+			SendTime(pScene);
 
-		// 씬의 오브젝트 애니메이트
-		UpdateScene(pScene);
+			// 씬의 오브젝트 애니메이트
+			UpdateScene(pScene);
 
-		// 충돌 처리
-		CheckCollision(pScene);
+			// 충돌 처리
+			CheckCollision(pScene);
 
-		// 플레이어 정보 보내기
-		SendPlayerInfo(pScene);
+			// 플레이어 정보 보내기
+			SendPlayerInfo(pScene);
 
-		// 총알 생성 보내기
-		SendCreateBullet(pScene);
+			// 총알 생성 보내기
+			SendCreateBullet(pScene);
 
-		// 회복 아이템 생성 패킷 보내기(60초마다 생성)
-		SendCreateHeal(pScene);
+			// 회복 아이템 생성 패킷 보내기(60초마다 생성)
+			SendCreateHeal(pScene);
 
-		// 잔탄 아이템 생성 패킷 보내기(10초마다 생성)
-		SendCreateAmmo(pScene);
+			// 잔탄 아이템 생성 패킷 보내기(10초마다 생성)
+			SendCreateAmmo(pScene);
 
 
-		// 오브젝트 업데이트 패킷 보내기
-		SendUpfateObject(pScene);
+			// 오브젝트 업데이트 패킷 보내기
+			SendUpfateObject(pScene);
 
-		// 오브젝트 삭제 패킷 보내기
-		SendDeleteObject(pScene);
+			// 오브젝트 삭제 패킷 보내기
+			SendDeleteObject(pScene);
 
-		// 플레이어 체력/잔탄 변경 패킷 보내기
-		SendPlayerLife(pScene);
+			// 플레이어 체력/잔탄 변경 패킷 보내기
+			SendPlayerLife(pScene);
 
-		// 이펙트 생성 패킷 보내기
-		SendCreateEffect(pScene);
+			// 이펙트 생성 패킷 보내기
+			SendCreateEffect(pScene);
 
-		PKT_SEND_COMPLETE pkt_cpl;
-		pkt_cpl.PktID = (char)PKT_ID_SEND_COMPLETE;
-		pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
-		Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
-		//std::cout << "패킷 전송 완료\n";
+			PKT_SEND_COMPLETE pkt_cpl;
+			pkt_cpl.PktID = (char)PKT_ID_SEND_COMPLETE;
+			pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
+			Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
+			//std::cout << "패킷 전송 완료\n";
+		}
 	}
 }

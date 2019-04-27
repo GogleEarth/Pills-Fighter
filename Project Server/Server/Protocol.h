@@ -18,7 +18,8 @@ typedef enum PKT_ID
 	PKT_ID_LOAD_COMPLETE_ALL,
 	PKT_ID_PLAYER_ID,
 	PKT_ID_GAME_START,
-	PKT_ID_SHOOT
+	PKT_ID_SHOOT,
+	PKT_ID_SCORE
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -191,6 +192,14 @@ struct PKT_SHOOT
 	BYTE			ID;
 	WEAPON_TYPE		Player_Weapon;
 	XMFLOAT4X4		BulletWorldMatrix;
+};
+
+struct PKT_SCORE
+{
+	char PktSize;
+	char PktId;
+	char RedScore;
+	char BlueScore;
 };
 
 #define MAX_NUM_OBJECT 2000

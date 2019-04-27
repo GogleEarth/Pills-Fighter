@@ -41,8 +41,8 @@ class Framework
 	std::queue<PKT_SHOOT> shoot_msg_queue;
 	std::mutex shootmutex;
 
-	std::queue<PKT_ROBBY_PLAYER_INFO> robby_player_msg_queue;
-	std::mutex robbyplayermutex;
+	std::queue<PKT_LOBBY_PLAYER_INFO> lobby_player_msg_queue;
+	std::mutex lobbyplayermutex;
 
 	int count = 0;
 	CModel PlayerMesh;
@@ -56,6 +56,8 @@ class Framework
 	bool spawn_ammo[2] = { false,false };
 	bool spawn_item = false;
 	float elapsed_time;
+	char RedScore;
+	char BlueScore;
 public:
 	CScene* m_pScene;
 

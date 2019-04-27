@@ -29,6 +29,7 @@ void CScene::BuildObjects()
 		m_pObjects[i]->m_iId = i;
 		m_pObjects[i]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		m_pObjects[i]->SetModel(m_pGMMesh);
+		m_pObjects[i]->hp = PLAYER_HP;
 	}
 	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
 	m_pObjects[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f };
