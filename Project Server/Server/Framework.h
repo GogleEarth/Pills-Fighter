@@ -11,6 +11,7 @@ struct Client_INFO
 	SOCKET socket;
 	bool load_complete;
 	bool enable;
+	ROBOT_TYPE selected_robot;
 };
 
 struct Client_arg

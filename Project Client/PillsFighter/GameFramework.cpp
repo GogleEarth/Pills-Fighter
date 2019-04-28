@@ -407,9 +407,9 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_LBUTTONUP:
 		if (m_pScene)
 		{
-			switch (m_pScene->MouseClick())
+			if (m_pScene->MouseClick() == MOUSE_CLICK_TYPE_START)
 			{
-			case MOUSE_CLICK_TYPE_START:
+			//case MOUSE_CLICK_TYPE_START:
 #ifdef ON_NETWORKING
 				SendToServer(PKT_ID_GAME_START);
 #else
@@ -423,14 +423,15 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 
 				BuildScene(SCENE_TYPE_COLONY);
 #endif
-				break;
+				//break;
 			}
-			case MOUSE_CLICK_SELECT_ROBOT:
+			else if (m_pScene->MouseClick() == MOUSE_CLICK_SELECT_ROBOT)
+			//case MOUSE_CLICK_SELECT_ROBOT:
 			{
 #ifdef ON_NETWORKING
 				SendToServer(PKT_ID_LOBBY_PLAYER_INFO);
 #endif
-
+				//break;
 			}
 		}
 		break;
@@ -861,6 +862,11 @@ void CGameFramework::ProcessPacket()
 		m_pScene->ChangeSelectRobot(pPacket->id, pPacket->selected_robot);
 		break;
 	}
+	case PKT_ID_SCORE:
+	{
+		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
+		// 스코어 처리
+	}
 	break;
 	}
 }
@@ -1024,11 +1030,13 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
 		PKT_LOBBY_PLAYER_INFO pktToServer;
+		PKT_ID id = PKT_ID_LOBBY_PLAYER_INFO;
 		pktToServer.id = m_nClinetIndex;
 		pktToServer.PktId = PKT_ID_LOBBY_PLAYER_INFO;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.selected_robot = m_pScene->GetPlayerRobotType();
 
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send LOBBY Player Info Error\n");
 		break;

@@ -160,6 +160,7 @@ void Framework::main_loop()
 					clients[id].id = id;
 					clients[id].enable = true;
 					clients[id].socket = client_sock;
+					clients[id].selected_robot = ROBOT_TYPE_GM;
 					m.unlock();
 
 					Arg* arg = new Arg;
@@ -309,12 +310,12 @@ DWORD Framework::Update_Process(CScene* pScene)
 			PKT_PLAYER_INFO pktdata;
 			pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
 			pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
-			PKT_CREATE_OBJECT anotherpktdata;
 			pktdata.ID = d.id;
 			pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
 			m_pScene->m_pObjects[d.id]->m_bPlay = true;
 			m_pScene->m_pObjects[d.id]->m_iId = d.id;
 			pktdata.IsShooting = false;
+			PKT_CREATE_OBJECT anotherpktdata;
 			for (int i = 0; i < playernum; ++i)
 			{
 				if (i != d.id)
@@ -324,6 +325,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 					anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
 					anotherpktdata.Object_Index = i;
 					anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+					anotherpktdata.Robot_Type = clients[i].selected_robot;
 					retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
 					retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
 				}
@@ -431,7 +433,6 @@ DWORD Framework::client_process(Client_arg* arg)
 					m.lock();
 					clients[arg->id].load_complete = true;
 					m.unlock();
-					continue;
 				}
 				else if (iPktID == PKT_ID_LOBBY_PLAYER_INFO)
 				{
@@ -439,6 +440,14 @@ DWORD Framework::client_process(Client_arg* arg)
 					lobby_player_msg_queue.push(PKT_LOBBY_PLAYER_INFO{ ((PKT_LOBBY_PLAYER_INFO*)buf)->PktSize, ((PKT_LOBBY_PLAYER_INFO*)buf)->PktId,
 						((PKT_LOBBY_PLAYER_INFO*)buf)->id,  ((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot });
 					lobbyplayermutex.unlock();
+					ROBOT_TYPE rt;
+					if (((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot == 0)
+						rt = ROBOT_TYPE_GM;
+					else if (((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot == 1)
+						rt = ROBOT_TYPE_GUNDAM;
+					m.lock();
+					clients[((PKT_LOBBY_PLAYER_INFO*)buf)->id].selected_robot = rt;
+					m.unlock();
 				}
 			}
 		}
