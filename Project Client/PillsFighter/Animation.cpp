@@ -108,6 +108,14 @@ void CAnimation::LoadAnimationFromFile(FILE *pfile, int nFrames)
 	m_pfKeyFrameTransformTimes = new float[m_nKeyFrameTransforms];
 	m_ppxmf4x4KeyFrameTransforms = new XMFLOAT4X4*[m_nKeyFrameTransforms];
 
+	std::string name = m_pstrAnimationName;
+	if (name.find("ONE") != name.npos)
+		m_nAnimationType = ANIMATION_TYPE_ONCE;
+	else if (name.find("LOOP") != name.npos)
+		m_nAnimationType = ANIMATION_TYPE_LOOP;
+	else if (name.find("PINGPONG") != name.npos)
+		m_nAnimationType = ANIMATION_TYPE_PINGPONG;
+
 	for (int i = 0; i < m_nKeyFrameTransforms; i++)
 	{
 		fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);

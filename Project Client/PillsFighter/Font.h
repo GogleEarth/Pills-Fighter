@@ -79,9 +79,11 @@ public:
 
 	void SetSrv(ID3D12Device *pd3dDevice);
 
-	void CreateText(int nLength, CFontVertex* pFontVertices, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
-	CTextObject* SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
-	void ChangeText(CTextObject *pTextObject, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+#define LEFT_ALIGN 0
+#define RIGHT_ALIGN 1
+	void CreateText(int nLength, CFontVertex* pFontVertices, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	CTextObject* SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void ChangeText(CTextObject *pTextObject, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:

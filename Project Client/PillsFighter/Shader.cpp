@@ -653,7 +653,7 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	CRobotObject *pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
 
 	//pObject = new CRobotObject();
 	//pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
@@ -1562,6 +1562,26 @@ D3D12_RASTERIZER_DESC CUserInterface::CreateRasterizerState()
 	return(d3dRasterizerDesc);
 }
 
+D3D12_BLEND_DESC CUserInterface::CreateBlendState()
+{
+	D3D12_BLEND_DESC d3dBlendDesc;
+	::ZeroMemory(&d3dBlendDesc, sizeof(D3D12_BLEND_DESC));
+	d3dBlendDesc.AlphaToCoverageEnable = FALSE;
+	d3dBlendDesc.IndependentBlendEnable = FALSE;
+	d3dBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[0].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	return(d3dBlendDesc);
+}
+
 void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
 	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dGeometryShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
@@ -1681,7 +1701,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 4;
+	m_nTextures = 5;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
@@ -1700,7 +1720,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nUIRect = 5;
+	m_ppTextures[4] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScoreBoard.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[4], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_nUIRect = 6;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Base UI
@@ -1723,6 +1747,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(0.63f, 0.9f, 0.9f, 0.4f);
 	xmf2Size = ::CalculateSize(0.63f, 0.9f, 0.9f, 0.4f);
 	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(-0.2f, 0.2f, 0.9f, 0.75f);
+	xmf2Size = ::CalculateSize(-0.2f, 0.2f, 0.9f, 0.75f);
+	m_ppUIRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	m_pMinimap = (CTexture*)pContext;
 }
@@ -1758,6 +1786,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		m_ppUIRects[3]->Render(pd3dCommandList, 0);
 	}
 
+
 	// Draw Minimap
 	if (m_pd3dPipelineStateMinimap) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimap);
 	if (m_pMinimap)
@@ -1766,8 +1795,16 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		m_ppUIRects[4]->Render(pd3dCommandList, 0);
 	}
 
-	// Draw Base UI
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+
+	// Draw Score Board
+	if (m_ppTextures[5])
+	{
+		m_ppTextures[4]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[5]->Render(pd3dCommandList, 0);
+	}
+
+	// Draw Base UI
 	if (m_ppTextures[0])
 	{
 		m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);

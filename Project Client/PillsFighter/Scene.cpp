@@ -57,7 +57,7 @@ void CScene::AddFont(ID3D12Device *pd3dDevice, CFont *pFont)
 	m_vpFonts.emplace_back(pFont);
 }
 
-CTextObject* CScene::AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+CTextObject* CScene::AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
 {
 	CFont *pFont = NULL;
 
@@ -70,10 +70,10 @@ CTextObject* CScene::AddText(const char *pstrFont, const char *pstrText, XMFLOAT
 		}
 	}
 
-	return (pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color));
+	return (pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType));
 }
 
-void CScene::ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+void CScene::ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
 {
 	CFont *pFont = NULL;
 
@@ -86,7 +86,7 @@ void CScene::ChangeText(CTextObject *pTextObject, const char *pstrFont, const ch
 		}
 	}
 
-	pFont->ChangeText(pTextObject, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color);
+	pFont->ChangeText(pTextObject, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType);
 }
 
 void CScene::ReleaseObjects()
@@ -715,61 +715,61 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_pLobbyShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pLobbyShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
-	m_nTextures = 13;
+	m_nTextures = UI_TEXTURE_COUNT;
 	m_ppTextures = new CTexture*[m_nTextures];
 
-	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Base.dds", 0);
+	m_ppTextures[UI_TEXTURE_BASE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Base.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/GameStart.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_GAMESTART] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_GAMESTART]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/GameStart.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GAMESTART], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGameStart.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_HL_GAMESTART] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HL_GAMESTART]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGameStart.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GAMESTART], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[11] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[11]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Ready.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[11], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_READY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_READY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Ready.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[12] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[12]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLReady.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[12], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_HL_READY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HL_READY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLReady.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[3] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Left.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_SELECT_LEFT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SELECT_LEFT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Left.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SELECT_LEFT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[4] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLLeft.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[4], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLLeft.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[5] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[5]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Right.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[5], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_SELECT_RIGHT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SELECT_RIGHT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Right.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SELECT_RIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[6] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[6]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLRight.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[6], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLRight.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 
-	m_ppTextures[7] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[7]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gim.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[7], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_GM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_GM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gim.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[8] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[8]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGim.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[8], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_HL_GM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HL_GM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGim.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[9] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[9]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gundam.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[9], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_GUNDAM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_GUNDAM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gundam.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GUNDAM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[10] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[10]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGundam.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[10], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGundam.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
 
 	m_nUIRect = 6;
@@ -778,31 +778,31 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	// Base UI
 	XMFLOAT2 xmf2Center = CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
 	XMFLOAT2 xmf2Size = CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
-	m_ppUIRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_BASE] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = ::CalculateCenter(0.514688f, 0.902500f, -0.672778f, -0.816111f);
 	xmf2Size = ::CalculateSize(0.514688f, 0.902500f, -0.672778f, -0.816111f);
-	m_ppUIRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_START_BUTTON] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	// Left
 	xmf2Center = ::CalculateCenter(0.514688f, 0.701564f, -0.430556f, -0.555556f);
 	xmf2Size = ::CalculateSize(0.514688f, 0.701564f, -0.430556f, -0.555556f);
-	m_ppUIRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_SELECT_LEFT] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	// Right
 	xmf2Center = ::CalculateCenter(0.718750f, 0.902500f, -0.430556f, -0.555556f);
 	xmf2Size = ::CalculateSize(0.718750f, 0.902500f, -0.430556f, -0.555556f);
-	m_ppUIRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_SELECT_RIGHT] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	// First : Gim
 	xmf2Center = ::CalculateCenter(0.514688f, 0.632813f, -0.188889f, -0.322222f);
 	xmf2Size = ::CalculateSize(0.514688f, 0.632813f, -0.188889f, -0.322222f);
-	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_GM_TEXT] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	// Second : Gundam
 	xmf2Center = ::CalculateCenter(0.646875f, 0.770313f, -0.188889f, -0.322222f);
 	xmf2Size = ::CalculateSize(0.646875f, 0.770313f, -0.188889f, -0.322222f);
-	m_ppUIRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_GUNDAM_TEXT] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	// Third : ???
 	//xmf2Center = ::CalculateCenter(0.784375f, 0.902500f, -0.188889f, -0.322222f);
@@ -1084,7 +1084,7 @@ void CLobbyScene::JoinPlayer(int nServerIndex, const char *pstrPlayerName)
 		xmf4Color.z = 0.0f;
 	}
 
-	m_ppTextObjects[nServerIndex] = AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(0.8f, 0.8f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
+	m_ppTextObjects[nServerIndex] = AddText("ÈÞ¸Õ¸ÅÁ÷Ã¼", pstrPlayerName, xmf2Pos, XMFLOAT2(0.8f, 0.8f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
 }
 
 void CLobbyScene::LeavePlayer(int nServerIndex)
@@ -1116,7 +1116,7 @@ void CLobbyScene::LeavePlayer(int nServerIndex)
 			xmf4Color.z = 0.0f;
 		}
 
-		ChangeText(m_ppTextObjects[nServerIndex], "ÈÞ¸Õ¸ÅÁ÷Ã¼", m_ppTextObjects[nServerIndex]->GetText(), xmf2Pos, XMFLOAT2(0.8f, 0.8f), XMFLOAT2(1.0f, 1.0f), xmf4Color);
+		ChangeText(m_ppTextObjects[nServerIndex], "ÈÞ¸Õ¸ÅÁ÷Ã¼", m_ppTextObjects[nServerIndex]->GetText(), xmf2Pos, XMFLOAT2(0.8f, 0.8f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
 	}
 }
 
@@ -1124,48 +1124,48 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 {
 	if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, pCamera);
 
-	m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[0]->Render(pd3dCommandList, 0);
+	m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
 
 	if (m_bHLStartButton)
 	{
 		if(m_nMyIndex == 0)
-			m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[UI_TEXTURE_HL_GAMESTART]->UpdateShaderVariables(pd3dCommandList);
 		else
-			m_ppTextures[12]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[UI_TEXTURE_HL_READY]->UpdateShaderVariables(pd3dCommandList);
 	}
 	else
 	{
 		if (m_nMyIndex == 0)
-			m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[UI_TEXTURE_GAMESTART]->UpdateShaderVariables(pd3dCommandList);
 		else
-			m_ppTextures[11]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[UI_TEXTURE_READY]->UpdateShaderVariables(pd3dCommandList);
 	}
-	m_ppUIRects[1]->Render(pd3dCommandList, 0);
+	m_ppUIRects[UI_RECT_START_BUTTON]->Render(pd3dCommandList, 0);
 
 	if (m_bHLSelectLeft)
-		m_ppTextures[4]->UpdateShaderVariables(pd3dCommandList);
+		m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT]->UpdateShaderVariables(pd3dCommandList);
 	else
-		m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[2]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_SELECT_LEFT]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[UI_RECT_SELECT_LEFT]->Render(pd3dCommandList, 0);
 
 	if (m_bHLSelectRight)
-		m_ppTextures[6]->UpdateShaderVariables(pd3dCommandList);
+		m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT]->UpdateShaderVariables(pd3dCommandList);
 	else
-		m_ppTextures[5]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[3]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_SELECT_RIGHT]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[UI_RECT_SELECT_RIGHT]->Render(pd3dCommandList, 0);
 
 	if (m_nChoiceCharactor == SKINNED_OBJECT_INDEX_GM)
-		m_ppTextures[8]->UpdateShaderVariables(pd3dCommandList);
+		m_ppTextures[UI_TEXTURE_HL_GM_TEXT]->UpdateShaderVariables(pd3dCommandList);
 	else
-		m_ppTextures[7]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[4]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_GM_TEXT]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[UI_RECT_GM_TEXT]->Render(pd3dCommandList, 0);
 
 	if (m_nChoiceCharactor == SKINNED_OBJECT_INDEX_GUNDAM)
-		m_ppTextures[10]->UpdateShaderVariables(pd3dCommandList);
+		m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT]->UpdateShaderVariables(pd3dCommandList);
 	else
-		m_ppTextures[9]->UpdateShaderVariables(pd3dCommandList);
-	m_ppUIRects[5]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_GUNDAM_TEXT]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[UI_RECT_GUNDAM_TEXT]->Render(pd3dCommandList, 0);
 
 	for (auto& playerinfo : m_umPlayerInfo)
 	{
@@ -1176,9 +1176,9 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 		if (!m_ppTextObjects[nServerIndex]) continue;
 
 		if (nRobotType == SKINNED_OBJECT_INDEX_GM)
-			m_ppTextures[7]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[UI_TEXTURE_GM_TEXT]->UpdateShaderVariables(pd3dCommandList);
 		else if (nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
-			m_ppTextures[9]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[UI_TEXTURE_GUNDAM_TEXT]->UpdateShaderVariables(pd3dCommandList);
 
 		m_ppPlayerRobotRects[nSlotIndex]->Render(pd3dCommandList, 0);
 	}
@@ -1406,6 +1406,9 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pUserInterface->SetPlayer(m_pPlayer);
 
 	m_pUserInterface = pUserInterface;
+
+	m_pRedScoreText = AddText("Arial", "100", XMFLOAT2(-0.055f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
+	m_pBlueScoreText = AddText("Arial", "100", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
 }
 
 void CColonyScene::StartScene()
@@ -2108,5 +2111,15 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		break;
 	case PKT_ID_CREATE_EFFECT:
 		break;
+	case PKT_ID_SCORE:
+	{
+		PKT_SCORE *pktScore = (PKT_SCORE*)pktData;
+		char pstrText[16];
+		sprintf(pstrText, "%d", pktScore->RedScore);
+		ChangeText(m_pRedScoreText, "Arial", pstrText, XMFLOAT2(-0.055f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
+		sprintf(pstrText, "%d", pktScore->BlueScore);
+		ChangeText(m_pBlueScoreText, "Arial", pstrText, XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
+		break;
+	}
 	}
 }

@@ -8,6 +8,14 @@
 class CRepository;
 class CSound;
 
+// for lights
+#define MAX_LIGHTS			3
+#define MAX_MATERIALS		8
+
+#define POINT_LIGHT			1
+#define SPOT_LIGHT			2
+#define DIRECTIONAL_LIGHT	3
+
 struct LIGHT
 {
 	XMFLOAT4 m_xmf4Ambient;
@@ -30,6 +38,10 @@ struct LIGHTS
 	LIGHT m_pLights[MAX_LIGHTS];
 	XMFLOAT4 m_xmf4GlobalAmbient;
 };
+
+// Scene Type
+#define SCENE_TYPE_LOBBY 1
+#define SCENE_TYPE_COLONY 2
 
 class CScene
 {
@@ -135,8 +147,8 @@ public:
 
 public:
 	void AddFont(ID3D12Device *pd3dDevice, CFont *pFont);
-	CTextObject* AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
-	void ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+	CTextObject* AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 
 protected:
 	CFontShader						*m_pFontShader = NULL;
@@ -172,6 +184,40 @@ struct SERVERINFO
 	int nSlotIndex;
 	int nRobotType;
 };
+
+// Lobby Scene's Shader Index
+#define LOBBY_SHADER_INDEX 1
+
+#define INDEX_LOBBY_SHADER_UI 0
+
+// Lobby UI Click Type
+#define MOUSE_CLICK_TYPE_START 1
+#define MOUSE_CLICK_SELECT_ROBOT 2
+
+// UI Texture Index
+#define UI_TEXTURE_COUNT 13
+
+#define UI_TEXTURE_BASE 0
+#define UI_TEXTURE_GAMESTART 1
+#define UI_TEXTURE_HL_GAMESTART 2
+#define UI_TEXTURE_READY 3
+#define UI_TEXTURE_HL_READY 4
+#define UI_TEXTURE_SELECT_LEFT 5
+#define UI_TEXTURE_HL_SELECT_LEFT 6
+#define UI_TEXTURE_SELECT_RIGHT 7
+#define UI_TEXTURE_HL_SELECT_RIGHT 8
+#define UI_TEXTURE_GM_TEXT 9
+#define UI_TEXTURE_HL_GM_TEXT 10
+#define UI_TEXTURE_GUNDAM_TEXT 11
+#define UI_TEXTURE_HL_GUNDAM_TEXT 12
+
+// UI Rect Index
+#define UI_RECT_BASE 0
+#define UI_RECT_START_BUTTON 1
+#define UI_RECT_SELECT_LEFT 2
+#define UI_RECT_SELECT_RIGHT 3
+#define UI_RECT_GM_TEXT 4
+#define UI_RECT_GUNDAM_TEXT 5
 
 class CLobbyScene : public CScene
 {
@@ -233,6 +279,47 @@ protected:
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Scene's Shader Index
+#define SHADER_INDEX 3
+
+#define INDEX_SHADER_STANDARD_OBJECTS 0
+#define INDEX_SHADER_INSTANCING_OBJECTS 1
+#define INDEX_SHADER_SKINND_OBJECTS 2
+
+// Standard Shader's Object Group
+#define STANDARD_OBJECT_GROUP 5
+
+#define STANDARD_OBJECT_INDEX_GG_BULLET 0
+#define STANDARD_OBJECT_INDEX_BZK_BULLET 1
+#define STANDARD_OBJECT_INDEX_MG_BULLET 2
+#define STANDARD_OBJECT_INDEX_REPAIR_ITEM 3
+#define STANDARD_OBJECT_INDEX_AMMO_ITEM 4
+
+// Instancing Shader's Object Group
+#define INSTANCING_OBJECT_GROUP 8
+
+#define INSTANCING_OBJECT_INDEX_HANGAR 0
+#define INSTANCING_OBJECT_INDEX_DOUBLESQUARE 1
+#define INSTANCING_OBJECT_INDEX_OCTAGON 2
+#define INSTANCING_OBJECT_INDEX_OCTAGONLONGTIER 3
+#define INSTANCING_OBJECT_INDEX_SLOPETOP 4
+#define INSTANCING_OBJECT_INDEX_SQUARE 5
+#define INSTANCING_OBJECT_INDEX_STEEPLETOP 6
+#define INSTANCING_OBJECT_INDEX_WALL 7
+
+// Standard Shader's Object Group
+#define SKINNED_OBJECT_GROUP 2
+
+#define SKINNED_OBJECT_INDEX_GM 0
+#define SKINNED_OBJECT_INDEX_GUNDAM 1
+
+// Scene's Effect Shader Index 
+#define EFFECT_SHADER_INDEX 3
+
+#define INDEX_EFFECT_SHADER_EFFECT 0
+#define INDEX_EFFECT_SHADER_HIT_SPRITE 1
+#define INDEX_EFFECT_SHADER_EXP_SPRITE 2
 
 class CColonyScene : public CScene
 {
@@ -299,6 +386,11 @@ protected:
 	D3D12_VIEWPORT 					m_d3dMMViewport;
 	D3D12_RECT						m_d3dMMScissorRect;
 
+	int								m_nRedScore = 0;
+	int								m_nBlueScore = 0;
+
+	CTextObject						*m_pRedScoreText = NULL;
+	CTextObject						*m_pBlueScoreText = NULL;
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
 	virtual void DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo);

@@ -407,9 +407,10 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_LBUTTONUP:
 		if (m_pScene)
 		{
-			if (m_pScene->MouseClick() == MOUSE_CLICK_TYPE_START)
+			switch(m_pScene->MouseClick())
 			{
-			//case MOUSE_CLICK_TYPE_START:
+			case MOUSE_CLICK_TYPE_START:
+			{
 #ifdef ON_NETWORKING
 				SendToServer(PKT_ID_GAME_START);
 #else
@@ -423,15 +424,14 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 
 				BuildScene(SCENE_TYPE_COLONY);
 #endif
-				//break;
+				break;
 			}
-			else if (m_pScene->MouseClick() == MOUSE_CLICK_SELECT_ROBOT)
-			//case MOUSE_CLICK_SELECT_ROBOT:
+			case MOUSE_CLICK_SELECT_ROBOT:
 			{
 #ifdef ON_NETWORKING
 				SendToServer(PKT_ID_LOBBY_PLAYER_INFO);
 #endif
-				//break;
+				break;
 			}
 		}
 		break;
@@ -815,7 +815,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_PLAYER_OUT *pPacket = (PKT_PLAYER_OUT*)m_pPacketBuffer;
 
-//		m_pScene->LeavePlayer(pPacket->id, true);
+		m_pScene->LeavePlayer(pPacket->id);
 		break;
 	}
 	case PKT_ID_PLAYER_ID:
@@ -865,7 +865,8 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_SCORE:
 	{
 		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
-		// 스코어 처리
+
+		m_pScene->ApplyRecvInfo(PKT_ID_SCORE, (LPVOID)pPacket);
 	}
 	break;
 	}
