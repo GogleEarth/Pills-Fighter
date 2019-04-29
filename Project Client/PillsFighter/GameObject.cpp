@@ -740,7 +740,7 @@ void CSoundCallbackHandler::HandleCallback(UINT nSoundType)
 {
 	switch (nSoundType)
 	{
-	case CALLBACK_SOUND_TYPE_MOVE:
+	case CALLBACK_TYPE_SOUND_MOVE:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMove);
 		break;
 	}

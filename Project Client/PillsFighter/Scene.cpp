@@ -261,15 +261,6 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
 
-	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, pCamera);
-
-	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
-
-	for (const auto& pFont : m_vpFonts)
-	{
-		pFont->Render(pd3dCommandList);
-	}
-
 	m_nFPS = (m_nFPS + 1) % 5;
 }
 
@@ -284,6 +275,18 @@ void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCa
 			if (m_ppShaders[i])
 				m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
 		}
+	}
+}
+
+void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, NULL);
+
+	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
+
+	for (const auto& pFont : m_vpFonts)
+	{
+		pFont->Render(pd3dCommandList);
 	}
 }
 
@@ -1407,8 +1410,8 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pUserInterface = pUserInterface;
 
-	m_pRedScoreText = AddText("Arial", "100", XMFLOAT2(-0.055f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
-	m_pBlueScoreText = AddText("Arial", "100", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
+	m_pRedScoreText = AddText("Arial", "0", XMFLOAT2(-0.05f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
+	m_pBlueScoreText = AddText("Arial", "0", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
 }
 
 void CColonyScene::StartScene()

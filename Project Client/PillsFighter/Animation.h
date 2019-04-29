@@ -12,7 +12,7 @@ class CSound;
 struct CALLBACKKEY
 {
 	float  							m_fTime = 0.0f;
-	UINT							m_nType;
+	UINT							m_nType = 0;
 };
 
 class CAnimationCallbackHandler
@@ -32,23 +32,23 @@ public:
 	virtual ~CAnimation();
 
 protected:
-	char							m_pstrAnimationName[64] = { 0 };
+	char							m_pstrAnimationName[64];
 
-	float							m_fAnimationLength = 0.0f;
+	float							m_fAnimationLength;
 
-	int								m_nKeyFrameTransforms = 0;
+	int								m_nKeyFrameTransforms;
 
-	float							*m_pfKeyFrameTransformTimes = NULL;
-	XMFLOAT4X4						**m_ppxmf4x4KeyFrameTransforms = NULL;
+	float							*m_pfKeyFrameTransformTimes;
+	XMFLOAT4X4						**m_ppxmf4x4KeyFrameTransforms;
 
-	float							m_fAnimationTimePosition = 0.0f;
-	int								m_nAnimationType = ANIMATION_TYPE_LOOP;
+	float							m_fAnimationTimePosition;
+	int								m_nAnimationType;
 
 public:
-	int 							m_nCallbackKeys = 0;
-	CALLBACKKEY 					*m_pCallbackKeys = NULL;
+	int 							m_nCallbackKeys;
+	CALLBACKKEY 					*m_pCallbackKeys;
 
-	CAnimationCallbackHandler 		*m_pAnimationCallbackHandler = NULL;
+	CAnimationCallbackHandler 		*m_pAnimationCallbackHandler;
 
 public:
 	void SetTimePosition(float fTrackTimePosition);
@@ -112,7 +112,7 @@ protected:
 	float 			m_fWeight = 1.0f;
 
 	CAnimation 		*m_pAnimation = NULL;
-	int				m_nAnimationState;
+	int				m_nAnimationState = 0;
 
 public:
 	void SetAnimation(CAnimation *pAnimation) { m_pAnimation = pAnimation; }

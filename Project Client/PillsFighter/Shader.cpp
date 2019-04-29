@@ -672,7 +672,7 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, nGroup, bPrepareRotate, pContext);
 
 	CAnimationController *pAnimationController = new CAnimationController(1, pObject->GetModel()->GetAnimationSet());
-	pAnimationController->SetTrackAnimation(0, 1);
+	pAnimationController->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 
 	pObject->SetAnimationController(pAnimationController);
 

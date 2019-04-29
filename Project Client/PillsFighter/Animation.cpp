@@ -4,6 +4,16 @@
 
 CAnimation::CAnimation()
 {
+	ZeroMemory(m_pstrAnimationName, sizeof(m_pstrAnimationName));
+	m_fAnimationLength = 0.0f;
+	m_nKeyFrameTransforms = 0;
+	m_pfKeyFrameTransformTimes = NULL;
+	m_ppxmf4x4KeyFrameTransforms = NULL;
+	m_fAnimationTimePosition = 0.0f;
+	m_nAnimationType = ANIMATION_TYPE_LOOP;
+	m_nCallbackKeys = 0;
+	m_pCallbackKeys = NULL;
+	m_pAnimationCallbackHandler = NULL;
 }
 
 CAnimation::~CAnimation()

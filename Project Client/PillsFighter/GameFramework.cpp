@@ -407,7 +407,7 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_LBUTTONUP:
 		if (m_pScene)
 		{
-			switch(m_pScene->MouseClick())
+			switch (m_pScene->MouseClick())
 			{
 			case MOUSE_CLICK_TYPE_START:
 			{
@@ -433,8 +433,9 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 #endif
 				break;
 			}
+			}
+			break;
 		}
-		break;
 	case WM_MOUSEMOVE:
 		m_ptCursorPos.x = LOWORD(lParam);
 		m_ptCursorPos.y = HIWORD(lParam);
@@ -646,6 +647,8 @@ void CGameFramework::FrameAdvance()
 		if (m_pScene)
 		{
 			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
+
+			m_pScene->RenderUI(m_pd3dCommandList);
 
 			m_pScene->AfterRender(m_pd3dCommandList);
 		}
