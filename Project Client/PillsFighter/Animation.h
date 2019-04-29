@@ -11,8 +11,8 @@ class CSound;
 
 struct CALLBACKKEY
 {
-	float  							m_fTime = 0.0f;
-	UINT							m_nType = 0;
+	float  							m_fTime;
+	UINT							m_nType;
 };
 
 class CAnimationCallbackHandler
@@ -77,11 +77,11 @@ public:
 	virtual ~CAnimationSet();
 
 protected:
-	int				m_nAnimationFrames = 0;
-	CModel			**m_ppAnimationFrameCaches = NULL;
+	int				m_nAnimationFrames;
+	CModel			**m_ppAnimationFrameCaches;
 
-	int				m_nAnimations = 0;
-	CAnimation		*m_pAnimations = NULL;
+	int				m_nAnimations;
+	CAnimation		*m_pAnimations;
 
 public:
 	int GetAnimationCount() { return m_nAnimations; }
@@ -102,17 +102,17 @@ public:
 class CAnimationTrack
 {
 public:
-	CAnimationTrack() {};
-	virtual ~CAnimationTrack() {};
+	CAnimationTrack();
+	virtual ~CAnimationTrack();
 
 protected:
-	bool 			m_bEnable = true;
-	float 			m_fSpeed = 1.0f;
-	float 			m_fPosition = 0.0f;
-	float 			m_fWeight = 1.0f;
+	bool 			m_bEnable;
+	float 			m_fSpeed;
+	float 			m_fPosition;
+	float 			m_fWeight;
 
-	CAnimation 		*m_pAnimation = NULL;
-	int				m_nAnimationState = 0;
+	CAnimation 		*m_pAnimation;
+	int				m_nAnimationState;
 
 public:
 	void SetAnimation(CAnimation *pAnimation) { m_pAnimation = pAnimation; }
@@ -142,13 +142,13 @@ public:
 	virtual ~CAnimationController();
 
 protected:
-	float 							m_fTime = 0.0f;
-	CAnimationSet					*m_pAnimationSet = NULL;
+	float 							m_fTime;
+	CAnimationSet					*m_pAnimationSet;
 
-	int 							m_nAnimationTracks = 0;
-	CAnimationTrack 				*m_pAnimationTracks = NULL;
+	int 							m_nAnimationTracks;
+	CAnimationTrack 				*m_pAnimationTracks;
 
-	XMFLOAT4X4						*m_xmf4x4BoneTransforms = NULL;
+	XMFLOAT4X4						*m_xmf4x4BoneTransforms;
 
 public:
 	void SetAnimationSet(CAnimationSet *pAnimationSet);

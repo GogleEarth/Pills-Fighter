@@ -130,22 +130,26 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_FORWARD)
 		{
-			if(!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_FORWARD);
+			if(!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
+				ChangeAnimation(0, ANIMATION_STATE_WALK_FORWARD);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
 		}
 		if (dwDirection & DIR_BACKWARD)
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_BACKWARD);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
+				ChangeAnimation(0, ANIMATION_STATE_WALK_BACKWARD);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_RIGHT);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
+				ChangeAnimation(0, ANIMATION_STATE_WALK_RIGHT);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) ChangeAnimation(0, ANIMATION_STATE_WALK_LEFT);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
+				ChangeAnimation(0, ANIMATION_STATE_WALK_LEFT);
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 		}
 
@@ -284,7 +288,7 @@ void CPlayer::SetAnimationIdle()
 	if (m_nState & OBJECT_STATE_ONGROUND)
 	{
 		ChangeAnimation(0, ANIMATION_STATE_IDLE);
-		m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
+		//m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
 	}
 }
 
@@ -295,7 +299,7 @@ void CPlayer::ActivationBooster()
 		if (m_nState & OBJECT_STATE_ONGROUND)
 		{
 			ChangeAnimation(0, ANIMATION_STATE_JUMP);
-			m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_ONCE);
+			//m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_ONCE);
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTERING;
@@ -320,7 +324,7 @@ void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 			if (pAnimationTrack->GetPosition() >= pAnimationTrack->GetLength())
 			{
 				ChangeAnimation(0, ANIMATION_STATE_JUMP_LOOP);
-				m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
+				//m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
 			}
 		}
 

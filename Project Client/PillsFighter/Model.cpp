@@ -225,6 +225,8 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 			printf("Diffuse Map Name : [%s]\n", pstrFileName);
 			m_vTextures.emplace_back(pTexture);
+
+			delete pwstrFileName;
 		}
 		else if (!strcmp(pstrToken, "<NormalMap>:"))
 		{
@@ -251,6 +253,8 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false);
 			printf("Normal Map Name : [%s]\n", pstrFileName);
 			m_vTextures.emplace_back(pTexture);
+
+			delete pwstrFileName;
 		}
 		else if (!strcmp(pstrToken, "<SpecularFactorMap>:"))
 		{
@@ -277,6 +281,8 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false);
 			printf("Specular Factor Map Name : [%s]\n", pstrFileName);
 			m_vTextures.emplace_back(pTexture);
+
+			delete pwstrFileName;
 		}
 		else if (!strcmp(pstrToken, "<SpecularMap>:"))
 		{

@@ -30,6 +30,21 @@ CGameFramework::CGameFramework()
 	m_pPlayer = NULL;
 
 	_tcscpy_s(m_pszCaption, _T(GAME_TITLE));
+
+	m_Socket = 0;
+
+	::ZeroMemory(m_RecvBuf, sizeof(m_RecvBuf));
+	m_nPacketSize = 0;
+	::ZeroMemory(m_pPacketBuffer, sizeof(m_pPacketBuffer));
+
+	m_nClinetIndex = -1;
+	m_bDrawScene = true;
+	m_bSend_Complete = true;
+
+	m_fElapsedTime = 0.0f;
+	m_nFrameRate = 0;
+	m_fFPSTimeElapsed = 0.0f;
+	m_nFramePerSecond = 0;
 }
 
 CGameFramework::~CGameFramework()
@@ -675,22 +690,21 @@ void CGameFramework::FrameAdvance()
 	m_fFPSTimeElapsed += m_fElapsedTime;
 	if (m_fFPSTimeElapsed > 1.0f)
 	{
-		m_fFrameRate = m_nFramePerSecond;
+		m_nFrameRate = m_nFramePerSecond;
 		m_nFramePerSecond = 0;
 		m_fFPSTimeElapsed = 0.0f;
 	}
 
 	m_fElapsedTime = 0.0f;
-	_itow_s(m_fFrameRate, m_pszCaption + strlen(GAME_TITLE), 37, 10);
+	_itow_s(m_nFrameRate, m_pszCaption + strlen(GAME_TITLE), 37, 10);
 	wcscat_s(m_pszCaption + strlen(GAME_TITLE), 37, _T(" FPS)"));
 #else
 	m_GameTimer.GetFrameRate(m_pszCaption + strlen(GAME_TITLE), 37);
 #endif
 	size_t nLength = _tcslen(m_pszCaption);
 	_stprintf(m_pszCaption + nLength, _T("(%f, %f)"), Screenx, Screeny);
-
+	
 	::SetWindowText(m_hWnd, m_pszCaption);
-
 }
 
 void CGameFramework::OnResizeBackBuffers()

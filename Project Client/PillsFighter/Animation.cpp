@@ -21,6 +21,7 @@ CAnimation::~CAnimation()
 	if (m_pfKeyFrameTransformTimes) delete[] m_pfKeyFrameTransformTimes;
 	for (int j = 0; j < m_nKeyFrameTransforms; j++) if (m_ppxmf4x4KeyFrameTransforms[j]) delete[] m_ppxmf4x4KeyFrameTransforms[j];
 	if (m_ppxmf4x4KeyFrameTransforms) delete[] m_ppxmf4x4KeyFrameTransforms;
+	if (m_pCallbackKeys) delete[] m_pCallbackKeys;
 }
 
 UINT CAnimation::GetCallbackData()
@@ -92,6 +93,7 @@ void CAnimation::SetCallbackKeys(int nCallbackKeys)
 {
 	m_nCallbackKeys = nCallbackKeys;
 	m_pCallbackKeys = new CALLBACKKEY[nCallbackKeys];
+	ZeroMemory(m_pCallbackKeys, sizeof(CALLBACKKEY) * nCallbackKeys);
 }
 
 void CAnimation::SetCallbackKey(int nKeyIndex, float fKeyTime, UINT nSoundType)
@@ -141,11 +143,13 @@ void CAnimation::LoadAnimationFromFile(FILE *pfile, int nFrames)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-
 CAnimationSet::CAnimationSet(int nAnimations)
 {
 	m_nAnimations = nAnimations;
 	m_pAnimations = new CAnimation[nAnimations];
+
+	m_nAnimationFrames = 0;
+	m_ppAnimationFrameCaches = NULL;
 }
 
 CAnimationSet::~CAnimationSet()
@@ -156,8 +160,7 @@ CAnimationSet::~CAnimationSet()
 
 void CAnimationSet::SetCallbackKeys(int nAnimationSet, int nCallbackKeys)
 {
-	m_pAnimations[nAnimationSet].m_nCallbackKeys = nCallbackKeys;
-	m_pAnimations[nAnimationSet].m_pCallbackKeys = new CALLBACKKEY[nCallbackKeys];
+	m_pAnimations[nAnimationSet].SetCallbackKeys(nCallbackKeys);
 }
 
 void CAnimationSet::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, UINT nSoundType)
@@ -174,11 +177,34 @@ void CAnimationSet::SetAnimationCallbackHandler(int nAnimationSet, CAnimationCal
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+CAnimationTrack::CAnimationTrack()
+{
+	m_bEnable = true;
+	m_fSpeed = 1.0f;
+	m_fPosition = 0.0f;
+	m_fWeight = 1.0f;
+
+	m_pAnimation = NULL;
+	m_nAnimationState = 0;
+}
+
+CAnimationTrack::~CAnimationTrack()
+{
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
 CAnimationController::CAnimationController(int nAnimationTracks, CAnimationSet *pAnimationSet)
 {
+	m_fTime = 0.0f;
+
 	m_nAnimationTracks = nAnimationTracks;
 	m_pAnimationTracks = new CAnimationTrack[nAnimationTracks];
+
 	m_xmf4x4BoneTransforms = new XMFLOAT4X4[pAnimationSet->GetAnimationFrames()];
+	ZeroMemory(m_xmf4x4BoneTransforms, sizeof(XMFLOAT4X4) * pAnimationSet->GetAnimationFrames());
 
 	SetAnimationSet(pAnimationSet);
 }

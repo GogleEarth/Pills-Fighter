@@ -7,12 +7,6 @@
 
 class CGameFramework;
 
-struct FrameworkThread
-{
-	CGameFramework* pGFW;
-	SOCKET			sock;
-};
-
 class CGameFramework
 {
 private:
@@ -108,24 +102,22 @@ protected:
 	CFont							m_Arial;
 	CFont							m_HumanMagic;
 
-	int	m_nCharacterIndex = 0;
-
 protected: // for Network
 	SOCKET	m_Socket;
 
 	char	m_RecvBuf[MAX_BUFFER];
 
-	int		m_nPacketSize = 0;
+	int		m_nPacketSize;
 	char	m_pPacketBuffer[MAX_PACKET];
 
-	int		m_nClinetIndex = -1;
-	bool	m_bDrawScene = true;
-	bool	m_bSend_Complete = true;
+	int		m_nClinetIndex;
+	bool	m_bDrawScene;
+	bool	m_bSend_Complete;
 
-	float	m_fElapsedTime = 0.0f;
-	float	m_fFrameRate = 0.0f;
-	float	m_fFPSTimeElapsed = 0.0f;
-	int		m_nFramePerSecond = 0;
+	float	m_fElapsedTime;
+	int		m_nFrameRate;
+	float	m_fFPSTimeElapsed;
+	int		m_nFramePerSecond;
 
 public:
 	void recvn();
@@ -135,10 +127,4 @@ public:
 	void OnProcessingSocketMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	void CreateObject(PKT_CREATE_OBJECT *pCreateObjectInfo);
 	void CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo);
-
-	//Ελ½Ε
-	PKT_PLAYER_INFO m_Client_Player_Info;
-	HANDLE hEvent;
-
-	void InitNetwork();
 };

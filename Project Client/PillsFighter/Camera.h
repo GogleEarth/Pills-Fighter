@@ -30,10 +30,10 @@ protected:
 	XMFLOAT4X4 						m_xmf4x4View;
 	XMFLOAT4X4 						m_xmf4x4Projection;
 
-	CPlayer							*m_pPlayer = NULL;
+	CPlayer							*m_pPlayer;
 
-	ID3D12Resource					*m_pd3dcbCamera = NULL;
-	VS_CB_CAMERA_INFO				*m_pcbMappedCamera = NULL;
+	ID3D12Resource					*m_pd3dcbCamera;
+	VS_CB_CAMERA_INFO				*m_pcbMappedCamera;
 
 public:
 	CCamera();

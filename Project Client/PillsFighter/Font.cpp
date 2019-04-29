@@ -6,6 +6,12 @@
 
 CTextObject::CTextObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	m_nCharacter = 0;
+	m_pCharacters = NULL;
+	
+	m_bUse = false;
+	ZeroMemory(m_pText, sizeof(m_pText));
+
 	m_pd3dcbFont = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(CFontVertex) * MAX_TEXT_LENGTH);
 
 	m_pd3dcbFont->Map(0, NULL, (void**)&m_pcbMappedFont);
@@ -68,7 +74,27 @@ void CTextObject::Release()
 
 CFont::CFont()
 {
+	::ZeroMemory(m_pstrName, sizeof(m_pstrName));
+	m_nSize = 0;
+	m_fTopPadding = 0.0f;
+	m_fBottomPadding = 0.0f;
+	m_fLeftPadding = 0.0f;
+	m_fRightPadding = 0.0f;
 
+	m_fLineHeight = 0.0f;
+	m_fBaseHeight = 0.0f;
+	m_nTextureWidth = 0;
+	m_nTextureHeight = 0;
+
+	::ZeroMemory(m_pstrImageFile, sizeof(m_pstrImageFile));\
+
+	m_nCharacters = 0;
+	m_pCharacters = NULL;
+
+	m_nKernings = 0;
+	m_pKernings = NULL;
+
+	m_pFontTexture = NULL;
 }
 
 CFont::~CFont()
@@ -95,6 +121,8 @@ void CFont::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3d
 
 	m_pFontTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_pFontTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, 0);
+
+	delete pwstrFileName;
 }
 
 void CFont::SetSrv(ID3D12Device *pd3dDevice)
@@ -285,6 +313,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 			char *pstrCount = &pstrToken[6];
 			m_nCharacters = atoi(pstrCount);
 			m_pCharacters = new CFontCharacter[m_nCharacters];
+			::ZeroMemory(m_pCharacters, sizeof(CFontCharacter) * m_nCharacters);
 
 			for (int i = 0; i < m_nCharacters; i++)
 			{
@@ -363,6 +392,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 			char *pstrCount = &pstrToken[6];
 			m_nKernings = atoi(pstrCount);
 			m_pKernings = new CFontKerning[m_nKernings];
+			::ZeroMemory(m_pKernings, sizeof(CFontKerning) * m_nKernings);
 
 			for (int i = 0; i < m_nKernings; i++)
 			{

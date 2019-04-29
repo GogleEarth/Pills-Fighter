@@ -48,14 +48,14 @@ public:
 
 protected:
 #define MAX_TEXT_LENGTH 100
-	int							m_nCharacter = 0;
-	CFontVertex					*m_pCharacters = NULL;
+	int							m_nCharacter;
+	CFontVertex					*m_pCharacters;
 
-	ID3D12Resource				*m_pd3dcbFont = NULL;
-	CFontVertex					*m_pcbMappedFont = NULL;
+	ID3D12Resource				*m_pd3dcbFont;
+	CFontVertex					*m_pcbMappedFont;
 	D3D12_VERTEX_BUFFER_VIEW	m_d3dFontView;
 
-	bool						m_bUse = false;
+	bool						m_bUse;
 	char						m_pText[MAX_TEXT_LENGTH];
 };
 
@@ -87,27 +87,27 @@ public:
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:
-	char m_pstrName[32] = { 0 };
-	int m_nSize = 0;
-	float m_fTopPadding = 0;
-	float m_fBottomPadding = 0;
-	float m_fLeftPadding = 0;
-	float m_fRightPadding = 0;
+	char m_pstrName[32];
+	int m_nSize;
+	float m_fTopPadding;
+	float m_fBottomPadding;
+	float m_fLeftPadding;
+	float m_fRightPadding;
 
-	float m_fLineHeight = 0;
-	float m_fBaseHeight = 0;
-	int m_nTextureWidth = 0;
-	int m_nTextureHeight = 0;
+	float m_fLineHeight;
+	float m_fBaseHeight;
+	int m_nTextureWidth;
+	int m_nTextureHeight;
 
-	char m_pstrImageFile[64] = { 0 };
+	char m_pstrImageFile[64];
 
-	int m_nCharacters = 0;
-	CFontCharacter *m_pCharacters = NULL;
+	int m_nCharacters;
+	CFontCharacter *m_pCharacters;
 
-	int m_nKernings = 0;
-	CFontKerning * m_pKernings = NULL;
+	int m_nKernings;
+	CFontKerning * m_pKernings;
 
-	CTexture *m_pFontTexture = NULL;
+	CTexture *m_pFontTexture;
 
 #define MAX_TEXT_SIZE 200
 	std::queue<CTextObject*> m_qpTempTextObjects;

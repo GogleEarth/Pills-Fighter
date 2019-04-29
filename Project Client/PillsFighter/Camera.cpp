@@ -5,42 +5,54 @@
 
 CCamera::CCamera()
 {
-	m_xmf4x4View = Matrix4x4::Identity();
-	m_xmf4x4Projection = Matrix4x4::Identity();
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
 	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+
 	m_fPitch = 0.0f;
 	m_fRoll = 0.0f;
 	m_fYaw = 0.0f;
+
 	m_xmf3Offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_fTimeLag = 0.0f;
+
+	m_xmf4x4View = Matrix4x4::Identity();
+	m_xmf4x4Projection = Matrix4x4::Identity();
+
 	m_pPlayer = NULL;
+
+	m_pd3dcbCamera = NULL;
+	m_pcbMappedCamera = NULL;
 }
 
 CCamera::CCamera(CCamera *pCamera)
 {
 	if (pCamera)
 	{
-		//카메라가 이미 있으면 기존 카메라의 정보를 새로운 카메라에 복사한다. 
 		*this = *pCamera;
 	}
 	else
 	{
-		//카메라가 없으면 기본 정보를 설정한다. 
-		m_xmf4x4View = Matrix4x4::Identity();
-		m_xmf4x4Projection = Matrix4x4::Identity();
 		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
-		m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
 		m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+		m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+
 		m_fPitch = 0.0f;
 		m_fRoll = 0.0f;
 		m_fYaw = 0.0f;
+
 		m_xmf3Offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		m_fTimeLag = 0.0f;
+
+		m_xmf4x4View = Matrix4x4::Identity();
+		m_xmf4x4Projection = Matrix4x4::Identity();
+
 		m_pPlayer = NULL;
+
+		m_pd3dcbCamera = NULL;
+		m_pcbMappedCamera = NULL;
 	}
 }
 

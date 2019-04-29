@@ -1838,7 +1838,8 @@ void CColonyScene::CheckCollisionPlayer()
 
 void CColonyScene::FindAimToTargetDistance()
 {
-	std::vector<CGameObject*> vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
+	std::vector<CGameObject*> vGMs = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
+	std::vector<CGameObject*> vGundams = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -1849,10 +1850,10 @@ void CColonyScene::FindAimToTargetDistance()
 
 	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
 
-	for (const auto& Enemy : vEnemys)
+	for (const auto& GM : vGMs)
 	{
 		// 카메라 이동 X 단 목표가 되지 않음.
-		if (Enemy->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		if (GM->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 		{
 			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
 
@@ -1861,12 +1862,29 @@ void CColonyScene::FindAimToTargetDistance()
 				if (fDistance > fTemp)
 				{
 					fDistance = fTemp;
-					pTarget = Enemy;
+					pTarget = GM;
 				}
 			}
 		}
 	}
 
+	for (const auto& Gundam : vGundams)
+	{
+		// 카메라 이동 X 단 목표가 되지 않음.
+		if (Gundam->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		{
+			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+
+			if (fDistBetweenCnP < fTemp)
+			{
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Gundam;
+				}
+			}
+		}
+	}
 
 	if (m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS])
 	{
