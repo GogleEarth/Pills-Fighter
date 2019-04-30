@@ -55,7 +55,7 @@ CGameObject::CGameObject(BULLET_TYPE Bullet_Type)
 		hp = 1;
 		m_ElapsedTime = 0;
 		m_DurationTime = 1.5f;
-		m_MovingSpeed = 750.0f;
+		m_MovingSpeed = 600.0f;
 		m_RotationSpeed = 1440.0f;
 	}
 	else if (m_Bullet_Type == BULLET_TYPE_BAZOOKA)
@@ -71,7 +71,7 @@ CGameObject::CGameObject(BULLET_TYPE Bullet_Type)
 		hp = 3;
 		m_ElapsedTime = 0;
 		m_DurationTime = 0.75f;
-		m_MovingSpeed = 1500.0f;
+		m_MovingSpeed = 1000.0f;
 		m_RotationSpeed = 1440.0f;
 	}
 }
