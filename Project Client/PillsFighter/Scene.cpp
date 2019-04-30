@@ -1197,7 +1197,6 @@ CColonyScene::CColonyScene() : CScene()
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 		m_pObjects[i] = NULL;
-
 }
 
 CColonyScene::~CColonyScene()
@@ -1399,9 +1398,11 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
 		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
 
+#ifndef ON_NETWORKING
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
+#endif
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -2056,17 +2057,17 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pObjects[pCreateObjectInfo->Object_Index] = pGameObject;
 }
 
-void CColonyScene::DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo)
+void CColonyScene::DeleteObject(int nIndex)
 {
-	if (m_pObjects[pDeleteObjectInfo->Object_Index])
+	if (m_pObjects[nIndex])
 	{
-		if (m_pObjects[pDeleteObjectInfo->Object_Index]->GetType() & OBJECT_TYPE_ROBOT)
+		if (m_pObjects[nIndex]->GetType() & OBJECT_TYPE_ROBOT)
 		{
-			std::vector<CParticle*> vpParticles = ((CRobotObject*)m_pObjects[pDeleteObjectInfo->Object_Index])->GetParticles();
+			std::vector<CParticle*> vpParticles = ((CRobotObject*)m_pObjects[nIndex])->GetParticles();
 			for (CParticle *pParticle : vpParticles) pParticle->Delete();
 		}
-		m_pObjects[pDeleteObjectInfo->Object_Index]->Delete();
-		m_pObjects[pDeleteObjectInfo->Object_Index] = NULL;
+		m_pObjects[nIndex]->Delete();
+		m_pObjects[nIndex] = NULL;
 	}
 }
 
@@ -2125,7 +2126,7 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_DELETE_OBJECT:
 		if (!m_pObjects[((PKT_DELETE_OBJECT*)pktData)->Object_Index]) break;
 
-		DeleteObject(((PKT_DELETE_OBJECT*)pktData));
+		DeleteObject(((PKT_DELETE_OBJECT*)pktData)->Object_Index);
 		break;
 	case PKT_ID_TIME_INFO:
 		break;
@@ -2148,4 +2149,11 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		break;
 	}
 	}
+}
+
+void CColonyScene::LeavePlayer(int nServerIndex)
+{
+	if (!m_pObjects[nServerIndex]) return;
+
+	DeleteObject(nServerIndex);
 }

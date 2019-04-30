@@ -107,7 +107,7 @@ protected:
 	int		m_nMachineGunAmmo = 0;
 
 	bool	m_bReloading = false;
-	float	m_fReloadTime;
+	float	m_fReloadTime = 0.0f;
 	bool	m_bShot = false;
 
 public:

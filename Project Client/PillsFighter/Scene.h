@@ -168,7 +168,7 @@ public:
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo) {}
-	virtual void DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo) {}
+	virtual void DeleteObject(int nIndex) {}
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
 	virtual void JoinPlayer(int nServerIndex, const char *pstrPlayerName) {};
@@ -237,7 +237,7 @@ public:
 	virtual void StartScene();
 
 	virtual void JoinPlayer(int nServerIndex, const char *pstrPlayerName);
-	virtual void LeavePlayer(int nSlotIndex);
+	virtual void LeavePlayer(int nServerIndex);
 	virtual void SetPlayerIndex(int nServerIndex);
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);
 	virtual int MouseClick();
@@ -394,9 +394,10 @@ protected:
 	CTextObject						*m_pBlueScoreText = NULL;
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
-	virtual void DeleteObject(PKT_DELETE_OBJECT *pDeleteObjectInfo);
+	virtual void DeleteObject(int nIndex);
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo);
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
+	virtual void LeavePlayer(int nServerIndex);
 
 protected:
 	CGameObject* m_pObjects[MAX_NUM_OBJECT];

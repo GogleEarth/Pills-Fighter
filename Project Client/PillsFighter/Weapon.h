@@ -98,6 +98,8 @@ protected:
 	int		m_nShotCount = 0;
 
 public:
+	virtual void Initialize();
+
 	virtual void Attack();
 
 	virtual void SetReloadTime() { m_fReloadTime = GG_RELOAD_TIME; }
@@ -122,6 +124,8 @@ public:
 	CBazooka();
 	virtual ~CBazooka();
 
+	virtual void Initialize();
+
 	virtual void Attack();
 
 	virtual void SetReloadTime() { m_fReloadTime = BZK_RELOAD_TIME; }
@@ -143,6 +147,8 @@ class CMachineGun : public CGun
 public:
 	CMachineGun();
 	virtual ~CMachineGun();
+
+	virtual void Initialize();
 
 	virtual void Attack();
 
