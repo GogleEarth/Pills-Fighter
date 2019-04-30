@@ -175,6 +175,12 @@ void CScene::ReleaseObjects()
 		pFont->ClearTexts();
 	}
 
+	if (m_pMinimapShader)
+	{
+		m_pMinimapShader->ReleaseShaderVariables();
+		delete m_pMinimapShader;
+	}
+
 	ReleaseShaderVariables();
 }
 
@@ -187,6 +193,7 @@ void CScene::ReleaseUploadBuffers()
 	for (int i = 0; i < m_nEffectShaders; i++) if(m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
 	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
 	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
+	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
 }
 
 void CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -1411,6 +1418,12 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pUserInterface = pUserInterface;
 
+	CMinimapShader *pMinimapShader = new CMinimapShader();
+	pMinimapShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pMinimapShader->Initialize(pd3dDevice, pd3dCommandList);
+
+	m_pMinimapShader = pMinimapShader;
+
 	m_pRedScoreText = AddText("Arial", "0", XMFLOAT2(-0.05f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 	m_pBlueScoreText = AddText("Arial", "0", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
 }
@@ -1601,9 +1614,7 @@ void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	UpdateShaderVariables(pd3dCommandList);
 
-	if(m_ppShaders[2])
-		m_ppShaders[2]->Render(pd3dCommandList, m_pMiniMapCamera);
-		
+	if (m_pMinimapShader) m_pMinimapShader->Render(pd3dCommandList, m_pMiniMapCamera);
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 }

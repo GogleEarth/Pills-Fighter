@@ -1744,8 +1744,8 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Size = ::CalculateSize(0.417187f, 0.456250f, 0.257778f, -0.257778f);
 	m_ppUIRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = ::CalculateCenter(0.63f, 0.9f, 0.9f, 0.4f);
-	xmf2Size = ::CalculateSize(0.63f, 0.9f, 0.9f, 0.4f);
+	xmf2Center = ::CalculateCenter(0.63f, 0.93f, 0.93f, 0.4f);
+	xmf2Size = ::CalculateSize(0.63f, 0.93f, 0.93f, 0.4f);
 	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = ::CalculateCenter(-0.2f, 0.2f, 0.9f, 0.75f);
@@ -2173,3 +2173,200 @@ void CCursorShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+CMinimapShader::CMinimapShader()
+{
+
+}
+
+CMinimapShader::~CMinimapShader()
+{
+	for (int i = 0; i < m_nUIRect; i++)
+	{
+		if (m_ppUIRects[i])
+			delete m_ppUIRects[i];
+	}
+
+	for (int i = 0; i < m_nTextures; i++)
+	{
+		if (m_ppTextures[i])
+			delete m_ppTextures[i];
+	}
+
+}
+
+D3D12_SHADER_BYTECODE CMinimapShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VS_UI", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_INPUT_LAYOUT_DESC CMinimapShader::CreateInputLayout()
+{
+	UINT nInputElementDescs = 2;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_RASTERIZER_DESC CMinimapShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
+	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
+	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
+	d3dRasterizerDesc.DepthBias = 0;
+	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
+	d3dRasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	d3dRasterizerDesc.DepthClipEnable = TRUE;
+	d3dRasterizerDesc.MultisampleEnable = FALSE;
+	d3dRasterizerDesc.AntialiasedLineEnable = FALSE;
+	d3dRasterizerDesc.ForcedSampleCount = 0;
+	d3dRasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	return(d3dRasterizerDesc);
+}
+
+void CMinimapShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
+{
+	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dGeometryShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineStateDesc;
+	::ZeroMemory(&d3dPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	d3dPipelineStateDesc.pRootSignature = pd3dGraphicsRootSignature;
+	d3dPipelineStateDesc.VS = CreateVertexShader(&pd3dVertexShaderBlob);
+	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
+	d3dPipelineStateDesc.RasterizerState = CreateRasterizerState();
+	d3dPipelineStateDesc.BlendState = CreateBlendState();
+	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
+	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
+	d3dPipelineStateDesc.SampleMask = UINT_MAX;
+	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	d3dPipelineStateDesc.NumRenderTargets = 1;
+	d3dPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dPipelineStateDesc.SampleDesc.Count = 1;
+	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
+
+	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
+	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
+	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
+
+	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
+}
+
+void CMinimapShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	// 대충 미니맵에 그릴 적 위치 매핑하는 내용 
+}
+
+void CMinimapShader::ReleaseShaderVariables()
+{
+	// 대충 매핑에 사용했던 리소스 언맵하는 내용
+
+	CShader::ReleaseShaderVariables();
+}
+
+void CMinimapShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_MINIMAP_ROBOT_POSITION *pcbMapped, XMFLOAT3 position)
+{
+	// 대충 적 위치 가져와서 미니맵에 그릴 적 위치 갱신하는 내용	
+}
+
+void CMinimapShader::ReleaseUploadBuffers()
+{
+	if (m_ppUIRects)
+	{
+		for (int i = 0; i < m_nUIRect; i++)
+		{
+			if (m_ppUIRects[i]) m_ppUIRects[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < m_nTextures; i++)
+		{
+			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	CShader::ReleaseUploadBuffers();
+}
+
+void CMinimapShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_nTextures = 3;
+	m_ppTextures = new CTexture*[m_nTextures];
+
+	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Radar_BG.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Enemy_Icon.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Team_Icon.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+
+	m_nUIRect = 3;
+	m_ppUIRects = new CRect*[m_nUIRect];
+
+	// Minimap Terrain
+	XMFLOAT2 xmf2Center = ::CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
+	XMFLOAT2 xmf2Size = ::CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
+	m_ppUIRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.63f, 0.93f, 0.93f, 0.4f);
+	xmf2Size = ::CalculateSize(0.63f, 0.93f, 0.93f, 0.4f);
+	m_ppUIRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.63f, 0.93f, 0.93f, 0.4f);
+	xmf2Size = ::CalculateSize(0.63f, 0.93f, 0.93f, 0.4f);
+	m_ppUIRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+}
+
+void CMinimapShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	//UpdateShaderVariables(pd3dCommandList, 적위치 갱신에 필요한 인자들);
+
+	// Draw Minimap Terrain
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+	if (m_ppTextures[0])
+	{
+		m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[0]->Render(pd3dCommandList, 0);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////

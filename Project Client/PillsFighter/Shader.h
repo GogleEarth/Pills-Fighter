@@ -509,3 +509,45 @@ public:
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+struct CB_MINIMAP_ROBOT_POSITION
+{
+	XMFLOAT3 position;
+};
+
+class CMinimapShader : public CShader
+{
+public:
+	CMinimapShader();
+	virtual ~CMinimapShader();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_MINIMAP_ROBOT_POSITION *pcbMapped, XMFLOAT3 position);
+	virtual void ReleaseShaderVariables();
+
+	virtual void ReleaseUploadBuffers();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+protected:
+	ID3D12Resource					*m_pd3dcbRobotPos = NULL;
+	CB_MINIMAP_ROBOT_POSITION		*m_pcbMappedRobotPos = NULL;
+
+	int								m_nUIRect = 0;
+	CRect							**m_ppUIRects = NULL;
+
+	int								m_nTextures;
+	CTexture						**m_ppTextures = NULL;
+
+};

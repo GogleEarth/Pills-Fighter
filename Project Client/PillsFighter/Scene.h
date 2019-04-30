@@ -176,6 +176,10 @@ public: // Network
 	virtual void SetPlayerIndex(int nServerIndex) {}
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
 
+
+protected:
+	CMinimapShader						*m_pMinimapShader = NULL;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

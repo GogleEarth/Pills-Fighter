@@ -477,6 +477,9 @@ float4 PS_UI_MINIMAP(GS_UI_OUT input) : SV_TARGET
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	float2 centerpos = float2(0.5f, 0.5f);
+	cColor = (distance(input.uv, centerpos) < 0.015) ? float4(1, 0, 0, 1) : cColor;
+	cColor = (distance(input.uv, centerpos) < 0.49) ? cColor : 0;
+	cColor = (distance(input.uv, centerpos) >= 0.49) ? float4(0.5, 0.2, 0.05, 1) : cColor;
 	cColor = (distance(input.uv, centerpos) < 0.5) ? cColor : 0;
 
 	return(cColor);
