@@ -764,7 +764,6 @@ void CRobotObject::OnPrepareAnimate()
 	m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
 	m_pLeftNozzle = m_pModel->FindFrame("Bone001");
 	m_pRightNozzle = m_pModel->FindFrame("Bone002");
-	m_pMuzzle = m_pModel->FindFrame("FirePoint");
 }
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
@@ -828,9 +827,9 @@ void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
 	if (nIndex != -1) ChangeWeapon(nIndex);
 }
 
-void CRobotObject::CRobotObject::ChangeWeapon(int nSlotIndex)
+void CRobotObject::CRobotObject::ChangeWeapon(int nIndex)
 {
-	CWeapon *pWeapon = GetWeapon(nSlotIndex);
+	CWeapon *pWeapon = GetWeapon(nIndex);
 
 	EquipOnRightHand(pWeapon);
 }
@@ -1069,7 +1068,7 @@ CFadeOut::~CFadeOut()
 {
 }
 
-void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType)
 {
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
@@ -1128,7 +1127,7 @@ void CSprite::ReleaseShaderVariables()
 	}
 }
 
-void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, EFFECT_ANIMATION_TYPE nEffectAniType)
+void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType)
 {
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;

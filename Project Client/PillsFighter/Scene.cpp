@@ -1608,13 +1608,13 @@ void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 }
 /////////////////////////////////////////////////////////////////////////
 
-void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList)
+void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
 {
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	for (int i = 0; i < 6; i++)
 	{
-		m_pCubeMapCamera[i]->SetPosition(m_pPlayer->GetPosition());
+		m_pCubeMapCamera[i]->SetPosition(pMainObject->GetPosition());
 		m_pCubeMapCamera[i]->GenerateViewMatrix();
 		m_pCubeMapCamera[i]->UpdateShaderVariables(pd3dCommandList);
 
@@ -1661,7 +1661,7 @@ void CColonyScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_nFPS % 5 == 0)
 	{
-		RenderCubeMap(pd3dCommandList);
+		RenderCubeMap(pd3dCommandList, m_pPlayer);
 	}
 
 	MinimapRender(pd3dCommandList);
@@ -1711,9 +1711,9 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
-					((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE_ONE);
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -1729,9 +1729,9 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 
-					((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
-					((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE_ONE);
 
 					pBZKBullet->Delete();
 
@@ -1748,9 +1748,9 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f));
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
-					((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE::EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE_ONE);
 
 					pMGBullet->Delete();
 
@@ -2081,15 +2081,15 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
-		((CFadeOutShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT])->InsertEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f));
+		m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
-		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE])->InsertEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
-		((CSpriteShader*)m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE])->InsertEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
 		break;
 	}
 }
@@ -2099,6 +2099,8 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	switch (pktID)
 	{
 	case PKT_ID_PLAYER_INFO:
+		if (!m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]) break;
+
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
 		if (((PKT_PLAYER_INFO*)pktData)->isChangeAnimation)
@@ -2114,21 +2116,24 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetState(((PKT_PLAYER_INFO*)pktData)->State);
 		break;
 	case PKT_ID_PLAYER_LIFE:
+		if (!m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]) break;
+
 		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
 		break;
 	case PKT_ID_CREATE_OBJECT:
 		break;
 	case PKT_ID_DELETE_OBJECT:
+		if (!m_pObjects[((PKT_DELETE_OBJECT*)pktData)->Object_Index]) break;
+
 		DeleteObject(((PKT_DELETE_OBJECT*)pktData));
 		break;
 	case PKT_ID_TIME_INFO:
 		break;
 	case PKT_ID_UPDATE_OBJECT:
-		if (((PKT_UPDATE_OBJECT*)pktData)->Object_Index)
-		{
-			XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
-			m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
-		}
+		if (!m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]) break;
+
+		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
+		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
 		break;
 	case PKT_ID_CREATE_EFFECT:
 		break;

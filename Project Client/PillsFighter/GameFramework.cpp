@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameFramework.h"
+#include "Weapon.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -963,7 +964,9 @@ void CGameFramework::SendToServer()
 		pktShoot.PktSize = sizeof(PKT_SHOOT);
 		pktShoot.ID = m_nClinetIndex;
 		pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
-		pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget();
+
+		CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
+		pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget(pGun->GetMuzzlePos());
 		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
 		{

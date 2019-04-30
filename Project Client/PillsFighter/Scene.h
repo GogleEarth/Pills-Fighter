@@ -351,7 +351,7 @@ public:
 
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject);
 
 	void CreateEnvironmentMap(ID3D12Device *pd3dDevice);
 	void CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);

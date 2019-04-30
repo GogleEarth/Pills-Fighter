@@ -962,9 +962,9 @@ void CFadeOutShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CFadeOutShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+void CFadeOutShader::AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
 {
-	((CFadeOut*)m_pEffect)->AddVertex(xmf3Position, xmf2Size);
+	m_pEffect->AddVertex(xmf3Position, xmf2Size, 0, nEffectAniType);
 }
 
 
@@ -1075,9 +1075,9 @@ void CHitSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CHitSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType)
+void CHitSpriteShader::AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
 {
-	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, rand() % 2, nEffectAniType);
+	m_pEffect->AddVertex(xmf3Position, xmf2Size, rand() % 2, nEffectAniType);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1104,9 +1104,9 @@ void CExpSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 	m_pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
-void CExpSpriteShader::InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType)
+void CExpSpriteShader::AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
 {
-	((CSprite*)m_pEffect)->AddVertex(xmf3Position, xmf2Size, 0, nEffectAniType);
+	m_pEffect->AddVertex(xmf3Position, xmf2Size, 0, nEffectAniType);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

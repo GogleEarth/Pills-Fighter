@@ -98,7 +98,7 @@ public:
 	void SetScene(CScene *pCScene) { m_pScene = pCScene; }
 
 public:
-	XMFLOAT4X4 GetToTarget();
+	XMFLOAT4X4 GetToTarget(XMFLOAT3 xmf3Position);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 
 protected:
@@ -123,7 +123,7 @@ public:
 
 	WEAPON_TYPE GetWeaponType();
 
-	virtual void ChangeWeapon(int nSlotIndex);
+	virtual void ChangeWeapon(int nIndex);
 	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, int nGroup);
 
 protected:

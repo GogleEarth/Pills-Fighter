@@ -87,7 +87,9 @@ void CGun::Shot(FMOD::Sound *pFmodSound)
 	Bullet *pBullet = NULL;
 	pBullet = new Bullet();
 
-	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget();
+	if (!m_pMuzzle) return;
+
+	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget(m_pMuzzle->GetPosition());
 
 	pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
 	pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
@@ -165,6 +167,11 @@ void CGimGun::Animate(float ElapsedTime, CCamera *pCamera)
 	CGun::Animate(ElapsedTime, pCamera);
 }
 
+void CGimGun::OnPrepareAnimate()
+{
+	m_pMuzzle = m_pModel->FindFrame("Bone001");
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -192,6 +199,11 @@ void CBazooka::Attack()
 	}
 }
 
+void CBazooka::OnPrepareAnimate()
+{
+	m_pMuzzle = m_pModel->FindFrame("Bone001");
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -217,4 +229,9 @@ void CMachineGun::Attack()
 		Shot(gFmodSound.m_pSoundMGShot);
 		SetShotCoolTime();
 	}
+}
+
+void CMachineGun::OnPrepareAnimate()
+{
+	m_pMuzzle = m_pModel->FindFrame("Bone001");
 }

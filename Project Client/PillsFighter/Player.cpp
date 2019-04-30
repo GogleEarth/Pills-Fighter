@@ -212,7 +212,7 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 	CRobotObject::Render(pd3dCommandList, pCamera, true);
 }
 
-XMFLOAT4X4 CPlayer::GetToTarget()
+XMFLOAT4X4 CPlayer::GetToTarget(XMFLOAT3 xmf3Position)
 {
 	float fDistance = m_pScene->GetToTargetDistance();
 
@@ -222,7 +222,6 @@ XMFLOAT4X4 CPlayer::GetToTarget()
 		xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
 		xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
 
-	XMFLOAT3 xmf3Position = m_pMuzzle->GetPosition();
 	XMFLOAT3 xmf3Right = m_pCamera->GetRightVector();
 	XMFLOAT3 xmf3Look = Vector3::Normalize(Vector3::Subtract(xmf3DestPos, xmf3Position));
 	XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Right, xmf3Look, true);
@@ -505,9 +504,9 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 	}
 }
 
-void CPlayer::ChangeWeapon(int nSlotIndex)
+void CPlayer::ChangeWeapon(int nIndex)
 {
-	CRobotObject::ChangeWeapon(nSlotIndex);
+	CRobotObject::ChangeWeapon(nIndex);
 
 	m_bReloading = false;
 	m_bWeaponChanged = TRUE;

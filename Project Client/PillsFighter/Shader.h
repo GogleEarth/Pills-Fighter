@@ -239,6 +239,7 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
+	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType) {};
 
 protected:
 	CEffect					*m_pEffect = NULL;
@@ -267,7 +268,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,7 +291,6 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL) {}
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -303,7 +303,7 @@ public:
 	virtual ~CHitSpriteShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType);
+	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ public:
 	virtual ~CExpSpriteShader();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void InsertEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, EFFECT_ANIMATION_TYPE nEffectAniType);
+	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -47,7 +47,7 @@ public:
 
 	virtual void Initialize();
 
-
+	CModel *m_pMuzzle = NULL;
 	CObjectsShader *m_pBulletShader = NULL;
 	int	m_nBulletGroup;
 
@@ -76,6 +76,7 @@ public:
 	virtual void SetType() { m_nType |= WEAPON_TYPE_OF_GUN; }
 
 	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
+	XMFLOAT3 GetMuzzlePos() { return m_pMuzzle->GetPosition();   }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +107,7 @@ public:
 	virtual void SetType();
 
 	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
+	virtual void OnPrepareAnimate();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,6 +129,7 @@ public:
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 5; }
 
 	virtual void SetType();
+	virtual void OnPrepareAnimate();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,4 +151,5 @@ public:
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
 
 	virtual void SetType();
+	virtual void OnPrepareAnimate();
 };

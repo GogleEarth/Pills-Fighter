@@ -314,7 +314,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, int nInstances = 1);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances = 1);
 
-	virtual void ChangeWeapon(int nSlotIndex);
+	virtual void ChangeWeapon(int nIndex);
 	virtual void ChangeWeaponByType(WEAPON_TYPE nType);
 	virtual int GetWeaponIndex(int nType);
 	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType);
@@ -351,13 +351,13 @@ public:
 
 protected:
 	FMOD::Channel *m_pChannelBooster = NULL;
-
-protected:
-	CModel* m_pMuzzle = NULL;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
+#define EFFECT_ANIMATION_TYPE_ONE 0 
+#define EFFECT_ANIMATION_TYPE_LOOP 1
 
 struct CB_EFFECT_INFO
 {
@@ -411,6 +411,8 @@ public:
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType) {}
 };
 
 /////////////////////////////////////////////////////////
@@ -428,7 +430,7 @@ public:
 	CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
 	virtual ~CFadeOut();
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType);
 };
 
 /////////////////////////////////////////////////////////
@@ -462,7 +464,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, EFFECT_ANIMATION_TYPE nEffectAniType);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType);
 
 protected:
 	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
