@@ -175,12 +175,6 @@ void CScene::ReleaseObjects()
 		pFont->ClearTexts();
 	}
 
-	if (m_pMinimapShader)
-	{
-		m_pMinimapShader->ReleaseShaderVariables();
-		delete m_pMinimapShader;
-	}
-
 	ReleaseShaderVariables();
 }
 
@@ -193,7 +187,6 @@ void CScene::ReleaseUploadBuffers()
 	for (int i = 0; i < m_nEffectShaders; i++) if(m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
 	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
 	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
-	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
 }
 
 void CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -252,7 +245,10 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	}
 	
 	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
-	if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, pCamera, true);
+	if (m_pTerrain)
+	{
+		m_pTerrain->Render(pd3dCommandList, pCamera, true);
+	}
 
 	for (int i = 0; i < m_nShaders; i++)
 	{
@@ -1356,6 +1352,12 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false); 
 }
 
+void CColonyScene::ReleaseUploadBuffers()
+{
+	CScene::ReleaseUploadBuffers();
+
+	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
+}
 void CColonyScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
@@ -1377,6 +1379,12 @@ void CColonyScene::ReleaseObjects()
 	}
 
 	if (m_pd3dMinimapDepthStencilBuffer) m_pd3dMinimapDepthStencilBuffer->Release();
+
+	if (m_pMinimapShader)
+	{
+		m_pMinimapShader->ReleaseShaderVariables();
+		delete m_pMinimapShader;
+	}
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)

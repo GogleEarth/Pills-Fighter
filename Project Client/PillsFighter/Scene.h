@@ -175,11 +175,6 @@ public: // Network
 	virtual void LeavePlayer(int nServerIndex) {};
 	virtual void SetPlayerIndex(int nServerIndex) {}
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
-
-
-protected:
-	CMinimapShader						*m_pMinimapShader = NULL;
-
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -338,6 +333,7 @@ public:
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void ReleaseObjects();
+	virtual void ReleaseUploadBuffers();
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	virtual void ReleaseUploadBuffers();
 
@@ -390,6 +386,8 @@ protected:
 
 	D3D12_VIEWPORT 					m_d3dMMViewport;
 	D3D12_RECT						m_d3dMMScissorRect;
+
+	CMinimapShader					*m_pMinimapShader = NULL;
 
 	int								m_nRedScore = 0;
 	int								m_nBlueScore = 0;
