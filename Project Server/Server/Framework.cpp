@@ -337,6 +337,12 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 		BlueScore = 100;
 		RedScore = 100;
+		PKT_SCORE scorepkt;
+		scorepkt.PktSize = sizeof(PKT_SCORE);
+		scorepkt.PktId = PKT_ID_SCORE;
+		scorepkt.BlueScore = BlueScore;
+		scorepkt.RedScore = RedScore;
+		Send_msg((char*)&scorepkt, scorepkt.PktSize, 0);
 
 		PlayGame(pScene);
 	}
@@ -525,7 +531,7 @@ void Framework::CheckCollision(CScene* pScene)
 							pScene->m_pObjects[k]->hp -= Bullet->hp;
 							if (pScene->m_pObjects[k]->hp <= 0)
 							{
-								if (pScene->m_pObjects[k]->m_iId % 2)
+								if (pScene->m_pObjects[k]->m_iId % 2 == 0)
 								{
 									RedScore -= 5;
 								}
