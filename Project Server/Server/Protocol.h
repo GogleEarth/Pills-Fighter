@@ -102,8 +102,10 @@ typedef struct PKT_PLAYER_INFO
 	BOOL			IsShooting;
 	WEAPON_TYPE		Player_Weapon;
 	BOOL			isChangeWeapon;
-	ANIMATION_TYPE	Player_Animation;
-	BOOL			isChangeAnimation;
+	ANIMATION_TYPE	Player_Up_Animation;
+	BOOL			isUpChangeAnimation;
+	ANIMATION_TYPE	Player_Down_Animation;
+	BOOL			isDownChangeAnimation;
 	int				State;
 }PKT_PLAYER_INFO;
 

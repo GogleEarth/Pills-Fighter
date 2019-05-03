@@ -22,41 +22,47 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	switch (nRobotType)
 	{
 	case SKINNED_OBJECT_INDEX_GM:
-		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", true);
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
 		break;
 	case SKINNED_OBJECT_INDEX_GUNDAM:
-		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", true);
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
 		break;
 	default:
-		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", true);
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
 		break;
 	}
 
-	m_pAnimationController = new CAnimationController(2, pModel->GetAnimationSet());
-	m_pAnimationController->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
-	m_pAnimationController->SetTrackEnable(1, false);
+	int nAnimationControllers = 2;
+	CAnimationController **ppAnimationControllers = new CAnimationController*[nAnimationControllers];
+	ppAnimationControllers[ANIMATION_UP] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_UP));
+	ppAnimationControllers[ANIMATION_DOWN] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_DOWN));
+
+	ppAnimationControllers[ANIMATION_UP]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 
 	CAnimationCallbackHandler *pAnimationCallbackHandler = new CSoundCallbackHandler();
 
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
 
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
 
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
 
-	m_pAnimationController->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
-	m_pAnimationController->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
+
+	SetAnimationController(ppAnimationControllers, nAnimationControllers);
 
 	SetModel(pModel);
 	
@@ -130,26 +136,42 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_FORWARD)
 		{
-			if(!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
-				ChangeAnimation(0, ANIMATION_STATE_WALK_FORWARD);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
+				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_FORWARD);
+			}
+
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
 		}
 		if (dwDirection & DIR_BACKWARD)
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
-				ChangeAnimation(0, ANIMATION_STATE_WALK_BACKWARD);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_BACKWARD);
+				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_BACKWARD);
+			}
+
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
-				ChangeAnimation(0, ANIMATION_STATE_WALK_RIGHT);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_RIGHT);
+				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_RIGHT);
+			}
+
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND)) 
-				ChangeAnimation(0, ANIMATION_STATE_WALK_LEFT);
+			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_LEFT);
+				if(!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_LEFT);
+			}
+
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 		}
 
@@ -286,8 +308,11 @@ void CPlayer::SetAnimationIdle()
 {
 	if (m_nState & OBJECT_STATE_ONGROUND)
 	{
-		ChangeAnimation(0, ANIMATION_STATE_IDLE);
-		//m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
+		if (!(m_nState & OBJECT_STATE_SHOOTING))
+		{
+			ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
+		}
 	}
 }
 
@@ -297,8 +322,10 @@ void CPlayer::ActivationBooster()
 	{
 		if (m_nState & OBJECT_STATE_ONGROUND)
 		{
-			ChangeAnimation(0, ANIMATION_STATE_JUMP);
-			//m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_ONCE);
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP, true);
+
+			if(!(m_nState & OBJECT_STATE_SHOOTING))
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTERING;
@@ -316,14 +343,16 @@ void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 {
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		if (m_pAnimationController->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
+		if (m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
 		{
-			CAnimationTrack *pAnimationTrack = m_pAnimationController->GetAnimationTrack(0);
+			CAnimationTrack *pAnimationTrack = m_ppAnimationControllers[ANIMATION_DOWN]->GetAnimationTrack(0);
 			
 			if (pAnimationTrack->GetPosition() >= pAnimationTrack->GetLength())
 			{
-				ChangeAnimation(0, ANIMATION_STATE_JUMP_LOOP);
-				//m_pAnimationController->SetTrackAnimationType(0, ANIMATION_TYPE_LOOP);
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
+
+				if (!(m_nState & OBJECT_STATE_SHOOTING))
+					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
 			}
 		}
 

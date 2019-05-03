@@ -133,7 +133,8 @@ public:
 	std::vector<ID3D12Resource*>		m_vd3dcbBoneTransforms;
 	std::vector<XMFLOAT4X4*>			m_vcbxmf4x4BoneTransforms;
 
-	CAnimationController				*m_pAnimationController = NULL;
+	int									m_nAnimationControllers = 0;
+	CAnimationController				**m_ppAnimationControllers = NULL;
 
 	void SetSkinnedMeshBoneTransformConstantBuffer();
 
@@ -145,7 +146,7 @@ public:
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
-	void SetAnimationController(CAnimationController *pController) { m_pAnimationController = pController; }
+	virtual void SetAnimationController(CAnimationController **pControllers, int nControllers) { m_ppAnimationControllers = pControllers; m_nAnimationControllers = nControllers; }
 
 public:
 	void AddParticle(CParticle *pParticle) { m_vpParticles.emplace_back(pParticle); };
@@ -276,14 +277,16 @@ public:
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 
 protected:
-	int		m_nAnimationState = ANIMATION_STATE_IDLE;
-	BOOL	m_bAnimationChanged = FALSE;
+	int		*m_pnAnimationState;
+	bool	*m_pbAnimationChanged;
 
 public:
-	void ChangeAnimation(int nIndex, int nState);
-	int GetAnimationState() { return m_nAnimationState; }
-	BOOL GetAnimationChanged() { return m_bAnimationChanged; }
-	void SetAnimationChanged(BOOL bAnimationChagned) { m_bAnimationChanged = bAnimationChagned; }
+	virtual void SetAnimationController(CAnimationController **pControllers, int nControllers);
+
+	void ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
+	int GetAnimationState(int nController) { return m_pnAnimationState[nController]; }
+	BOOL GetAnimationChanged(int nController) { return m_pbAnimationChanged[nController]; }
+	void SetAnimationChanged(int nController, BOOL bAnimationChagned) { m_pbAnimationChanged[nController] = bAnimationChagned; }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

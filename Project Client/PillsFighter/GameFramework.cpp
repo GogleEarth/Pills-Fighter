@@ -1008,11 +1008,13 @@ void CGameFramework::SendToServer()
 
 		if (pktPlayerInfo.isChangeWeapon) m_pPlayer->SetWeaponChanged(FALSE);
 
-		pktPlayerInfo.Player_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState());
+		pktPlayerInfo.Player_Up_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_UP));
+		pktPlayerInfo.isUpChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_UP);
+		if (pktPlayerInfo.isUpChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_UP, FALSE);
 
-		pktPlayerInfo.isChangeAnimation = m_pPlayer->GetAnimationChanged();
-
-		if (pktPlayerInfo.isChangeAnimation) m_pPlayer->SetAnimationChanged(FALSE);
+		pktPlayerInfo.Player_Down_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_DOWN));
+		pktPlayerInfo.isDownChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_DOWN);
+		if (pktPlayerInfo.isDownChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_DOWN, FALSE);
 
 		pktPlayerInfo.State = m_pPlayer->GetState();
 

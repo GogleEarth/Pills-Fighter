@@ -321,7 +321,8 @@ CModel::~CModel()
 		delete[] m_ppMaterials;
 	}
 
-	if (m_pAnimationSet) delete m_pAnimationSet;
+	if (m_ppAnimationSets[0]) delete m_ppAnimationSets[0];
+	if (m_ppAnimationSets[1]) delete m_ppAnimationSets[1];
 }
 
 void CModel::AddRef()
@@ -538,7 +539,7 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, nInstances);
 }
 
-CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation)
+CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName)
 {
 	FILE *pFile;
 	fopen_s(&pFile, pstrFileName, "rb");
@@ -551,7 +552,8 @@ CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D1
 	int nMeshes = 0, nSkinnedMeshes = 0;
 	pRootModel->GetMeshes(&nMeshes, &nSkinnedMeshes);
 	pRootModel->SetModelMeshCount(nMeshes, nSkinnedMeshes);
-	if (bHasAnimation) pRootModel->m_pAnimationSet = CModel::LoadAnimationFromFile(pFile, pRootModel);
+	if (pstrUpperAniFileName) pRootModel->m_ppAnimationSets[ANIMATION_UP] = CModel::LoadAnimationFromFile(pRootModel, pstrUpperAniFileName);
+	if (pstrUnderAniFileName) pRootModel->m_ppAnimationSets[ANIMATION_DOWN] = CModel::LoadAnimationFromFile(pRootModel, pstrUnderAniFileName);
 	pRootModel->CacheSkinningBoneFrames(pRootModel);
 
 	return pRootModel;
@@ -648,8 +650,11 @@ CModel* CModel::LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 	return pModel;
 }
 
-CAnimationSet* CModel::LoadAnimationFromFile(FILE *pfile, CModel *pModel)
+CAnimationSet* CModel::LoadAnimationFromFile(CModel *pModel, const char* pstrFileName)
 {
+	FILE *pfile;
+	fopen_s(&pfile, pstrFileName, "rb");
+
 	BYTE nstrLength;
 	char pstrToken[64] = { 0 };
 

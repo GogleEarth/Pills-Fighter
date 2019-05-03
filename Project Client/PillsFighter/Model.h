@@ -137,7 +137,7 @@ protected:
 
 	char			m_pstrModelName[64] = { 0 };
 
-	CAnimationSet	*m_pAnimationSet = NULL;
+	CAnimationSet	*m_ppAnimationSets[2] = { 0 };
 
 public:
 	void ReleaseUploadBuffers();
@@ -151,7 +151,7 @@ public:
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned);
 	void SetMaterial(CMaterial **ppMaterials, UINT nMaterials) { m_ppMaterials = ppMaterials; m_nMaterials = nMaterials; }
 	XMFLOAT4X4 GetWorldTransf() { return m_xmf4x4World; }
-	CAnimationSet* GetAnimationSet() { return m_pAnimationSet; }
+	CAnimationSet* GetAnimationSet(int nIndex) { return m_ppAnimationSets[nIndex]; }
 
 	CMesh* GetMesh() { return m_pMesh; }
 
@@ -194,7 +194,7 @@ protected:
 	const char		*m_pstrFileName = NULL;
 
 public:
-	static CModel* LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation);
+	static CModel* LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName);
 	static CModel* LoadModelFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile, const char *pstrFileName, const char *pstrFilePath);
-	static CAnimationSet* LoadAnimationFromFile(FILE *pfile, CModel *pModel);
+	static CAnimationSet* LoadAnimationFromFile(CModel *pModel, const char* pstrFileName);
 };

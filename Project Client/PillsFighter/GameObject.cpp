@@ -350,7 +350,10 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	{
 		OnPrepareRender();
 
-		if (m_pAnimationController) m_pAnimationController->AdvanceTime(fTimeElapsed);
+		for (int i = 0; i < m_nAnimationControllers; i++)
+		{
+			if (m_ppAnimationControllers[i]) m_ppAnimationControllers[i]->AdvanceTime(fTimeElapsed);
+		}
 
 		UpdateWorldTransform();
 
@@ -386,7 +389,10 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 	OnPrepareRender();
 
-	if (m_pAnimationController) m_pAnimationController->ApplyTransform();
+	for (int i = 0; i < m_nAnimationControllers; i++)
+	{
+		if (m_ppAnimationControllers[i]) m_ppAnimationControllers[i]->ApplyTransform();
+	}
 
 	UpdateWorldTransform();
 
@@ -714,6 +720,19 @@ CAnimationObject::CAnimationObject() : CGameObject()
 
 CAnimationObject::~CAnimationObject()
 {
+	if(m_pnAnimationState) delete[] m_pnAnimationState;
+	if(m_pbAnimationChanged) delete[] m_pbAnimationChanged;
+}
+
+void CAnimationObject::SetAnimationController(CAnimationController **pControllers, int nControllers)
+{
+	CGameObject::SetAnimationController(pControllers, nControllers);
+
+	m_pnAnimationState = new int[nControllers];
+	::ZeroMemory(m_pnAnimationState, sizeof(int) * nControllers);
+
+	m_pbAnimationChanged = new bool[nControllers];
+	::ZeroMemory(m_pbAnimationChanged, sizeof(bool) * nControllers);
 }
 
 void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
@@ -721,14 +740,18 @@ void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
 	CGameObject::Animate(ElapsedTime);
 }
 
-void CAnimationObject::ChangeAnimation(int nIndex, int nState)
+void CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition)
 {
-	if (nState != m_nAnimationState)
+	if (m_ppAnimationControllers)
 	{
-		m_nAnimationState = nState;
-		m_pAnimationController->SetTrackAnimation(nIndex, nState);
+		if (nAnimation != m_pnAnimationState[nController])
+		{
+			if (bResetPosition) m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
+			m_pnAnimationState[nController] = nAnimation;
+			m_ppAnimationControllers[nController]->SetTrackAnimation(nTrack, nAnimation);
 
-		m_bAnimationChanged = TRUE;
+			m_pbAnimationChanged[nController] = TRUE;
+		}
 	}
 }
 

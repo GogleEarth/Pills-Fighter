@@ -17,7 +17,7 @@ CRepository::~CRepository()
 	}
 }
 
-CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation)
+CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName)
 {
 	for (const auto& Model : m_vModels)
 	{
@@ -27,7 +27,7 @@ CModel* CRepository::GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLis
 		}
 	}
 
-	CModel *pModel = CModel::LoadGeometryAndAnimationFromFile(pd3dDevice, pd3dCommandList, pstrFileName, bHasAnimation);
+	CModel *pModel = CModel::LoadGeometryAndAnimationFromFile(pd3dDevice, pd3dCommandList, pstrFileName, pstrUpperAniFileName, pstrUnderAniFileName);
 	pModel->AddRef();
 	m_vModels.emplace_back(pModel);
 	

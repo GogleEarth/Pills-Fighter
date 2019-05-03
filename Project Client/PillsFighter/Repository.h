@@ -8,7 +8,7 @@ public:
 	CRepository();
 	virtual ~CRepository();
 
-	CModel* GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, bool bHasAnimation);
+	CModel* GetModel(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName);
 	void ReleaseUploadBuffers();
 
 protected:
