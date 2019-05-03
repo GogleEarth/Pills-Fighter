@@ -110,6 +110,7 @@ void Framework::main_loop()
 					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
 					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
 					int id = findindex();
+					pkt_cid.Team = id % 2;
 					if (id != -1)
 						pkt_cid.id = id;
 					else
@@ -135,10 +136,12 @@ void Framework::main_loop()
 						{
 							m.lock();
 							bool enable = clients[i].enable;
+							char team = clients[i].team;
 							m.unlock();
 							if (enable)
 							{
 								pkt_pin.id = i;
+								pkt_pin.Team = team;
 								std::cout << i << "번쨰 플레이어 정보를 새로 들어온 클라이언트에게 보냄\n";
 								retval = send(client_sock, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 							}
@@ -149,6 +152,7 @@ void Framework::main_loop()
 							if (client.enable)
 							{
 								pkt_pin.id = id;
+								pkt_pin.Team = id % 2;
 								std::cout << id << "번쨰 플레이어의 입장 다른 플레이어에게 알려줌\n";
 								retval = send(client.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 							}
@@ -161,6 +165,7 @@ void Framework::main_loop()
 					clients[id].enable = true;
 					clients[id].socket = client_sock;
 					clients[id].selected_robot = ROBOT_TYPE_GM;
+					clients[id].team = id % 2;
 					m.unlock();
 
 					Arg* arg = new Arg;
@@ -333,8 +338,6 @@ DWORD Framework::Update_Process(CScene* pScene)
 		}
 		m.unlock();
 
-		game_start = false;
-
 		BlueScore = 100;
 		RedScore = 100;
 		PKT_SCORE scorepkt;
@@ -444,7 +447,7 @@ DWORD Framework::client_process(Client_arg* arg)
 				{
 					lobbyplayermutex.lock();
 					lobby_player_msg_queue.push(PKT_LOBBY_PLAYER_INFO{ ((PKT_LOBBY_PLAYER_INFO*)buf)->PktSize, ((PKT_LOBBY_PLAYER_INFO*)buf)->PktId,
-						((PKT_LOBBY_PLAYER_INFO*)buf)->id,  ((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot });
+						((PKT_LOBBY_PLAYER_INFO*)buf)->id,  ((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot, ((PKT_LOBBY_PLAYER_INFO*)buf)->Team });
 					lobbyplayermutex.unlock();
 					ROBOT_TYPE rt;
 					if (((PKT_LOBBY_PLAYER_INFO*)buf)->selected_robot == 0)
@@ -453,6 +456,7 @@ DWORD Framework::client_process(Client_arg* arg)
 						rt = ROBOT_TYPE_GUNDAM;
 					m.lock();
 					clients[((PKT_LOBBY_PLAYER_INFO*)buf)->id].selected_robot = rt;
+					clients[((PKT_LOBBY_PLAYER_INFO*)buf)->id].team = ((PKT_LOBBY_PLAYER_INFO*)buf)->Team;
 					m.unlock();
 				}
 			}
@@ -974,6 +978,20 @@ void Framework::PlayGame(CScene * pScene)
 			pkt_cpl.PktSize = (char)sizeof(PKT_SEND_COMPLETE);
 			Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
 			//std::cout << "패킷 전송 완료\n";
+		}
+		else
+		{
+			PKT_GAME_END pkt_gend;
+			pkt_gend.PktId = (char)PKT_ID_GAME_END;
+			pkt_gend.PktSize = (char)sizeof(PKT_GAME_END);
+			if (RedScore == 0)
+				pkt_gend.WinTeam = 0;
+			else
+				pkt_gend.WinTeam = 1;
+			Send_msg((char*)&pkt_gend, pkt_gend.PktSize, 0);
+
+			game_start = false;
+			break;
 		}
 	}
 }

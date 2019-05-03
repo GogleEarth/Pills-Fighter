@@ -885,8 +885,14 @@ void CGameFramework::ProcessPacket()
 		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
 
 		m_pScene->ApplyRecvInfo(PKT_ID_SCORE, (LPVOID)pPacket);
+		break;
 	}
-	break;
+	case PKT_ID_GAME_END:
+	{
+		PKT_GAME_END *pPacket = (PKT_GAME_END*)m_pPacketBuffer;
+		// 게임종료 처리
+		break;
+	}
 	}
 }
 

@@ -19,7 +19,8 @@ typedef enum PKT_ID
 	PKT_ID_PLAYER_ID,
 	PKT_ID_GAME_START,
 	PKT_ID_SHOOT,
-	PKT_ID_SCORE
+	PKT_ID_SCORE,
+	PKT_ID_GAME_END
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -169,6 +170,7 @@ typedef struct PKT_PLAYER_IN
 	char		PktSize;
 	char		PktId;
 	int			id;
+	char		Team;
 }PKT_PLAYER_IN, PKT_PLAYER_OUT, PKT_CLIENTID;
 
 struct PKT_LOBBY_PLAYER_INFO
@@ -177,6 +179,7 @@ struct PKT_LOBBY_PLAYER_INFO
 	char		PktId;
 	int			id;
 	char		selected_robot;
+	char		Team;
 };
 
 typedef struct PKT_GAME_START
@@ -200,6 +203,13 @@ struct PKT_SCORE
 	char PktId;
 	char RedScore;
 	char BlueScore;
+};
+
+struct PKT_GAME_END
+{
+	char PktSize;
+	char PktId;
+	char WinTeam;
 };
 
 #define MAX_NUM_OBJECT 2000

@@ -12,6 +12,7 @@ struct Client_INFO
 	bool load_complete;
 	bool enable;
 	ROBOT_TYPE selected_robot;
+	char team;
 };
 
 struct Client_arg
