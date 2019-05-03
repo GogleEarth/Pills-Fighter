@@ -64,7 +64,7 @@ void CGun::Initialize()
 	CWeapon::Initialize();
 
 	SetReloadTime();
-	SetMaxReloadAmmo();
+		SetMaxReloadAmmo();
 }
 
 void CGun::Reload(int& nAmmo)

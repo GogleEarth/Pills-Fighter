@@ -549,5 +549,4 @@ protected:
 
 	int								m_nTextures;
 	CTexture						**m_ppTextures = NULL;
-
 };

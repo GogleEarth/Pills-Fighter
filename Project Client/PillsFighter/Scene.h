@@ -335,7 +335,6 @@ public:
 	virtual void ReleaseObjects();
 	virtual void ReleaseUploadBuffers();
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
-	virtual void ReleaseUploadBuffers();
 
 	virtual void CheckCollision();
 	virtual void CheckCollisionPlayer();

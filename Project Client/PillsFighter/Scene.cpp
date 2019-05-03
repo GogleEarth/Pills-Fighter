@@ -1352,12 +1352,6 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", false); 
 }
 
-void CColonyScene::ReleaseUploadBuffers()
-{
-	CScene::ReleaseUploadBuffers();
-
-	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
-}
 void CColonyScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
@@ -1701,6 +1695,7 @@ void CColonyScene::ReleaseUploadBuffers()
 	if (m_pGimGun) m_pGimGun->ReleaseUploadBuffers();
 	if (m_pBazooka) m_pBazooka->ReleaseUploadBuffers();
 	if (m_pMachineGun) m_pMachineGun->ReleaseUploadBuffers();
+	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
 }
 
 void CColonyScene::CheckCollision()
