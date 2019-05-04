@@ -173,7 +173,7 @@ void Framework::main_loop()
 					arg->client_socket = client_sock;
 					arg->id = id;
 
-					thread[count] = CreateThread(
+					thread[id] = CreateThread(
 						NULL, 0, client_thread,
 						(LPVOID)arg, 0, NULL);
 					count++;
@@ -272,7 +272,7 @@ DWORD Framework::Update_Process(CScene* pScene)
 
 			if (game_start)
 			{
-				playernum = count;
+				playernum = get_players();
 				count = -1;
 				std::cout << "게임 시작!\n";
 				break;
@@ -388,6 +388,7 @@ DWORD Framework::client_process(Client_arg* arg)
 				Player_out = true;
 				m.lock();
 				clients[arg->id].enable = false;
+				playernum--;
 				m.unlock();
 				closesocket(client_socket);
 				PKT_PLAYER_OUT playerout;
@@ -397,7 +398,7 @@ DWORD Framework::client_process(Client_arg* arg)
 				Send_msg((char*)&playerout, playerout.PktSize, 0);
 				std::cout << arg->id << "번 플레이어 스레드 종료\n";
 				m_pScene->m_pObjects[arg->id]->m_bPlay = false;
-				return 0;
+				break;
 			}
 			else
 			{
@@ -420,8 +421,9 @@ DWORD Framework::client_process(Client_arg* arg)
 					msg_queue.push(PKT_PLAYER_INFO{ ((PKT_PLAYER_INFO*)buf)->PktSize, ((PKT_PLAYER_INFO*)buf)->PktId,
 						((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix,
 						((PKT_PLAYER_INFO*)buf)->IsShooting, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
-						((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Animation,
-						((PKT_PLAYER_INFO*)buf)->isChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
+						((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Up_Animation,
+						((PKT_PLAYER_INFO*)buf)->isUpChangeAnimation, ((PKT_PLAYER_INFO*)buf)->Player_Down_Animation,
+						((PKT_PLAYER_INFO*)buf)->isDownChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
 					playerinfomutex.unlock();
 
 				}
@@ -934,7 +936,7 @@ void Framework::PlayGame(CScene * pScene)
 {
 	while (true)
 	{
-		if (BlueScore > 0 && RedScore > 0)
+		if (BlueScore > 0 && RedScore > 0 && playernum > 0)
 		{
 			m_GameTimer.Tick(60.0f);
 			elapsed_time = m_GameTimer.GetTimeElapsed();
@@ -979,6 +981,14 @@ void Framework::PlayGame(CScene * pScene)
 			Send_msg((char*)&pkt_cpl, pkt_cpl.PktSize, 0);
 			//std::cout << "패킷 전송 완료\n";
 		}
+		else if (playernum <= 0)
+		{
+			playernum = 0;
+			count = 0;
+			game_start = false;
+			std::cout << "플레이어가 0명이여서 게임을 종료\n";
+			break;
+		}
 		else
 		{
 			PKT_GAME_END pkt_gend;
@@ -991,7 +1001,24 @@ void Framework::PlayGame(CScene * pScene)
 			Send_msg((char*)&pkt_gend, pkt_gend.PktSize, 0);
 
 			game_start = false;
+			playernum = 0;
+			count = get_players();
+			std::cout << "점수가 0이된 팀이 있어서 게임을 종료\n";
 			break;
 		}
 	}
+}
+
+int Framework::get_players()
+{
+	int num = 0;
+	m.lock();
+	for (auto c : clients)
+	{
+		if (c.enable)
+			num++;
+	}
+	m.unlock();
+
+	return num;
 }

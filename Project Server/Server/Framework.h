@@ -97,6 +97,8 @@ public:
 	void SendTime(CScene* pScene);
 	void UpdateScene(CScene* pScene);
 	void PlayGame(CScene* pScene);
+
+	int get_players();
 };
 
 struct Arg
