@@ -43,26 +43,54 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CAnimationCallbackHandler *pAnimationCallbackHandler = new CSoundCallbackHandler();
 
 	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
 	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
 
+	pAnimationCallbackHandler = new CSoundCallbackHandler();
 	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, (void*)& CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
 	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
 
+	pAnimationCallbackHandler = new CSoundCallbackHandler();
 	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
 	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
 
+	pAnimationCallbackHandler = new CSoundCallbackHandler();
 	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
 	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
 
-	SetAnimationController(ppAnimationControllers, nAnimationControllers);
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	SWITCH *callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bShootStartEndPoint;
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_GM_GUN_SHOOT_START, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_GM_GUN_SHOOT_START, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_GM_GUN_SHOOT_START, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bShootReturnEndPoint;
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_GM_GUN_SHOOT_RETURN, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_GM_GUN_SHOOT_RETURN, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_GM_GUN_SHOOT_RETURN, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bShootOnceEndPoint;
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_SHOOT_ONCE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_SHOOT_ONCE, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_SHOOT_ONCE, pAnimationCallbackHandler);
+
+	SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
+	SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
 
 	SetModel(pModel);
 	
@@ -122,8 +150,6 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	m_pCamera->SetOffset(CAMERA_POSITION);
 	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 
-	Update(fTimeElapsed);
-
 	return(m_pCamera);
 }
 
@@ -139,6 +165,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
 			{
 				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
+				m_nState |= OBJECT_STATE_MOVING;
+
 				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_FORWARD);
 			}
 
@@ -149,6 +177,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
 			{
 				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_BACKWARD);
+				m_nState |= OBJECT_STATE_MOVING;
+
 				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_BACKWARD);
 			}
 
@@ -159,6 +189,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
 			{
 				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_RIGHT);
+				m_nState |= OBJECT_STATE_MOVING;
+
 				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_RIGHT);
 			}
 
@@ -169,6 +201,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
 			{
 				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_LEFT);
+				m_nState |= OBJECT_STATE_MOVING;
+
 				if(!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_LEFT);
 			}
 
@@ -199,6 +233,7 @@ void CPlayer::Update(float fTimeElapsed)
 	ProcessBoosterGauge(fTimeElapsed);
 	ProcessHitPoint();
 	ProcessTime(m_pRHWeapon, fTimeElapsed);
+	ProcessAnimation();
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
@@ -308,8 +343,25 @@ void CPlayer::SetAnimationIdle()
 {
 	if (m_nState & OBJECT_STATE_ONGROUND)
 	{
-		if (!(m_nState & OBJECT_STATE_SHOOTING))
+		if (m_nState & OBJECT_STATE_SHOOTING)
 		{
+			CGun *pGun = (CGun*)m_pRHWeapon;
+
+			if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == ANIMATION_STATE_GM_GUN_SHOOT_START)
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START);
+			}
+			else
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN);
+			}
+
+			m_ppAnimationControllers[ANIMATION_DOWN]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackPosition(0));
+		}
+		else
+		{
+			m_nState &= ~OBJECT_STATE_MOVING;
+
 			ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
 		}
@@ -343,18 +395,6 @@ void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 {
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		if (m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
-		{
-			CAnimationTrack *pAnimationTrack = m_ppAnimationControllers[ANIMATION_DOWN]->GetAnimationTrack(0);
-			
-			if (pAnimationTrack->GetPosition() >= pAnimationTrack->GetLength())
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
-
-				if (!(m_nState & OBJECT_STATE_SHOOTING))
-					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
-			}
-		}
 
 		if (m_fElapsedBGConsumeTime <= 0.0f)
 		{
@@ -431,6 +471,82 @@ void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAA
 	}
 }
 
+void CPlayer::ProcessAnimation()
+{
+	if (m_nState & OBJECT_STATE_SHOOTING)
+	{
+		if (m_bShootStartEndPoint)
+		{
+			m_bShootStartEndPoint = false;
+			m_bChangeableOnceAni = true;
+		}
+
+		if (m_bShootReturnEndPoint)
+		{
+			m_bShootReturnEndPoint = false;
+			m_nState &= ~OBJECT_STATE_SHOOTING;
+		}
+
+		// ONCE 애니메이션으로 바꿀 수 있을 경우
+		if (m_bChangeableOnceAni)
+		{
+			CGun *pGun = (CGun*)m_pRHWeapon;
+
+			if (pGun->IsShootable())
+			{
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
+				m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, 0.0f);
+
+				pGun->Shot();
+				m_bShootable = false;
+			}
+
+			if (m_LButtonDown)
+			{
+				if (m_bShootOnceEndPoint)
+				{
+					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
+					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
+
+					m_bShootable = true;
+					m_bShootOnceEndPoint = false;
+				}
+			}
+
+			if (!m_LButtonDown)
+			{
+				if ((pGun->ShootNumber() == pGun->ShootedNumber()) || (pGun->ShootedNumber() == 0))
+				{
+					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
+
+					if (!(m_nState & OBJECT_STATE_MOVING) && (m_nState & OBJECT_STATE_ONGROUND))
+					{
+						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
+					}
+
+					m_bChangeableOnceAni = false;
+				}
+			}
+		}
+	}
+	
+	if (!(m_nState & OBJECT_STATE_ONGROUND))
+	{
+		if (m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
+		{
+			CAnimationTrack *pAnimationTrack = m_ppAnimationControllers[ANIMATION_DOWN]->GetAnimationTrack(0);
+
+			if (pAnimationTrack->GetPosition() >= pAnimationTrack->GetLength())
+			{
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
+
+				if (!(m_nState & OBJECT_STATE_SHOOTING))
+					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
+			}
+		}
+	}
+}
+
 void CPlayer::Attack(CWeapon *pWeapon)
 {
 	if (pWeapon)
@@ -441,7 +557,18 @@ void CPlayer::Attack(CWeapon *pWeapon)
 		{
 			CGun *pGun = (CGun*)pWeapon;
 
-			if (!m_bReloading) pGun->Attack();
+			if (!m_bReloading)
+			{
+				if (!(m_nState & OBJECT_STATE_SHOOTING))
+				{
+					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
+
+					if (!(m_nState & OBJECT_STATE_MOVING) && (m_nState & OBJECT_STATE_ONGROUND))
+						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
+
+					m_nState |= OBJECT_STATE_SHOOTING;
+				}
+			}
 		}
 	}
 }
@@ -489,10 +616,13 @@ void CPlayer::Reload(CWeapon *pWeapon)
 	{
 		CGun *pGun = (CGun*)pWeapon;
 
-		if (!m_bReloading)
+		if (pGun->GetReloadedAmmo() < pGun->GetMaxReloadAmmo())
 		{
-			m_bReloading = true;
-			m_fReloadTime = pGun->GetReloadTime();
+			if (!m_bReloading)
+			{
+				m_bReloading = true;
+				m_fReloadTime = pGun->GetReloadTime();
+			}
 		}
 	}
 }
@@ -535,6 +665,8 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 
 void CPlayer::ChangeWeapon(int nIndex)
 {
+	if (m_nState & OBJECT_STATE_SHOOTING) return;
+
 	CRobotObject::ChangeWeapon(nIndex);
 
 	m_bReloading = false;

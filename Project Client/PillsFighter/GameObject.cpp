@@ -34,6 +34,8 @@ CGameObject::~CGameObject()
 
 	if (m_pModel) m_pModel->Release();
 	if (m_pShader) delete m_pShader;
+	if (m_ppAnimationControllers[ANIMATION_UP]) delete m_ppAnimationControllers[ANIMATION_UP];
+	if (m_ppAnimationControllers[ANIMATION_DOWN]) delete m_ppAnimationControllers[ANIMATION_DOWN];
 }
 
 void CGameObject::SetModel(CModel *pModel)
@@ -344,16 +346,34 @@ void CGameObject::ApplyToParticle(CParticle *pParticle)
 	pParticle->SetToFollowFramePosition();
 }
 
+void CGameObject::AfterAdvanceAnimationController()
+{
+	if (m_ppAnimationControllers[ANIMATION_UP])
+		m_ppAnimationControllers[ANIMATION_UP]->AfterAdvanceTime();
+
+	if (m_ppAnimationControllers[ANIMATION_DOWN])
+		m_ppAnimationControllers[ANIMATION_DOWN]->AfterAdvanceTime();
+}
+
 void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_pModel)
 	{
 		OnPrepareRender();
-
-		for (int i = 0; i < m_nAnimationControllers; i++)
+		
+		if (m_ppAnimationControllers[ANIMATION_UP] && m_ppAnimationControllers[ANIMATION_DOWN])
 		{
-			if (m_ppAnimationControllers[i]) m_ppAnimationControllers[i]->AdvanceTime(fTimeElapsed);
+			if (m_nState & OBJECT_STATE_MOVING && !(m_nState & OBJECT_STATE_SHOOTING))
+			{
+				if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0))
+					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackPosition(0));
+			}
 		}
+
+		if (m_ppAnimationControllers[ANIMATION_UP]) m_ppAnimationControllers[ANIMATION_UP]->AdvanceTime(fTimeElapsed);
+		if (m_ppAnimationControllers[ANIMATION_DOWN]) m_ppAnimationControllers[ANIMATION_DOWN]->AdvanceTime(fTimeElapsed);
+
+		AfterAdvanceAnimationController();
 
 		UpdateWorldTransform();
 
@@ -389,9 +409,14 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 	OnPrepareRender();
 
-	for (int i = 0; i < m_nAnimationControllers; i++)
+	if (m_ppAnimationControllers[ANIMATION_UP])
 	{
-		if (m_ppAnimationControllers[i]) m_ppAnimationControllers[i]->ApplyTransform();
+		m_ppAnimationControllers[ANIMATION_UP]->ApplyTransform();
+	}
+
+	if (m_ppAnimationControllers[ANIMATION_DOWN])
+	{
+		m_ppAnimationControllers[ANIMATION_DOWN]->ApplyTransform();
 	}
 
 	UpdateWorldTransform();
@@ -720,19 +745,11 @@ CAnimationObject::CAnimationObject() : CGameObject()
 
 CAnimationObject::~CAnimationObject()
 {
-	if(m_pnAnimationState) delete[] m_pnAnimationState;
-	if(m_pbAnimationChanged) delete[] m_pbAnimationChanged;
 }
 
-void CAnimationObject::SetAnimationController(CAnimationController **pControllers, int nControllers)
+void CAnimationObject::SetAnimationController(CAnimationController *pControllers, int nIndex)
 {
-	CGameObject::SetAnimationController(pControllers, nControllers);
-
-	m_pnAnimationState = new int[nControllers];
-	::ZeroMemory(m_pnAnimationState, sizeof(int) * nControllers);
-
-	m_pbAnimationChanged = new bool[nControllers];
-	::ZeroMemory(m_pbAnimationChanged, sizeof(bool) * nControllers);
+	CGameObject::SetAnimationController(pControllers, nIndex);
 }
 
 void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
@@ -746,7 +763,8 @@ void CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimati
 	{
 		if (nAnimation != m_pnAnimationState[nController])
 		{
-			if (bResetPosition) m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
+			if (bResetPosition) 
+				m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
 			m_pnAnimationState[nController] = nAnimation;
 			m_ppAnimationControllers[nController]->SetTrackAnimation(nTrack, nAnimation);
 
@@ -758,16 +776,6 @@ void CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimati
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
-
-void CSoundCallbackHandler::HandleCallback(UINT nSoundType)
-{
-	switch (nSoundType)
-	{
-	case CALLBACK_TYPE_SOUND_MOVE:
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMove);
-		break;
-	}
-}
 
 CRobotObject::CRobotObject() : CAnimationObject()
 {
@@ -787,6 +795,11 @@ void CRobotObject::OnPrepareAnimate()
 	m_pLeftHand = m_pModel->FindFrame("Bip001_L_Hand");
 	m_pLeftNozzle = m_pModel->FindFrame("Bone001");
 	m_pRightNozzle = m_pModel->FindFrame("Bone002");
+	m_pSpine = m_pModel->FindFrame("Bip001_Spine");
+	m_pPelvis = m_pModel->FindFrame("Bip001_Pelvis");
+	m_pLThigh = m_pModel->FindFrame("Bip001_L_Thigh");
+	m_pRThigh = m_pModel->FindFrame("Bip001_R_Thigh");
+	m_pBip = m_pModel->FindFrame("Bip001");
 }
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
@@ -902,6 +915,57 @@ void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamer
 
 	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
+}
+
+void CRobotObject::AfterAdvanceAnimationController()
+{
+	if ((m_nState & OBJECT_STATE_SHOOTING) && ((m_nState & OBJECT_STATE_MOVING) || (m_nState & OBJECT_STATE_BOOSTERING)))
+	{
+		XMFLOAT4X4 xmf4x4SpineParent = m_pSpine->GetToParent();
+		XMFLOAT4X4 xmf4x4PelvisParent = m_pPelvis->GetToParent();
+		
+		XMFLOAT3 xmf3Pos = XMFLOAT3(xmf4x4PelvisParent._41, xmf4x4PelvisParent._42, xmf4x4PelvisParent._43);
+		xmf4x4PelvisParent = xmf4x4SpineParent;
+		xmf4x4PelvisParent._41 = xmf3Pos.x;
+		xmf4x4PelvisParent._42 = xmf3Pos.y;
+		xmf4x4PelvisParent._43 = xmf3Pos.z;
+
+		m_pPelvis->SetToParent(xmf4x4PelvisParent);
+
+		// L Thigh
+		float fPosition = m_ppAnimationControllers[ANIMATION_UP]->GetAnimationPosition(0);
+		float fLength = m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0);
+		float fScale = 1.0f;
+		if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == ANIMATION_STATE_GM_GUN_SHOOT_START)
+			fScale = fPosition / fLength;
+		else if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == ANIMATION_STATE_GM_GUN_SHOOT_RETURN)
+			fScale = 1.0f - fPosition / fLength;
+
+		XMFLOAT4X4 xmf4x4LThighParent = m_pLThigh->GetToParent();
+
+		XMMATRIX xmx = XMLoadFloat4x4(&xmf4x4LThighParent);
+
+		XMMATRIX xmxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(45.0f * fScale), XMConvertToRadians(0.0f), XMConvertToRadians(0.0f));
+		xmx = XMMatrixMultiply(xmx, xmxRotate);
+
+		XMStoreFloat4x4(&xmf4x4LThighParent, xmx);
+
+		m_pLThigh->SetToParent(xmf4x4LThighParent);
+
+		// R Thigh
+		XMFLOAT4X4 xmf4x4RThighParent = m_pRThigh->GetToParent();
+
+		xmx = XMLoadFloat4x4(&xmf4x4RThighParent);
+
+		xmxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(45.0f * fScale), XMConvertToRadians(0.0f), XMConvertToRadians(0.0f));
+		xmx = XMMatrixMultiply(xmx, xmxRotate);
+
+		XMStoreFloat4x4(&xmf4x4RThighParent, xmx);
+
+		m_pRThigh->SetToParent(xmf4x4RThighParent);
+	}
+	
+	CGameObject::AfterAdvanceAnimationController();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

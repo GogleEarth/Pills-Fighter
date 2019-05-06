@@ -51,11 +51,12 @@ public:
 	CObjectsShader *m_pBulletShader = NULL;
 	int	m_nBulletGroup;
 
-	float m_fShotCoolTime = 0.0f;
+	float	m_fShotCoolTime = 0.0f;
 
-	int m_nReloadedAmmo = 0;
-	int m_nMaxReloadAmmo = 0;
-	float m_fReloadTime = 0.0f;
+	int		m_nReloadedAmmo = 0;
+	int		m_nMaxReloadAmmo = 0;
+	float	m_fReloadTime = 0.0f;
+	int		m_nShootCount = 0;
 
 public:
 	float GetReloadTime() { return m_fReloadTime; }
@@ -67,16 +68,29 @@ public:
 
 public:
 	virtual void Attack() {};
-	virtual void Shot(FMOD::Sound *pFmodSound);
+	virtual void Shot();
 
 	virtual void SetReloadTime() {}
-	virtual void SetShotCoolTime() {}
+	virtual void SetShotCoolTime();
 	virtual void SetBurstCoolTime() {}
 	virtual void SetMaxReloadAmmo() {}
 	virtual void SetType() { m_nType |= WEAPON_TYPE_OF_GUN; }
 
-	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
+	virtual void Animate(float fElapsedTime, CCamera *pCamera = NULL);
 	XMFLOAT3 GetMuzzlePos() { return m_pMuzzle->GetPosition();   }
+
+protected:
+	bool m_bShootable = true;
+
+public:
+	bool IsShootable() { return m_bShootable; }
+	void SetShootable(bool b) { m_bShootable = b; }
+
+	virtual int ShootNumber() { return 0; };
+	virtual int ShootedNumber() { return m_nShootCount; };
+
+	virtual void CheckShootable(float fElapsedTime);
+	virtual void SetShootCount();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -95,21 +109,25 @@ public:
 protected:
 	float	m_fBurstCoolTime = 0.0f;
 	bool	m_bBurst = false;
-	int		m_nShotCount = 0;
 
 public:
 	virtual void Initialize();
 
 	virtual void Attack();
 
+	virtual void Shot();
 	virtual void SetReloadTime() { m_fReloadTime = GG_RELOAD_TIME; }
-	virtual void SetShotCoolTime() { m_fShotCoolTime = GG_SHOT_COOLTIME; }
+	virtual void SetShotCoolTime();
 	virtual void SetBurstCoolTime() { m_fBurstCoolTime = GG_BURST_COOLTIME; }
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
 	virtual void SetType();
 
-	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
 	virtual void OnPrepareAnimate();
+
+	virtual int ShootNumber() { return 3; };
+
+	virtual void CheckShootable(float fElapsedTime);
+	virtual void SetShootCount();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,14 +144,16 @@ public:
 
 	virtual void Initialize();
 
-	virtual void Attack();
+	virtual void Shot();
 
 	virtual void SetReloadTime() { m_fReloadTime = BZK_RELOAD_TIME; }
-	virtual void SetShotCoolTime() { m_fShotCoolTime = BZK_SHOT_COOLTIME; }
+	virtual void SetShotCoolTime();
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 5; }
 
 	virtual void SetType();
 	virtual void OnPrepareAnimate();
+
+	virtual int ShootNumber() { return 1; };
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,12 +170,14 @@ public:
 
 	virtual void Initialize();
 
-	virtual void Attack();
+	virtual void Shot();
 
 	virtual void SetReloadTime() { m_fReloadTime = MG_RELOAD_TIME; }
-	virtual void SetShotCoolTime() { m_fShotCoolTime = MG_SHOT_COOLTIME; }
+	virtual void SetShotCoolTime();
 	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
 
 	virtual void SetType();
 	virtual void OnPrepareAnimate();
+
+	virtual int ShootNumber() { return 1; };
 };

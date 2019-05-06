@@ -961,7 +961,7 @@ void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
 
 void CGameFramework::SendToServer()
 {
-	if (m_pPlayer && m_pPlayer->IsShotable() && m_bDrawScene && m_bSend_Complete)
+	//if (m_pPlayer && m_pPlayer->IsShotable() && m_bDrawScene && m_bSend_Complete)
 	{
 		//총알 생성 패킷 보내기
 		PKT_SHOOT pktShoot;
@@ -991,13 +991,13 @@ void CGameFramework::SendToServer()
 
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
 
-		if (m_pPlayer->IsShotable())
+		//if (m_pPlayer->IsShotable())
 		{
 			//pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
 			pktPlayerInfo.IsShooting = TRUE;
-			m_pPlayer->IsShotable(false);
+			//m_pPlayer->IsShotable(false);
 		}
-		else
+		//else
 		{
 			pktPlayerInfo.IsShooting = 0;
 		}

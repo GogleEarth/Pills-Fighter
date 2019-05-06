@@ -1216,11 +1216,13 @@ void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM w
 			if (!m_LButtonDown) m_pPlayer->PrepareAttack(m_pPlayer->GetRHWeapon());
 
 			m_LButtonDown = TRUE;
+			m_pPlayer->LButtonDown();
 		}
 		break;
 	case WM_LBUTTONUP:
 	{
 		m_LButtonDown = FALSE;
+		m_pPlayer->LButtonUp();
 		break;
 	}
 	default:
@@ -2032,7 +2034,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_MG_BULLET, true, NULL);
 		break;
@@ -2047,7 +2048,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_BZK_BULLET, true, NULL);
 		break;
@@ -2055,7 +2055,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_GG_BULLET, true, NULL);
 		break;

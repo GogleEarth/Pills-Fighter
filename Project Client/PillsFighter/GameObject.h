@@ -133,8 +133,7 @@ public:
 	std::vector<ID3D12Resource*>		m_vd3dcbBoneTransforms;
 	std::vector<XMFLOAT4X4*>			m_vcbxmf4x4BoneTransforms;
 
-	int									m_nAnimationControllers = 0;
-	CAnimationController				**m_ppAnimationControllers = NULL;
+	CAnimationController				*m_ppAnimationControllers[2] = { NULL };
 
 	void SetSkinnedMeshBoneTransformConstantBuffer();
 
@@ -146,7 +145,7 @@ public:
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
-	virtual void SetAnimationController(CAnimationController **pControllers, int nControllers) { m_ppAnimationControllers = pControllers; m_nAnimationControllers = nControllers; }
+	virtual void SetAnimationController(CAnimationController *pControllers, int nIndex) { m_ppAnimationControllers[nIndex] = pControllers; }
 
 public:
 	void AddParticle(CParticle *pParticle) { m_vpParticles.emplace_back(pParticle); };
@@ -173,6 +172,12 @@ protected:
 
 public:
 	void SetShader(CShader *pShader) { m_pShader = pShader; }
+
+protected:
+
+
+public:
+	virtual void AfterAdvanceAnimationController();
 
 };
 
@@ -277,11 +282,11 @@ public:
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 
 protected:
-	int		*m_pnAnimationState;
-	bool	*m_pbAnimationChanged;
+	int		m_pnAnimationState[2] = { 0 };
+	bool	m_pbAnimationChanged[2] = { 0 };
 
 public:
-	virtual void SetAnimationController(CAnimationController **pControllers, int nControllers);
+	virtual void SetAnimationController(CAnimationController *pControllers, int nIndex);
 
 	void ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
 	int GetAnimationState(int nController) { return m_pnAnimationState[nController]; }
@@ -291,16 +296,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-
-class CSoundCallbackHandler : public CAnimationCallbackHandler
-{
-public:
-	CSoundCallbackHandler() { }
-	~CSoundCallbackHandler() { }
-
-public:
-	virtual void HandleCallback(UINT nSoundType);
-};
 
 class CRobotObject : public CAnimationObject
 {
@@ -354,6 +349,16 @@ public:
 
 protected:
 	FMOD::Channel *m_pChannelBooster = NULL;
+
+protected:
+	CModel *m_pSpine = NULL;
+	CModel *m_pPelvis = NULL;
+	CModel *m_pBip = NULL;
+	CModel *m_pLThigh = NULL;
+	CModel *m_pRThigh = NULL;
+	
+public:
+	virtual void AfterAdvanceAnimationController();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

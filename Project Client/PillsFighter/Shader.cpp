@@ -679,7 +679,8 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	ppAnimationControllers[ANIMATION_UP]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 	ppAnimationControllers[ANIMATION_DOWN]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
 
-	pObject->SetAnimationController(ppAnimationControllers, nAnimationControllers);
+	pObject->SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
+	pObject->SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
 
 	CRobotObject *pRobot = (CRobotObject*)pObject;
 

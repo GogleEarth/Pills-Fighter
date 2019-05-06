@@ -108,12 +108,8 @@ protected:
 
 	bool	m_bReloading = false;
 	float	m_fReloadTime = 0.0f;
-	bool	m_bShot = false;
 
 public:
-	bool IsShotable() { return m_bShot; }
-	void IsShotable(bool bShot) { m_bShot = bShot; }
-
 	void PickUpAmmo(int nType, int nAmmo);
 
 	void ProcessTime(CWeapon *pWeapon, float fTimeElapsed);
@@ -132,4 +128,23 @@ protected:
 public:
 	BOOL GetWeaponChanged() { return m_bWeaponChanged; }
 	void SetWeaponChanged(BOOL bWeaponChanged) { m_bWeaponChanged = bWeaponChanged; }
+
+	void ProcessAnimation();
+
+	bool IsShootable() { return m_bShootable; }
+	void SetShootable(bool bShot) { m_bShootable = bShot; }
+
+protected:
+	bool m_bShootable = false;
+
+	bool m_bShootStartEndPoint = false;
+	bool m_bShootReturnEndPoint = false;
+	bool m_bShootOnceEndPoint = false;
+	bool m_bChangeableOnceAni = false;
+
+	bool m_LButtonDown = false;
+
+public:
+	void LButtonDown() { m_LButtonDown = true; }
+	void LButtonUp() { m_LButtonDown = false; }
 };
