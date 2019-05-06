@@ -612,7 +612,6 @@ void CGameFramework::FrameAdvance()
 	ProcessInput();
 
 #ifdef ON_NETWORKING
-
 	SendToServer();
 #else
 	m_GameTimer.Tick(60.0f);
@@ -961,7 +960,7 @@ void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
 
 void CGameFramework::SendToServer()
 {
-	//if (m_pPlayer && m_pPlayer->IsShotable() && m_bDrawScene && m_bSend_Complete)
+	if (m_pPlayer && m_pPlayer->GetShootBullet())
 	{
 		//총알 생성 패킷 보내기
 		PKT_SHOOT pktShoot;
@@ -991,15 +990,14 @@ void CGameFramework::SendToServer()
 
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
 
-		//if (m_pPlayer->IsShotable())
+		if (m_pPlayer->GetShootBullet())
 		{
-			//pktPlayerInfo.BulletWorldMatrix = m_pPlayer->GetToTarget();
 			pktPlayerInfo.IsShooting = TRUE;
-			//m_pPlayer->IsShotable(false);
+			m_pPlayer->SetShootBullet(false);
 		}
-		//else
+		else
 		{
-			pktPlayerInfo.IsShooting = 0;
+			pktPlayerInfo.IsShooting = FALSE;
 		}
 
 		pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
@@ -1011,10 +1009,12 @@ void CGameFramework::SendToServer()
 		pktPlayerInfo.Player_Up_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_UP));
 		pktPlayerInfo.isUpChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_UP);
 		if (pktPlayerInfo.isUpChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_UP, FALSE);
+		pktPlayerInfo.UpAnimationPosition = m_pPlayer->GetAnimationTrackPosition(ANIMATION_UP);
 
 		pktPlayerInfo.Player_Down_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_DOWN));
 		pktPlayerInfo.isDownChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_DOWN);
 		if (pktPlayerInfo.isDownChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_DOWN, FALSE);
+		pktPlayerInfo.DownAnimationPosition = m_pPlayer->GetAnimationTrackPosition(ANIMATION_DOWN);
 
 		pktPlayerInfo.State = m_pPlayer->GetState();
 

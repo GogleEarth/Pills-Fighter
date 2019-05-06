@@ -147,4 +147,11 @@ protected:
 public:
 	void LButtonDown() { m_LButtonDown = true; }
 	void LButtonUp() { m_LButtonDown = false; }
+
+protected:
+	bool m_bShootBullet = false;
+
+public:
+	bool GetShootBullet() { return m_bShootBullet; }
+	void SetShootBullet(bool b) { m_bShootBullet = b; }
 };

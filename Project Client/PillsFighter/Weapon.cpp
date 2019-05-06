@@ -103,7 +103,7 @@ void CGun::Shot()
 
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 #else
-	//pPlayer->IsShotable(true);
+	pPlayer->SetShootBullet(true);
 #endif
 
 	SetShotCoolTime();

@@ -146,6 +146,8 @@ public:
 	void MoveToCollision(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 	virtual void SetAnimationController(CAnimationController *pControllers, int nIndex) { m_ppAnimationControllers[nIndex] = pControllers; }
+	virtual void SetAnimationTrackPosition(int nIndex, float fPosition) { m_ppAnimationControllers[nIndex]->SetTrackPosition(0, fPosition); }
+	virtual float GetAnimationTrackPosition(int nIndex) { return m_ppAnimationControllers[nIndex]->GetTrackPosition(0); }
 
 public:
 	void AddParticle(CParticle *pParticle) { m_vpParticles.emplace_back(pParticle); };

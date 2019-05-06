@@ -175,6 +175,9 @@ public: // Network
 	virtual void LeavePlayer(int nServerIndex) {};
 	virtual void SetPlayerIndex(int nServerIndex) {}
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
+
+protected:
+	int	m_nMyIndex = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,7 +251,6 @@ public:
 protected:
 	CLobbyShader						*m_pLobbyShader = NULL;
 
-	int									m_nMyIndex = 0;
 	int									m_nChoiceCharactor = 0;
 	int									m_nCurrentSlotIndex = 0;
 	CTextObject							*m_ppTextObjects[8] = { NULL }; // ServerIndex

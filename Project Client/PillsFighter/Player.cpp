@@ -309,6 +309,7 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 		SetPosition(xmf3PlayerPosition);
 
 		m_nState |= OBJECT_STATE_ONGROUND;
+		m_nState &= ~OBJECT_STATE_BOOSTED;
 	}
 	else m_nState &= ~OBJECT_STATE_ONGROUND;
 }
@@ -381,6 +382,8 @@ void CPlayer::ActivationBooster()
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTERING;
+		m_nState |= OBJECT_STATE_BOOSTED;
+
 		m_bChargeBG = false;
 		SetElapsedBGConsumeTime();
 	}
@@ -530,7 +533,7 @@ void CPlayer::ProcessAnimation()
 		}
 	}
 	
-	if (!(m_nState & OBJECT_STATE_ONGROUND))
+	if (m_nState & OBJECT_STATE_BOOSTED)
 	{
 		if (m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
 		{

@@ -104,8 +104,10 @@ typedef struct PKT_PLAYER_INFO
 	BOOL			isChangeWeapon;
 	ANIMATION_TYPE	Player_Up_Animation;
 	BOOL			isUpChangeAnimation;
+	float			UpAnimationPosition;
 	ANIMATION_TYPE	Player_Down_Animation;
 	BOOL			isDownChangeAnimation;
+	float			DownAnimationPosition;
 	int				State;
 }PKT_PLAYER_INFO;
 

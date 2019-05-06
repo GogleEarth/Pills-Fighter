@@ -2122,12 +2122,14 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		{
 			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
 			pObject->ChangeAnimation(ANIMATION_UP, 0, ((PKT_PLAYER_INFO*)pktData)->Player_Up_Animation);
+			pObject->SetAnimationTrackPosition(ANIMATION_UP, ((PKT_PLAYER_INFO*)pktData)->UpAnimationPosition);
 		}
 
 		if (((PKT_PLAYER_INFO*)pktData)->isDownChangeAnimation)
 		{
 			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
 			pObject->ChangeAnimation(ANIMATION_DOWN, 0, ((PKT_PLAYER_INFO*)pktData)->Player_Down_Animation);
+			pObject->SetAnimationTrackPosition(ANIMATION_DOWN, ((PKT_PLAYER_INFO*)pktData)->DownAnimationPosition);
 		}
 
 		if (((PKT_PLAYER_INFO*)pktData)->isChangeWeapon)

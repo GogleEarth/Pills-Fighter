@@ -422,8 +422,9 @@ DWORD Framework::client_process(Client_arg* arg)
 						((PKT_PLAYER_INFO*)buf)->ID, ((PKT_PLAYER_INFO*)buf)->WorldMatrix,
 						((PKT_PLAYER_INFO*)buf)->IsShooting, ((PKT_PLAYER_INFO*)buf)->Player_Weapon,
 						((PKT_PLAYER_INFO*)buf)->isChangeWeapon, ((PKT_PLAYER_INFO*)buf)->Player_Up_Animation,
-						((PKT_PLAYER_INFO*)buf)->isUpChangeAnimation, ((PKT_PLAYER_INFO*)buf)->Player_Down_Animation,
-						((PKT_PLAYER_INFO*)buf)->isDownChangeAnimation, ((PKT_PLAYER_INFO*)buf)->State });
+						((PKT_PLAYER_INFO*)buf)->isUpChangeAnimation, ((PKT_PLAYER_INFO*)buf)->UpAnimationPosition,
+						((PKT_PLAYER_INFO*)buf)->Player_Down_Animation, ((PKT_PLAYER_INFO*)buf)->isDownChangeAnimation,
+						((PKT_PLAYER_INFO*)buf)->DownAnimationPosition, ((PKT_PLAYER_INFO*)buf)->State });
 					playerinfomutex.unlock();
 
 				}
