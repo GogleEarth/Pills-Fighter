@@ -994,3 +994,50 @@ void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStr
 		outStream.Append(output);
 	}
 }
+
+
+////////////////////////////////////////////////////////////////
+
+cbuffer cbMinimapRobotPos : register(b12)
+{
+	bool enemyOrTeam;
+	float2 gvMinimapRobotPos;
+}
+
+[maxvertexcount(4)]
+void GSMinimapEnemy(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	// 미니맵에 나올 때 알맞게 되도록 월드 상 적 위치를 미니맵 상 위치로 변환
+	float2 enemyPos = float2(0.0f, 0.0f);
+	//enemyPos.x = gvMinimapRobotPos.x/1000; // X 변환
+	//enemyPos.y = gvMinimapRobotPos.y/1000; // Z 변환
+	enemyPos.x = 0.5f; // X 변환
+	enemyPos.y = 0.5f; // Z 변환
+
+	float4 fVertices[4];
+	fVertices[0] = float4(enemyPos + input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(enemyPos + input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[2] = float4(enemyPos + input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(enemyPos + input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}

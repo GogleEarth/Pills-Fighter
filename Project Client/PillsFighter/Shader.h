@@ -508,12 +508,27 @@ public:
 };
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 
-struct CB_MINIMAP_ROBOT_POSITION
+
+class CMinimapRobotShader : public CShader
 {
-	XMFLOAT3 position;
+public:
+	CMinimapRobotShader();
+	virtual ~CMinimapRobotShader();
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
+
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 };
+
+///////////////////////////////////////////////////////////////////////////////
 
 class CMinimapShader : public CShader
 {
@@ -523,27 +538,33 @@ public:
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_MINIMAP_ROBOT_POSITION *pcbMapped, XMFLOAT3 position);
-	virtual void ReleaseShaderVariables();
-
 	virtual void ReleaseUploadBuffers();
+	void ReleaseObjects();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	void insertMinimapRobot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMinimapRobot* pMRobot, void *pContext);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
+
 protected:
-	ID3D12Resource					*m_pd3dcbRobotPos = NULL;
-	CB_MINIMAP_ROBOT_POSITION		*m_pcbMappedRobotPos = NULL;
 
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
 
 	int								m_nTextures;
 	CTexture						**m_ppTextures = NULL;
+
+	std::vector<CMinimapRobot*>		m_ppvMRobots;
+
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapRobot = NULL;
+
+public:
+	std::vector<CMinimapRobot*>& GetObjects() { return m_ppvMRobots; }
+
 };

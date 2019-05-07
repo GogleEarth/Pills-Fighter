@@ -1451,3 +1451,78 @@ void CCursor::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_pMesh) m_pMesh->Render(pd3dCommandList, 0);
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+CMinimapRobot::CMinimapRobot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature)
+{
+	m_pMesh = new CRect(pd3dDevice, pd3dCommandList, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(0.2f, 0.2f));
+
+	m_pShader = new CMinimapRobotShader();
+	m_pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+
+	m_pTexture = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Enemy_Icon.dds", 0);
+	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Team_Icon.dds", 1);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+}
+
+CMinimapRobot::~CMinimapRobot()
+{
+	ReleaseShaderVariables();
+
+	if (m_pMesh) delete m_pMesh;
+	if (m_pTexture) delete m_pTexture;
+	if (m_pShader) delete m_pShader;
+
+}
+
+void CMinimapRobot::ReleaseUploadBuffer()
+{
+	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
+	if (m_pTexture) m_pTexture->ReleaseUploadBuffers();
+}
+
+void CMinimapRobot::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UpdateShaderVariables(pd3dCommandList);
+
+	if (m_pShader) m_pShader->Render(pd3dCommandList, NULL);
+	if (m_pTexture) m_pTexture->UpdateShaderVariables(pd3dCommandList);
+	if (m_pMesh) m_pMesh->Render(pd3dCommandList, 0);
+
+	std::cout << m_cbMappedGameObject.robotPosition.x << std::endl;
+	std::cout << m_cbMappedGameObject.robotPosition.y << std::endl;
+}
+
+void CMinimapRobot::MoveMinimapRobotPos(XMFLOAT4X4& xmf4x4World)
+{
+	m_cbMappedGameObject.enemyOrTeam = true;
+	m_cbMappedGameObject.robotPosition.x = xmf4x4World._41;
+	m_cbMappedGameObject.robotPosition.y = xmf4x4World._43;
+
+}
+
+void CMinimapRobot::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO, m_cbGameObject->GetGPUVirtualAddress());
+}
+
+void CMinimapRobot::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_MINIMAP_ROBOT_POSITION) + 255) & ~255); //256ÀÇ ¹è¼ö
+
+	m_cbGameObject = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_cbGameObject->Map(0, NULL, (void **)&m_cbMappedGameObject);
+}
+
+void CMinimapRobot::ReleaseShaderVariables()
+{
+	m_cbGameObject->Unmap(0, NULL);
+	m_cbGameObject->Release();
+}
