@@ -751,27 +751,50 @@ struct VS_PARTICLE_INPUT
 	float	age : AGE;
 };
 
-VS_PARTICLE_INPUT VSParticleStreamOut(VS_PARTICLE_INPUT input)
+struct VS_PARTICLE_SO_OUTPUT
 {
-	return input;
+	float3	position : POSITION;
+	float3	velocity : VELOCITY;
+	float2	size : SIZE;
+	uint	type : TYPE;
+	float	age : AGE;
+	uint	verid : VERTEXID;
+};
+
+VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID : SV_VertexID)
+{
+	VS_PARTICLE_SO_OUTPUT output;
+	output.position = input.position;
+	output.velocity = input.velocity;
+	output.size = input.size;
+	output.type = input.type;
+	output.age = input.age;
+	output.verid = nVerID;
+
+	return output;
 }
 
 [maxvertexcount(2)]
-void GSParticleStreamOut(point VS_PARTICLE_INPUT input[1], inout PointStream<VS_PARTICLE_INPUT> pointStream)
+void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream<VS_PARTICLE_INPUT> pointStream)
 {
-	input[0].age += gParticle.m_fElapsedTime;
+	VS_PARTICLE_INPUT output;
+	output.position = input[0].position;
+	output.velocity = input[0].velocity;
+	output.size = input[0].size;
+	output.type = input[0].type;
+	output.age = input[0].age + gParticle.m_fElapsedTime;
 
-	if (input[0].type == PARTICLE_TYPE_EMITTER)
+	if (output.type == PARTICLE_TYPE_EMITTER)
 	{
-		float3 vRandom = gParticle.m_vRandom.xyz;
+		float3 vRandom = gParticle.m_vRandom.xyz;// *input[0].verid * input[0].verid;
 		vRandom = normalize(vRandom * 2.0f - 1.0f);
 
-		if ((gParticle.m_bEmit == true) && (input[0].age > 0.005f))
+		if ((gParticle.m_bEmit == true) && (output.age > 0.005f))
 		{
 			VS_PARTICLE_INPUT particle;
-			particle.position = input[0].position + gParticle.m_vPosition;
+			particle.position = output.position + gParticle.m_vPosition;
 			particle.velocity = gParticle.m_fSpeed * (vRandom + gParticle.m_vDirection);
-			particle.size = input[0].size;
+			particle.size = output.size;
 			particle.age = gParticle.m_fElapsedTime;
 			particle.type = 1;
 
@@ -780,18 +803,22 @@ void GSParticleStreamOut(point VS_PARTICLE_INPUT input[1], inout PointStream<VS_
 
 		//if (input[0].age < 0.2f)
 		{
-			input[0].velocity = gParticle.m_fSpeed * (vRandom + gParticle.m_vDirection);
-			pointStream.Append(input[0]);
+			output.velocity = gParticle.m_fSpeed * (vRandom + gParticle.m_vDirection);
+			pointStream.Append(output);
 		}
 	}
 	else
 	{
-		if (input[0].age < gParticle.m_fDuration) pointStream.Append(input[0]);
+		if (output.age < gParticle.m_fDuration) pointStream.Append(output);
 	}
-
 }
 
 ////////////////////////////////////////////
+
+cbuffer cbSceneInfo : register(b11)
+{
+	float gfGravity;
+}
 
 struct VS_PARTICLE_OUTPUT
 {
@@ -813,7 +840,7 @@ VS_PARTICLE_OUTPUT VSParticleDraw(VS_PARTICLE_INPUT input)
 	VS_PARTICLE_OUTPUT output;
 
 	float t = input.age;
-	output.position = (input.velocity * t) + input.position;
+	output.position = (input.velocity * t * (gfGravity * 0.05f)) + input.position;
 
 	float fOpacity = 1.0f - smoothstep(0.0f, gParticle.m_fDuration, input.age);
 	output.color = float4(1.0f, 1.0f, 1.0f, fOpacity);

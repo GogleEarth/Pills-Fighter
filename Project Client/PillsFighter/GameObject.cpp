@@ -363,7 +363,7 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		
 		if (m_ppAnimationControllers[ANIMATION_UP] && m_ppAnimationControllers[ANIMATION_DOWN])
 		{
-			if (m_nState & OBJECT_STATE_MOVING && !(m_nState & OBJECT_STATE_SHOOTING))
+			if (m_nState & OBJECT_STATE_MOVING && !(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
 			{
 				if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0))
 					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackPosition(0));
@@ -761,10 +761,13 @@ void CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimati
 {
 	if (m_ppAnimationControllers)
 	{
+		if (bResetPosition)
+		{
+			m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
+		}
+
 		if (nAnimation != m_pnAnimationState[nController])
 		{
-			if (bResetPosition) 
-				m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
 			m_pnAnimationState[nController] = nAnimation;
 			m_ppAnimationControllers[nController]->SetTrackAnimation(nTrack, nAnimation);
 
@@ -858,6 +861,9 @@ void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
 	case WEAPON_TYPE::WEAPON_TYPE_BAZOOKA:
 		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_BAZOOKA);
 		break;
+	case WEAPON_TYPE::WEAPON_TYPE_SABER:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_SABER);
+		break;
 	}
 
 	if (nIndex != -1) ChangeWeapon(nIndex);
@@ -921,50 +927,12 @@ void CRobotObject::AfterAdvanceAnimationController()
 {
 	if ((m_nState & OBJECT_STATE_SHOOTING) && ((m_nState & OBJECT_STATE_MOVING) || (m_nState & OBJECT_STATE_BOOSTERING)))
 	{
-		XMFLOAT4X4 xmf4x4SpineParent = m_pSpine->GetToParent();
-		XMFLOAT4X4 xmf4x4PelvisParent = m_pPelvis->GetToParent();
-		
-		XMFLOAT3 xmf3Pos = XMFLOAT3(xmf4x4PelvisParent._41, xmf4x4PelvisParent._42, xmf4x4PelvisParent._43);
-		xmf4x4PelvisParent = xmf4x4SpineParent;
-		xmf4x4PelvisParent._41 = xmf3Pos.x;
-		xmf4x4PelvisParent._42 = xmf3Pos.y;
-		xmf4x4PelvisParent._43 = xmf3Pos.z;
-
-		m_pPelvis->SetToParent(xmf4x4PelvisParent);
-
-		// L Thigh
-		float fPosition = m_ppAnimationControllers[ANIMATION_UP]->GetAnimationPosition(0);
-		float fLength = m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0);
-		float fScale = 1.0f;
-		if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == ANIMATION_STATE_GM_GUN_SHOOT_START)
-			fScale = fPosition / fLength;
-		else if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == ANIMATION_STATE_GM_GUN_SHOOT_RETURN)
-			fScale = 1.0f - fPosition / fLength;
-
-		XMFLOAT4X4 xmf4x4LThighParent = m_pLThigh->GetToParent();
-
-		XMMATRIX xmx = XMLoadFloat4x4(&xmf4x4LThighParent);
-
-		XMMATRIX xmxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(45.0f * fScale), XMConvertToRadians(0.0f), XMConvertToRadians(0.0f));
-		xmx = XMMatrixMultiply(xmx, xmxRotate);
-
-		XMStoreFloat4x4(&xmf4x4LThighParent, xmx);
-
-		m_pLThigh->SetToParent(xmf4x4LThighParent);
-
-		// R Thigh
-		XMFLOAT4X4 xmf4x4RThighParent = m_pRThigh->GetToParent();
-
-		xmx = XMLoadFloat4x4(&xmf4x4RThighParent);
-
-		xmxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(45.0f * fScale), XMConvertToRadians(0.0f), XMConvertToRadians(0.0f));
-		xmx = XMMatrixMultiply(xmx, xmxRotate);
-
-		XMStoreFloat4x4(&xmf4x4RThighParent, xmx);
-
-		m_pRThigh->SetToParent(xmf4x4RThighParent);
+		// pelvis의 회전 시키기 전 행렬을 저장.
+		// pelvis의 행렬을 spine 행렬로 바꾸기. ( 포지션은 바꾸지 않음 )
+		// pelvis의 바뀌기 전 행렬과 바뀐 후 행렬을 비교해서 각 축마다 몇 도씩 회전했는지 알아내기.
+		// L Thigh과 R Thigh에 구한 회전각의 반대를 적용시키기.
 	}
-	
+
 	CGameObject::AfterAdvanceAnimationController();
 }
 

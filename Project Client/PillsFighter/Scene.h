@@ -65,6 +65,7 @@ public:
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderEffects(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -319,9 +320,9 @@ protected:
 // Scene's Effect Shader Index 
 #define EFFECT_SHADER_INDEX 3
 
-#define INDEX_EFFECT_SHADER_EFFECT 0
+#define INDEX_EFFECT_SHADER_EXP_SPRITE 0
+#define INDEX_EFFECT_SHADER_EFFECT 2
 #define INDEX_EFFECT_SHADER_HIT_SPRITE 1
-#define INDEX_EFFECT_SHADER_EXP_SPRITE 2
 
 class CColonyScene : public CScene
 {
@@ -331,7 +332,6 @@ public:
 
 	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-	virtual void ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void ReleaseObjects();
@@ -408,4 +408,5 @@ protected:
 	CModel		*m_pGimGun = NULL;
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
+	CModel		*m_pSaber = NULL;
 };

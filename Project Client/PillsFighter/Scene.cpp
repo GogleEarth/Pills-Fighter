@@ -255,15 +255,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		if(m_ppShaders[i])
 			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
-
-	for (int i = 0; i < m_nEffectShaders; i++)
-	{
-		if (m_ppEffectShaders[i])
-			m_ppEffectShaders[i]->Render(pd3dCommandList, pCamera);
-	}
-
-	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
-
+	
 	m_nFPS = (m_nFPS + 1) % 5;
 }
 
@@ -279,6 +271,17 @@ void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCa
 				m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
 		}
 	}
+}
+
+void CScene::RenderEffects(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	for (int i = 0; i < m_nEffectShaders; i++)
+	{
+		if (m_ppEffectShaders[i])
+			m_ppEffectShaders[i]->Render(pd3dCommandList, pCamera);
+	}
+
+	if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, pCamera);
 }
 
 void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -490,6 +493,12 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.ShaderRegister = 10;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.Num32BitValues = 1;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.ShaderRegister = 11;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
@@ -1217,12 +1226,14 @@ void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM w
 
 			m_LButtonDown = TRUE;
 			m_pPlayer->LButtonDown();
+			m_pPlayer->Attack(m_pPlayer->GetRHWeapon());
 		}
 		break;
 	case WM_LBUTTONUP:
 	{
 		m_LButtonDown = FALSE;
 		m_pPlayer->LButtonUp();
+		m_pPlayer->ResetMouseUpTime();
 		break;
 	}
 	default:
@@ -1253,6 +1264,9 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case '3':
 			m_pPlayer->ChangeWeapon(2);
 			break;
+		case '4':
+			m_pPlayer->ChangeWeapon(3);
+			break;
 		case 'B':
 			m_bRenderWire = !m_bRenderWire;
 			break;
@@ -1262,26 +1276,6 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		break;
 	default:
 		break;
-	}
-}
-
-void CColonyScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
-{
-	ULONG dwDirection = 0;
-
-	if (pKeysBuffer['W'] & 0xF0) dwDirection |= DIR_FORWARD;
-	if (pKeysBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
-	if (pKeysBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
-	if (pKeysBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
-	if (pKeysBuffer[VK_SPACE] & 0xF0) dwDirection |= DIR_UP;
-	if (pKeysBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
-
-	if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * fElapsedTime);
-	else m_pPlayer->SetAnimationIdle();
-
-	if (m_LButtonDown)
-	{
-		if (m_pPlayer) m_pPlayer->Attack(m_pPlayer->GetRHWeapon());
 	}
 }
 
@@ -1352,6 +1346,7 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL);
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
+	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
 }
 
 void CColonyScene::ReleaseObjects()
@@ -1408,6 +1403,8 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
 		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
+		m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL);
 
 #ifndef ON_NETWORKING
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
@@ -1698,6 +1695,7 @@ void CColonyScene::ReleaseUploadBuffers()
 	if (m_pBazooka) m_pBazooka->ReleaseUploadBuffers();
 	if (m_pMachineGun) m_pMachineGun->ReleaseUploadBuffers();
 	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
+	if (m_pSaber) m_pSaber->ReleaseUploadBuffers();
 }
 
 void CColonyScene::CheckCollision()
@@ -1708,7 +1706,7 @@ void CColonyScene::CheckCollision()
 	std::vector<CGameObject*> vBZKBullets;
 	std::vector<CGameObject*> vMGBullets;
 
-	vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
+	vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
 	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
 	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
 	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
@@ -1730,7 +1728,8 @@ void CColonyScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pBullet->GetPosition(), XMFLOAT2(15.0f, 15.0f), EFFECT_ANIMATION_TYPE_ONE);
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE);
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -1748,7 +1747,8 @@ void CColonyScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE_ONE);
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(fSize * 2, fSize * 2), EFFECT_ANIMATION_TYPE_ONE);
 
 					pBZKBullet->Delete();
 
@@ -1767,7 +1767,8 @@ void CColonyScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(25.0f, 25.0f), EFFECT_ANIMATION_TYPE_ONE);
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE);
 
 					pMGBullet->Delete();
 
@@ -1986,6 +1987,8 @@ void CColonyScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphic
 void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
+
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 0);
 }
 
 void CColonyScene::ReleaseShaderVariables()
@@ -2034,6 +2037,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_MG_BULLET, true, NULL);
 		break;
@@ -2048,6 +2052,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_BZK_BULLET, true, NULL);
 		break;
@@ -2055,6 +2060,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pGameObject = new Bullet();
 		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
 
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_GG_BULLET, true, NULL);
 		break;
@@ -2090,7 +2096,7 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	EFFECT_ANIMATION_TYPE nEffectAniType = pCreateEffectInfo->EftAnitType;
 	CEffect *pEffect = NULL;
 	CSprite *pSprite = NULL;
-	float fSize = (float)(rand() % 2000) / 100.0f;
+	float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
 
 	switch (nEffectType)
 	{
@@ -2103,7 +2109,7 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
-		m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize * 2, fSize * 2), nEffectAniType);
 		break;
 	}
 }

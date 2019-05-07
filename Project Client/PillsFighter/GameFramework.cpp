@@ -556,8 +556,24 @@ void CGameFramework::ProcessInput()
 {
 	static UCHAR pKeyBuffer[256];
 
-	if (::GetKeyboardState(pKeyBuffer)) 
-		if (m_pScene) m_pScene->ProcessInput(pKeyBuffer, m_fElapsedTime);
+	if(m_pPlayer) m_pPlayer->DeactiveMoving();
+
+	if (::GetKeyboardState(pKeyBuffer))
+	{
+		if (m_pPlayer)
+		{
+			ULONG dwDirection = 0;
+
+			if (pKeyBuffer['W'] & 0xF0) dwDirection |= DIR_FORWARD;
+			if (pKeyBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
+			if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
+			if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
+			if (pKeyBuffer[VK_SPACE] & 0xF0) m_pPlayer->ActivationBooster();
+			if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
+
+			if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
+		}
+	}
 
 	float cxDelta = 0.0f, cyDelta = 0.0f;
 	POINT ptCursorPos;
@@ -662,6 +678,8 @@ void CGameFramework::FrameAdvance()
 		if (m_pScene)
 		{
 			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
+
+			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
 
 			m_pScene->RenderUI(m_pd3dCommandList);
 

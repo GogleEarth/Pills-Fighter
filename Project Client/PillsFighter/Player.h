@@ -90,7 +90,6 @@ public:
 	void ProcessHitPoint();
 	void ProcessGravity(float fTimeElapsed);
 
-	void SetAnimationIdle();
 protected:
 	CScene			*m_pScene = NULL;
 
@@ -154,4 +153,23 @@ protected:
 public:
 	bool GetShootBullet() { return m_bShootBullet; }
 	void SetShootBullet(bool b) { m_bShootBullet = b; }
+
+protected:
+	bool m_bSwordingEndPoint = false;
+
+protected:
+	float m_fMouseUpTime = 0.0f;
+
+public:
+	void ProcessMouseUpTime(float fElapsedTime);
+	void ResetMouseUpTime() { m_fMouseUpTime = 0.0f; }
+
+	void DeactiveMoving() { m_nState &= ~OBJECT_STATE_MOVING; }
+protected:
+	int m_nAnimationList[3] = { ANIMATION_STATE_BEAM_SABER_1_ONE , ANIMATION_STATE_BEAM_SABER_2_ONE, ANIMATION_STATE_BEAM_SABER_3_ONE };
+	int m_nSaberAnimationIndex = 0;
+
+protected:
+	bool m_bJumpEndPoint = false;
+	bool m_bPressSpace = false;
 };

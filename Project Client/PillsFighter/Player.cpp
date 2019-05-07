@@ -89,6 +89,38 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_SHOOT_ONCE, 0, FLT_MAX, (void*)callbackSwitch);
 	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_SHOOT_ONCE, pAnimationCallbackHandler);
 
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bSwordingEndPoint;
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_1_ONE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_1_ONE, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_1_ONE, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bSwordingEndPoint;
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_2_ONE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_2_ONE, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_2_ONE, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bSwordingEndPoint;
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_3_ONE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_3_ONE, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_3_ONE, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CSwitchCallbackHandler();
+	callbackSwitch = new SWITCH();
+	callbackSwitch->bCondition = true;
+	callbackSwitch->pbSwitch = &m_bJumpEndPoint;
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_JUMP, 1);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_JUMP, 0, FLT_MAX, (void*)callbackSwitch);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_JUMP, pAnimationCallbackHandler);
+
 	SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
 	SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
 
@@ -155,69 +187,64 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
-	if (dwDirection)
+	XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
+
+	if (dwDirection & DIR_FORWARD)
 	{
-
-		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
-
-		if (dwDirection & DIR_FORWARD)
+		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
 		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
-				m_nState |= OBJECT_STATE_MOVING;
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
+			m_nState |= OBJECT_STATE_MOVING;
 
-				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_FORWARD);
-			}
-
-			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
-		}
-		if (dwDirection & DIR_BACKWARD)
-		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_BACKWARD);
-				m_nState |= OBJECT_STATE_MOVING;
-
-				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_BACKWARD);
-			}
-
-			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
-		}
-		if (dwDirection & DIR_RIGHT)
-		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_RIGHT);
-				m_nState |= OBJECT_STATE_MOVING;
-
-				if (!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_RIGHT);
-			}
-
-			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
-		}
-		if (dwDirection & DIR_LEFT)
-		{
-			if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_LEFT);
-				m_nState |= OBJECT_STATE_MOVING;
-
-				if(!(m_nState & OBJECT_STATE_SHOOTING)) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_LEFT);
-			}
-
-			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_FORWARD);
 		}
 
-		if (dwDirection & DIR_UP)
+		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
+	}
+	if (dwDirection & DIR_BACKWARD)
+	{
+		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
 		{
-			ActivationBooster();
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_BACKWARD);
+			m_nState |= OBJECT_STATE_MOVING;
+
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_BACKWARD);
 		}
 
-		//if (dwDirection & DIR_DOWN);
+		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
+	}
+	if (dwDirection & DIR_RIGHT)
+	{
+		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+		{
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_RIGHT);
+			m_nState |= OBJECT_STATE_MOVING;
 
-		Move(xmf3Shift);
-	}		
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_RIGHT);
+		}
+
+		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
+	}
+	if (dwDirection & DIR_LEFT)
+	{
+		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+		{
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_LEFT);
+			m_nState |= OBJECT_STATE_MOVING;
+
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_LEFT);
+		}
+
+		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
+	}
+
+	//if (dwDirection & DIR_DOWN);
+
+	Move(xmf3Shift);
 }
 
 void CPlayer::Move(const XMFLOAT3& xmf3Shift)
@@ -300,7 +327,7 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 	int z = (int)(xmf3PlayerPosition.z / xmf3Scale.z);
 	bool bReverseQuad = ((z % 2) != 0);
 	float fHeight = pTerrain->GetHeight(xmf3PlayerPosition.x, xmf3PlayerPosition.z, bReverseQuad);
-	if (xmf3PlayerPosition.y < fHeight)
+	if (xmf3PlayerPosition.y <= fHeight)
 	{
 		float fPlayerVelocity = GetVelocity();
 		fPlayerVelocity = 0.0f;
@@ -309,7 +336,9 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 		SetPosition(xmf3PlayerPosition);
 
 		m_nState |= OBJECT_STATE_ONGROUND;
-		m_nState &= ~OBJECT_STATE_BOOSTED;
+
+		if(!m_bPressSpace)
+			m_nState &= ~OBJECT_STATE_BOOSTED;
 	}
 	else m_nState &= ~OBJECT_STATE_ONGROUND;
 }
@@ -340,35 +369,6 @@ void CPlayer::ProcessHitPoint()
 	}
 }
 
-void CPlayer::SetAnimationIdle()
-{
-	if (m_nState & OBJECT_STATE_ONGROUND)
-	{
-		if (m_nState & OBJECT_STATE_SHOOTING)
-		{
-			CGun *pGun = (CGun*)m_pRHWeapon;
-
-			if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == ANIMATION_STATE_GM_GUN_SHOOT_START)
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START);
-			}
-			else
-			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN);
-			}
-
-			m_ppAnimationControllers[ANIMATION_DOWN]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackPosition(0));
-		}
-		else
-		{
-			m_nState &= ~OBJECT_STATE_MOVING;
-
-			ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
-			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
-		}
-	}
-}
-
 void CPlayer::ActivationBooster()
 {
 	if (!(m_nState & OBJECT_STATE_BOOSTERING) && m_nBoosterGauge > 0)
@@ -377,7 +377,7 @@ void CPlayer::ActivationBooster()
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP, true);
 
-			if(!(m_nState & OBJECT_STATE_SHOOTING))
+			if(!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
 		}
 
@@ -386,19 +386,20 @@ void CPlayer::ActivationBooster()
 
 		m_bChargeBG = false;
 		SetElapsedBGConsumeTime();
+		m_bPressSpace = true;
 	}
 }
 
 void CPlayer::DeactivationBooster()
 {
 	m_nState &= ~OBJECT_STATE_BOOSTERING;
+	m_bPressSpace = false;
 }
 
 void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 {
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-
 		if (m_fElapsedBGConsumeTime <= 0.0f)
 		{
 			SetElapsedBGConsumeTime();
@@ -474,6 +475,28 @@ void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAA
 	}
 }
 
+void CPlayer::ProcessMouseUpTime(float fTimeElapsed)
+{
+	if (!m_LButtonDown)
+	{
+		m_fMouseUpTime += fTimeElapsed;
+
+		if (m_fMouseUpTime > 4.0f)
+		{
+			if (m_nState & OBJECT_STATE_SHOOTING)
+				m_nState &= ~OBJECT_STATE_SHOOTING;
+
+			if (m_nState & OBJECT_STATE_SWORDING)
+				m_nState &= ~OBJECT_STATE_SWORDING;
+		}
+
+		if (m_fMouseUpTime > 1.0f)
+		{
+			m_nSaberAnimationIndex = 0;
+		}
+	}
+}
+
 void CPlayer::ProcessAnimation()
 {
 	if (m_nState & OBJECT_STATE_SHOOTING)
@@ -535,16 +558,72 @@ void CPlayer::ProcessAnimation()
 	
 	if (m_nState & OBJECT_STATE_BOOSTED)
 	{
-		if (m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0) & ANIMATION_STATE_JUMP)
+		if (m_bJumpEndPoint)
 		{
-			CAnimationTrack *pAnimationTrack = m_ppAnimationControllers[ANIMATION_DOWN]->GetAnimationTrack(0);
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
 
-			if (pAnimationTrack->GetPosition() >= pAnimationTrack->GetLength())
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
+
+			m_bJumpEndPoint = false;
+		}
+
+		if (!(m_pnAnimationState[ANIMATION_DOWN] == ANIMATION_STATE_JUMP))
+		{
+			if (!(m_nState & OBJECT_STATE_SWORDING) && !(m_nState & OBJECT_STATE_SHOOTING))
 			{
-				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
+			}
 
-				if (!(m_nState & OBJECT_STATE_SHOOTING))
-					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
+		}
+	}
+
+	if (m_nState & OBJECT_STATE_SWORDING)
+	{
+		if (m_bSwordingEndPoint)
+		{
+			m_nState &= ~OBJECT_STATE_SWORDING;
+
+			if (m_LButtonDown)
+			{
+				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
+
+				printf("%d\n", m_nSaberAnimationIndex);
+				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
+
+				m_nState |= OBJECT_STATE_SWORDING;
+			}
+
+			m_bSwordingEndPoint = false;
+		}
+	}
+
+	// 가만히 있을 때
+	if ((m_nState & OBJECT_STATE_ONGROUND) && !(m_nState & OBJECT_STATE_BOOSTERING))
+	{
+		if (!(m_nState & OBJECT_STATE_MOVING))
+		{
+			if (m_nState & OBJECT_STATE_SHOOTING)
+			{
+				if (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_GM_GUN_SHOOT_START)
+				{
+					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START);
+				}
+				else
+				{
+					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN);
+				}
+
+				m_ppAnimationControllers[ANIMATION_DOWN]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackPosition(0));
+			}
+			else
+			{
+				if (!(m_nState & OBJECT_STATE_SWORDING))
+					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
+
+				if (!(m_nState & OBJECT_STATE_MOVING))
+					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
 			}
 		}
 	}
@@ -571,6 +650,18 @@ void CPlayer::Attack(CWeapon *pWeapon)
 
 					m_nState |= OBJECT_STATE_SHOOTING;
 				}
+			}
+		}
+		else if (nType & WEAPON_TYPE_OF_SABER)
+		{
+			if (!(m_nState & OBJECT_STATE_SWORDING))
+			{
+				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
+
+				printf("%d\n", m_nSaberAnimationIndex);
+				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
+
+				m_nState |= OBJECT_STATE_SWORDING;
 			}
 		}
 	}
@@ -664,11 +755,14 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 			}
 		}
 	}
+
+	ProcessMouseUpTime(fTimeElapsed);
 }
 
 void CPlayer::ChangeWeapon(int nIndex)
 {
 	if (m_nState & OBJECT_STATE_SHOOTING) return;
+	if (m_nState & OBJECT_STATE_SWORDING) return;
 
 	CRobotObject::ChangeWeapon(nIndex);
 
@@ -688,6 +782,8 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 			return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
 		else if (nType & WEAPON_TYPE_OF_BAZOOKA)
 			return WEAPON_TYPE::WEAPON_TYPE_BAZOOKA;
+		else if (nType & WEAPON_TYPE_OF_SABER)
+			return WEAPON_TYPE::WEAPON_TYPE_SABER;
 	}
 
 	return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
@@ -710,6 +806,9 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 	case WEAPON_TYPE_OF_MACHINEGUN:
 		pWeapon = new CMachineGun();
 		if (pBulletShader) ((CMachineGun*)pWeapon)->SetBullet(pBulletShader, nGroup);
+		break;
+	case WEAPON_TYPE_OF_SABER:
+		pWeapon = new CSaber();
 		break;
 	default:
 		exit(1);
