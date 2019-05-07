@@ -2021,6 +2021,8 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	CObjectsShader *pObjectsShader = NULL;
 
+	CMinimapRobot *minimapRobot = NULL;
+
 	switch (pCreateObjectInfo->Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
@@ -2033,6 +2035,10 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
+
+		minimapRobot = new CMinimapRobot(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+		minimapRobot->MoveMinimapRobotPos(pCreateObjectInfo->WorldMatrix);
+		m_pMinimapShader->insertMinimapRobot(pd3dDevice, pd3dCommandList, minimapRobot, NULL);
 
 		break;
 	case OBJECT_TYPE_OBSTACLE:
