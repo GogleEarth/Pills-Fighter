@@ -426,7 +426,10 @@ DWORD Framework::client_process(Client_arg* arg)
 						((PKT_PLAYER_INFO*)buf)->Player_Down_Animation, ((PKT_PLAYER_INFO*)buf)->isDownChangeAnimation,
 						((PKT_PLAYER_INFO*)buf)->DownAnimationPosition, ((PKT_PLAYER_INFO*)buf)->State });
 					playerinfomutex.unlock();
-
+					//if(((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
+					//	((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE||
+					//	((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+					//	std::cout << ((PKT_PLAYER_INFO*)buf)->ID << "의 애니메이션 포지션 : " << ((PKT_PLAYER_INFO*)buf)->UpAnimationPosition << "\n";
 				}
 				else if (iPktID == PKT_ID_SHOOT)
 				{
