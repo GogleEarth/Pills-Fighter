@@ -449,9 +449,9 @@ void GS_UI_Bar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout 
 
 	float2 fUVs[4];
 	fUVs[0] = float2(0.0f, 1.0f);
-	fUVs[1] = float2(0.0f, 1.0f - yPos);
+	fUVs[1] = float2(0.0f, 0.0f);
 	fUVs[2] = float2(1.0f, 1.0f);
-	fUVs[3] = float2(1.0f, 1.0f - yPos);
+	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_UI_OUT output;
 
@@ -468,6 +468,17 @@ float4 PS_UI(GS_UI_OUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	return(cColor);
+}
+
+float4 PS_UI_BULLET(GS_UI_OUT input) : SV_TARGET
+{
+	float2 vNewUV = input.uv;
+	float fStride = 1.0f / float(giValue);
+	vNewUV.y = 1 - fmod(vNewUV.y, fStride) * giValue;
+
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, vNewUV);
 
 	return(cColor);
 }

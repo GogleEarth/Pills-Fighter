@@ -317,12 +317,13 @@ protected:
 #define SKINNED_OBJECT_INDEX_GM 0
 #define SKINNED_OBJECT_INDEX_GUNDAM 1
 
-// Scene's Effect Shader Index 
-#define EFFECT_SHADER_INDEX 3
 
-#define INDEX_EFFECT_SHADER_EXP_SPRITE 0
-#define INDEX_EFFECT_SHADER_EFFECT 2
-#define INDEX_EFFECT_SHADER_HIT_SPRITE 1
+// Scene's Effect Shader Index
+#define EFFECT_SHADER_INDEX 2
+
+#define INDEX_SHADER_TIMED_EEFECTS 0
+#define INDEX_SHADER_SPRITE_EFFECTS 1
+
 
 class CColonyScene : public CScene
 {

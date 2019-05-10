@@ -94,9 +94,9 @@ public:
 
 	void CheckDeleteObjects();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
 		CRepository *pRepository, void *pContext = NULL) {};
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
 		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 };
 
@@ -108,7 +108,7 @@ public:
 	CStandardObjectsShader();
 	virtual ~CStandardObjectsShader();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
 		CRepository *pRepository, void *pContext = NULL);
 };
 
@@ -160,7 +160,7 @@ public:
 	BYTE LeftByteFromFile(FILE *pInFile, int byte) {
 		UINT nReads = 0;
 		char waste[64] = { '\0' };
-		nReads = (UINT)::fread(waste, sizeof(char), byte, pInFile);
+		nReads = (UINT)::fread(waste, sizeof(char), byte, pInFile); 
 
 		return(nReads);
 	}
@@ -169,8 +169,8 @@ public:
 		BYTE m_value = 7;
 		UINT nReads = 0;
 		nReads = (UINT)::fread(pstrToken, sizeof(char), nStrLength, pInFile);
-		nReads = (UINT)::fread(pstrToken, sizeof(char), m_value, pInFile);
-		pstrToken[m_value] = '\0';
+		nReads = (UINT)::fread(pstrToken, sizeof(char), m_value, pInFile); 
+		pstrToken[m_value] = '\0'; 
 
 		return(nReads);
 	}
@@ -188,8 +188,8 @@ public:
 	virtual ~CSkinnedObjectsShader();
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob); 
+	
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 };
 
@@ -242,11 +242,13 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
-	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType) {};
+	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nTextures = 1);
 
 protected:
-	CEffect					*m_pEffect = NULL;
-	CTexture				*m_pTexture = NULL;
+	// Effect Count = Texture Count
+	int						m_nEffects = 0;
+	CEffect					**m_ppEffects = NULL;
+	CTexture				**m_ppTextures = NULL;
 
 	ID3D12PipelineState		*m_pd3dSOPipelineState = NULL;
 };
@@ -254,11 +256,15 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-class CFadeOutShader : public CEffectShader
+#define TIMED_EFFECT_COUNT 1
+
+#define TIMED_EFFECT_INDEX_HIT_TEXT 0
+
+class CTimedEffectShader : public CEffectShader
 {
 public:
-	CFadeOutShader();
-	virtual ~CFadeOutShader();
+	CTimedEffectShader();
+	virtual ~CTimedEffectShader();
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();
@@ -271,12 +277,19 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
-	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+#define SPRITE_EFFECT_COUNT 2
+
+#define SPRITE_EFFECT_INDEX_HIT 0
+#define SPRITE_EFFECT_INDEX_EXPLOSION 1
+
+
+#define SPRITE_EFFECT_INDEX_HIT_TEXTURES 2
+#define SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES 1
 class CSpriteShader : public CEffectShader
 {
 public:
@@ -293,33 +306,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL) {}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-class CHitSpriteShader : public CSpriteShader
-{
-public:
-	CHitSpriteShader();
-	virtual ~CHitSpriteShader();
-
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-class CExpSpriteShader : public CSpriteShader
-{
-public:
-	CExpSpriteShader();
-	virtual ~CExpSpriteShader();
-
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void AddEffect(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,6 +385,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimap(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -414,6 +402,7 @@ public:
 
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateBar = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateBullet = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
@@ -506,6 +495,7 @@ public:
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 };
+
 
 
 

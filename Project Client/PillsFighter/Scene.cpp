@@ -48,7 +48,7 @@ void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 void CScene::MoveCursor(float x, float y)
 {
-	if (m_pCursor) m_pCursor->MoveCursorPos(x, y);
+	if(m_pCursor) m_pCursor->MoveCursorPos(x, y);
 }
 
 void CScene::AddFont(ID3D12Device *pd3dDevice, CFont *pFont)
@@ -183,8 +183,8 @@ void CScene::ReleaseUploadBuffers()
 	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
 
-	for (int i = 0; i < m_nShaders; i++) if (m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
-	for (int i = 0; i < m_nEffectShaders; i++) if (m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
+	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
+	for (int i = 0; i < m_nEffectShaders; i++) if(m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
 	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
 	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
 }
@@ -243,7 +243,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
-
+	
 	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
 	if (m_pTerrain)
 	{
@@ -252,10 +252,10 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	for (int i = 0; i < m_nShaders; i++)
 	{
-		if (m_ppShaders[i])
+		if(m_ppShaders[i])
 			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
-
+	
 	m_nFPS = (m_nFPS + 1) % 5;
 }
 
@@ -441,7 +441,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.ShaderRegister = 3; //HP
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_BONE_OFFSETS].Descriptor.ShaderRegister = 5; //Offset
@@ -958,7 +958,7 @@ void CLobbyScene::ChangeSelectRobot(int nServerIndex, int nRobotType)
 void CLobbyScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
-
+	
 	for (int i = 0; i < m_nUIRect; i++)
 	{
 		if (m_ppUIRects[i])
@@ -1079,13 +1079,13 @@ XMFLOAT2 CLobbyScene::GetPlayerTextPosition()
 	XMFLOAT2 xmf2Pos;
 	xmf2Pos.y = 0.400000f;
 
-	if (m_nCurrentSlotIndex % 2 == 0)
+	if(m_nCurrentSlotIndex % 2 == 0)
 		xmf2Pos.x = -0.862500f;
 	else
 		xmf2Pos.x = -0.862500f + 0.7f;
 
 	xmf2Pos.y += ((int)(m_nCurrentSlotIndex / 2)) * -0.378f;
-
+	
 	m_nCurrentSlotIndex++;
 
 	return xmf2Pos;
@@ -1111,7 +1111,7 @@ void CLobbyScene::JoinPlayer(int nServerIndex, const char *pstrPlayerName)
 void CLobbyScene::LeavePlayer(int nServerIndex)
 {
 	int nSlotIndex = m_umPlayerInfo[nServerIndex].nSlotIndex;
-
+	
 	if (!m_ppTextObjects[nServerIndex])
 		return;
 
@@ -1150,7 +1150,7 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 	if (m_bHLStartButton)
 	{
-		if (m_nMyIndex == 0)
+		if(m_nMyIndex == 0)
 			m_ppTextures[UI_TEXTURE_HL_GAMESTART]->UpdateShaderVariables(pd3dCommandList);
 		else
 			m_ppTextures[UI_TEXTURE_HL_READY]->UpdateShaderVariables(pd3dCommandList);
@@ -1288,7 +1288,8 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
-
+	
+	// Objects
 	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
 	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
@@ -1311,44 +1312,42 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pSkinnedRobotShader->Initialize(pd3dDevice, pd3dCommandList, pRepository, m_pd3dGraphicsRootSignature);
 	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS] = pSkinnedRobotShader;
 
+	// Effects
 	m_nEffectShaders = EFFECT_SHADER_INDEX;
 	m_ppEffectShaders = new CEffectShader*[m_nEffectShaders];
 
-	// 그룹 4 [ Fade Out Shader ]
-	CFadeOutShader *pFadeOutShader = new CFadeOutShader();
-	pFadeOutShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pFadeOutShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT] = pFadeOutShader;
+	// 그룹 1 [ Timed Effect Shader ]
+	CTimedEffectShader *pTimedEffectShader = new CTimedEffectShader();
+	pTimedEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pTimedEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS] = pTimedEffectShader;
 
-	// 그룹 5 [ Sprite Shader ]
-	CHitSpriteShader *pHitSpriteShader = new CHitSpriteShader();
-	pHitSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pHitSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE] = pHitSpriteShader;
-
-	CExpSpriteShader *pExpSpriteShader = new CExpSpriteShader();
-	pExpSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pExpSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE] = pExpSpriteShader;
-
-	// 그룹 6 [ Wire Shader ]
-	m_pWireShader = new CWireShader();
-	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-
-	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
-	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
-
-	// 그룹 7 [ Terrain Shader ]
-	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/Stage/HeightMap.raw"), 514, 514, 514, 514, xmf3Scale, xmf4Color);
-
-	// 그룹 8 [ SkyBox Shader ]
-	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
-
-	// 그룹 9 [ Particle Shader ]
+	// 그룹 2 [ Sprite Shader ]
+	CSpriteShader *pSpriteShader = new CSpriteShader();
+	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS] = pSpriteShader;
+	   
+	
+	// Particle
 	m_pParticleShader = new CParticleShader();
 	m_pParticleShader->CreateShader(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 	m_pParticleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 
+	////
+	// Wire
+	m_pWireShader = new CWireShader();
+	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+
+	// Terrain
+	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
+	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
+	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/Stage/HeightMap.raw"), 514, 514, 514, 514, xmf3Scale, xmf4Color);
+
+	// SkyBox
+	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+
+	// Weapons
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL);
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
@@ -1403,11 +1402,11 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pPlayer->SetScene(this);
 	}
 
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
 		m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
 		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL);
@@ -1484,7 +1483,7 @@ void CColonyScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
 
 void CColonyScene::CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice)
 {
-	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle);
+	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle); 
 	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dEnvirCubeDSBuffer, &m_d3dDsvEnvirCubeMapCPUHandle);
 	m_d3dSrvEnvirCubeMapGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dEnvirCube, RESOURCE_TEXTURE_CUBE);
 }
@@ -1732,10 +1731,10 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+					m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS]->AddEffect(TIMED_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
 					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -1751,10 +1750,10 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+					m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS]->AddEffect(TIMED_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
 					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pBZKBullet->GetPosition(), XMFLOAT2(fSize * 2, fSize * 2), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), XMFLOAT2(fSize * 2, fSize * 2), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
 
 					pBZKBullet->Delete();
 
@@ -1771,10 +1770,10 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+					m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS]->AddEffect(TIMED_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
 					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-					m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pMGBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pMGBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
 
 					pMGBullet->Delete();
 
@@ -1784,7 +1783,7 @@ void CColonyScene::CheckCollision()
 		}
 	}
 #endif
-
+	
 	std::vector<CGameObject*> vObstacles;
 	CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
 
@@ -1935,7 +1934,7 @@ void CColonyScene::FindAimToTargetDistance()
 			}
 		}
 	}
-
+	
 	if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 	{
 		if (fDistance > fTemp) fDistance = fTemp;
@@ -2036,7 +2035,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		m_pMinimapShader->InsertMinimapRobot(pGameObject, pCreateObjectInfo->Object_Index);
 
-
 		break;
 	case OBJECT_TYPE_OBSTACLE:
 		printf("Do not Apply Insert Obstacle\n");
@@ -2110,15 +2108,15 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
-		m_ppEffectShaders[INDEX_EFFECT_SHADER_EFFECT]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0);
+		m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS]->AddEffect(TIMED_EFFECT_INDEX_HIT_TEXT, pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
-		m_ppEffectShaders[INDEX_EFFECT_SHADER_HIT_SPRITE]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType);
+		m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
-		m_ppEffectShaders[INDEX_EFFECT_SHADER_EXP_SPRITE]->AddEffect(pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize * 2, fSize * 2), nEffectAniType);
+		m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize * 2, fSize * 2), nEffectAniType, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
 		break;
 	}
 }
