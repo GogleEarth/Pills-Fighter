@@ -42,6 +42,7 @@ public:
 
 	// 이동 속력
 	float m_MovingSpeed;
+	bool in_used = false;
 
 protected:
 	CModel							*m_pModel = NULL;
