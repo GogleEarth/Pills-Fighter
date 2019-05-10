@@ -48,7 +48,7 @@ void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 void CScene::MoveCursor(float x, float y)
 {
-	if(m_pCursor) m_pCursor->MoveCursorPos(x, y);
+	if (m_pCursor) m_pCursor->MoveCursorPos(x, y);
 }
 
 void CScene::AddFont(ID3D12Device *pd3dDevice, CFont *pFont)
@@ -183,8 +183,8 @@ void CScene::ReleaseUploadBuffers()
 	if (m_pSkyBox) m_pSkyBox->ReleaseUploadBuffers();
 	if (m_pTerrain) m_pTerrain->ReleaseUploadBuffers();
 
-	for (int i = 0; i < m_nShaders; i++) if(m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
-	for (int i = 0; i < m_nEffectShaders; i++) if(m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
+	for (int i = 0; i < m_nShaders; i++) if (m_ppShaders[i]) m_ppShaders[i]->ReleaseUploadBuffers();
+	for (int i = 0; i < m_nEffectShaders; i++) if (m_ppEffectShaders[i]) m_ppEffectShaders[i]->ReleaseUploadBuffers();
 	if (m_pParticleShader) m_pParticleShader->ReleaseUploadBuffers();
 	if (m_pUserInterface) m_pUserInterface->ReleaseUploadBuffers();
 }
@@ -243,7 +243,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
-	
+
 	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
 	if (m_pTerrain)
 	{
@@ -252,10 +252,10 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	for (int i = 0; i < m_nShaders; i++)
 	{
-		if(m_ppShaders[i])
+		if (m_ppShaders[i])
 			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
-	
+
 	m_nFPS = (m_nFPS + 1) % 5;
 }
 
@@ -958,7 +958,7 @@ void CLobbyScene::ChangeSelectRobot(int nServerIndex, int nRobotType)
 void CLobbyScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
-	
+
 	for (int i = 0; i < m_nUIRect; i++)
 	{
 		if (m_ppUIRects[i])
@@ -1079,13 +1079,13 @@ XMFLOAT2 CLobbyScene::GetPlayerTextPosition()
 	XMFLOAT2 xmf2Pos;
 	xmf2Pos.y = 0.400000f;
 
-	if(m_nCurrentSlotIndex % 2 == 0)
+	if (m_nCurrentSlotIndex % 2 == 0)
 		xmf2Pos.x = -0.862500f;
 	else
 		xmf2Pos.x = -0.862500f + 0.7f;
 
 	xmf2Pos.y += ((int)(m_nCurrentSlotIndex / 2)) * -0.378f;
-	
+
 	m_nCurrentSlotIndex++;
 
 	return xmf2Pos;
@@ -1111,7 +1111,7 @@ void CLobbyScene::JoinPlayer(int nServerIndex, const char *pstrPlayerName)
 void CLobbyScene::LeavePlayer(int nServerIndex)
 {
 	int nSlotIndex = m_umPlayerInfo[nServerIndex].nSlotIndex;
-	
+
 	if (!m_ppTextObjects[nServerIndex])
 		return;
 
@@ -1150,7 +1150,7 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 	if (m_bHLStartButton)
 	{
-		if(m_nMyIndex == 0)
+		if (m_nMyIndex == 0)
 			m_ppTextures[UI_TEXTURE_HL_GAMESTART]->UpdateShaderVariables(pd3dCommandList);
 		else
 			m_ppTextures[UI_TEXTURE_HL_READY]->UpdateShaderVariables(pd3dCommandList);
@@ -1288,7 +1288,7 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
-	
+
 	m_nShaders = SHADER_INDEX;
 	m_ppShaders = new CShader*[m_nShaders];
 	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
@@ -1403,11 +1403,11 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pPlayer->SetScene(this);
 	}
 
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, 
+	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL);
@@ -1425,7 +1425,7 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pUserInterface = pUserInterface;
 
-	CMinimapShader *pMinimapShader = new CMinimapShader();
+	CMinimapShader *pMinimapShader = new CMinimapShader(pd3dDevice, pd3dCommandList);
 	pMinimapShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pMinimapShader->Initialize(pd3dDevice, pd3dCommandList);
 
@@ -1484,7 +1484,7 @@ void CColonyScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
 
 void CColonyScene::CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice)
 {
-	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle); 
+	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle);
 	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dEnvirCubeDSBuffer, &m_d3dDsvEnvirCubeMapCPUHandle);
 	m_d3dSrvEnvirCubeMapGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dEnvirCube, RESOURCE_TEXTURE_CUBE);
 }
@@ -1784,7 +1784,7 @@ void CColonyScene::CheckCollision()
 		}
 	}
 #endif
-	
+
 	std::vector<CGameObject*> vObstacles;
 	CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
 
@@ -1935,7 +1935,7 @@ void CColonyScene::FindAimToTargetDistance()
 			}
 		}
 	}
-	
+
 	if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 	{
 		if (fDistance > fTemp) fDistance = fTemp;
@@ -2021,8 +2021,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	CObjectsShader *pObjectsShader = NULL;
 
-	CMinimapRobot *minimapRobot = NULL;
-
 	switch (pCreateObjectInfo->Object_Type)
 	{
 	case OBJECT_TYPE_PLAYER:
@@ -2036,9 +2034,8 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
 
-		minimapRobot = new CMinimapRobot(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
-		minimapRobot->MoveMinimapRobotPos(pCreateObjectInfo->WorldMatrix);
-		m_pMinimapShader->insertMinimapRobot(pd3dDevice, pd3dCommandList, minimapRobot, NULL);
+		m_pMinimapShader->InsertMinimapRobot(pGameObject, pCreateObjectInfo->Object_Index);
+
 
 		break;
 	case OBJECT_TYPE_OBSTACLE:

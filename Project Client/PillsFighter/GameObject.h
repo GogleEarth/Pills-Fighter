@@ -608,35 +608,3 @@ protected:
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
-
-struct CB_MINIMAP_ROBOT_POSITION
-{
-	BOOL enemyOrTeam;
-	XMFLOAT2 robotPosition;
-};
-
-class CMinimapRobot
-{
-public:
-	CMinimapRobot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
-	virtual ~CMinimapRobot();
-
-	void ReleaseUploadBuffer();
-
-	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
-
-	void MoveMinimapRobotPos(XMFLOAT4X4& xmf4x4World);
-
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-
-protected:
-	CMesh		*m_pMesh;
-	CTexture	*m_pTexture;
-	CShader		*m_pShader;
-
-	ID3D12Resource					*m_cbGameObject;
-	CB_MINIMAP_ROBOT_POSITION		m_cbMappedGameObject;
-};

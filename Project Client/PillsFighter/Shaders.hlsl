@@ -1000,8 +1000,8 @@ void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStr
 
 cbuffer cbMinimapRobotPos : register(b12)
 {
-	bool enemyOrTeam;
-	float2 gvMinimapRobotPos;
+	float2 gvMinimapRobotPos[7];
+	bool enemyOrTeam[7];
 }
 
 [maxvertexcount(4)]
@@ -1012,10 +1012,7 @@ void GSMinimapEnemy(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
 
-	// 미니맵에 나올 때 알맞게 되도록 월드 상 적 위치를 미니맵 상 위치로 변환
 	float2 enemyPos = float2(0.0f, 0.0f);
-	//enemyPos.x = gvMinimapRobotPos.x/1000; // X 변환
-	//enemyPos.y = gvMinimapRobotPos.y/1000; // Z 변환
 	enemyPos.x = 0.5f; // X 변환
 	enemyPos.y = 0.5f; // Z 변환
 
