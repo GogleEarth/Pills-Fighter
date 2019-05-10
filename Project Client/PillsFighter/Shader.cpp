@@ -637,6 +637,9 @@ void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin", INSTANCING_OBJECT_INDEX_WALL);
 
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Brick_Garage.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_BrickGarageSelfData.bin", INSTANCING_OBJECT_INDEX_BRICKGARAGE);
+
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
