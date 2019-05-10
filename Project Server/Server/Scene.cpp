@@ -68,6 +68,15 @@ void CScene::BuildObjects()
 	m_pObstacles[3]->index = 3;
 	m_pObstacles[3]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
 	m_pObstacles[3]->SetModel(m_pObstacleMesh);
+
+	for (int i = 0; i < 24; ++i)
+	{
+		m_BeamsaberCollisionmesh[i].in_used = false;
+		m_BeamsaberCollisionmesh[i].SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+		m_BeamsaberCollisionmesh[i].SetModel(m_pGMMesh);
+		m_BeamsaberCollisionmesh[i].index = i;
+		m_BeamsaberCollisionmesh[i].hp = 3;
+	}
 }
 
 void CScene::AnimateObjects(float fTimeElapsed)
@@ -83,6 +92,12 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		}
 		if (m_pObstacles[i] != NULL)
 			m_pObstacles[i]->Animate(fTimeElapsed);
+	}
+
+	for (int i = 0; i < 24; ++i)
+	{
+		if (m_BeamsaberCollisionmesh[i].in_used)
+			m_BeamsaberCollisionmesh[i].Animate(fTimeElapsed);
 	}
 }
 

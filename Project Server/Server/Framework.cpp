@@ -426,10 +426,59 @@ DWORD Framework::client_process(Client_arg* arg)
 						((PKT_PLAYER_INFO*)buf)->Player_Down_Animation, ((PKT_PLAYER_INFO*)buf)->isDownChangeAnimation,
 						((PKT_PLAYER_INFO*)buf)->DownAnimationPosition, ((PKT_PLAYER_INFO*)buf)->State });
 					playerinfomutex.unlock();
-					//if(((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
-					//	((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE||
-					//	((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
-					//	std::cout << ((PKT_PLAYER_INFO*)buf)->ID << "의 애니메이션 포지션 : " << ((PKT_PLAYER_INFO*)buf)->UpAnimationPosition << "\n";
+					if (((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
+						((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE ||
+						((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+						std::cout << "플레이어 " << ((PKT_PLAYER_INFO*)buf)->ID << "의"
+						<< ((PKT_PLAYER_INFO*)buf)->Player_Up_Animation
+						<< "의 애니메이션 포지션 : "
+						<< ((PKT_PLAYER_INFO*)buf)->UpAnimationPosition << "\n";
+
+					if (((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
+						if (((PKT_PLAYER_INFO*)buf)->UpAnimationPosition >= 0.3f)
+						{
+							if (!m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].in_used)
+							{
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 2].in_used = false;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].in_used = true;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].m_iId = ((PKT_PLAYER_INFO*)buf)->ID;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].SetWorldTransf(((PKT_PLAYER_INFO*)buf)->WorldMatrix);
+								XMFLOAT3 lookvector = { ((PKT_PLAYER_INFO*)buf)->WorldMatrix._31,((PKT_PLAYER_INFO*)buf)->WorldMatrix._32,((PKT_PLAYER_INFO*)buf)->WorldMatrix._33 };
+								lookvector = Vector3::ScalarProduct(lookvector, 10.0f, false);
+								lookvector = Vector3::Add(m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].GetPosition(), lookvector);
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].SetPosition(lookvector.x, lookvector.y, lookvector.z);
+							}
+						}
+					if (((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
+						if (((PKT_PLAYER_INFO*)buf)->UpAnimationPosition >= 0.35f)
+						{
+							if (!m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].in_used)
+							{
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID].in_used = false;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].in_used = true;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].m_iId = ((PKT_PLAYER_INFO*)buf)->ID;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].SetWorldTransf(((PKT_PLAYER_INFO*)buf)->WorldMatrix);
+								XMFLOAT3 lookvector = { ((PKT_PLAYER_INFO*)buf)->WorldMatrix._31,((PKT_PLAYER_INFO*)buf)->WorldMatrix._32,((PKT_PLAYER_INFO*)buf)->WorldMatrix._33 };
+								lookvector = Vector3::ScalarProduct(lookvector, 15.0f, false);
+								lookvector = Vector3::Add(m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].GetPosition(), lookvector);
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].SetPosition(lookvector.x, lookvector.y, lookvector.z);
+							}
+						}
+					if (((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+						if (((PKT_PLAYER_INFO*)buf)->UpAnimationPosition >= 0.5f)
+						{
+							if (!m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 2].in_used)
+							{
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 1].in_used = false;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 2].in_used = true;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 2].m_iId = ((PKT_PLAYER_INFO*)buf)->ID;
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 2].SetWorldTransf(((PKT_PLAYER_INFO*)buf)->WorldMatrix);
+								XMFLOAT3 lookvector = { ((PKT_PLAYER_INFO*)buf)->WorldMatrix._31,((PKT_PLAYER_INFO*)buf)->WorldMatrix._32,((PKT_PLAYER_INFO*)buf)->WorldMatrix._33 };
+								lookvector = Vector3::ScalarProduct(lookvector, 15.0f, false);
+								lookvector = Vector3::Add(m_pScene->m_BeamsaberCollisionmesh[2].GetPosition(), lookvector);
+								m_pScene->m_BeamsaberCollisionmesh[3 * ((PKT_PLAYER_INFO*)buf)->ID + 2].SetPosition(lookvector.x, lookvector.y, lookvector.z);
+							}
+						}
 				}
 				else if (iPktID == PKT_ID_SHOOT)
 				{
@@ -662,6 +711,50 @@ void Framework::CheckCollision(CScene* pScene)
 							Item->Delete();
 						}
 					}
+				}
+			}
+		}
+	}
+
+	// 플레이어와 빔사벨 충돌
+	for (int i = 0; i < 24; ++i)
+	{
+		for (int k = 0; k < MAX_CLIENT; ++k)
+		{
+			if (pScene->m_pObjects[k]->m_bPlay)
+			{
+				if (m_pScene->m_BeamsaberCollisionmesh[i].in_used)
+				{
+					if (m_pScene->m_BeamsaberCollisionmesh[i].m_iId != pScene->m_pObjects[k]->m_iId)
+					{
+						if (m_pScene->m_BeamsaberCollisionmesh[i].GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						{
+							std::cout << "충돌!\n";
+							pktCE.PktId = PKT_ID_CREATE_EFFECT;
+							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCE.efType = EFFECT_TYPE_HIT_FONT;
+							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+							pktCE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
+							pktCE.xmf3Position.y += 20.0f;
+							effect_msg_queue.push(pktCE);
+							pktCDE.PktId = PKT_ID_CREATE_EFFECT;
+							pktCDE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+							pktCDE.efType = EFFECT_TYPE_HIT;
+							pktCDE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+							pktCDE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
+							pktCDE.xmf3Position.y += 10.0f;
+							effect_msg_queue.push(pktCDE);
+							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
+							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
+							pktLF.ID = pScene->m_pObjects[k]->m_iId;
+							pktLF.HP = m_pScene->m_BeamsaberCollisionmesh[i].hp;
+							pktLF.AMMO = 0;
+							life_msg_queue.push(pktLF);
+							m_pScene->m_BeamsaberCollisionmesh[i].in_used = false;
+						}
+					}
+
+					//m_pScene->m_BeamsaberCollisionmesh[i].in_used = false;
 				}
 			}
 		}
