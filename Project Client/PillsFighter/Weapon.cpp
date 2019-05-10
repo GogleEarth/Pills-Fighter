@@ -148,7 +148,7 @@ void CGun::Animate(float fElapsedTime, CCamera *pCamera)
 		CheckShootable(fElapsedTime);
 	}
 
-	if (ShootedNumber() == ShootNumber())
+	if (ShootedCount() == ShootNumber())
 	{
 		SetShootCount();
 	}

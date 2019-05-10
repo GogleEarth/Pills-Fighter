@@ -361,15 +361,6 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	{
 		OnPrepareRender();
 		
-		if (m_ppAnimationControllers[ANIMATION_UP] && m_ppAnimationControllers[ANIMATION_DOWN])
-		{
-			if (m_nState & OBJECT_STATE_MOVING && !(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
-			{
-				if (m_ppAnimationControllers[ANIMATION_UP]->GetTrackAnimationState(0) == m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackAnimationState(0))
-					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackPosition(0));
-			}
-		}
-
 		if (m_ppAnimationControllers[ANIMATION_UP]) m_ppAnimationControllers[ANIMATION_UP]->AdvanceTime(fTimeElapsed);
 		if (m_ppAnimationControllers[ANIMATION_DOWN]) m_ppAnimationControllers[ANIMATION_DOWN]->AdvanceTime(fTimeElapsed);
 
@@ -900,6 +891,19 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	{
 		gFmodSound.PauseFMODSound(m_pChannelBooster);
 	}
+
+	if (m_ppAnimationControllers[ANIMATION_UP] && m_ppAnimationControllers[ANIMATION_DOWN])
+	{
+		// 하반신이 우선인 상태
+		if (m_nState & OBJECT_STATE_MOVING)
+		{
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
+			{
+				m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackPosition(0));
+			}
+		}
+	}
+
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);

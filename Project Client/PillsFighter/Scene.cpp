@@ -1231,7 +1231,6 @@ void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM w
 			if (!m_LButtonDown) m_pPlayer->PrepareAttack(m_pPlayer->GetRHWeapon());
 
 			m_LButtonDown = TRUE;
-			m_pPlayer->LButtonDown();
 			m_pPlayer->Attack(m_pPlayer->GetRHWeapon());
 		}
 		break;
@@ -1239,7 +1238,6 @@ void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM w
 	{
 		m_LButtonDown = FALSE;
 		m_pPlayer->LButtonUp();
-		m_pPlayer->ResetMouseUpTime();
 		break;
 	}
 	default:

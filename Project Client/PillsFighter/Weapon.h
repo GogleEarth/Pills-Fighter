@@ -100,7 +100,7 @@ public:
 	void SetShootable(bool b) { m_bShootable = b; }
 
 	virtual int ShootNumber() { return 0; };
-	virtual int ShootedNumber() { return m_nShootCount; };
+	virtual int ShootedCount() { return m_nShootCount; };
 
 	virtual void CheckShootable(float fElapsedTime);
 	virtual void SetShootCount();

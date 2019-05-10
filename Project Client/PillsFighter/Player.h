@@ -36,7 +36,7 @@ public:
 	void Move(ULONG nDirection, float fDistance);
 	void Move(const XMFLOAT3& xmf3Shift);
 	virtual void Rotate(float x, float y, float z);
-	
+
 	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
 	void Update(float fTimeElapsed);
 
@@ -75,7 +75,7 @@ protected:
 
 public:
 	void ActivationBooster();
-	void DeactivationBooster();
+	void DeactivationBooster() {m_nState &= ~OBJECT_STATE_BOOSTERING;};
 	void SetElapsedBGConsumeTime() { m_fElapsedBGConsumeTime = 1.0f; }
 	void SetElapsedBGChargeTime() { m_fElapsedBGChargeTime = 1.0f; }
 
@@ -130,46 +130,36 @@ public:
 
 	void ProcessAnimation();
 
-	bool IsShootable() { return m_bShootable; }
-	void SetShootable(bool bShot) { m_bShootable = bShot; }
+	void DeactiveMoving() { m_nState &= ~OBJECT_STATE_MOVING; }
 
+	// For Animation	
 protected:
-	bool m_bShootable = false;
-
+	// Call Back Data
 	bool m_bShootStartEndPoint = false;
 	bool m_bShootReturnEndPoint = false;
 	bool m_bShootOnceEndPoint = false;
+	bool m_bSwordingEndPoint = false;
+	bool m_bJumpEndPoint = false;
+
+	// Others
 	bool m_bChangeableOnceAni = false;
 
-	bool m_LButtonDown = false;
-
-public:
-	void LButtonDown() { m_LButtonDown = true; }
-	void LButtonUp() { m_LButtonDown = false; }
-
-protected:
-	bool m_bShootBullet = false;
-
-public:
-	bool GetShootBullet() { return m_bShootBullet; }
-	void SetShootBullet(bool b) { m_bShootBullet = b; }
-
-protected:
-	bool m_bSwordingEndPoint = false;
-
-protected:
-	float m_fMouseUpTime = 0.0f;
-
-public:
-	void ProcessMouseUpTime(float fElapsedTime);
-	void ResetMouseUpTime() { m_fMouseUpTime = 0.0f; }
-
-	void DeactiveMoving() { m_nState &= ~OBJECT_STATE_MOVING; }
-protected:
 	int m_nAnimationList[3] = { ANIMATION_STATE_BEAM_SABER_1_ONE , ANIMATION_STATE_BEAM_SABER_2_ONE, ANIMATION_STATE_BEAM_SABER_3_ONE };
 	int m_nSaberAnimationIndex = 0;
 
+	// For Attack
 protected:
-	bool m_bJumpEndPoint = false;
-	bool m_bPressSpace = false;
+	bool m_bShootable = false;
+	bool m_LButtonDown = false;
+	bool m_bShootBullet = false;
+	float m_fMouseUpTime = 0.0f;
+
+public:
+	bool IsShootable() { return m_bShootable; }
+	void SetShootable(bool bShot) { m_bShootable = bShot; }
+	void LButtonUp() { m_LButtonDown = false; m_fMouseUpTime = 0.0f;}
+	bool GetShootBullet() { return m_bShootBullet; }
+	void SetShootBullet(bool b) { m_bShootBullet = b; }
+
+	void ProcessMouseUpTime(float fElapsedTime);
 };

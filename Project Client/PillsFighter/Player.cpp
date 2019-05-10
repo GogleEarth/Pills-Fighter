@@ -191,10 +191,9 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 	if (dwDirection & DIR_FORWARD)
 	{
-		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+		if (m_nState & OBJECT_STATE_ONGROUND)
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
-			m_nState |= OBJECT_STATE_MOVING;
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_FORWARD);
@@ -204,10 +203,9 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	}
 	if (dwDirection & DIR_BACKWARD)
 	{
-		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+		if (m_nState & OBJECT_STATE_ONGROUND)
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_BACKWARD);
-			m_nState |= OBJECT_STATE_MOVING;
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_BACKWARD);
@@ -217,10 +215,9 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	}
 	if (dwDirection & DIR_RIGHT)
 	{
-		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+		if (m_nState & OBJECT_STATE_ONGROUND)
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_RIGHT);
-			m_nState |= OBJECT_STATE_MOVING;
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_RIGHT);
@@ -230,10 +227,9 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	}
 	if (dwDirection & DIR_LEFT)
 	{
-		if (!(m_nState & OBJECT_STATE_BOOSTERING) && (m_nState & OBJECT_STATE_ONGROUND))
+		if (m_nState & OBJECT_STATE_ONGROUND)
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_LEFT);
-			m_nState |= OBJECT_STATE_MOVING;
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_LEFT);
@@ -242,8 +238,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 	}
 
-	//if (dwDirection & DIR_DOWN);
-
+	m_nState |= OBJECT_STATE_MOVING;
 	Move(xmf3Shift);
 }
 
@@ -337,10 +332,14 @@ void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)
 
 		m_nState |= OBJECT_STATE_ONGROUND;
 
-		if(!m_bPressSpace)
-			m_nState &= ~OBJECT_STATE_BOOSTED;
+		if(!(m_nState & OBJECT_STATE_BOOSTERING))
+			m_nState &= ~OBJECT_STATE_FLYING;
 	}
-	else m_nState &= ~OBJECT_STATE_ONGROUND;
+	else
+	{
+		m_nState &= ~OBJECT_STATE_ONGROUND;
+		m_nState |= OBJECT_STATE_FLYING;
+	}
 }
 
 void CPlayer::OnCameraUpdateCallback(float fTimeElapsed)
@@ -371,29 +370,24 @@ void CPlayer::ProcessHitPoint()
 
 void CPlayer::ActivationBooster()
 {
+	// Active by Space Bar
 	if (!(m_nState & OBJECT_STATE_BOOSTERING) && m_nBoosterGauge > 0)
 	{
-		if (m_nState & OBJECT_STATE_ONGROUND)
+		if (!(m_nState & OBJECT_STATE_FLYING))
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP, true);
 
-			if(!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
+
+			m_nState |= OBJECT_STATE_JUMPING;
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTERING;
-		m_nState |= OBJECT_STATE_BOOSTED;
 
 		m_bChargeBG = false;
 		SetElapsedBGConsumeTime();
-		m_bPressSpace = true;
 	}
-}
-
-void CPlayer::DeactivationBooster()
-{
-	m_nState &= ~OBJECT_STATE_BOOSTERING;
-	m_bPressSpace = false;
 }
 
 void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
@@ -453,7 +447,7 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
-		float fBoosterPower = m_fGravity * m_fKeepBoosteringTime * m_fBoosterBasicForce;
+		float fBoosterPower = m_fGravity + m_fKeepBoosteringTime * m_fBoosterBasicForce;
 
 		m_fAccelerationY += fBoosterPower;
 	}
@@ -501,19 +495,21 @@ void CPlayer::ProcessAnimation()
 {
 	if (m_nState & OBJECT_STATE_SHOOTING)
 	{
+		// Start 자세 End Point
 		if (m_bShootStartEndPoint)
 		{
 			m_bShootStartEndPoint = false;
 			m_bChangeableOnceAni = true;
 		}
 
+		// Return 자세 End Point
 		if (m_bShootReturnEndPoint)
 		{
 			m_bShootReturnEndPoint = false;
 			m_nState &= ~OBJECT_STATE_SHOOTING;
 		}
 
-		// ONCE 애니메이션으로 바꿀 수 있을 경우
+		// Start 자세 이후
 		if (m_bChangeableOnceAni)
 		{
 			CGun *pGun = (CGun*)m_pRHWeapon;
@@ -521,8 +517,6 @@ void CPlayer::ProcessAnimation()
 			if (pGun->IsShootable())
 			{
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
-				m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, 0.0f);
-
 				pGun->Shot();
 				m_bShootable = false;
 			}
@@ -541,22 +535,23 @@ void CPlayer::ProcessAnimation()
 
 			if (!m_LButtonDown)
 			{
-				if ((pGun->ShootNumber() == pGun->ShootedNumber()) || (pGun->ShootedNumber() == 0))
+				if ( (pGun->ShootNumber() == pGun->ShootedCount()) || (pGun->ShootedCount() == 0))
 				{
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
 
-					if (!(m_nState & OBJECT_STATE_MOVING) && (m_nState & OBJECT_STATE_ONGROUND))
+					if (!(m_nState & OBJECT_STATE_MOVING) && !(m_nState & OBJECT_STATE_JUMPING))
 					{
 						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
 					}
 
+					m_bShootOnceEndPoint = false;
 					m_bChangeableOnceAni = false;
 				}
 			}
 		}
 	}
 	
-	if (m_nState & OBJECT_STATE_BOOSTED)
+	if (m_nState & OBJECT_STATE_FLYING)
 	{
 		if (m_bJumpEndPoint)
 		{
@@ -566,16 +561,15 @@ void CPlayer::ProcessAnimation()
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
 
 			m_bJumpEndPoint = false;
+			m_nState &= ~OBJECT_STATE_JUMPING;
 		}
 
-		if (!(m_pnAnimationState[ANIMATION_DOWN] == ANIMATION_STATE_JUMP))
+		if (!(m_nState & OBJECT_STATE_JUMPING))
 		{
-			if (!(m_nState & OBJECT_STATE_SWORDING) && !(m_nState & OBJECT_STATE_SHOOTING))
-			{
-				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
-			}
-
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
+			
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
 		}
 	}
 
@@ -583,54 +577,50 @@ void CPlayer::ProcessAnimation()
 	{
 		if (m_bSwordingEndPoint)
 		{
-			m_nState &= ~OBJECT_STATE_SWORDING;
-
 			if (m_LButtonDown)
 			{
 				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
 
-				printf("%d\n", m_nSaberAnimationIndex);
 				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
-
-				m_nState |= OBJECT_STATE_SWORDING;
 			}
+			else
+				m_nState &= ~OBJECT_STATE_SWORDING;
 
 			m_bSwordingEndPoint = false;
 		}
 	}
 
-	// 가만히 있을 때
-	if ((m_nState & OBJECT_STATE_ONGROUND) && !(m_nState & OBJECT_STATE_BOOSTERING))
+	// 땅 위에서 가만히 있을 때
+	// 총 쏘는 도중 or 아이들
+	if ((m_nState & OBJECT_STATE_ONGROUND) && !(m_nState & OBJECT_STATE_MOVING) && !(m_nState & OBJECT_STATE_JUMPING))
 	{
-		if (!(m_nState & OBJECT_STATE_MOVING))
+		// 총 쏘는 도중일 때
+		if (m_nState & OBJECT_STATE_SHOOTING)
 		{
-			if (m_nState & OBJECT_STATE_SHOOTING)
+			if (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_GM_GUN_SHOOT_START)
 			{
-				if (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_GM_GUN_SHOOT_START)
-				{
-					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START);
-				}
-				else
-				{
-					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN);
-				}
-
-				m_ppAnimationControllers[ANIMATION_DOWN]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackPosition(0));
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START);
 			}
-			else
+			else if(m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_GM_GUN_SHOOT_RETURN)
 			{
-				if (!(m_nState & OBJECT_STATE_SWORDING))
-					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
-
-				if (!(m_nState & OBJECT_STATE_MOVING))
-					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
+				ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN);
 			}
+		}
+		else
+		{
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
+
+			if (!(m_nState & OBJECT_STATE_SWORDING))
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
 		}
 	}
 }
 
 void CPlayer::Attack(CWeapon *pWeapon)
 {
+	// Active By L Button Down
+	m_LButtonDown = true;
+
 	if (pWeapon)
 	{
 		int nType = pWeapon->GetType();
@@ -658,10 +648,10 @@ void CPlayer::Attack(CWeapon *pWeapon)
 			{
 				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
 
-				printf("%d\n", m_nSaberAnimationIndex);
 				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 
 				m_nState |= OBJECT_STATE_SWORDING;
+				m_bSwordingEndPoint = false;
 			}
 		}
 	}
