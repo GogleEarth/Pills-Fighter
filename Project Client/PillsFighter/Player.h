@@ -119,7 +119,7 @@ public:
 	WEAPON_TYPE GetWeaponType();
 
 	virtual void ChangeWeapon(int nIndex);
-	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, int nGroup);
+	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, CShader *pEffectShader, int nGroup);
 
 protected:
 	BOOL		m_bWeaponChanged = FALSE;

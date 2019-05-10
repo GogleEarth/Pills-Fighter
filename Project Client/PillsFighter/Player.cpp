@@ -789,7 +789,7 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 	return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
 }
 
-void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, int nGroup)
+void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, CShader *pEffectShader, int nGroup)
 {
 	CWeapon *pWeapon = NULL;
 
@@ -797,15 +797,15 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 	{
 	case WEAPON_TYPE_OF_GIM_GUN:
 		pWeapon = new CGimGun();
-		if (pBulletShader) ((CGimGun*)pWeapon)->SetBullet(pBulletShader, nGroup);
+		if (pBulletShader) ((CGimGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_BAZOOKA:
 		pWeapon = new CBazooka();
-		if (pBulletShader) ((CBazooka*)pWeapon)->SetBullet(pBulletShader, nGroup);
+		if (pBulletShader) ((CBazooka*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_MACHINEGUN:
 		pWeapon = new CMachineGun();
-		if (pBulletShader) ((CMachineGun*)pWeapon)->SetBullet(pBulletShader, nGroup);
+		if (pBulletShader) ((CMachineGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_SABER:
 		pWeapon = new CSaber();

@@ -258,8 +258,9 @@ protected:
 
 #define TIMED_EFFECT_COUNT 1
 
-#define TIMED_EFFECT_INDEX_HIT_TEXT 0
+#define TIMED_EFFECT_INDEX_MUZZLE_FIRE 0
 
+#define TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES 1
 class CTimedEffectShader : public CEffectShader
 {
 public:
@@ -277,6 +278,28 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define TEXT_EFFECT_COUNT 1
+
+#define TEXT_EFFECT_INDEX_HIT_TEXT 0
+
+class CTextEffectShader : public CTimedEffectShader
+{
+public:
+	CTextEffectShader();
+	virtual ~CTextEffectShader();
+
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+protected:
+	ID3D12PipelineState *m_pd3dTextPipelineState = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,7 +340,7 @@ public:
 	CParticleShader();
 	virtual ~CParticleShader();
 
-	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();
@@ -344,8 +367,6 @@ public:
 	void SetFollowObject(CGameObject *pObject, CModel *pFrame);
 
 protected:
-	ID3DBlob						*m_pd3dGeometryShaderBlob = NULL;
-
 	ID3D12PipelineState				*m_pd3dSOPipelineState = NULL;
 
 	CTexture						*m_pTexture;

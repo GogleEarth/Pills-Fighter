@@ -3,6 +3,7 @@
 #include"GameObject.h"
 
 class CObjectsShader;
+class CEffectShader;
 
 class CWeapon : public CGameObject
 {
@@ -60,6 +61,7 @@ public:
 
 	CModel *m_pMuzzle = NULL;
 	CObjectsShader *m_pBulletShader = NULL;
+	CEffectShader *m_pEffectShader = NULL;
 	int	m_nBulletGroup;
 
 	float	m_fShotCoolTime = 0.0f;
@@ -73,7 +75,7 @@ public:
 	float GetReloadTime() { return m_fReloadTime; }
 	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
 	int GetReloadedAmmo() { return m_nReloadedAmmo; }
-	void SetBullet(CShader *Bullet, int nGroup) { m_pBulletShader = (CObjectsShader*)Bullet; m_nBulletGroup = nGroup; }
+	void SetBullet(CShader *pBullet, CShader *pEffect, int nGroup) { m_pBulletShader = (CObjectsShader*)pBullet; m_pEffectShader = (CEffectShader*)pEffect;  m_nBulletGroup = nGroup; }
 
 	virtual void Reload(int& nAmmo);
 

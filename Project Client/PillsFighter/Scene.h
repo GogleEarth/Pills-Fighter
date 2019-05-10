@@ -319,10 +319,11 @@ protected:
 
 
 // Scene's Effect Shader Index
-#define EFFECT_SHADER_INDEX 2
+#define EFFECT_SHADER_INDEX 3
 
-#define INDEX_SHADER_TIMED_EEFECTS 0
-#define INDEX_SHADER_SPRITE_EFFECTS 1
+#define INDEX_SHADER_TEXT_EEFECTS 0
+#define INDEX_SHADER_TIMED_EEFECTS 1
+#define INDEX_SHADER_SPRITE_EFFECTS 2
 
 
 class CColonyScene : public CScene

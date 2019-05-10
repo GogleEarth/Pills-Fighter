@@ -510,15 +510,17 @@ ConstantBuffer<EFFECT> gEffect : register(b7);
 struct VS_EFFECT_INPUT
 {
 	float3 position : POSITION;
-	float2 size : SIZE;
 	float age : AGE;
+	float2 size : SIZE;
+	uint texindex : TEXINDEX;
 };
 
 struct VS_EFFECT_OUTPUT
 {
 	float3 position : POSITION;
-	float2 size : SIZE;
+	uint texindex : TEXINDEX;
 	float4 color : COLOR;
+	float2 size : SIZE;
 };
 
 VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
@@ -530,6 +532,7 @@ VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
 
 	output.size = input.size;
 	output.position = input.position;
+	output.texindex = input.texindex;
 
 	return output;
 }
@@ -537,8 +540,9 @@ VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
 struct GS_EFFECT_OUTPUT
 {
 	float4 position : SV_POSITION;
-	float2 uv : TEXCOORD;
 	float4 color : COLOR;
+	float2 uv : TEXCOORD;
+	uint texindex : TEXINDEX;
 };
 
 [maxvertexcount(4)]
@@ -565,13 +569,13 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_EFFECT_OUTPUT output;
+	output.texindex = input[0].texindex;
+	output.color = input[0].color;
 
 	for (int i = 0; i < 4; i++)
 	{
 		output.position = mul(mul(fVertices[i], gmtxView), gmtxProjection);
 		output.uv = fUVs[i];
-		output.position.z = 0.0f;
-		output.color = input[0].color;
 
 		outStream.Append(output);
 	}
@@ -579,7 +583,7 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 
 float4 PSEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	float4 cColor = gtxtTexture[NonUniformResourceIndex(input.texindex)].Sample(gssWrap, input.uv);
 
 	return(cColor *input.color);
 }
@@ -675,6 +679,7 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_SPRITE_OUTPUT output;
+	output.texindex = input[0].texindex;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -682,7 +687,6 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 		float3x3 f3x3Sprite = float3x3(gSprite.m_f2SpriteSize.x, 0.0f, 0.0f, 0.0f, gSprite.m_f2SpriteSize.y, 0.0f, fUVs[i].x * gSprite.m_f2SpriteSize.x, fUVs[i].y * gSprite.m_f2SpriteSize.y, 1.0f);
 		float3 f3Sprite = float3(input[0].spritepos, 1.0f);
 		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
-		output.texindex = input[0].texindex;
 
 		outStream.Append(output);
 	}
@@ -797,14 +801,36 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 
 	if (output.type == PARTICLE_TYPE_EMITTER)
 	{
-		float3 vRandom = gParticle.m_vRandom.xyz;// *input[0].verid * input[0].verid;
-		vRandom = normalize(vRandom * 2.0f - 1.0f);
+		float3 vRandom = gParticle.m_vRandom.xyz *input[0].verid * input[0].verid;
+		float fZ = fmod(vRandom.z, 90.0f) - 45.0f;
+		float fY = fmod(vRandom.y, 30) - 15.0f;
 
 		if ((gParticle.m_bEmit == true) && (output.age > 0.005f))
 		{
+			float fRadianZ = fZ * 3.14159265359f / 180.0f;
+			float fRadianY = fY * 3.14159265359f / 180.0f;
+
+			//float3x3 f3x3XRotate = {
+			//	1, 0, 0,
+			//	0, cos(fRadian), -sin(fRadian),
+			//	0, sin(fRadian), cos(fRadian)
+			//};
+
+			float3x3 f3x3YRotate = {
+				cos(fRadianY), 0, sin(fRadianY),
+				0, 1, 0,
+				-sin(fRadianY), 0, cos(fRadianY)
+			};
+
+			float3x3 f3x3ZRotate = {
+				cos(fRadianZ), -sin(fRadianZ), 0,
+				sin(fRadianZ), cos(fRadianZ), 0,
+				0, 0, 1
+			};
+
 			VS_PARTICLE_INPUT particle;
 			particle.position = output.position + gParticle.m_vPosition;
-			particle.velocity = gParticle.m_fSpeed * (vRandom + gParticle.m_vDirection);
+			particle.velocity = gParticle.m_fSpeed * mul(mul(gParticle.m_vDirection, f3x3YRotate), f3x3ZRotate);
 			particle.size = output.size;
 			particle.age = gParticle.m_fElapsedTime;
 			particle.type = 1;

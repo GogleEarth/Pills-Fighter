@@ -430,8 +430,9 @@ public:
 struct CFadeOutVertex
 {
 	XMFLOAT3	m_xmf3Position;
-	XMFLOAT2	m_xmf2Size;
 	float		m_fAge;
+	XMFLOAT2	m_xmf2Size;
+	UINT		m_nTextureIndex;
 };
 
 class CFadeOut : public CEffect
