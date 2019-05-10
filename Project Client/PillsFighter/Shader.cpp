@@ -143,7 +143,7 @@ D3D12_DEPTH_STENCIL_DESC CShader::CreateAlwaysDepthStencilState()
 	return(d3dDepthStencilDesc);
 }
 
-D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout() 
+D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout()
 {
 	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
@@ -161,7 +161,7 @@ D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout()
 	return(d3dInputLayoutDesc);
 }
 
-D3D12_SHADER_BYTECODE CShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) 
+D3D12_SHADER_BYTECODE CShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CompileShaderFromFile(L"Shaders.hlsl", "VSTextured", "vs_5_1", ppd3dShaderBlob));
 }
@@ -171,7 +171,7 @@ D3D12_SHADER_BYTECODE CShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 	return(CompileShaderFromFile(L"Shaders.hlsl", "PSTextured", "ps_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob) 
+D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob)
 {
 	UINT nCompileFlags = 0;
 #if defined(_DEBUG)
@@ -267,8 +267,8 @@ D3D12_SHADER_BYTECODE CSkinnedAnimationShader::CreateVertexShader(ID3DBlob **ppd
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-D3D12_RASTERIZER_DESC CWireShader::CreateRasterizerState() 
-{ 
+D3D12_RASTERIZER_DESC CWireShader::CreateRasterizerState()
+{
 	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
 	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
 	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
@@ -300,7 +300,7 @@ D3D12_INPUT_LAYOUT_DESC CWireShader::CreateInputLayout()
 	return(d3dInputLayoutDesc);
 }
 
-D3D12_SHADER_BYTECODE CWireShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) 
+D3D12_SHADER_BYTECODE CWireShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CompileShaderFromFile(L"Shaders.hlsl", "VSWire", "vs_5_1", ppd3dShaderBlob));
 }
@@ -372,7 +372,7 @@ void CObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsComman
 {
 	pObject->SetModel(m_vpModels[nGroup]);
 	pObject->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	if(bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
+	if (bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
 
 	m_pvpObjects[nGroup].emplace_back(pObject);
 }
@@ -387,7 +387,7 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 		for (auto& Object : m_pvpObjects[i])
 		{
-			if(nIndex == 0)
+			if (nIndex == 0)
 				Object->Render(pd3dCommandList, pCamera, true);
 			else
 				Object->Render(pd3dCommandList, pCamera, false);
@@ -1367,7 +1367,7 @@ void CParticleShader::AnimateObjects(float fTimeElapsed)
 {
 	CheckDeleteObjects();
 
-	for(int i = 0; i < m_nParticleIndex; i++)
+	for (int i = 0; i < m_nParticleIndex; i++)
 	{
 		m_vpParticles[i]->Animate(fTimeElapsed);
 	}
@@ -1426,7 +1426,7 @@ D3D12_SHADER_BYTECODE CTerrainShader::CreateVertexShader(ID3DBlob **ppd3dShaderB
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSTerrain", "vs_5_1", ppd3dShaderBlob));
 }
-	
+
 D3D12_SHADER_BYTECODE CTerrainShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSTerrain", "ps_5_1", ppd3dShaderBlob));
@@ -2226,9 +2226,8 @@ void CMinimapRobotShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSigna
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-CMinimapShader::CMinimapShader()
+CMinimapShader::CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-
 }
 
 CMinimapShader::~CMinimapShader()
@@ -2334,16 +2333,22 @@ void CMinimapShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
 
-void CMinimapShader::ReleaseObjects()
+void CMinimapShader::InsertMinimapRobot(CGameObject *object, int index)
 {
-	if (m_ppvMRobots.size())
-	{
-		for (auto& Object = m_ppvMRobots.begin(); Object != m_ppvMRobots.end();)
-		{
-			delete *Object;
-			Object = m_ppvMRobots.erase(Object);
-		}
+	m_pMinimapRobotObjects[m_nMinimapRobotCnt] = object;
+	InsertMinimapRobotInfo(object->GetWorldTransf(), index, m_nMinimapRobotCnt);
+	m_nMinimapRobotCnt++;
+}
+
+void CMinimapShader::InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index, int cnt)
+{
+	if (index % 2 == 1) {
+		m_cbMinimapRobotInfo.enemyOrTeam[cnt] = true; // enemy
 	}
+	else {
+		m_cbMinimapRobotInfo.enemyOrTeam[cnt] = false; // team
+	}
+	m_cbMinimapRobotInfo.robotPosition[cnt] = XMFLOAT2(objectWorld._41, objectWorld._43);
 }
 
 void CMinimapShader::ReleaseUploadBuffers()
@@ -2364,22 +2369,44 @@ void CMinimapShader::ReleaseUploadBuffers()
 		}
 	}
 
-
 	CShader::ReleaseUploadBuffers();
+}
+
+void CMinimapShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_MINIMAP_ROBOT_POSITION) + 255) & ~255); //256ÀÇ ¹è¼ö
+
+	m_MinimapRobotRsc = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_MinimapRobotRsc->Map(0, NULL, (void **)&m_cbMinimapRobotInfo);
+}
+
+void CMinimapShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO, m_MinimapRobotRsc->GetGPUVirtualAddress());
 }
 
 void CMinimapShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 1;
+	m_nTextures = 3;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Radar_BG.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_nUIRect = 1;
+	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Enemy_Icon.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Team_Icon.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_nUIRect = 3;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Minimap Terrain
@@ -2387,14 +2414,12 @@ void CMinimapShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	XMFLOAT2 xmf2Size = ::CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
 	m_ppUIRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+	xmf2Center = ::CalculateCenter(-0.1f, 0.1f, 0.1f, -0.1f);
+	xmf2Size = ::CalculateSize(-0.1f, 0.1f, 0.1f, -0.1f);
+	for (int i = 1; i < 3; i++) {
+		m_ppUIRects[i] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	}
 }
-
-void CMinimapShader::insertMinimapRobot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMinimapRobot* pMRobot, void *pContext)
-{
-	pMRobot->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	m_ppvMRobots.emplace_back(pMRobot);
-}
-
 
 void CMinimapShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
@@ -2406,11 +2431,15 @@ void CMinimapShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		m_ppUIRects[0]->Render(pd3dCommandList, 0);
 	}
 
-	for (auto& Object : m_ppvMRobots) {
-		Object->UpdateShaderVariables(pd3dCommandList);
-		Object->Render(pd3dCommandList);
+	// Draw Minimap Robots
+	if (m_pd3dPipelineStateMinimapRobot) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimapRobot);
+	UpdateShaderVariables(pd3dCommandList);
+	for (int i = 1; i < 3; i++) {
+		if (m_ppTextures[i]) {
+			m_ppTextures[i]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[i]->Render(pd3dCommandList, 0);
+		}
 	}
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

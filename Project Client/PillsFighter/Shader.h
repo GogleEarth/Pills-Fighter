@@ -94,9 +94,9 @@ public:
 
 	void CheckDeleteObjects();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
 		CRepository *pRepository, void *pContext = NULL) {};
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
 		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 };
 
@@ -108,7 +108,7 @@ public:
 	CStandardObjectsShader();
 	virtual ~CStandardObjectsShader();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, 
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
 		CRepository *pRepository, void *pContext = NULL);
 };
 
@@ -160,7 +160,7 @@ public:
 	BYTE LeftByteFromFile(FILE *pInFile, int byte) {
 		UINT nReads = 0;
 		char waste[64] = { '\0' };
-		nReads = (UINT)::fread(waste, sizeof(char), byte, pInFile); 
+		nReads = (UINT)::fread(waste, sizeof(char), byte, pInFile);
 
 		return(nReads);
 	}
@@ -169,8 +169,8 @@ public:
 		BYTE m_value = 7;
 		UINT nReads = 0;
 		nReads = (UINT)::fread(pstrToken, sizeof(char), nStrLength, pInFile);
-		nReads = (UINT)::fread(pstrToken, sizeof(char), m_value, pInFile); 
-		pstrToken[m_value] = '\0'; 
+		nReads = (UINT)::fread(pstrToken, sizeof(char), m_value, pInFile);
+		pstrToken[m_value] = '\0';
 
 		return(nReads);
 	}
@@ -188,8 +188,8 @@ public:
 	virtual ~CSkinnedObjectsShader();
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob); 
-	
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 };
 
@@ -530,10 +530,16 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+struct CB_MINIMAP_ROBOT_POSITION
+{
+	XMFLOAT2 robotPosition[7];
+	BOOL enemyOrTeam[7];
+};
+
 class CMinimapShader : public CShader
 {
 public:
-	CMinimapShader();
+	CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CMinimapShader();
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
@@ -543,14 +549,16 @@ public:
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void ReleaseUploadBuffers();
-	void ReleaseObjects();
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
-	void insertMinimapRobot(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CMinimapRobot* pMRobot, void *pContext);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
+	void InsertMinimapRobot(CGameObject *object, int index);
+	void InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index, int cnt);
 
 protected:
 
@@ -560,11 +568,14 @@ protected:
 	int								m_nTextures;
 	CTexture						**m_ppTextures = NULL;
 
-	std::vector<CMinimapRobot*>		m_ppvMRobots;
-
 	ID3D12PipelineState				*m_pd3dPipelineStateMinimapRobot = NULL;
 
-public:
-	std::vector<CMinimapRobot*>& GetObjects() { return m_ppvMRobots; }
+	ID3D12Resource					*m_MinimapRobotRsc;
+	CB_MINIMAP_ROBOT_POSITION		m_cbMinimapRobotInfo;
+
+	CTexture						*m_pMinimapRobotTexture;
+
+	int								m_nMinimapRobotCnt = 0;
+	CGameObject						*m_pMinimapRobotObjects[7];
 
 };
