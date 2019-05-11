@@ -875,8 +875,10 @@ void CRobotObject::ApplyToParticle(CParticle *pParticle)
  		pParticle->SetEmit(true);
 	else pParticle->SetEmit(false);
 
-	XMFLOAT3 xmf3ParticleDir = XMFLOAT3(-m_xmf3Look.x - m_xmf3Up.x, -m_xmf3Look.y - m_xmf3Up.y, -m_xmf3Look.z - m_xmf3Up.z);
-	pParticle->SetDirection(xmf3ParticleDir);
+	XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Right), XMConvertToRadians(135));
+
+	XMFLOAT3 xmf3Direction = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
+	pParticle->SetDirection(xmf3Direction);
 }
 
 void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
@@ -1257,12 +1259,14 @@ CParticle::~CParticle()
 	m_pd3dInitVertexUploadBuffer = NULL;
 }
 
-void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration)
+void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, XMFLOAT3 xmf3Angles)
 {
 	m_xmf3Position = xmf3Position;
 	m_xmf3Direction = xmf3Direction;
 	m_fSpeed = fSpeed;
 	m_fDuration = fDuration;
+	m_fEmitInterval = fEmitInterval;
+	m_xmf3Angles = xmf3Angles;
 
 	m_nDrawBufferIndex = 0;
 	m_nSOBufferIndex = 1;
@@ -1280,15 +1284,20 @@ void CParticle::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 
 void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	XMFLOAT4 xmf3Random = RANDOM_COLOR;
+	XMFLOAT4 xmf4Random = XMFLOAT4(rand(), rand(), rand(), rand());
 
+	m_pcbMappedParticle->m_vRandom = xmf4Random;
 	m_pcbMappedParticle->m_vPosition = m_xmf3Position;
-	m_pcbMappedParticle->m_fElapsedTime = m_fElapsedTime;
-	m_pcbMappedParticle->m_vRandom = xmf3Random;
-	m_pcbMappedParticle->m_vDirection = m_xmf3Direction;
 	m_pcbMappedParticle->m_fSpeed = m_fSpeed;
+	m_pcbMappedParticle->m_vDirection = m_xmf3Direction;
 	m_pcbMappedParticle->m_fDuration = m_fDuration;
+	m_pcbMappedParticle->m_fElapsedTime = m_fElapsedTime;
 	m_pcbMappedParticle->m_bEmit = m_bEmit;
+	m_pcbMappedParticle->m_fEmitInterval = m_fEmitInterval;
+	m_pcbMappedParticle->m_vRight = m_pFollowObject->GetRight();
+	m_pcbMappedParticle->m_vUp = m_pFollowObject->GetUp();
+	m_pcbMappedParticle->m_vLook = m_pFollowObject->GetLook();
+	m_pcbMappedParticle->m_vAngles = m_xmf3Angles;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PARTICLE, m_pd3dcbParticle->GetGPUVirtualAddress());
 }

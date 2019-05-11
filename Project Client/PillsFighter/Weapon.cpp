@@ -77,7 +77,7 @@ void CGun::Initialize()
 	CWeapon::Initialize();
 
 	SetReloadTime();
-		SetMaxReloadAmmo();
+	SetMaxReloadAmmo();
 }
 
 void CGun::SetShotCoolTime()

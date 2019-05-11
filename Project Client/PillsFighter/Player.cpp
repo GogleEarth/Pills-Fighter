@@ -381,6 +381,8 @@ void CPlayer::ActivationBooster()
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
 
 			m_nState |= OBJECT_STATE_JUMPING;
+
+			m_bJumpEndPoint = false;
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTERING;
@@ -494,10 +496,14 @@ void CPlayer::ProcessMouseUpTime(float fTimeElapsed)
 void CPlayer::ProcessAnimation()
 {
 	if (m_nState & OBJECT_STATE_SHOOTING)
+		printf("SHOOTING\n");
+
+	if (m_nState & OBJECT_STATE_SHOOTING)
 	{
 		// Start 자세 End Point
 		if (m_bShootStartEndPoint)
 		{
+			printf("ShootStartEnd\n");
 			m_bShootStartEndPoint = false;
 			m_bChangeableOnceAni = true;
 		}
@@ -505,6 +511,7 @@ void CPlayer::ProcessAnimation()
 		// Return 자세 End Point
 		if (m_bShootReturnEndPoint)
 		{
+			printf("ShootReturnEnd\n");
 			m_bShootReturnEndPoint = false;
 			m_nState &= ~OBJECT_STATE_SHOOTING;
 		}
@@ -516,6 +523,7 @@ void CPlayer::ProcessAnimation()
 
 			if (pGun->IsShootable())
 			{
+				printf("Shot\n");
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
 				pGun->Shot();
 				m_bShootable = false;
@@ -525,6 +533,7 @@ void CPlayer::ProcessAnimation()
 			{
 				if (m_bShootOnceEndPoint)
 				{
+					printf("LButton Down, ShootOnceEndPoint\n");
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
 
@@ -535,8 +544,9 @@ void CPlayer::ProcessAnimation()
 
 			if (!m_LButtonDown)
 			{
-				if ( (pGun->ShootNumber() == pGun->ShootedCount()) || (pGun->ShootedCount() == 0))
+				if ((pGun->ShootNumber() == pGun->ShootedCount()) || (pGun->ShootedCount() == 0))
 				{
+					printf("LButton Up, Shoot Count Max\n");
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
 
 					if (!(m_nState & OBJECT_STATE_MOVING) && !(m_nState & OBJECT_STATE_JUMPING))
@@ -643,12 +653,17 @@ void CPlayer::Attack(CWeapon *pWeapon)
 			{
 				if (!(m_nState & OBJECT_STATE_SHOOTING))
 				{
+
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
 					if (!(m_nState & OBJECT_STATE_MOVING) && (m_nState & OBJECT_STATE_ONGROUND))
 						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
 					m_nState |= OBJECT_STATE_SHOOTING;
+
+					m_bShootStartEndPoint = false;
+					m_bShootReturnEndPoint = false;
+					m_bShootOnceEndPoint = false;
 				}
 			}
 		}
@@ -661,6 +676,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 
 				m_nState |= OBJECT_STATE_SWORDING;
+
 				m_bSwordingEndPoint = false;
 			}
 		}

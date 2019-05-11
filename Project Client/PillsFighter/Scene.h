@@ -245,7 +245,7 @@ public:
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);
 	virtual int MouseClick();
 
-	XMFLOAT2 GetPlayerTextPosition();
+	XMFLOAT2 GetPlayerTextPosition(int nServerIndex);
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
@@ -322,9 +322,9 @@ protected:
 // Scene's Effect Shader Index
 #define EFFECT_SHADER_INDEX 3
 
-#define INDEX_SHADER_TEXT_EEFECTS 0
-#define INDEX_SHADER_TIMED_EEFECTS 1
-#define INDEX_SHADER_SPRITE_EFFECTS 2
+#define INDEX_SHADER_TIMED_EEFECTS 0
+#define INDEX_SHADER_SPRITE_EFFECTS 1
+#define INDEX_SHADER_TEXT_EEFECTS 2
 
 
 class CColonyScene : public CScene

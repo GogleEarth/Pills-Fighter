@@ -23,6 +23,7 @@ cbuffer cbCameraInfo : register(b1)
 
 // b0 ~ b6
 #include "Light.hlsl"
+#include "Math.hlsl"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -746,13 +747,18 @@ void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRI
 
 struct PARTICLE
 {
-	float3	m_vPosition;
-	float	m_fElapsedTime;
 	float4	m_vRandom;
-	float3	m_vDirection;
+	float3	m_vPosition;
 	float	m_fSpeed;
+	float3	m_vDirection;
 	float	m_fDuration;
+	float3  m_vRight;
+	float	m_fElapsedTime;
+	float3  m_vUp;
+	float	m_fEmitInterval;
+	float3  m_vLook;
 	bool	m_bEmit;
+	float3	m_vAngles;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(b8);
@@ -801,48 +807,32 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 
 	if (output.type == PARTICLE_TYPE_EMITTER)
 	{
-		float3 vRandom = gParticle.m_vRandom.xyz *input[0].verid * input[0].verid;
-		float fZ = fmod(vRandom.z, 90.0f) - 45.0f;
-		float fY = fmod(vRandom.y, 30) - 15.0f;
-
-		if ((gParticle.m_bEmit == true) && (output.age > 0.005f))
+		if ((gParticle.m_bEmit == true) && (output.age > gParticle.m_fEmitInterval))
 		{
-			float fRadianZ = fZ * 3.14159265359f / 180.0f;
-			float fRadianY = fY * 3.14159265359f / 180.0f;
+			float4 vRandom = gParticle.m_vRandom * input[0].verid * input[0].verid;
+			float fX = fmod(vRandom.x, gParticle.m_vAngles.x) - gParticle.m_vAngles.x / 2.0f;
+			float fY = fmod(vRandom.y, gParticle.m_vAngles.y) - gParticle.m_vAngles.y / 2.0f;
+			float fZ = fmod(vRandom.z, gParticle.m_vAngles.z) - gParticle.m_vAngles.z / 2.0f;
 
-			//float3x3 f3x3XRotate = {
-			//	1, 0, 0,
-			//	0, cos(fRadian), -sin(fRadian),
-			//	0, sin(fRadian), cos(fRadian)
-			//};
+			float3 vDirection = gParticle.m_vDirection;
 
-			float3x3 f3x3YRotate = {
-				cos(fRadianY), 0, sin(fRadianY),
-				0, 1, 0,
-				-sin(fRadianY), 0, cos(fRadianY)
-			};
-
-			float3x3 f3x3ZRotate = {
-				cos(fRadianZ), -sin(fRadianZ), 0,
-				sin(fRadianZ), cos(fRadianZ), 0,
-				0, 0, 1
-			};
+			if (fX > 0.0001f) vDirection = mul(vDirection, RotateAxis(gParticle.m_vRight, fX));
+			if (fY > 0.0001f) vDirection = mul(vDirection, RotateAxis(gParticle.m_vUp, fY));
+			if (fZ > 0.0001f) vDirection = mul(vDirection, RotateAxis(gParticle.m_vLook, fZ));
 
 			VS_PARTICLE_INPUT particle;
 			particle.position = output.position + gParticle.m_vPosition;
-			particle.velocity = gParticle.m_fSpeed * mul(mul(gParticle.m_vDirection, f3x3YRotate), f3x3ZRotate);
+			particle.velocity = gParticle.m_fSpeed * vDirection;
 			particle.size = output.size;
 			particle.age = gParticle.m_fElapsedTime;
 			particle.type = 1;
 
 			pointStream.Append(particle);
+
+			output.age = 0.0f;
 		}
 
-		//if (input[0].age < 0.2f)
-		{
-			output.velocity = gParticle.m_fSpeed * (vRandom + gParticle.m_vDirection);
-			pointStream.Append(output);
-		}
+		pointStream.Append(output);
 	}
 	else
 	{

@@ -506,13 +506,18 @@ struct CParticleVertex
 
 struct CB_PARTICLE_INFO
 {
-	XMFLOAT3	m_vPosition;
-	float		m_fElapsedTime;
 	XMFLOAT4	m_vRandom;
-	XMFLOAT3	m_vDirection;
+	XMFLOAT3	m_vPosition;
 	float		m_fSpeed;
+	XMFLOAT3	m_vDirection;
 	float		m_fDuration;
+	XMFLOAT3	m_vRight;
+	float		m_fElapsedTime;
+	XMFLOAT3	m_vUp;
+	float		m_fEmitInterval;
+	XMFLOAT3	m_vLook;
 	bool		m_bEmit;
+	XMFLOAT3	m_vAngles;
 };
 
 class CParticle
@@ -542,6 +547,8 @@ protected:
 	float								m_fElapsedTime;
 	float								m_fDuration;
 	bool								m_bEmit = true;
+	float								m_fEmitInterval;
+	XMFLOAT3							m_xmf3Angles;
 
 	bool								m_nInit = false;
 	int									m_nVertices;
@@ -567,7 +574,7 @@ public:
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration);
+	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, XMFLOAT3 xmf3Angles);
 
 	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
