@@ -1735,9 +1735,7 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					XMFLOAT3 xmf3Pos = pBullet->GetPosition();
-					xmf3Pos.z = 0.0f;
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, xmf3Pos, XMFLOAT2(0.04f, 0.02f), 0);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
 					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
 					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
@@ -1756,9 +1754,7 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 
-					XMFLOAT3 xmf3Pos = pBZKBullet->GetPosition();
-					xmf3Pos.z = 0.0f;
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, xmf3Pos, XMFLOAT2(0.04f, 0.02f), 0);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
 					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
 					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), XMFLOAT2(fSize * 2, fSize * 2), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
@@ -1778,9 +1774,7 @@ void CColonyScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					XMFLOAT3 xmf3Pos = pMGBullet->GetPosition();
-					xmf3Pos.z = 0.0f;
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, xmf3Pos, XMFLOAT2(0.04f, 0.02f), 0);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
 
 					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
 					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pMGBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
@@ -2130,9 +2124,7 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
-		XMFLOAT3 xmf3Pos = pCreateEffectInfo->xmf3Position;
-		//xmf3Pos.z = 0.0f;
-		m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, xmf3Pos, XMFLOAT2(0.04f, 0.02f), 0);
+		m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);

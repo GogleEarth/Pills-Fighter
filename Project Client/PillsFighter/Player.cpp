@@ -614,6 +614,16 @@ void CPlayer::ProcessAnimation()
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
 		}
 	}
+
+	if ((m_nState & OBJECT_STATE_JUMPING) && !(m_nState & OBJECT_STATE_BOOSTERING))
+	{
+		ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_IDLE);
+
+		if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
+			ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_IDLE);
+
+		m_nState &= ~OBJECT_STATE_JUMPING;
+	}
 }
 
 void CPlayer::Attack(CWeapon *pWeapon)
