@@ -4,6 +4,7 @@
 #include "Scene.h"
 #include "Timer.h"
 #include "Model.h"
+#include "Repository.h"
 
 struct Client_INFO
 {
@@ -47,9 +48,7 @@ class Framework
 	std::mutex lobbyplayermutex;
 
 	int count = 0;
-	CModel PlayerMesh;
-	CModel BulletMesh;
-	CModel HangarMesh;
+	CRepository *m_pRepository;
 	CGameTimer m_GameTimer;
 	int playernum;
 	volatile bool game_start = false;

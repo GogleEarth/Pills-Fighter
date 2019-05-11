@@ -15,6 +15,8 @@ Framework::Framework()
 	}
 
 	count = 0;
+
+	m_pRepository = new CRepository();
 }
 
 Framework::~Framework()
@@ -28,7 +30,7 @@ void Framework::Build()
 	game_start = false;
 
 	m_pScene = new CScene();
-	m_pScene->BuildObjects();
+	m_pScene->BuildObjects(m_pRepository);
 
 	// 윈속 초기화
 	if (WSAStartup(WS22, &wsa) != 0)
@@ -312,27 +314,30 @@ DWORD Framework::Update_Process(CScene* pScene)
 		m.lock();
 		for (auto d : clients)
 		{
-			PKT_PLAYER_INFO pktdata;
-			pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
-			pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
-			pktdata.ID = d.id;
-			pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
-			m_pScene->m_pObjects[d.id]->m_bPlay = true;
-			m_pScene->m_pObjects[d.id]->m_iId = d.id;
-			pktdata.IsShooting = false;
-			PKT_CREATE_OBJECT anotherpktdata;
-			for (int i = 0; i < playernum; ++i)
+			if (d.enable)
 			{
-				if (i != d.id)
+				PKT_PLAYER_INFO pktdata;
+				pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
+				pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
+				pktdata.ID = d.id;
+				pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
+				m_pScene->m_pObjects[d.id]->m_bPlay = true;
+				m_pScene->m_pObjects[d.id]->m_iId = d.id;
+				pktdata.IsShooting = false;
+				PKT_CREATE_OBJECT anotherpktdata;
+				for (int i = 0; i < playernum; ++i)
 				{
-					anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
-					anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
-					anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
-					anotherpktdata.Object_Index = i;
-					anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
-					anotherpktdata.Robot_Type = clients[i].selected_robot;
-					retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
-					retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
+					if (i != d.id)
+					{
+						anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
+						anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+						anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+						anotherpktdata.Object_Index = i;
+						anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+						anotherpktdata.Robot_Type = clients[i].selected_robot;
+						retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
+						retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
+					}
 				}
 			}
 		}
@@ -429,10 +434,6 @@ DWORD Framework::client_process(Client_arg* arg)
 					if (((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
 						((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE ||
 						((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
-						std::cout << "플레이어 " << ((PKT_PLAYER_INFO*)buf)->ID << "의"
-						<< ((PKT_PLAYER_INFO*)buf)->Player_Up_Animation
-						<< "의 애니메이션 포지션 : "
-						<< ((PKT_PLAYER_INFO*)buf)->UpAnimationPosition << "\n";
 
 					if (((PKT_PLAYER_INFO*)buf)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
 						if (((PKT_PLAYER_INFO*)buf)->UpAnimationPosition >= 0.3f)
@@ -557,7 +558,7 @@ void Framework::CheckCollision(CScene* pScene)
 				{
 					if (Bullet->m_iId != pScene->m_pObjects[k]->m_iId)
 					{
-						if (Bullet->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						if ((Bullet->GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
 							XMFLOAT3 position = Bullet->GetPosition();
 							pktCDE.PktId = PKT_ID_CREATE_EFFECT;
@@ -614,29 +615,32 @@ void Framework::CheckCollision(CScene* pScene)
 		}
 	}
 
-	//// 플레이어의 총알과 장애물의 충돌처리
-	//for (const auto& Bullet : vPlayerBulletObjects)
-	//{
-	//	for (int k = 0; k < MAX_NUM_OBJECT; ++k)
-	//	{
-	//		if (pScene->m_pObstacles[k] != NULL)
-	//		{
-	//			if (!Bullet->IsDelete())
-	//			{
-	//				if (Bullet->GetAABB().Intersects(pScene->m_pObstacles[k]->GetAABB()))
-	//				{
-	//					XMFLOAT3 position = Bullet->GetPosition();
-	//					pktCE.efType = EFFECT_TYPE_ONE;
-	//					pktCE.xmf3Position = position;
-	//					effect_msg_queue.push(pktCE);
-	//					pktDO.Object_Index = Bullet->index;
-	//					delete_msg_queue.push(pktDO);
-	//					Bullet->Delete();
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+	// 플레이어의 총알과 장애물의 충돌처리
+	for (const auto& Bullet : vPlayerBulletObjects)
+	{
+		for (auto obstacle : pScene->Obstacles)
+		{
+			if (!Bullet->IsDelete())
+			{
+				if ((Bullet->GetAABB())[0].Intersects((obstacle->GetAABB())[0]))
+				{
+					XMFLOAT3 position = Bullet->GetPosition();
+					pktCE.PktId = PKT_ID_CREATE_EFFECT;
+					pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+					if (Bullet->m_Object_Type == OBJECT_TYPE_BZK_BULLET)
+						pktCE.efType = EFFECT_TYPE_EXPLOSION;
+					else
+						pktCE.efType = EFFECT_TYPE_HIT;
+					pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+					pktCE.xmf3Position = position;
+					effect_msg_queue.push(pktCE);
+					pktDO.Object_Index = Bullet->index;
+					delete_msg_queue.push(pktDO);
+					Bullet->Delete();
+				}
+			}
+		}
+	}
 
 	// 플레이어와 회복아이템의 충돌체크
 	for (const auto& Item : vHealingItem)
@@ -649,7 +653,7 @@ void Framework::CheckCollision(CScene* pScene)
 				{
 					if (Item->m_iId != pScene->m_pObjects[k]->m_iId)
 					{
-						if (Item->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						if ((Item->GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
 							spawn_item = false;
 							XMFLOAT3 position = Item->GetPosition();
@@ -688,7 +692,7 @@ void Framework::CheckCollision(CScene* pScene)
 				{
 					if (Item->m_iId != pScene->m_pObjects[k]->m_iId)
 					{
-						if (Item->GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						if ((Item->GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
 							spawn_ammo[Item->m_iId - ITEM_AMMO1] = false;
 							XMFLOAT3 position = Item->GetPosition();
@@ -723,13 +727,12 @@ void Framework::CheckCollision(CScene* pScene)
 		{
 			if (pScene->m_pObjects[k]->m_bPlay)
 			{
-				if (m_pScene->m_BeamsaberCollisionmesh[i].in_used)
+				if (pScene->m_BeamsaberCollisionmesh[i].in_used)
 				{
-					if (m_pScene->m_BeamsaberCollisionmesh[i].m_iId != pScene->m_pObjects[k]->m_iId)
+					if (pScene->m_BeamsaberCollisionmesh[i].m_iId != pScene->m_pObjects[k]->m_iId)
 					{
-						if (m_pScene->m_BeamsaberCollisionmesh[i].GetAABB().Intersects(pScene->m_pObjects[k]->GetAABB()))
+						if ((pScene->m_BeamsaberCollisionmesh[i].GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
-							std::cout << "충돌!\n";
 							pktCE.PktId = PKT_ID_CREATE_EFFECT;
 							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
 							pktCE.efType = EFFECT_TYPE_HIT_FONT;
@@ -751,6 +754,27 @@ void Framework::CheckCollision(CScene* pScene)
 							pktLF.AMMO = 0;
 							life_msg_queue.push(pktLF);
 							m_pScene->m_BeamsaberCollisionmesh[i].in_used = false;
+
+							pScene->m_pObjects[k]->hp -= pScene->m_BeamsaberCollisionmesh[i].hp;
+							if (pScene->m_pObjects[k]->hp <= 0)
+							{
+								if (pScene->m_pObjects[k]->m_iId % 2 == 0)
+								{
+									RedScore -= 5;
+								}
+								else
+								{
+									BlueScore -= 5;
+								}
+
+								PKT_SCORE scorepkt;
+								scorepkt.PktSize = sizeof(PKT_SCORE);
+								scorepkt.PktId = PKT_ID_SCORE;
+								scorepkt.BlueScore = BlueScore;
+								scorepkt.RedScore = RedScore;
+								Send_msg((char*)&scorepkt, scorepkt.PktSize, 0);
+								pScene->m_pObjects[k]->hp = PLAYER_HP;
+							}
 						}
 					}
 
@@ -811,7 +835,6 @@ void Framework::SendPlayerInfo(CScene* pScene)
 		msg_queue.pop();
 
 		pScene->m_pObjects[pkt.ID]->SetWorldTransf(pkt.WorldMatrix);
-		XMFLOAT3 p_position = pScene->m_pObjects[pkt.ID]->GetPosition();
 
 		// 플레이어의 정보 전송
 		Send_msg((char*)&pkt, pkt.PktSize, 0);

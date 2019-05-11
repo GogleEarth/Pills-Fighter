@@ -2131,7 +2131,7 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
 		XMFLOAT3 xmf3Pos = pCreateEffectInfo->xmf3Position;
-		xmf3Pos.z = 0.0f;
+		//xmf3Pos.z = 0.0f;
 		m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, xmf3Pos, XMFLOAT2(0.04f, 0.02f), 0);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:

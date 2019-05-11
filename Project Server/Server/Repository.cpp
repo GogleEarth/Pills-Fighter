@@ -12,23 +12,24 @@ CRepository::~CRepository()
 	{
 		for (auto& Model = m_vModels.begin(); Model != m_vModels.end();)
 		{
-			delete *Model;
+			(*Model)->Release();
 			Model = m_vModels.erase(Model);
 		}
 	}
 }
 
-CModel* CRepository::GetModel(char *pstrName)
+CModel* CRepository::GetModel(char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName)
 {
 	for (const auto& Model : m_vModels)
 	{
-		if (Model->IsName(pstrName))
+		if (!strcmp(Model->GetFileName(), pstrFileName))
 		{
 			return Model;
 		}
 	}
 
-	CModel *pModel = new CModel(pstrName);
+	CModel *pModel = CModel::LoadGeometryAndAnimationFromFile(pstrFileName, pstrUpperAniFileName, pstrUnderAniFileName);
+	pModel->AddRef();
 	m_vModels.emplace_back(pModel);
 
 	return pModel;

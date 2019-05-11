@@ -7,7 +7,6 @@ CScene::CScene()
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
 		m_pObjects[i] = NULL;
-		m_pObstacles[i] = NULL;
 	}
 }
 
@@ -16,20 +15,47 @@ CScene::~CScene()
 {
 }
 
-void CScene::BuildObjects()
+void CScene::BuildObjects(CRepository* pRepository)
 {
-	m_pBulletMesh = new CModel("./Resource/Bullet/Bullet.FBX");
-	m_pObstacleMesh = new CModel("./Resource/Hangar/Hangar.FBX");
-	m_pGMMesh = new CModel("./Resource/GM/GM.FBX");
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Hangar.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveHangarSelfData.bin", 0);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Double_Square.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveDoubleSquareSelfData.bin", 1);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Octagon.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveOctagonSelfData.bin", 2);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_OctagonLongTier.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveOctagonLongtierSelfData.bin", 3);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Slope_top.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveSlopeTopSelfData.bin", 4);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Square.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveSquareSelfData.bin", 5);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Steeple_top.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveSteepleTopSelfData.bin", 6);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Wall.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/WallSelfData.bin", 7);
+
+	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Brick_Garage.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_BrickGarageSelfData.bin", 8);
+
+	m_pGMMesh = pRepository->GetModel("./Resource/PlayerCollisionBox.bin", NULL, NULL);
+	m_pBulletMesh = pRepository->GetModel("./Resource/Bullet/Bullet.bin", NULL, NULL);
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
 		m_pObjects[i] = new CGameObject();
 		m_pObjects[i]->m_Object_Type = OBJECT_TYPE_PLAYER;
 		m_pObjects[i]->m_iId = i;
-		m_pObjects[i]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+		//m_pObjects[i]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		m_pObjects[i]->SetModel(m_pGMMesh);
 		m_pObjects[i]->hp = PLAYER_HP;
+		m_pObjects[i]->m_bPlay = false;
 	}
 	m_pObjects[0]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f };
 	m_pObjects[1]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f };
@@ -40,39 +66,10 @@ void CScene::BuildObjects()
 	m_pObjects[6]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f };
 	m_pObjects[7]->m_xmf4x4World = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f };
 
-
-	m_pObstacles[0] = new CGameObject();
-	m_pObstacles[0]->SetPrepareRotate(-90.0f, 90.0f, 0.0f);
-	m_pObstacles[0]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -200.0f, 0.0f, 0.0f, 1.0f });
-	m_pObstacles[0]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
-	m_pObstacles[0]->index = 0;
-	m_pObstacles[0]->SetModel(m_pObstacleMesh);
-
-	m_pObstacles[1] = new CGameObject();
-	m_pObstacles[1]->SetPrepareRotate(-90.0f, -90.0f, 0.0f);
-	m_pObstacles[1]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 200.0f, 0.0f, 0.0f, 1.0f });
-	m_pObstacles[1]->index = 1;	
-	m_pObstacles[1]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
-	m_pObstacles[1]->SetModel(m_pObstacleMesh);
-
-	m_pObstacles[2] = new CGameObject();
-	m_pObstacles[2]->SetPrepareRotate(-90.0f, 0, 0.0f);
-	m_pObstacles[2]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
-	m_pObstacles[2]->index = 2;	
-	m_pObstacles[2]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
-	m_pObstacles[2]->SetModel(m_pObstacleMesh);
-
-	m_pObstacles[3] = new CGameObject();
-	m_pObstacles[3]->SetPrepareRotate(-90.0f, 0, 0.0f);
-	m_pObstacles[3]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
-	m_pObstacles[3]->index = 3;
-	m_pObstacles[3]->m_Object_Type = OBJECT_TYPE_OBSTACLE;
-	m_pObstacles[3]->SetModel(m_pObstacleMesh);
-
 	for (int i = 0; i < 24; ++i)
 	{
 		m_BeamsaberCollisionmesh[i].in_used = false;
-		m_BeamsaberCollisionmesh[i].SetPrepareRotate(-90.0f, 0.0f, 0.0f);
+		//m_BeamsaberCollisionmesh[i].SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		m_BeamsaberCollisionmesh[i].SetModel(m_pGMMesh);
 		m_BeamsaberCollisionmesh[i].index = i;
 		m_BeamsaberCollisionmesh[i].hp = 3;
@@ -90,8 +87,11 @@ void CScene::AnimateObjects(float fTimeElapsed)
 			else if (m_pObjects[i]->IsDelete())
 				releaseObject(i);
 		}
-		if (m_pObstacles[i] != NULL)
-			m_pObstacles[i]->Animate(fTimeElapsed);
+	}
+
+	for (auto obstacle : Obstacles)
+	{
+		obstacle->Animate(fTimeElapsed);
 	}
 
 	for (int i = 0; i < 24; ++i)
@@ -99,6 +99,95 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		if (m_BeamsaberCollisionmesh[i].in_used)
 			m_BeamsaberCollisionmesh[i].Animate(fTimeElapsed);
 	}
+}
+
+void CScene::InsertObjectFromLoadInfFromBin(char * pstrFileName, int nGroup)
+{
+	CGameObject *pObject = new CGameObject();
+
+	FILE *pInFile = NULL;
+	::fopen_s(&pInFile, pstrFileName, "rb");
+	if (!pInFile) {
+		std::cout << "lose bin file" << std::endl;
+	}
+	::rewind(pInFile);
+
+	char pstrToken[64] = { '\0' };
+	UINT nReads = 0;
+	float loadedToken = 0;
+	UINT cycle = 0;
+	XMFLOAT3 posLoader = XMFLOAT3(0, 0, 0);
+	XMFLOAT3 rotLoader = XMFLOAT3(0, 0, 0);
+
+	while (feof(pInFile) == 0)
+	{
+		ReadPosrotFromFile(pInFile, pstrToken);
+
+		if (!strcmp(pstrToken, "m_value"))
+		{
+			switch (cycle) {
+			case 0:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				posLoader.x = loadedToken;
+				++cycle;
+				break;
+			case 1:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				posLoader.y = loadedToken;
+				++cycle;
+				break;
+			case 2:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				posLoader.z = loadedToken;
+				++cycle;
+				break;
+			case 3:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.x = loadedToken;
+				++cycle;
+				break;
+			case 4:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.y = loadedToken;
+				++cycle;
+				break;
+			case 5:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.z = loadedToken;
+				pObject = new CGameObject();
+				pObject->SetPosition(posLoader);
+				pObject->SetPrepareRotate(rotLoader.x, rotLoader.y, rotLoader.z);
+				InsertObject(pObject, nGroup, true, NULL);
+				cycle = 0;
+				break;
+			}
+		}
+		else
+		{
+			std::cout << "bin file load error" << std::endl;
+			break;
+		}
+	}
+}
+
+void CScene::InsertObject(CGameObject * pObject, int nGroup, bool bPrepareRotate, void * pContext)
+{
+	pObject->SetModel(m_vpModels[nGroup]);
+	if (bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
+
+	Obstacles.emplace_back(pObject);
 }
 
 void CScene::InsertObject(PKT_CREATE_OBJECT CreateObjectInfo)

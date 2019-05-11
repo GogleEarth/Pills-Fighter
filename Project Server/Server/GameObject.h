@@ -47,17 +47,17 @@ public:
 protected:
 	CModel							*m_pModel = NULL;
 
-	BoundingBox						m_xmAABB;
+	std::vector<BoundingBox>			m_vxmAABB;
 
 
 	bool							 m_Delete = FALSE;
-
+	int									m_nMeshes = 0;
 public:
 	CGameObject();
 	CGameObject(BULLET_TYPE Bullet_Type);
 	virtual ~CGameObject();
 
-	void SetModel(CModel *pModel) { m_pModel = pModel; }
+	void SetModel(CModel *pModel);
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 
 	virtual void Animate(float fTimeElapsed);
@@ -81,6 +81,7 @@ public:
 	void SetMovingSpeed(float MovingSpeed) { m_MovingSpeed = MovingSpeed; }
 
 	void SetPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch = Pitch; m_fPrepareYaw = Yaw; m_fPrepareRoll = Roll; }
+	void AddPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch += Pitch; m_fPrepareYaw += Yaw; m_fPrepareRoll += Roll; }
 
 	//게임 객체를 로컬 x-축, y-축, z-축 방향으로 이동한다.
 	void MoveStrafe(float fDistance = 1.0f);
@@ -91,10 +92,13 @@ public:
 	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 
-	BoundingBox GetAABB() { return m_xmAABB; }
+	std::vector<BoundingBox>& GetAABB() { return m_vxmAABB; }
+	int GetNumAABB() { return m_nMeshes; }
 	void Delete() { m_Delete = TRUE; }
 	bool IsDelete() { return m_Delete; }
 	void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
+
+	void UpdateWorldTransform();
 
 protected:
 	int			m_nHitPoint;

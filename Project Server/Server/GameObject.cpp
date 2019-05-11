@@ -55,7 +55,7 @@ CGameObject::CGameObject(BULLET_TYPE Bullet_Type)
 		hp = 3;
 		m_ElapsedTime = 0;
 		m_DurationTime = 1.5f;
-		m_MovingSpeed = 600.0f;
+		m_MovingSpeed = 500.0f;
 		m_RotationSpeed = 1440.0f;
 	}
 	else if (m_Bullet_Type == BULLET_TYPE_BAZOOKA)
@@ -63,7 +63,7 @@ CGameObject::CGameObject(BULLET_TYPE Bullet_Type)
 		hp = 15;
 		m_ElapsedTime = 0;
 		m_DurationTime = 2.5f;
-		m_MovingSpeed = 450.0f;
+		m_MovingSpeed = 400.0f;
 		m_RotationSpeed = 1440.0f;
 	}
 	else if (m_Bullet_Type == BULLET_TYPE_BEAM_RIFLE)
@@ -71,7 +71,7 @@ CGameObject::CGameObject(BULLET_TYPE Bullet_Type)
 		hp = 5;
 		m_ElapsedTime = 0;
 		m_DurationTime = 0.75f;
-		m_MovingSpeed = 1000.0f;
+		m_MovingSpeed = 600.0f;
 		m_RotationSpeed = 1440.0f;
 	}
 }
@@ -82,11 +82,33 @@ CGameObject::~CGameObject()
 		m_pModel = NULL;
 }
 
+void CGameObject::SetModel(CModel * pModel)
+{
+	if (m_pModel) m_pModel->Release();
+
+	if (pModel)
+	{
+		m_pModel = pModel;
+		m_pModel->AddRef();
+
+		m_vxmAABB.empty();
+
+		m_nMeshes = pModel->GetMeshes();
+		for (int i = 0; i < m_nMeshes; i++) m_vxmAABB.emplace_back(BoundingBox());
+	}
+}
+
 void CGameObject::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh)
 {
-	if (!m_pModel) m_pModel = new CModel();
+	if (!m_pModel)
+	{
+		CModel *pModel = new CModel();
+		pModel->SetMesh(pMesh, pCubeMesh, false);
 
-	m_pModel->SetMesh(pMesh, pCubeMesh);
+		SetModel(pModel);
+	}
+	else
+		m_pModel->SetMesh(pMesh, pCubeMesh, false);
 }
 
 void CGameObject::SetWorldTransf(XMFLOAT4X4& xmf4x4World)
@@ -151,7 +173,9 @@ void CGameObject::Animate(float fTimeElapsed)
 			if (m_pModel)
 			{
 				OnPrepareRender();
-				m_pModel->UpdateCollisionBox(m_xmAABB, m_xmf4x4World);
+				UpdateWorldTransform();
+				int i = 0;
+				m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
 			}
 		}
 	}
@@ -160,7 +184,9 @@ void CGameObject::Animate(float fTimeElapsed)
 		if (m_pModel)
 		{
 			OnPrepareRender();
-			m_pModel->UpdateCollisionBox(m_xmAABB, m_xmf4x4World);
+			UpdateWorldTransform();
+			int i = 0;
+			m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
 		}
 	}
 }
@@ -192,6 +218,11 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
 	m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3Look, true);
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
+}
+
+void CGameObject::UpdateWorldTransform()
+{
+	if (m_pModel) m_pModel->UpdateWorldTransform(&m_xmf4x4World);
 }
 
 void CGameObject::SetPosition(float x, float y, float z)
