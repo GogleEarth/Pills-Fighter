@@ -1037,12 +1037,28 @@ void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStr
 
 cbuffer cbMinimapRobotPos : register(b12)
 {
-	float2 gvMinimapRobotPos[7];
-	bool enemyOrTeam[7];
+	float2 gvMinimapRobotPos[8];
+	bool enemyOrTeam[8];
 }
 
+cbuffer cbMinimapPlayerPos : register(b13)
+{
+	float2 gvMinimapPlayerPos;
+	float2 gvMinimapPlayerLook;
+	float2 gvMinimapPlayerRight;
+}
+
+static int robotCnt = 0;
+
+struct GS_UI_MINIMAPROBOT_OUT
+{
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD;
+	bool eort : ENEMYORTEAM;
+};
+
 [maxvertexcount(4)]
-void GSMinimapEnemy(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStream)
+void GSMinimapEnemy(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_MINIMAPROBOT_OUT> outStream)
 {
 	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
@@ -1050,8 +1066,13 @@ void GSMinimapEnemy(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> 
 	float fHalfH = input[0].size.y;
 
 	float2 enemyPos = float2(0.0f, 0.0f);
-	enemyPos.x = 0.5f; // X 변환
-	enemyPos.y = 0.5f; // Z 변환
+	enemyPos.x = (gvMinimapRobotPos[robotCnt].x - gvMinimapPlayerPos.x) / 200; // X 변환
+	enemyPos.y = (gvMinimapRobotPos[robotCnt].y - gvMinimapPlayerPos.y) / 200; // Z 변환
+	bool eOrT = enemyOrTeam[robotCnt];
+	robotCnt++;
+	if (robotCnt >= 7) {
+		robotCnt = 0;
+	}
 
 	float4 fVertices[4];
 	fVertices[0] = float4(enemyPos + input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
@@ -1065,13 +1086,30 @@ void GSMinimapEnemy(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> 
 	fUVs[2] = float2(1.0f, 1.0f);
 	fUVs[3] = float2(1.0f, 0.0f);
 
-	GS_UI_OUT output;
+
+	GS_UI_MINIMAPROBOT_OUT output;
 
 	for (int i = 0; i < 4; i++)
 	{
 		output.pos = fVertices[i];
 		output.uv = fUVs[i];
+		output.eort = eOrT;
 
 		outStream.Append(output);
 	}
+}
+
+
+float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
+{
+	float4 cColor;
+	if (input.eort == true) {
+		// 1: 적
+		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	}
+	else { cColor = gtxtTexture[1].Sample(gssWrap, input.uv); }
+
+	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
+
+	return(cColor);
 }

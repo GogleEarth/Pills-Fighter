@@ -1721,6 +1721,13 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 
 	m_pd3dcbPlayerAmmo->Map(0, NULL, (void **)&m_pcbMappedPlayerAmmo);
+
+	ncbElementBytes = ((sizeof(CB_MINIMAP_PLAYER_POSITION) + 255) & ~255);
+	m_MinimapPlayerRsc = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+	m_MinimapPlayerRsc->Map(0, NULL, (void **)&m_cbMinimapPlayerInfo);
+
 }
 
 void CUserInterface::ReleaseShaderVariables()
@@ -1743,6 +1750,12 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbPlayerAmmo->Release();
 	}
 
+	if (m_MinimapPlayerRsc)
+	{
+		m_MinimapPlayerRsc->Unmap(0, NULL);
+		m_MinimapPlayerRsc->Release();
+	}
+
 
 	CShader::ReleaseShaderVariables();
 }
@@ -1754,6 +1767,19 @@ void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dComman
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = pd3dcb->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
+}
+
+void CUserInterface::UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT3 playerPos = m_pPlayer->GetPosition();
+	XMFLOAT3 playerLook = m_pPlayer->GetLook();
+	XMFLOAT3 playerRight = m_pPlayer->GetRight();
+
+	m_cbMinimapPlayerInfo.playerPosition = XMFLOAT2(playerPos.x, playerPos.z);
+	m_cbMinimapPlayerInfo.playerLook = XMFLOAT2(playerLook.x, playerLook.z);
+	m_cbMinimapPlayerInfo.playerRight = XMFLOAT2(playerRight.x, playerRight.z);
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PLAYER_INFO, m_MinimapPlayerRsc->GetGPUVirtualAddress());
 }
 
 void CUserInterface::ReleaseUploadBuffers()
@@ -1872,6 +1898,8 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 			m_ppUIRects[3]->Render(pd3dCommandList, 0);
 		}
 	}
+
+	UpdateShaderVariablesMinimapPlayer(pd3dCommandList);
 
 	// Draw Minimap
 	if (m_pd3dPipelineStateMinimap) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimap);
@@ -2320,6 +2348,10 @@ void CMinimapRobotShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSigna
 
 CMinimapShader::CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	for (int i = 0; i < ROBOTCOUNT; i++) {
+		m_cbMinimapRobotInfo.robotPosition[i] = XMFLOAT2(-1.0f, -1.0f);
+		m_cbMinimapRobotInfo.enemyOrTeam[i] = false;
+	}
 }
 
 CMinimapShader::~CMinimapShader()
@@ -2355,6 +2387,10 @@ D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShaderMinimapRobot(ID3DBlob 
 D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSMinimapEnemy", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CMinimapShader::CreateInputLayout()
@@ -2403,7 +2439,7 @@ void CMinimapShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
 	d3dPipelineStateDesc.RasterizerState = CreateRasterizerState();
 	d3dPipelineStateDesc.BlendState = CreateBlendState();
-	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
+	d3dPipelineStateDesc.DepthStencilState = CreateAlwaysDepthStencilState();
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
@@ -2416,6 +2452,7 @@ void CMinimapShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderMinimapRobot(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderMinimapRobot(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateMinimapRobot);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
@@ -2427,20 +2464,18 @@ void CMinimapShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 void CMinimapShader::InsertMinimapRobot(CGameObject *object, int index)
 {
-	m_pMinimapRobotObjects[m_nMinimapRobotCnt] = object;
-	InsertMinimapRobotInfo(object->GetWorldTransf(), index, m_nMinimapRobotCnt);
-	m_nMinimapRobotCnt++;
+	InsertMinimapRobotInfo(object->GetWorldTransf(), index);
 }
 
-void CMinimapShader::InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index, int cnt)
+void CMinimapShader::InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index)
 {
 	if (index % 2 == 1) {
-		m_cbMinimapRobotInfo.enemyOrTeam[cnt] = true; // enemy
+		m_cbMinimapRobotInfo.enemyOrTeam[index] = true; // 1: enemy
 	}
 	else {
-		m_cbMinimapRobotInfo.enemyOrTeam[cnt] = false; // team
+		m_cbMinimapRobotInfo.enemyOrTeam[index] = false; // 0: team
 	}
-	m_cbMinimapRobotInfo.robotPosition[cnt] = XMFLOAT2(objectWorld._41, objectWorld._43);
+	m_cbMinimapRobotInfo.robotPosition[index] = XMFLOAT2(objectWorld._41, objectWorld._43);
 }
 
 void CMinimapShader::ReleaseUploadBuffers()
@@ -2474,31 +2509,47 @@ void CMinimapShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 	m_MinimapRobotRsc->Map(0, NULL, (void **)&m_cbMinimapRobotInfo);
 }
 
+void CMinimapShader::UpdateMinimapRobotInfo(CGameObject *object, BYTE id)
+{
+	// ÀÎµ¦½º ¹Þ¾Æ¼­ ÇØ´ç ÀÎµ¦½ºÀÇ ¹Ì´Ï¸ÊÀÎÆ÷¸¦ ¹Ù²Û´Ù
+	XMFLOAT4X4 world = object->GetWorldTransf();
+	XMFLOAT2 position = XMFLOAT2(world._41, world._43);
+	m_cbMinimapRobotInfo.robotPosition[(int)id] = position;
+}
+
 void CMinimapShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO, m_MinimapRobotRsc->GetGPUVirtualAddress());
+}
+
+void CMinimapShader::ReleaseShaderVariables()
+{
+	if (m_MinimapRobotRsc)
+	{
+		m_MinimapRobotRsc->Unmap(0, NULL);
+		m_MinimapRobotRsc->Release();
+	}
+
+	CShader::ReleaseShaderVariables();
 }
 
 void CMinimapShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 3;
+	m_nTextures = 2;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Radar_BG.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[1] = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
 	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Enemy_Icon.dds", 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Team_Icon.dds", 1);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Team_Icon.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-
-	m_nUIRect = 3;
+	m_nUIRect = 9;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Minimap Terrain
@@ -2508,7 +2559,7 @@ void CMinimapShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	xmf2Center = ::CalculateCenter(-0.1f, 0.1f, 0.1f, -0.1f);
 	xmf2Size = ::CalculateSize(-0.1f, 0.1f, 0.1f, -0.1f);
-	for (int i = 1; i < 3; i++) {
+	for (int i = 1; i < ROBOTCOUNT + 1; i++) {
 		m_ppUIRects[i] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 	}
 }
@@ -2524,11 +2575,11 @@ void CMinimapShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	// Draw Minimap Robots
-	if (m_pd3dPipelineStateMinimapRobot) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimapRobot);
 	UpdateShaderVariables(pd3dCommandList);
-	for (int i = 1; i < 3; i++) {
+	if (m_pd3dPipelineStateMinimapRobot) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimapRobot);
+	m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
+	for (int i = 1; i < ROBOTCOUNT; i++) {
 		if (m_ppTextures[i]) {
-			m_ppTextures[i]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[i]->Render(pd3dCommandList, 0);
 		}
 	}

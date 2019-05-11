@@ -396,6 +396,13 @@ struct CB_PLAYER_VALUE
 	int nValue;
 };
 
+struct CB_MINIMAP_PLAYER_POSITION
+{
+	XMFLOAT2 playerPosition;
+	XMFLOAT2 playerLook;
+	XMFLOAT2 playerRight;
+};
+
 class CUserInterface : public CShader
 {
 public:
@@ -414,6 +421,7 @@ public:
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
+	virtual void UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -435,6 +443,9 @@ protected:
 
 	ID3D12Resource					*m_pd3dcbPlayerAmmo = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
+
+	ID3D12Resource					*m_MinimapPlayerRsc = NULL;
+	CB_MINIMAP_PLAYER_POSITION		m_cbMinimapPlayerInfo;
 
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
@@ -541,11 +552,13 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#define ROBOTCOUNT 8
 struct CB_MINIMAP_ROBOT_POSITION
 {
-	XMFLOAT2 robotPosition[7];
-	BOOL enemyOrTeam[7];
+	XMFLOAT2 robotPosition[ROBOTCOUNT];
+	BOOL enemyOrTeam[ROBOTCOUNT];
 };
+
 
 class CMinimapShader : public CShader
 {
@@ -557,11 +570,15 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+
+	void UpdateMinimapRobotInfo(CGameObject *object, BYTE id);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
 
@@ -569,7 +586,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	void InsertMinimapRobot(CGameObject *object, int index);
-	void InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index, int cnt);
+	void InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index);
 
 protected:
 
@@ -585,8 +602,5 @@ protected:
 	CB_MINIMAP_ROBOT_POSITION		m_cbMinimapRobotInfo;
 
 	CTexture						*m_pMinimapRobotTexture;
-
-	int								m_nMinimapRobotCnt = 0;
-	CGameObject						*m_pMinimapRobotObjects[7];
 
 };
