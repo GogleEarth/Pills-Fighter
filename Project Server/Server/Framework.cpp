@@ -634,6 +634,8 @@ void Framework::CheckCollision(CScene* pScene)
 					pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 					pktCE.xmf3Position = position;
 					effect_msg_queue.push(pktCE);
+					pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
+					pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 					pktDO.Object_Index = Bullet->index;
 					delete_msg_queue.push(pktDO);
 					Bullet->Delete();

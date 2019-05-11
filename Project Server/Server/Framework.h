@@ -10,8 +10,8 @@ struct Client_INFO
 {
 	int id;
 	SOCKET socket;
-	bool load_complete;
-	bool enable;
+	volatile bool load_complete;
+	volatile bool enable;
 	ROBOT_TYPE selected_robot;
 	char team;
 };
@@ -54,8 +54,8 @@ class Framework
 	volatile bool game_start = false;
 	float item_cooltime = 0.0f;
 	float ammo_item_cooltime[2] = { 0.0f,0.0f };
-	bool spawn_ammo[2] = { false,false };
-	bool spawn_item = false;
+	volatile bool spawn_ammo[2] = { false,false };
+	volatile bool spawn_item = false;
 	float elapsed_time;
 	char RedScore;
 	char BlueScore;
