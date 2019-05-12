@@ -18,25 +18,25 @@ CScene::~CScene()
 void CScene::BuildObjects(CRepository* pRepository)
 {
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Hangar.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveHangarSelfData.bin", 0);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_HangarSelfData.bin", 0);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Double_Square.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveDoubleSquareSelfData.bin", 1);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_DoubleSquareSelfData.bin", 1);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Octagon.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveOctagonSelfData.bin", 2);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_OctagonSelfData.bin", 2);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_OctagonLongTier.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveOctagonLongtierSelfData.bin", 3);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_OctagonLongTierSelfData.bin", 3);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Slope_top.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveSlopeTopSelfData.bin", 4);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_Slope_TopSelfData.bin", 4);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Square.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveSquareSelfData.bin", 5);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_SquareSelfData.bin", 5);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Steeple_top.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/SaveSteepleTopSelfData.bin", 6);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_Steeple_TopSelfData.bin", 6);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Wall.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/WallSelfData.bin", 7);
