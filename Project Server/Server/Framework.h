@@ -36,7 +36,7 @@ class Framework
 	std::queue<PKT_PLAYER_INFO> msg_queue;
 	std::mutex playerinfomutex;
 
-	std::queue<PKT_PLAYER_PICK_AMMO> ammo_msg_queue;
+	std::queue<PKT_PLAYER_PICK_AMMO> item_msg_queue;
 	std::queue<PKT_PLAYER_LIFE> life_msg_queue;
 	std::queue<PKT_DELETE_OBJECT> delete_msg_queue;
 	std::queue<PKT_UPDATE_OBJECT> update_msg_queue;

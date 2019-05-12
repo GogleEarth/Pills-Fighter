@@ -21,7 +21,7 @@ typedef enum PKT_ID
 	PKT_ID_SHOOT,
 	PKT_ID_SCORE,
 	PKT_ID_GAME_END,
-	PKT_ID_PICK_AMMO
+	PKT_ID_PICK_ITEM
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -108,6 +108,12 @@ enum BULLET_TYPE
 	BULLET_TYPE_BEAM_RIFLE
 };
 
+enum ITEM_TYPE
+{
+	ITEM_TYPE_HEALING,
+	ITEM_TYPE_AMMO
+};
+
 #pragma pack(push, 1)
 
 typedef struct PKT_PLAYER_INFO
@@ -137,11 +143,13 @@ typedef struct PKT_PLAYER_LIFE
 	DWORD		AMMO;
 }PKT_PLAYER_LIFE;
 
-typedef struct PKT_PICK_AMMO
+typedef struct PKT_PICK_ITEM
 {
 	BYTE		PktSize;
 	BYTE		PktId;
 	BYTE		ID;
+	BYTE		Item_type;
+	DWORD		HP;
 	DWORD		AMMO;
 }PKT_PLAYER_PICK_AMMO;
 

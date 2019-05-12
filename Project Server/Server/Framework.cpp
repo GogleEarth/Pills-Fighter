@@ -531,7 +531,7 @@ void Framework::CheckCollision(CScene* pScene)
 	PKT_PLAYER_LIFE pktLF;
 	PKT_CREATE_EFFECT pktCDE;
 	PKT_CREATE_EFFECT pktCE;
-	PKT_PICK_AMMO pktPA;
+	PKT_PICK_ITEM pktPA;
 
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 	{
@@ -660,23 +660,17 @@ void Framework::CheckCollision(CScene* pScene)
 						if ((Item->GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
 							spawn_item = false;
-							XMFLOAT3 position = Item->GetPosition();
-							pktCE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-							pktCE.efType = EFFECT_TYPE_HIT;
-							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							pktCE.xmf3Position = position;
-							effect_msg_queue.push(pktCE);
 							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
 							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Item->index;
 							delete_msg_queue.push(pktDO);
-							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
-							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
-							pktLF.ID = pScene->m_pObjects[k]->m_iId;
-							pktLF.HP = -50;
-							pktLF.AMMO = 0;
-							life_msg_queue.push(pktLF);
+							pktPA.PktId = (char)PKT_ID_PICK_ITEM;
+							pktPA.PktSize = (char)sizeof(PKT_PICK_ITEM);
+							pktPA.ID = pScene->m_pObjects[k]->m_iId;
+							pktPA.HP = 50;
+							pktPA.AMMO = 0;
+							pktPA.Item_type = ITEM_TYPE_HEALING;
+							item_msg_queue.push(pktPA);
 							Item->Delete();
 						}
 					}
@@ -699,22 +693,17 @@ void Framework::CheckCollision(CScene* pScene)
 						if ((Item->GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
 							spawn_ammo[Item->m_iId - ITEM_AMMO1] = false;
-							XMFLOAT3 position = Item->GetPosition();
-							pktCE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-							pktCE.efType = EFFECT_TYPE_HIT;
-							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							pktCE.xmf3Position = position;
-							effect_msg_queue.push(pktCE);
 							pktDO.PktId = (char)PKT_ID_DELETE_OBJECT;
 							pktDO.PktSize = (char)sizeof(PKT_DELETE_OBJECT);
 							pktDO.Object_Index = Item->index;
 							delete_msg_queue.push(pktDO);
-							pktPA.PktId = (char)PKT_ID_PICK_AMMO;
-							pktPA.PktSize = (char)sizeof(PKT_PICK_AMMO);
+							pktPA.PktId = (char)PKT_ID_PICK_ITEM;
+							pktPA.PktSize = (char)sizeof(PKT_PICK_ITEM);
 							pktPA.ID = pScene->m_pObjects[k]->m_iId;
 							pktPA.AMMO = 100;
-							ammo_msg_queue.push(pktPA);
+							pktLF.HP = 0;
+							pktPA.Item_type = ITEM_TYPE_AMMO;
+							item_msg_queue.push(pktPA);
 							Item->Delete();
 						}
 					}
@@ -878,12 +867,12 @@ void Framework::SendPlayerLife(CScene* pScene)
 		Send_msg((char*)&pkt_l, pkt_l.PktSize, 0);
 	}
 
-	while (!ammo_msg_queue.empty())
+	while (!item_msg_queue.empty())
 	{
-		PKT_PICK_AMMO pkt_a;
+		PKT_PICK_ITEM pkt_a;
 
-		pkt_a = ammo_msg_queue.front();
-		ammo_msg_queue.pop();
+		pkt_a = item_msg_queue.front();
+		item_msg_queue.pop();
 
 		Send_msg((char*)&pkt_a, pkt_a.PktSize, 0);
 	}
