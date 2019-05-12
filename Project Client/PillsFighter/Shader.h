@@ -452,7 +452,7 @@ protected:
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
 
 	ID3D12Resource					*m_MinimapPlayerRsc = NULL;
-	CB_MINIMAP_PLAYER_POSITION		m_cbMinimapPlayerInfo;
+	CB_MINIMAP_PLAYER_POSITION		*m_cbMinimapPlayerInfo;
 
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;

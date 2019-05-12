@@ -1867,9 +1867,9 @@ void CUserInterface::UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandLis
 	XMFLOAT3 playerLook = m_pPlayer->GetLook();
 	XMFLOAT3 playerRight = m_pPlayer->GetRight();
 
-	m_cbMinimapPlayerInfo.playerPosition = XMFLOAT2(playerPos.x, playerPos.z);
-	m_cbMinimapPlayerInfo.playerLook = XMFLOAT2(playerLook.x, playerLook.z);
-	m_cbMinimapPlayerInfo.playerRight = XMFLOAT2(playerRight.x, playerRight.z);
+	m_cbMinimapPlayerInfo->playerPosition = XMFLOAT2(playerPos.x, playerPos.z);
+	m_cbMinimapPlayerInfo->playerLook = XMFLOAT2(playerLook.x, playerLook.z);
+	m_cbMinimapPlayerInfo->playerRight = XMFLOAT2(playerRight.x, playerRight.z);
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PLAYER_INFO, m_MinimapPlayerRsc->GetGPUVirtualAddress());
 }
