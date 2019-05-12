@@ -141,6 +141,7 @@ typedef struct PKT_PICK_AMMO
 {
 	BYTE		PktSize;
 	BYTE		PktId;
+	BYTE		ID;
 	DWORD		AMMO;
 }PKT_PLAYER_PICK_AMMO;
 
