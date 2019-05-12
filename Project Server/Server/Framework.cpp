@@ -811,12 +811,9 @@ int Framework::searchenables()
 
 void Framework::SendCreateEffect(CScene* pScene)
 {
-	while (true)
+	while (!effect_msg_queue.empty())
 	{
 		PKT_CREATE_EFFECT pkt_ce;
-
-		if (effect_msg_queue.empty())
-			break;
 
 		pkt_ce = effect_msg_queue.front();
 		effect_msg_queue.pop();
@@ -827,11 +824,9 @@ void Framework::SendCreateEffect(CScene* pScene)
 
 void Framework::SendPlayerInfo(CScene* pScene)
 {
-	while (true)
+	while (!msg_queue.empty())
 	{
 		PKT_PLAYER_INFO pkt;
-		if (msg_queue.empty())
-			break;
 
 		pkt = msg_queue.front();
 		msg_queue.pop();
@@ -845,12 +840,9 @@ void Framework::SendPlayerInfo(CScene* pScene)
 
 void Framework::SendUpfateObject(CScene* pScene)
 {
-	while (true)
+	while (!update_msg_queue.empty())
 	{
 		PKT_UPDATE_OBJECT pkt_u;
-
-		if (update_msg_queue.empty())
-			break;
 
 		pkt_u = update_msg_queue.front();
 		update_msg_queue.pop();
@@ -862,12 +854,9 @@ void Framework::SendUpfateObject(CScene* pScene)
 
 void Framework::SendDeleteObject(CScene* pScene)
 {
-	while (true)
+	while (!delete_msg_queue.empty())
 	{
 		PKT_DELETE_OBJECT pkt_d;
-
-		if (delete_msg_queue.empty())
-			break;
 
 		pkt_d = delete_msg_queue.front();
 		delete_msg_queue.pop();
@@ -878,12 +867,9 @@ void Framework::SendDeleteObject(CScene* pScene)
 
 void Framework::SendPlayerLife(CScene* pScene)
 {
-	while (true)
+	while (!life_msg_queue.empty())
 	{
 		PKT_PLAYER_LIFE pkt_l;
-
-		if (life_msg_queue.empty())
-			break;
 
 		pkt_l = life_msg_queue.front();
 		life_msg_queue.pop();
@@ -895,11 +881,9 @@ void Framework::SendPlayerLife(CScene* pScene)
 void Framework::SendCreateBullet(CScene * pScene)
 {
 
-	while (true)
+	while (!shoot_msg_queue.empty())
 	{
 		PKT_SHOOT shootpkt;
-		if (shoot_msg_queue.empty())
-			break;
 
 		shootpkt = shoot_msg_queue.front();
 		shoot_msg_queue.pop();
@@ -1109,6 +1093,21 @@ void Framework::PlayGame(CScene * pScene)
 			count = 0;
 			game_start = false;
 			std::cout << "플레이어가 0명이여서 게임을 종료\n";
+
+			while(!msg_queue.empty())
+				msg_queue.pop();
+			while (!life_msg_queue.empty())
+				life_msg_queue.pop();
+			while (!delete_msg_queue.empty())
+				delete_msg_queue.pop();
+			while (!update_msg_queue.empty())
+				update_msg_queue.pop();
+			while (!effect_msg_queue.empty())
+				effect_msg_queue.pop();
+			while (!shoot_msg_queue.empty())
+				shoot_msg_queue.pop();
+			while (!lobby_player_msg_queue.empty())
+				lobby_player_msg_queue.pop();
 			break;
 		}
 		else
