@@ -625,14 +625,16 @@ void CGameFramework::WaitForGpuComplete()
 
 void CGameFramework::FrameAdvance()
 {
-	ProcessInput();
-
 #ifdef ON_NETWORKING
+	//if(m_fElapsedTime > 0.0f)
+	//	if (m_fElapsedTime < (1.0f / 60.0f)) return;
 	SendToServer();
 #else
 	m_GameTimer.Tick(60.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
+
+	ProcessInput();
 
 	m_Arial.CheckUsingTexts();
 	m_HumanMagic.CheckUsingTexts();
@@ -773,8 +775,8 @@ void CGameFramework::MoveToNextFrame()
 
 void CGameFramework::ProcessPacket()
 {
-	printf("Size : %d\n", m_pPacketBuffer[0]);
-	printf("Type : %d\n", m_pPacketBuffer[1]);
+	//printf("Size : %d\n", m_pPacketBuffer[0]);
+	//printf("Type : %d\n", m_pPacketBuffer[1]);
 
 	char nType = m_pPacketBuffer[1];
 
@@ -802,9 +804,6 @@ void CGameFramework::ProcessPacket()
 		if (pPacket->ID == m_nClinetIndex)
 		{
 			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - pPacket->HP);
-			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
-			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
-			m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
 		}
 		else
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)pPacket);
@@ -911,6 +910,16 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_GAME_END *pPacket = (PKT_GAME_END*)m_pPacketBuffer;
 		// 게임종료 처리
+		break;
+	}
+	case PKT_ID_PICK_AMMO:
+	{
+		PKT_PICK_AMMO *pPacket = (PKT_PICK_AMMO*)m_pPacketBuffer;
+
+		m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
+		m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
+		m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
+
 		break;
 	}
 	}

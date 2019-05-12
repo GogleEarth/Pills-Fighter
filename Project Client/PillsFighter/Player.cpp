@@ -192,7 +192,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 	if (dwDirection & DIR_FORWARD)
 	{
-		if (m_nState & OBJECT_STATE_ONGROUND)
+		if (m_nState & OBJECT_STATE_ONGROUND && !(m_nState & OBJECT_STATE_JUMPING))
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
 
@@ -206,7 +206,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	}
 	if (dwDirection & DIR_BACKWARD)
 	{
-		if (m_nState & OBJECT_STATE_ONGROUND)
+		if (m_nState & OBJECT_STATE_ONGROUND && !(m_nState & OBJECT_STATE_JUMPING))
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_BACKWARD);
 
@@ -220,7 +220,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	}
 	if (dwDirection & DIR_RIGHT)
 	{
-		if (m_nState & OBJECT_STATE_ONGROUND)
+		if (m_nState & OBJECT_STATE_ONGROUND && !(m_nState & OBJECT_STATE_JUMPING))
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_RIGHT);
 
@@ -234,7 +234,7 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	}
 	if (dwDirection & DIR_LEFT)
 	{
-		if (m_nState & OBJECT_STATE_ONGROUND)
+		if (m_nState & OBJECT_STATE_ONGROUND && !(m_nState & OBJECT_STATE_JUMPING))
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_LEFT);
 
@@ -740,6 +740,8 @@ void CPlayer::Reload(CWeapon *pWeapon)
 
 void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 {
+	printf("%d, %d, %d\n", m_nGimGunAmmo, m_nBazookaAmmo, m_nMachineGunAmmo);
+
 	if (pWeapon)
 	{
 		int nType = pWeapon->GetType();

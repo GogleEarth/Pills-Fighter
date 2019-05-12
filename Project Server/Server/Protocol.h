@@ -20,7 +20,8 @@ typedef enum PKT_ID
 	PKT_ID_GAME_START,
 	PKT_ID_SHOOT,
 	PKT_ID_SCORE,
-	PKT_ID_GAME_END
+	PKT_ID_GAME_END,
+	PKT_ID_PICK_AMMO
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -136,6 +137,13 @@ typedef struct PKT_PLAYER_LIFE
 	DWORD		AMMO;
 }PKT_PLAYER_LIFE;
 
+typedef struct PKT_PICK_AMMO
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	DWORD		AMMO;
+}PKT_PLAYER_PICK_AMMO;
+
 typedef struct PKT_CREATE_OBJECT
 {
 	BYTE		PktSize;
@@ -236,7 +244,8 @@ struct PKT_GAME_END
 
 #define MAX_NUM_OBJECT 2000
 
-#define SERVERIP	"119.64.25.5"
+//#define SERVERIP	"119.64.25.5"
+#define SERVERIP	"127.0.0.1"
 #define SERVERPORT	9000
 #define LOBBYSERVERIP	"127.0.0.1"
 #define LOBBYSERVERPORT	9001
