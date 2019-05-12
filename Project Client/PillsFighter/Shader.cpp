@@ -2541,7 +2541,8 @@ void CMinimapShader::UpdateMinimapRobotInfo(CGameObject *object, BYTE id)
 	// ÀÎµ¦½º ¹Þ¾Æ¼­ ÇØ´ç ÀÎµ¦½ºÀÇ ¹Ì´Ï¸ÊÀÎÆ÷¸¦ ¹Ù²Û´Ù
 	XMFLOAT4X4 world = object->GetWorldTransf();
 	XMFLOAT2 position = XMFLOAT2(world._41, world._43);
-	m_cbMinimapRobotInfo[(int)id].robotPosition = position;
+	//m_cbMinimapRobotInfo[(int)id].robotPosition = position;
+	m_cbMinimapRobotInfo[0].robotPosition = position;
 }
 
 void CMinimapShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
