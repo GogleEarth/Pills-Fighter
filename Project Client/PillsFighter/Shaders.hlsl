@@ -1082,7 +1082,7 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	float2 enemyPos = float2(0.0f, 0.0f);
 	enemyPos.x = (gvMinimapRobotPos[input[0].index].x - gvMinimapPlayerPos.x) / 500; // X 변환
 	enemyPos.y = (gvMinimapRobotPos[input[0].index].y - gvMinimapPlayerPos.y) / 500; // Z 변환
-	
+
 	bool eOrT = enemyOrTeam[input[0].index];
 
 	float4 fVertices[4];
@@ -1121,6 +1121,58 @@ float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 	else { cColor = gtxtTexture[1].Sample(gssWrap, input.uv); }
 
 	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
+
+	return(cColor);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+[maxvertexcount(4)]
+void GSMinimapSight(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float2 vUp = -(gvMinimapPlayerLook);
+	float2 vRight = gvMinimapPlayerRight;
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+float4 PSMinimapSight(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor;
+	cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	if (cColor.r > 0.5 && cColor.g < 0.3 && cColor.b < 0.3) { cColor.a = 0.8; }
+	else { discard; }
+
+	return(cColor);
+}
+
+float4 PSMinimapTerrain(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	cColor.a = 0.9;
 
 	return(cColor);
 }

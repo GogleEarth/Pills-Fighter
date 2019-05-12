@@ -577,8 +577,11 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapSight(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapBG(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapSight(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayoutMinimapRect();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -615,4 +618,6 @@ protected:
 
 	CTexture						*m_pMinimapRobotTexture;
 
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapBG = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapSight = NULL;
 };
