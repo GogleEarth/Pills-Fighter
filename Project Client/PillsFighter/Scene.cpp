@@ -1586,20 +1586,6 @@ void CColonyScene::CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_d3dMMScissorRect = { 0, 0, MINIMAP_BUFFER_WIDTH, MINIMAP_BUFFER_HEIGHT };
 
 	m_pMiniMapCamera = new CCamera();
-
-	XMFLOAT3 xmf3Looks = XMFLOAT3(0.0f, -1.0f, 0.0f);
-	XMFLOAT3 xmf3Ups = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks, xmf3Ups, true);
-
-	m_pMiniMapCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	m_pMiniMapCamera->SetPlayer(m_pPlayer);
-	m_pMiniMapCamera->GenerateProjectionMatrix(1.01f, 5000.0f, 1.0f, 60.0f);
-	m_pMiniMapCamera->SetRight(xmf3Right);
-	m_pMiniMapCamera->SetUp(xmf3Ups);
-	m_pMiniMapCamera->SetLook(xmf3Looks);
-	m_pMiniMapCamera->SetPosition(XMFLOAT3(0, 500, 0));
-
-	m_pMiniMapCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CColonyScene::CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice)
@@ -1612,12 +1598,6 @@ void CColonyScene::CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice)
 void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	if (m_pMiniMapCamera) {
-		m_pMiniMapCamera->UpdateForMinimap(m_pMiniMapCamera->GetPlayer()->GetCamera()->GetLookVector());
-		m_pMiniMapCamera->GenerateViewMatrix();
-		m_pMiniMapCamera->UpdateShaderVariables(pd3dCommandList);
-	}
 
 	pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
 	pd3dCommandList->ClearDepthStencilView(m_d3dDsvMinimapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
