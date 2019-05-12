@@ -24,4 +24,6 @@ public:
 	FMOD::Sound *m_pSoundMGShot = NULL;
 	FMOD::Sound *m_pSoundMove = NULL;
 	FMOD::Sound *m_pSoundBooster = NULL;
+	FMOD::Sound *m_pSoundPickAmmo = NULL;
+	FMOD::Sound *m_pSoundPickHeal = NULL;
 };

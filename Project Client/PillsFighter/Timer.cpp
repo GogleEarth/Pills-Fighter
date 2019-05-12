@@ -72,6 +72,7 @@ void CGameTimer::Tick(float fLockFPS)
 		m_fFrameTime[0] = fTimeElapsed;
 		if (m_nSampleCount < MAX_SAMPLE_COUNT) m_nSampleCount++;
 	}
+
 	//초당 프레임 수를 1 증가시키고 현재 프레임 처리 시간을 누적하여 저장한다.
 	m_nFramesPerSecond++;
 	m_fFPSTimeElapsed += fTimeElapsed;

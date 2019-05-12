@@ -4,6 +4,8 @@
 
 ////////////////////////////////////////////////////////////////
 
+extern CFMODSound gFmodSound;
+
 CGameFramework::CGameFramework()
 {
 	m_pdxgiFactory = NULL;
@@ -716,13 +718,21 @@ void CGameFramework::FrameAdvance()
 	}
 
 	m_fElapsedTime = 0.0f;
+
+#ifdef _DEBUG
 	_itow_s(m_nFrameRate, m_pszCaption + strlen(GAME_TITLE), 37, 10);
-	wcscat_s(m_pszCaption + strlen(GAME_TITLE), 37, _T(" FPS)"));
-#else
-	m_GameTimer.GetFrameRate(m_pszCaption + strlen(GAME_TITLE), 37);
+	wcscat_s(m_pszCaption + strlen(GAME_TITLE), 37, _T(" FPS"));
 #endif
+
+#else
+
+#ifdef _DEBUG
+	m_GameTimer.GetFrameRate(m_pszCaption + strlen(GAME_TITLE), 37);
 	size_t nLength = _tcslen(m_pszCaption);
 	_stprintf(m_pszCaption + nLength, _T("(%f, %f)"), Screenx, Screeny);
+#endif
+
+#endif
 	
 	::SetWindowText(m_hWnd, m_pszCaption);
 }
@@ -923,6 +933,7 @@ void CGameFramework::ProcessPacket()
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
+				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickAmmo);
 			}
 		}
 		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
@@ -930,6 +941,7 @@ void CGameFramework::ProcessPacket()
 			if (pPacket->ID == m_nClinetIndex)
 			{
 				m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() + pPacket->HP);
+				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
 			}
 		}
 		break;
@@ -1019,6 +1031,7 @@ void CGameFramework::SendToServer()
 			printf("Send Shoot Error\n");
 		}
 	}
+
 	if (m_pPlayer && m_bDrawScene && m_bSend_Complete)
 	{
 		int retval;
@@ -1035,6 +1048,7 @@ void CGameFramework::SendToServer()
 		{
 			pktPlayerInfo.IsShooting = TRUE;
 			m_pPlayer->SetShootBullet(false);
+			printf("Shoot\n");
 		}
 		else
 		{

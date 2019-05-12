@@ -1470,7 +1470,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].push(pParticle);
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList, XMFLOAT2(5.0f, 5.0f));
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 10.0f, 4.0f, 0.1f, true,
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 4.0f, 0.1f, true,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));		
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 

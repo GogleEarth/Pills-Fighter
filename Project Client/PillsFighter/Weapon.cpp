@@ -121,7 +121,7 @@ void CGun::Shot()
 #endif
 
 	SetShotCoolTime();
-
+	
 	m_nShootCount++;
 	m_nReloadedAmmo--;
 }
@@ -129,7 +129,9 @@ void CGun::Shot()
 void CGun::CheckShootable(float fElapsedTime)
 {
 	if (m_nReloadedAmmo > 0)
+	{
 		m_bShootable = true;
+	}
 }
 
 void CGun::SetShootCount()

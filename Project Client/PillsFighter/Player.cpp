@@ -525,7 +525,7 @@ void CPlayer::ProcessAnimation()
 		{
 			CGun *pGun = (CGun*)m_pRHWeapon;
 
-			if (pGun->IsShootable())
+			if (pGun->IsShootable() && !GetShootBullet())
 			{
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
 				pGun->Shot();
@@ -740,8 +740,6 @@ void CPlayer::Reload(CWeapon *pWeapon)
 
 void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 {
-	printf("%d, %d, %d\n", m_nGimGunAmmo, m_nBazookaAmmo, m_nMachineGunAmmo);
-
 	if (pWeapon)
 	{
 		int nType = pWeapon->GetType();

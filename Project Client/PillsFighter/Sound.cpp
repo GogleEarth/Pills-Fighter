@@ -15,6 +15,8 @@ CFMODSound::CFMODSound()
 	m_pfmodSystem->createSound("./Resource/SE/BZK_Shot.wav", FMOD_DEFAULT, NULL, &m_pSoundBZKShot);
 	m_pfmodSystem->createSound("./Resource/SE/MG_Shot.wav", FMOD_DEFAULT, NULL, &m_pSoundMGShot);
 	m_pfmodSystem->createSound("./Resource/SE/Move.wav", FMOD_DEFAULT, NULL, &m_pSoundMove);
+	m_pfmodSystem->createSound("./Resource/SE/PickAmmo.wav", FMOD_DEFAULT, NULL, &m_pSoundPickAmmo);
+	m_pfmodSystem->createSound("./Resource/SE/PickHeal.wav", FMOD_DEFAULT, NULL, &m_pSoundPickHeal);
 	m_pfmodSystem->createSound("./Resource/SE/Booster.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundBooster);
 }
 
@@ -28,6 +30,8 @@ CFMODSound::~CFMODSound()
 	m_pSoundMGShot->release();
 	m_pSoundMove->release();
 	m_pSoundBooster->release();
+	m_pSoundPickAmmo->release();
+	m_pSoundPickHeal->release();
 
 	m_pfmodSystem->close();
 	m_pfmodSystem->release();
