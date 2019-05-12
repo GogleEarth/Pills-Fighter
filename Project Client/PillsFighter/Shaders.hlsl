@@ -759,6 +759,7 @@ struct PARTICLE
 	float3  m_vLook;
 	bool	m_bEmit;
 	float3	m_vAngles;
+	bool	m_bScaling;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(b8);
@@ -779,7 +780,7 @@ struct VS_PARTICLE_SO_OUTPUT
 	float2	size : SIZE;
 	uint	type : TYPE;
 	float	age : AGE;
-	uint	verid : VERTEXID;
+	float	verid : VERTEXID;
 };
 
 VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID : SV_VertexID)
@@ -790,7 +791,7 @@ VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID :
 	output.size = input.size;
 	output.type = input.type;
 	output.age = input.age;
-	output.verid = nVerID;
+	output.verid = float(nVerID);
 
 	return output;
 }
@@ -809,7 +810,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 	{
 		if ((gParticle.m_bEmit == true) && (output.age > gParticle.m_fEmitInterval))
 		{
-			float4 vRandom = gParticle.m_vRandom * input[0].verid * input[0].verid;
+			float4 vRandom = gParticle.m_vRandom * input[0].verid;
 			float fX = fmod(vRandom.x, gParticle.m_vAngles.x) - gParticle.m_vAngles.x / 2.0f;
 			float fY = fmod(vRandom.y, gParticle.m_vAngles.y) - gParticle.m_vAngles.y / 2.0f;
 			float fZ = fmod(vRandom.z, gParticle.m_vAngles.z) - gParticle.m_vAngles.z / 2.0f;
@@ -873,6 +874,10 @@ VS_PARTICLE_OUTPUT VSParticleDraw(VS_PARTICLE_INPUT input)
 	output.color = float4(1.0f, 1.0f, 1.0f, fOpacity);
 
 	output.size = input.size;
+
+	if (gParticle.m_bScaling)
+		output.size *= input.age;
+
 	output.type = input.type;
 
 	return output;

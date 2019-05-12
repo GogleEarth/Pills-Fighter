@@ -343,7 +343,10 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 
 void CGameObject::ApplyToParticle(CParticle *pParticle)
 {
-	pParticle->SetToFollowFramePosition();
+	if (pParticle)
+	{
+		pParticle->SetToFollowFramePositions();
+	}
 }
 
 void CGameObject::AfterAdvanceAnimationController()
@@ -906,7 +909,6 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		}
 	}
 
-
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
 }
@@ -1205,14 +1207,14 @@ void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureI
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Size)
 {
 	CParticleVertex *pParticleVertex = new CParticleVertex();
 	m_nVertices = 1;
 
 	pParticleVertex[0].m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	pParticleVertex[0].m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	pParticleVertex[0].m_xmf2Size = XMFLOAT2(2.0f, 2.0f);
+	pParticleVertex[0].m_xmf2Size = xmf2Size;
 	pParticleVertex[0].m_nType = PARTICLE_TYPE_EMITTER;
 	pParticleVertex[0].m_fAge = 0.0f;
 
@@ -1259,7 +1261,8 @@ CParticle::~CParticle()
 	m_pd3dInitVertexUploadBuffer = NULL;
 }
 
-void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, XMFLOAT3 xmf3Angles)
+void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling,
+	XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles)
 {
 	m_xmf3Position = xmf3Position;
 	m_xmf3Direction = xmf3Direction;
@@ -1267,6 +1270,10 @@ void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float 
 	m_fDuration = fDuration;
 	m_fEmitInterval = fEmitInterval;
 	m_xmf3Angles = xmf3Angles;
+	m_xmf3Right = xmf3Right;
+	m_xmf3Up = xmf3Up;
+	m_xmf3Look = xmf3Look;
+	m_bScaling = bScaling;
 
 	m_nDrawBufferIndex = 0;
 	m_nSOBufferIndex = 1;
@@ -1284,7 +1291,7 @@ void CParticle::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 
 void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	XMFLOAT4 xmf4Random = XMFLOAT4(rand(), rand(), rand(), rand());
+	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt), dist1(mt), dist1(mt), dist1(mt));
 
 	m_pcbMappedParticle->m_vRandom = xmf4Random;
 	m_pcbMappedParticle->m_vPosition = m_xmf3Position;
@@ -1294,10 +1301,11 @@ void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 	m_pcbMappedParticle->m_fElapsedTime = m_fElapsedTime;
 	m_pcbMappedParticle->m_bEmit = m_bEmit;
 	m_pcbMappedParticle->m_fEmitInterval = m_fEmitInterval;
-	m_pcbMappedParticle->m_vRight = m_pFollowObject->GetRight();
-	m_pcbMappedParticle->m_vUp = m_pFollowObject->GetUp();
-	m_pcbMappedParticle->m_vLook = m_pFollowObject->GetLook();
+	m_pcbMappedParticle->m_vRight = m_xmf3Right;
+	m_pcbMappedParticle->m_vUp = m_xmf3Up;
+	m_pcbMappedParticle->m_vLook = m_xmf3Look;
 	m_pcbMappedParticle->m_vAngles = m_xmf3Angles;
+	m_pcbMappedParticle->m_bScaling = m_bScaling;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PARTICLE, m_pd3dcbParticle->GetGPUVirtualAddress());
 }
@@ -1325,14 +1333,19 @@ void CParticle::SetFollowObject(CGameObject *pObject, CModel *pModel)
 	m_pFollowFrame = pModel;
 }
 
-void CParticle::SetToFollowFramePosition()
+void CParticle::SetToFollowFramePositions()
 {
-	if(m_pFollowFrame) SetPosition(m_pFollowFrame->GetPosition());
-}
+	if (m_pFollowFrame)
+	{
+		m_xmf3Position = m_pFollowFrame->GetPosition();
+	}
 
-void CParticle::SetDirectionByFollowFrame()
-{
-	if(m_pFollowFrame) SetDirection(m_pFollowFrame->GetLook());
+	if (m_pFollowObject)
+	{
+		m_xmf3Right = m_pFollowObject->GetRight();
+		m_xmf3Up = m_pFollowObject->GetUp();
+		m_xmf3Look = m_pFollowObject->GetLook();
+	}
 }
 
 void CParticle::Animate(float fTimeElapsed)

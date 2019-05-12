@@ -80,7 +80,6 @@ public:
 	virtual void Reload(int& nAmmo);
 
 public:
-	virtual void Attack() {};
 	virtual void Shot();
 
 	virtual void SetReloadTime() {}
@@ -121,12 +120,9 @@ public:
 
 protected:
 	float	m_fBurstCoolTime = 0.0f;
-	bool	m_bBurst = false;
 
 public:
 	virtual void Initialize();
-
-	virtual void Attack();
 
 	virtual void Shot();
 	virtual void SetReloadTime() { m_fReloadTime = GG_RELOAD_TIME; }

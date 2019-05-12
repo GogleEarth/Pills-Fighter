@@ -1252,13 +1252,47 @@ CParticleShader::CParticleShader()
 
 CParticleShader::~CParticleShader()
 {
-	for (CParticle* pParticle : m_vpParticles)
+	if (m_pvpParticles)
 	{
-		pParticle->ReleaseShaderVariables();
-		delete pParticle;
+		for (int i = 0; i < PARTICLE_COUNT; i++)
+		{
+			for (CParticle* pParticle : m_pvpParticles[i])
+			{
+				pParticle->ReleaseShaderVariables();
+				delete pParticle;
+			}
+		}
+
+		delete[] m_pvpParticles;
 	}
 
-	if (m_pTexture) delete m_pTexture;
+	if (m_pvpTempParticles)
+	{
+		for (int i = 0; i < PARTICLE_COUNT; i++)
+		{
+			while(!m_pvpTempParticles[i].empty())
+			{
+				CParticle *pParticle = m_pvpTempParticles[i].front();
+				m_pvpTempParticles[i].pop();
+
+				pParticle->ReleaseShaderVariables();
+				delete pParticle;
+			}
+		}
+
+		delete[] m_pvpTempParticles;
+	}
+
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < PARTICLE_COUNT; i++)
+		{
+			if (m_ppTextures[i]) delete m_ppTextures[i];
+		}
+
+		delete[] m_ppTextures;
+	}
+
 	if (m_pd3dSOPipelineState) m_pd3dSOPipelineState->Release();
 }
 
@@ -1394,64 +1428,99 @@ void CParticleShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature
 
 void CParticleShader::ReleaseUploadBuffers()
 {
-	for (CParticle* pParticle : m_vpParticles)
+	if (m_pvpTempParticles)
 	{
-		pParticle->ReleaseUploadBuffers();
+		for (int i = 0; i < PARTICLE_COUNT; i++)
+		{
+			for (int j = 0 ; j < m_pvpTempParticles[i].size(); j++)
+			{
+				CParticle *pParticle = m_pvpTempParticles[i].front();
+				m_pvpTempParticles[i].pop();
+
+				pParticle->ReleaseUploadBuffers();
+
+				m_pvpTempParticles[i].push(pParticle);
+			}
+		}
 	}
 
-	if (m_pTexture) m_pTexture->ReleaseUploadBuffers();
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < PARTICLE_COUNT; i++)
+		{
+			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
+		}
+	}
 }
 
 void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
+	m_pvpParticles = new std::vector<CParticle*>[PARTICLE_COUNT];
+	m_pvpTempParticles = new std::queue<CParticle*>[PARTICLE_COUNT];
+
 	CParticle *pParticle = NULL;
 
-	for (int i = 0; i < 8 * 2; i++)
+	for (int i = 0; i < 16; i++)
 	{
-		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 40.0f, 1.0f, 0.01f, XMFLOAT3(0.0f, 90.0f, 90.0f));
+		pParticle = new CParticle(pd3dDevice, pd3dCommandList, XMFLOAT2(4.0f, 4.0f));
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 40.0f, 1.0f, 0.01f, false,
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-		m_vpParticles.emplace_back(pParticle);
+		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].push(pParticle);
+
+		pParticle = new CParticle(pd3dDevice, pd3dCommandList, XMFLOAT2(5.0f, 5.0f));
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 10.0f, 4.0f, 0.1f, true,
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));		
+		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].push(pParticle);
 	}
 
-	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/flare.dds", 0);
+	m_ppTextures = new CTexture*[PARTICLE_COUNT];
 
-	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	m_ppTextures[PARTICLE_INDEX_BOOSTER_FLARE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_INDEX_BOOSTER_FLARE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_INDEX_BOOSTER_FLARE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+	m_ppTextures[PARTICLE_INDEX_BOOSTER_FOG] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_INDEX_BOOSTER_FOG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Fog1.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_INDEX_BOOSTER_FOG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 }
 
 void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
 {
-	m_vpParticles[m_nParticleIndex++]->SetFollowObject(pObject, pFrame);
+	// Flare
+	CParticle *pParticle = m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].front();
+	m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].pop();
+
+	pParticle->SetFollowObject(pObject, pFrame);
+	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FLARE].emplace_back(pParticle);
+
+	// Fog
+	pParticle = m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].front();
+	m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].pop();
+
+	pParticle->SetFollowObject(pObject, pFrame);
+	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FOG].emplace_back(pParticle);
 }
 
 void CParticleShader::CheckDeleteObjects()
 {
-	if (m_vpParticles.size())
-	{
-		for (auto& Object = m_vpParticles.begin(); Object != m_vpParticles.end();)
-		{
-			if ((*Object)->IsDelete())
-			{
-				delete *Object;
-
-				m_nParticleIndex--;
-				Object = m_vpParticles.erase(Object);
-			}
-			else
-				Object++;
-		}
-	}
 }
 
 void CParticleShader::AnimateObjects(float fTimeElapsed)
 {
 	CheckDeleteObjects();
 
-	for(int i = 0; i < m_nParticleIndex; i++)
+	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
-		m_vpParticles[i]->Animate(fTimeElapsed);
+		for (const auto& pParticle : m_pvpParticles[i])
+		{
+			pParticle->Animate(fTimeElapsed);
+		}
 	}
 }
 
@@ -1459,22 +1528,47 @@ void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 {
 	CShader::OnPrepareRender(pd3dCommandList);
 
-	m_pTexture->UpdateShaderVariables(pd3dCommandList);
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		m_ppTextures[i]->UpdateShaderVariables(pd3dCommandList); 
 
-	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->Render(pd3dCommandList);
+		for (const auto& pParticle : m_pvpParticles[i])
+		{
+			pParticle->Render(pd3dCommandList);
+		}
+	}
 }
 
 void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->ReadVertexCount(pd3dCommandList);
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		for (const auto& pParticle : m_pvpParticles[i])
+		{
+			pParticle->ReadVertexCount(pd3dCommandList);
+		}
+	}
 
 	if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
-	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->SORender(pd3dCommandList);
+
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		for (const auto& pParticle : m_pvpParticles[i])
+		{
+			pParticle->SORender(pd3dCommandList);
+		}
+	}
 }
 
 void CParticleShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	for (int i = 0; i < m_nParticleIndex; i++) m_vpParticles[i]->AfterRender(pd3dCommandList);
+	for (int i = 0; i < PARTICLE_COUNT; i++)
+	{
+		for (const auto& pParticle : m_pvpParticles[i])
+		{
+			pParticle->AfterRender(pd3dCommandList);
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

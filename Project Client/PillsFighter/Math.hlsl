@@ -50,20 +50,20 @@ float3x3 RotateAxis(float3 vAxis, float fAngle)
 	float fTheta = radians(fAngle);
 
 	float3 v0 = float3(
-		cos(fTheta) + (1 - cos(fTheta)) * vAxis.x * vAxis.x,
-		(1 - cos(fTheta)) * vAxis.x * vAxis.y - sin(fTheta) * vAxis.z,
-		(1 - cos(fTheta)) * vAxis.x * vAxis.z + sin(fTheta) * vAxis.y);
+		cos(fTheta) + (1.0f - cos(fTheta)) * vAxis.x * vAxis.x,
+		(1.0f - cos(fTheta)) * vAxis.x * vAxis.y - sin(fTheta) * vAxis.z,
+		(1.0f - cos(fTheta)) * vAxis.x * vAxis.z + sin(fTheta) * vAxis.y);
 
 	float3 v1 = float3(
-		(1 - cos(fTheta)) * vAxis.x * vAxis.y + sin(fTheta) * vAxis.z,
-		cos(fTheta) + (1 - cos(fTheta)) * vAxis.y *  vAxis.y,
-		(1 - cos(fTheta)) * vAxis.y * vAxis.z - sin(fTheta) * vAxis.x
+		(1.0f - cos(fTheta)) * vAxis.x * vAxis.y + sin(fTheta) * vAxis.z,
+		cos(fTheta) + (1.0f - cos(fTheta)) * vAxis.y *  vAxis.y,
+		(1.0f - cos(fTheta)) * vAxis.y * vAxis.z - sin(fTheta) * vAxis.x
 		);
 
 	float3 v2 = float3(
-		(1 - cos(fTheta)) * vAxis.x * vAxis.z - sin(fTheta) * vAxis.y,
-		(1 - cos(fTheta)) * vAxis.y * vAxis.z + sin(fTheta) * vAxis.x,
-		cos(fTheta) + (1 - cos(fTheta)) * vAxis.z * vAxis.z
+		(1.0f - cos(fTheta)) * vAxis.x * vAxis.z - sin(fTheta) * vAxis.y,
+		(1.0f - cos(fTheta)) * vAxis.y * vAxis.z + sin(fTheta) * vAxis.x,
+		cos(fTheta) + (1.0f - cos(fTheta)) * vAxis.z * vAxis.z
 		);
 
 	return float3x3(v0, v1, v2);

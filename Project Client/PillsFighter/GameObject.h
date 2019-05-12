@@ -518,12 +518,13 @@ struct CB_PARTICLE_INFO
 	XMFLOAT3	m_vLook;
 	bool		m_bEmit;
 	XMFLOAT3	m_vAngles;
+	bool		m_bScaling;
 };
 
 class CParticle
 {
 public:
-	CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Size);
 	virtual ~CParticle();
 
 protected:
@@ -543,12 +544,16 @@ protected:
 
 	XMFLOAT3							m_xmf3Position;
 	XMFLOAT3							m_xmf3Direction;
+	XMFLOAT3							m_xmf3Right;
+	XMFLOAT3							m_xmf3Up;
+	XMFLOAT3							m_xmf3Look;
 	float								m_fSpeed;
 	float								m_fElapsedTime;
 	float								m_fDuration;
 	bool								m_bEmit = true;
 	float								m_fEmitInterval;
 	XMFLOAT3							m_xmf3Angles;
+	bool								m_bScaling = false;
 
 	bool								m_nInit = false;
 	int									m_nVertices;
@@ -574,15 +579,18 @@ public:
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, XMFLOAT3 xmf3Angles);
+	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling,
+		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles);
 
 	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }
+	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
+	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }
+	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
 	void SetEmit(bool bEmit) { m_bEmit = bEmit; }
 
 	void SetFollowObject(CGameObject *pObject, CModel *pModel);
-	void SetToFollowFramePosition();
-	void SetDirectionByFollowFrame();
+	void SetToFollowFramePositions();
 
 	void Delete() { m_bDelete = true; }
 	int IsDelete() { return m_bDelete; }

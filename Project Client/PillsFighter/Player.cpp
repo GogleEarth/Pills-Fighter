@@ -496,14 +496,10 @@ void CPlayer::ProcessMouseUpTime(float fTimeElapsed)
 void CPlayer::ProcessAnimation()
 {
 	if (m_nState & OBJECT_STATE_SHOOTING)
-		printf("SHOOTING\n");
-
-	if (m_nState & OBJECT_STATE_SHOOTING)
 	{
 		// Start 자세 End Point
 		if (m_bShootStartEndPoint)
 		{
-			printf("ShootStartEnd\n");
 			m_bShootStartEndPoint = false;
 			m_bChangeableOnceAni = true;
 		}
@@ -511,7 +507,6 @@ void CPlayer::ProcessAnimation()
 		// Return 자세 End Point
 		if (m_bShootReturnEndPoint)
 		{
-			printf("ShootReturnEnd\n");
 			m_bShootReturnEndPoint = false;
 			m_nState &= ~OBJECT_STATE_SHOOTING;
 		}
@@ -523,7 +518,6 @@ void CPlayer::ProcessAnimation()
 
 			if (pGun->IsShootable())
 			{
-				printf("Shot\n");
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
 				pGun->Shot();
 				m_bShootable = false;
@@ -533,7 +527,6 @@ void CPlayer::ProcessAnimation()
 			{
 				if (m_bShootOnceEndPoint)
 				{
-					printf("LButton Down, ShootOnceEndPoint\n");
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
 
@@ -546,7 +539,6 @@ void CPlayer::ProcessAnimation()
 			{
 				if ((pGun->ShootNumber() == pGun->ShootedCount()) || (pGun->ShootedCount() == 0))
 				{
-					printf("LButton Up, Shoot Count Max\n");
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
 
 					if (!(m_nState & OBJECT_STATE_MOVING) && !(m_nState & OBJECT_STATE_JUMPING))

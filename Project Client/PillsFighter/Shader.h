@@ -334,6 +334,13 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define PARTICLE_COUNT 2
+
+#define PARTICLE_INDEX_BOOSTER_FLARE 0
+#define PARTICLE_INDEX_BOOSTER_FOG 1
+
+#define PARTICLE_INDEX_BOOSTER_FLARE_TEXTURES 1
+#define PARTICLE_INDEX_BOOSTER_FOG_TEXTURES 1
 class CParticleShader : public CShader
 {
 public:
@@ -369,10 +376,10 @@ public:
 protected:
 	ID3D12PipelineState				*m_pd3dSOPipelineState = NULL;
 
-	CTexture						*m_pTexture;
+	CTexture						**m_ppTextures = NULL;
 
-	std::vector<CParticle*>			m_vpParticles;
-	int								m_nParticleIndex = 0;
+	std::vector<CParticle*>			*m_pvpParticles = NULL;
+	std::queue<CParticle*>			*m_pvpTempParticles = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -191,15 +191,6 @@ void CGimGun::OnPrepareAnimate()
 	m_pMuzzle = m_pModel->FindFrame("Bone001");
 }
 
-void CGimGun::Attack()
-{
-	if (m_fBurstCoolTime < 0.0f)
-	{
-		m_bBurst = true;
-		SetBurstCoolTime();
-	}
-}
-
 void CGimGun::Shot()
 {
 	CGun::Shot();
