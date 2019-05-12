@@ -483,9 +483,11 @@ DWORD Framework::client_process(Client_arg* arg)
 				}
 				else if (iPktID == PKT_ID_SHOOT)
 				{
+					std::cout << "น฿ป็ : ";
 					shootmutex.lock();
 					shoot_msg_queue.push(PKT_SHOOT{ ((PKT_SHOOT*)buf)->PktSize, ((PKT_SHOOT*)buf)->PktId,
 						((PKT_SHOOT*)buf)->ID,  ((PKT_SHOOT*)buf)->Player_Weapon, ((PKT_SHOOT*)buf)->BulletWorldMatrix });
+					std::cout << shoot_msg_queue.size() << "\n";
 					shootmutex.unlock();
 				}
 				else if (iPktID == PKT_ID_GAME_START)
