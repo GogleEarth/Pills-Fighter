@@ -907,13 +907,18 @@ CMinimapRobotRect::~CMinimapRobotRect()
 	if (m_pxmf2Positions) delete[] m_pxmf2Positions;
 	if (m_pxmf2Sizes) delete[] m_pxmf2Sizes;
 	if (m_pnIndices) delete[] m_pnIndices;
+
+	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
+	
 }
 
 void CMinimapRobotRect::ReleaseUploadBuffers()
 {
 	if (m_pd3dSizeUploadBuffer) m_pd3dSizeUploadBuffer->Release();
 	m_pd3dSizeUploadBuffer = NULL;
-
+	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
+	m_pd3dIndexUploadBuffer = NULL;
+	
 	CMesh::ReleaseUploadBuffers();
 }
 
