@@ -912,14 +912,26 @@ void CGameFramework::ProcessPacket()
 		// 게임종료 처리
 		break;
 	}
-	case PKT_ID_PICK_AMMO:
+	case PKT_ID_PICK_ITEM:
 	{
-		PKT_PICK_AMMO *pPacket = (PKT_PICK_AMMO*)m_pPacketBuffer;
+		PKT_PICK_ITEM *pPacket = (PKT_PICK_ITEM*)m_pPacketBuffer;
 
-		m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
-		m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
-		m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
-
+		if (pPacket->Item_type == ITEM_TYPE_AMMO)
+		{
+			if (pPacket->ID == m_nClinetIndex)
+			{
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
+			}
+		}
+		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
+		{
+			if (pPacket->ID == m_nClinetIndex)
+			{
+				m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() + pPacket->HP);
+			}
+		}
 		break;
 	}
 	}
