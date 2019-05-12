@@ -107,6 +107,8 @@ enum BULLET_TYPE
 	BULLET_TYPE_BEAM_RIFLE
 };
 
+#pragma pack(push, 1)
+
 typedef struct PKT_PLAYER_INFO
 {
 	BYTE			PktSize;
@@ -229,6 +231,8 @@ struct PKT_GAME_END
 	BYTE PktId;
 	BYTE WinTeam;
 };
+
+#pragma pack(pop)
 
 #define MAX_NUM_OBJECT 2000
 
