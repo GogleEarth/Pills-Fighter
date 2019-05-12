@@ -1029,7 +1029,6 @@ void CGameFramework::SendToServer()
 		{
 			pktPlayerInfo.IsShooting = TRUE;
 			m_pPlayer->SetShootBullet(false);
-			printf("Shoot\n");
 
 			//총알 생성 패킷 보내기
 			PKT_SHOOT pktShoot;

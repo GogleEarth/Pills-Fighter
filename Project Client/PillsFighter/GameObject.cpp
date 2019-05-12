@@ -1380,15 +1380,17 @@ void CParticle::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
-void CParticle::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+void CParticle::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_SOURCE);
-	pd3dCommandList->CopyResource(m_pd3dReadBackBuffer, m_pd3dBuffer);
-	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
-	pd3dCommandList->CopyResource(m_pd3dBuffer, m_pd3dDummyBuffer);
-	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_STREAM_OUT);
+	UpdateShaderVariables(pd3dCommandList);
 
-	if (!m_nInit) m_nInit = true;
+	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	pd3dCommandList->SOSetTargets(0, 1, &m_d3dSOBufferView[m_nSOBufferIndex]);
+
+	if (!m_nInit) pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
+	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
 }
 
 void CParticle::Render(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1403,17 +1405,15 @@ void CParticle::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
 }
 
-void CParticle::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
+void CParticle::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	UpdateShaderVariables(pd3dCommandList);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	pd3dCommandList->CopyResource(m_pd3dReadBackBuffer, m_pd3dBuffer);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+	pd3dCommandList->CopyResource(m_pd3dBuffer, m_pd3dDummyBuffer);
+	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_STREAM_OUT);
 
-	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-	pd3dCommandList->SOSetTargets(0, 1, &m_d3dSOBufferView[m_nSOBufferIndex]);
-
-	if (!m_nInit) pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
-	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
-	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	if (!m_nInit) m_nInit = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
