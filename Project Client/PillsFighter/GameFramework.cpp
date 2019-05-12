@@ -35,7 +35,7 @@ CGameFramework::CGameFramework()
 	m_Socket = 0;
 
 	::ZeroMemory(m_RecvBuf, sizeof(m_RecvBuf));
-	m_nPacketSize = 0;
+	m_nPrevSize = 0;
 	::ZeroMemory(m_pPacketBuffer, sizeof(m_pPacketBuffer));
 
 	m_nClinetIndex = -1;
@@ -337,7 +337,7 @@ void CGameFramework::BuildColonyScene()
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain(), m_pScene->GetPlayerRobotType());
-	pPlayer->SetMovingSpeed(100.0f);
+	pPlayer->SetMovingSpeed(80.0f);
 	pPlayer->SetHitPoint(100);
 
 	m_pPlayer = pPlayer;
@@ -773,6 +773,9 @@ void CGameFramework::MoveToNextFrame()
 
 void CGameFramework::ProcessPacket()
 {
+	printf("Size : %d\n", m_pPacketBuffer[0]);
+	printf("Type : %d\n", m_pPacketBuffer[1]);
+
 	char nType = m_pPacketBuffer[1];
 
 	switch (nType)
@@ -917,34 +920,33 @@ void CGameFramework::recvn()
 {
 	int nRest = recv(m_Socket, m_RecvBuf, MAX_BUFFER, 0);
 
-	char *pBuf = m_RecvBuf;
+	char *ptr = m_RecvBuf;
 	int nPacketsize = 0;
 
-	if (m_nPacketSize > 0) nPacketsize = m_pPacketBuffer[0];
+	if (m_nPrevSize > 0) nPacketsize = m_pPacketBuffer[0];
 
 	while (nRest > 0)
 	{
-		if (nPacketsize == 0) nPacketsize = pBuf[0];
-
-		int nRequired = nPacketsize - m_nPacketSize;
+		if (nPacketsize == 0) nPacketsize = ptr[0];
+		int nRequired = nPacketsize - m_nPrevSize;
 
 		if (nRequired <= nRest)
 		{
-			memcpy(m_pPacketBuffer + m_nPacketSize, pBuf, nRequired);
+			memcpy(m_pPacketBuffer + m_nPrevSize, ptr, nRequired);
 
 			ProcessPacket();
 
 			nRest -= nRequired;
-			pBuf += nRequired;
+			ptr += nRequired;
 
 			nPacketsize = 0;
-			m_nPacketSize = 0;
+			m_nPrevSize = 0;
 		}
 		else
 		{
-			memcpy(m_pPacketBuffer + m_nPacketSize, pBuf, nRest);
+			memcpy(m_pPacketBuffer + m_nPrevSize, ptr, nRest);
 			nRest = 0;
-			m_nPacketSize += nRest;
+			m_nPrevSize += nRest;
 		}
 	}
 }

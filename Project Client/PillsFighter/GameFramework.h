@@ -107,7 +107,7 @@ protected: // for Network
 
 	char	m_RecvBuf[MAX_BUFFER];
 
-	int		m_nPacketSize;
+	int		m_nPrevSize;
 	char	m_pPacketBuffer[MAX_PACKET];
 
 	int		m_nClinetIndex;

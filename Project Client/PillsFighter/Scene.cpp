@@ -1083,7 +1083,7 @@ XMFLOAT2 CLobbyScene::GetPlayerTextPosition(int nServerIndex)
 	XMFLOAT2 xmf2Pos;
 	xmf2Pos.y = 0.400000f;
 
-	if(nServerIndex % 2 == 0)
+	if(m_nCurrentSlotIndex % 2 == 0)
 		xmf2Pos.x = -0.862500f;
 	else
 		xmf2Pos.x = -0.862500f + 0.7f;
@@ -1100,7 +1100,7 @@ void CLobbyScene::JoinPlayer(int nServerIndex, const char *pstrPlayerName)
 	m_umPlayerInfo[nServerIndex].nSlotIndex = m_nCurrentSlotIndex;
 	m_umPlayerInfo[nServerIndex].nRobotType = SKINNED_OBJECT_INDEX_GM;
 
-	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nServerIndex);
+	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(m_nCurrentSlotIndex);
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	if (nServerIndex == m_nMyIndex)
@@ -1131,7 +1131,7 @@ void CLobbyScene::LeavePlayer(int nServerIndex)
 
 		playerinfo.second.nSlotIndex = m_nCurrentSlotIndex;
 
-		XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nServerIndex);
+		XMFLOAT2 xmf2Pos = GetPlayerTextPosition(m_nCurrentSlotIndex);
 
 		XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 

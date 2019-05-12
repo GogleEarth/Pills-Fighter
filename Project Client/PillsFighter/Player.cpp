@@ -188,6 +188,7 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
+	
 
 	if (dwDirection & DIR_FORWARD)
 	{
@@ -195,8 +196,10 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_WALK_FORWARD);
 
-			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_FORWARD);
+			else
+				fDistance /= 2.0f;
 		}
 
 		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
@@ -209,6 +212,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_BACKWARD);
+			else
+				fDistance /= 2.0f;
 		}
 
 		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
@@ -221,6 +226,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_RIGHT);
+			else
+				fDistance /= 2.0f;
 		}
 
 		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
@@ -233,6 +240,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING)) 
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_WALK_LEFT);
+			else
+				fDistance /= 2.0f;
 		}
 
 		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);

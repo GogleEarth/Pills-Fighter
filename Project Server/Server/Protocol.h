@@ -127,17 +127,17 @@ typedef struct PKT_PLAYER_INFO
 
 typedef struct PKT_PLAYER_LIFE
 {
-	char		PktSize;
-	char		PktId;
-	int			ID;
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		ID;
 	DWORD		HP;
 	DWORD		AMMO;
 }PKT_PLAYER_LIFE;
 
 typedef struct PKT_CREATE_OBJECT
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	OBJECT_TYPE	Object_Type;
 	XMFLOAT4X4	WorldMatrix;
 	int			Object_Index;
@@ -146,30 +146,30 @@ typedef struct PKT_CREATE_OBJECT
 
 typedef struct PKT_DELETE_OBJECT
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	int			Object_Index;
 }PKT_DELETE_OBJECT;
 
 struct PKT_TIME_INFO
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	float		elapsedtime;
 };
 
 struct PKT_UPDATE_OBJECT
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	int			Object_Index;
 	XMFLOAT3	Object_Position;
 };
 
 struct PKT_CREATE_EFFECT
 {
-	char					PktSize;
-	char					PktId;
+	BYTE					PktSize;
+	BYTE					PktId;
 	XMFLOAT3				xmf3Position;
 	EFFECT_TYPE				efType;
 	EFFECT_ANIMATION_TYPE	EftAnitType;
@@ -177,33 +177,33 @@ struct PKT_CREATE_EFFECT
 
 struct PKT_GAME_STATE
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	GAME_STATE	game_state;
-	char		num_player;
+	BYTE		num_player;
 };
 
 typedef struct PKT_PLAYER_IN
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	int			id;
-	char		Team;
+	BYTE		Team;
 }PKT_PLAYER_IN, PKT_PLAYER_OUT, PKT_CLIENTID;
 
 struct PKT_LOBBY_PLAYER_INFO
 {
-	char		PktSize;
-	char		PktId;
+	BYTE		PktSize;
+	BYTE		PktId;
 	int			id;
-	char		selected_robot;
-	char		Team;
+	BYTE		selected_robot;
+	BYTE		Team;
 };
 
 typedef struct PKT_GAME_START
 {
-	char PktSize;
-	char PktID;
+	BYTE PktSize;
+	BYTE PktID;
 }PKT_GAME_START, PKT_LOAD_COMPLETE, PKT_SEND_COMPLETE;
 
 struct PKT_SHOOT
@@ -217,22 +217,22 @@ struct PKT_SHOOT
 
 struct PKT_SCORE
 {
-	char PktSize;
-	char PktId;
-	char RedScore;
-	char BlueScore;
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE RedScore;
+	BYTE BlueScore;
 };
 
 struct PKT_GAME_END
 {
-	char PktSize;
-	char PktId;
-	char WinTeam;
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE WinTeam;
 };
 
 #define MAX_NUM_OBJECT 2000
 
-#define SERVERIP	"127.0.0.1"
+#define SERVERIP	"119.64.25.5"
 #define SERVERPORT	9000
 #define LOBBYSERVERIP	"127.0.0.1"
 #define LOBBYSERVERPORT	9001
