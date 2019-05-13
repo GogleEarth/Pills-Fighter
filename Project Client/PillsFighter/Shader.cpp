@@ -1288,12 +1288,18 @@ CParticleShader::~CParticleShader()
 
 	if (m_ppTextures)
 	{
-		for (int i = 0; i < PARTICLE_COUNT; i++)
+		for (int i = 0; i < PARTICLE_TEXTURE_COUNT; i++)
 		{
 			if (m_ppTextures[i]) delete m_ppTextures[i];
 		}
 
 		delete[] m_ppTextures;
+	}
+
+	if (m_pHitParticle)
+	{
+		m_pHitParticle->ReleaseShaderVariables();
+		delete m_pHitParticle;
 	}
 
 	if (m_pd3dSOPipelineState) m_pd3dSOPipelineState->Release();
@@ -1307,9 +1313,8 @@ D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "VELOCITY", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[3] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "TYPE", 0, DXGI_FORMAT_R32_SINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	//pd3dInputElementDescs[5] = { "FACTOR", 0, DXGI_FORMAT_R32_UINT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1328,7 +1333,6 @@ D3D12_STREAM_OUTPUT_DESC CParticleShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "TYPE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "AGE", 0, 0, 1, 0 };
-	//pd3dStreamOutputDeclarations[5] = { 0, "FACTOR", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1431,25 +1435,9 @@ void CParticleShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature
 
 void CParticleShader::ReleaseUploadBuffers()
 {
-	if (m_pvpTempParticles)
-	{
-		for (int i = 0; i < PARTICLE_COUNT; i++)
-		{
-			for (int j = 0 ; j < m_pvpTempParticles[i].size(); j++)
-			{
-				CParticle *pParticle = m_pvpTempParticles[i].front();
-				m_pvpTempParticles[i].pop();
-
-				pParticle->ReleaseUploadBuffers();
-
-				m_pvpTempParticles[i].push(pParticle);
-			}
-		}
-	}
-
 	if (m_ppTextures)
 	{
-		for (int i = 0; i < PARTICLE_COUNT; i++)
+		for (int i = 0; i < PARTICLE_TEXTURE_COUNT; i++)
 		{
 			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
 		}
@@ -1461,36 +1449,83 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_pvpParticles = new std::vector<CParticle*>[PARTICLE_COUNT];
 	m_pvpTempParticles = new std::queue<CParticle*>[PARTICLE_COUNT];
 
-	CParticle *pParticle = NULL;
-
 	for (int i = 0; i < 16; i++)
 	{
-		pParticle = new CParticle(pd3dDevice, pd3dCommandList, XMFLOAT2(4.0f, 4.0f));
+		CParticle *pParticle = NULL;
+
+		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 40.0f, 1.0f, 0.01f, false,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
+		CParticleVertex *pParticleVertex = new CParticleVertex();
+
+		pParticleVertex->m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		pParticleVertex->m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		pParticleVertex->m_xmf2Size = XMFLOAT2(4.0f, 4.0f);
+		pParticleVertex->m_nType = PARTICLE_TYPE_EMITTER;
+		pParticleVertex->m_fAge = 0.0f;
+
+		pParticle->AddVertex(pParticleVertex, 1);
+
 		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].push(pParticle);
 
-		pParticle = new CParticle(pd3dDevice, pd3dCommandList, XMFLOAT2(5.0f, 5.0f));
+		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 4.0f, 0.1f, true,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));		
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
+		pParticleVertex = new CParticleVertex();
+
+		pParticleVertex->m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		pParticleVertex->m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		pParticleVertex->m_xmf2Size = XMFLOAT2(6.0f, 6.0f);
+		pParticleVertex->m_nType = PARTICLE_TYPE_EMITTER;
+		pParticleVertex->m_fAge = 0.0f;
+
+		pParticle->AddVertex(pParticleVertex, 1);
+
 		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].push(pParticle);
 	}
 
-	m_ppTextures = new CTexture*[PARTICLE_COUNT];
+	m_ppTextures = new CTexture*[PARTICLE_TEXTURE_COUNT];
 
-	m_ppTextures[PARTICLE_INDEX_BOOSTER_FLARE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[PARTICLE_INDEX_BOOSTER_FLARE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare.dds", 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare.dds", 0);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_INDEX_BOOSTER_FLARE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
 
-	m_ppTextures[PARTICLE_INDEX_BOOSTER_FOG] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[PARTICLE_INDEX_BOOSTER_FOG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Fog1.dds", 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FOG] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FOG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Fog1.dds", 0);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_INDEX_BOOSTER_FOG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FOG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+
+
+	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
+	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), 100.0f, 0.5f, 0.01f, false,
+		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f));
+	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare2.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+}
+
+void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position)
+{
+	CParticleVertex *pParticleVertex = new CParticleVertex[25];
+
+	for (int i = 0; i < 25; i++)
+	{
+		pParticleVertex[i].m_xmf3Position = xmf3Position;
+		pParticleVertex[i].m_xmf3Velocity = XMFLOAT3(rand()%100/50.0f, rand() % 100 / 50.0f, rand() % 100 / 50.0f);
+		pParticleVertex[i].m_xmf2Size = XMFLOAT2(1.0f, 1.0f);
+		pParticleVertex[i].m_nType = PARTICLE_TYPE_ONE_EMITTER;
+		pParticleVertex[i].m_fAge = 0.0f;
+	}
+
+	m_pHitParticle->AddVertex(pParticleVertex, 25);
 }
 
 void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
@@ -1525,6 +1560,8 @@ void CParticleShader::AnimateObjects(float fTimeElapsed)
 			pParticle->Animate(fTimeElapsed);
 		}
 	}
+
+	if (m_pHitParticle) m_pHitParticle->Animate(fTimeElapsed);
 }
 
 void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -1540,6 +1577,13 @@ void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 			pParticle->Render(pd3dCommandList);
 		}
 	}
+
+	
+	if (m_pHitParticle)
+	{
+		m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
+		m_pHitParticle->Render(pd3dCommandList);
+	}
 }
 
 void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1551,6 +1595,7 @@ void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 			pParticle->ReadVertexCount(pd3dCommandList);
 		}
 	}
+	if (m_pHitParticle) m_pHitParticle->ReadVertexCount(pd3dCommandList);
 
 	if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
 
@@ -1561,6 +1606,7 @@ void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 			pParticle->SORender(pd3dCommandList);
 		}
 	}
+	if (m_pHitParticle) m_pHitParticle->SORender(pd3dCommandList);
 }
 
 void CParticleShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1572,6 +1618,8 @@ void CParticleShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 			pParticle->AfterRender(pd3dCommandList);
 		}
 	}
+
+	if (m_pHitParticle) m_pHitParticle->AfterRender(pd3dCommandList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

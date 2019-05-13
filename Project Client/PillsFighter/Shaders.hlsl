@@ -21,6 +21,12 @@ cbuffer cbCameraInfo : register(b1)
 	float3		gvCameraPosition : packoffset(c8);
 };
 
+cbuffer cbSceneInfo : register(b11)
+{
+	float4		gvRandoms;
+	float		gfGravity;
+}
+
 // b0 ~ b6
 #include "Light.hlsl"
 #include "Math.hlsl"
@@ -743,11 +749,12 @@ void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRI
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define PARTICLE_TYPE_EMITTER 0
+#define PARTICLE_TYPE_COMMON 0
+#define PARTICLE_TYPE_EMITTER 1
+#define PARTICLE_TYPE_ONE_EMITTER 2
 
 struct PARTICLE
 {
-	float4	m_vRandom;
 	float3	m_vPosition;
 	float	m_fSpeed;
 	float3	m_vDirection;
@@ -769,7 +776,7 @@ struct VS_PARTICLE_INPUT
 	float3	position : POSITION;
 	float3	velocity : VELOCITY;
 	float2	size : SIZE;
-	uint	type : TYPE;
+	int		type : TYPE;
 	float	age : AGE;
 };
 
@@ -778,7 +785,7 @@ struct VS_PARTICLE_SO_OUTPUT
 	float3	position : POSITION;
 	float3	velocity : VELOCITY;
 	float2	size : SIZE;
-	uint	type : TYPE;
+	int		type : TYPE;
 	float	age : AGE;
 	float	verid : VERTEXID;
 };
@@ -806,11 +813,11 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 	output.type = input[0].type;
 	output.age = input[0].age + gParticle.m_fElapsedTime;
 
-	if (output.type == PARTICLE_TYPE_EMITTER)
+	if ((input[0].type == PARTICLE_TYPE_EMITTER) || (input[0].type == PARTICLE_TYPE_ONE_EMITTER))
 	{
 		if ((gParticle.m_bEmit == true) && (output.age > gParticle.m_fEmitInterval))
 		{
-			float4 vRandom = gParticle.m_vRandom * input[0].verid;
+			float4 vRandom = gvRandoms * input[0].verid * input[0].verid;
 			float fX = fmod(vRandom.x, gParticle.m_vAngles.x) - gParticle.m_vAngles.x / 2.0f;
 			float fY = fmod(vRandom.y, gParticle.m_vAngles.y) - gParticle.m_vAngles.y / 2.0f;
 			float fZ = fmod(vRandom.z, gParticle.m_vAngles.z) - gParticle.m_vAngles.z / 2.0f;
@@ -825,15 +832,16 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 			particle.position = output.position + gParticle.m_vPosition;
 			particle.velocity = gParticle.m_fSpeed * vDirection;
 			particle.size = output.size;
-			particle.age = gParticle.m_fElapsedTime;
-			particle.type = 1;
+			particle.type = PARTICLE_TYPE_COMMON;
+			particle.age = 0.0f;
 
 			pointStream.Append(particle);
 
 			output.age = 0.0f;
 		}
 
-		pointStream.Append(output);
+		if (input[0].type == PARTICLE_TYPE_EMITTER)
+			pointStream.Append(output);
 	}
 	else
 	{
@@ -842,11 +850,6 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 }
 
 ////////////////////////////////////////////
-
-cbuffer cbSceneInfo : register(b11)
-{
-	float gfGravity;
-}
 
 struct VS_PARTICLE_OUTPUT
 {

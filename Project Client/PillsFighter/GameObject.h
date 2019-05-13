@@ -492,21 +492,24 @@ protected:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define PARTICLE_TYPE_EMITTER 0
-#define MAX_PARTICLE_VERTEX_COUNT 1000
+#define PARTICLE_TYPE_COMMON 0
+#define PARTICLE_TYPE_EMITTER 1
+#define PARTICLE_TYPE_ONE_EMITTER 2
+
+#define MAX_PARTICLE_VERTEX_COUNT 10000
+#define MAX_TEMP_PARTICLE_VERTEX_COUNT 1000
 
 struct CParticleVertex
 {
 	XMFLOAT3	m_xmf3Position;
 	XMFLOAT3	m_xmf3Velocity;
 	XMFLOAT2	m_xmf2Size;
-	UINT		m_nType;
+	int			m_nType;
 	float		m_fAge;
 };
 
 struct CB_PARTICLE_INFO
 {
-	XMFLOAT4	m_vRandom;
 	XMFLOAT3	m_vPosition;
 	float		m_fSpeed;
 	XMFLOAT3	m_vDirection;
@@ -524,23 +527,24 @@ struct CB_PARTICLE_INFO
 class CParticle
 {
 public:
-	CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Size);
+	CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CParticle();
 
 protected:
-	ID3D12Resource						*m_pd3dInitVertexBuffer;
-	ID3D12Resource						*m_pd3dInitVertexUploadBuffer;
-	D3D12_VERTEX_BUFFER_VIEW			m_d3dInitVertexBufferView;
+	ID3D12Resource						*m_pd3dMappedVertexBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW			m_d3MappedVertexBufferView;
+	CParticleVertex						*m_pMappedParticleVertices = NULL;
+	int									m_nMappedParticleVertices = 0;
 
-	ID3D12Resource						*m_pd3dVertexBuffer[2];
+	ID3D12Resource						*m_pd3dVertexBuffer[2] = { NULL };
 	D3D12_VERTEX_BUFFER_VIEW			m_d3dVertexBufferView[2];
 	D3D12_STREAM_OUTPUT_BUFFER_VIEW		m_d3dSOBufferView[2];
 
 	int									m_nDrawBufferIndex = 0;
 	int									m_nSOBufferIndex = 1;
-	ID3D12Resource						*m_pd3dBuffer;
-	ID3D12Resource						*m_pd3dDummyBuffer;
-	ID3D12Resource						*m_pd3dReadBackBuffer;
+	ID3D12Resource						*m_pd3dBuffer = NULL;
+	ID3D12Resource						*m_pd3dDummyBuffer = NULL;
+	ID3D12Resource						*m_pd3dReadBackBuffer = NULL;
 
 	XMFLOAT3							m_xmf3Position;
 	XMFLOAT3							m_xmf3Direction;
@@ -555,14 +559,13 @@ protected:
 	XMFLOAT3							m_xmf3Angles;
 	bool								m_bScaling = false;
 
-	bool								m_nInit = false;
-	int									m_nVertices;
+	int									m_nVertices = 0;
 
 	CGameObject							*m_pFollowObject = NULL;
 	CModel								*m_pFollowFrame = NULL;
 
 	ID3D12Resource						*m_pd3dcbParticle = NULL;
-	CB_PARTICLE_INFO					*m_pcbMappedParticle;
+	CB_PARTICLE_INFO					*m_pcbMappedParticle = NULL;
 
 	bool								m_bDelete = false;
 
@@ -570,8 +573,6 @@ public:
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
-
-	virtual void ReleaseUploadBuffers();
 
 	virtual void Animate(float fTimeElapsed);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -581,6 +582,8 @@ public:
 
 	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling,
 		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles);
+
+	virtual void AddVertex(CParticleVertex *pParticleVertices, int nVertices);
 
 	void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; }
 	void SetDirection(XMFLOAT3 xmf3Direction) { m_xmf3Direction = xmf3Direction; }

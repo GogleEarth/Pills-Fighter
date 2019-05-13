@@ -228,6 +228,19 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	CheckCollision();
 }
 
+void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UpdateShaderVariables(pd3dCommandList);
+
+	for (int i = 0; i < m_nEffectShaders; i++)
+	{
+		if (m_ppEffectShaders[i])
+			m_ppEffectShaders[i]->PrepareRender(pd3dCommandList);
+	}
+
+	if (m_pParticleShader) m_pParticleShader->PrepareRender(pd3dCommandList);
+}
+
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	if (pCamera)
@@ -235,8 +248,6 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		pCamera->GenerateViewMatrix();
 		pCamera->UpdateShaderVariables(pd3dCommandList);
 	}
-
-	UpdateShaderVariables(pd3dCommandList);
 
 	if (m_pd3dcbLights)
 	{
@@ -294,17 +305,6 @@ void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	{
 		pFont->Render(pd3dCommandList);
 	}
-}
-
-void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	for (int i = 0; i < m_nEffectShaders; i++)
-	{
-		if (m_ppEffectShaders[i])
-			m_ppEffectShaders[i]->PrepareRender(pd3dCommandList);
-	}
-
-	if (m_pParticleShader) m_pParticleShader->PrepareRender(pd3dCommandList);
 }
 
 void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -495,10 +495,10 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.Num32BitValues = 1;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.Num32BitValues = 5;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.ShaderRegister = 11;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 12;
@@ -1606,7 +1606,7 @@ void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	pd3dCommandList->RSSetViewports(1, &m_d3dMMViewport);
 	pd3dCommandList->RSSetScissorRects(1, &m_d3dMMScissorRect);
 
-	UpdateShaderVariables(pd3dCommandList);
+	//UpdateShaderVariables(pd3dCommandList);
 
 	if (m_pMinimapShader) m_pMinimapShader->Render(pd3dCommandList, m_pMiniMapCamera);
 
@@ -1631,9 +1631,7 @@ void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 
 		pd3dCommandList->RSSetViewports(1, &m_d3dEMViewport);
 		pd3dCommandList->RSSetScissorRects(1, &m_d3dEMScissorRect);
-
-		UpdateShaderVariables(pd3dCommandList);
-
+		
 		if (m_pd3dcbLights)
 		{
 			D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
@@ -1726,6 +1724,8 @@ void CColonyScene::CheckCollision()
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+
+					AddParticle(0, pBullet->GetPosition());
 				}
 			}
 		}
@@ -1766,6 +1766,8 @@ void CColonyScene::CheckCollision()
 					pMGBullet->Delete();
 
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+
+					AddParticle(0, pMGBullet->GetPosition());
 				}
 			}
 		}
@@ -1846,6 +1848,11 @@ void CColonyScene::CheckCollisionPlayer()
 	//	m_pPlayer->MoveToCollision(Obstacle);
 	//}
 }
+
+void CColonyScene::AddParticle(int nType, XMFLOAT3 xmf3Position)
+{
+	m_pParticleShader->AddParticle(nType, xmf3Position);
+};
 
 void CColonyScene::FindAimToTargetDistance()
 {
@@ -1981,7 +1988,9 @@ void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandL
 {
 	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
 
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 0);
+	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt), dist1(mt), dist1(mt), dist1(mt));
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
 }
 
 void CColonyScene::ReleaseShaderVariables()

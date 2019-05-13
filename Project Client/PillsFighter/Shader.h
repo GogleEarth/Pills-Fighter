@@ -339,8 +339,17 @@ public:
 #define PARTICLE_INDEX_BOOSTER_FLARE 0
 #define PARTICLE_INDEX_BOOSTER_FOG 1
 
+#define PARTICLE_TEXTURE_COUNT 3
+
+#define PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE 0
+#define PARTICLE_TEXTURE_INDEX_BOOSTER_FOG 1
+#define PARTICLE_TEXTURE_INDEX_HIT 2
+
+
 #define PARTICLE_INDEX_BOOSTER_FLARE_TEXTURES 1
 #define PARTICLE_INDEX_BOOSTER_FOG_TEXTURES 1
+#define PARTICLE_HIT_TEXTURES 1
+
 class CParticleShader : public CShader
 {
 public:
@@ -370,6 +379,7 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
+	virtual void AddParticle(int nType, XMFLOAT3 xmf3Position);
 
 	void SetFollowObject(CGameObject *pObject, CModel *pFrame);
 
@@ -380,6 +390,8 @@ protected:
 
 	std::vector<CParticle*>			*m_pvpParticles = NULL;
 	std::queue<CParticle*>			*m_pvpTempParticles = NULL;
+
+	CParticle						*m_pHitParticle = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

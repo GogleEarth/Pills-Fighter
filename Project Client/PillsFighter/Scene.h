@@ -399,6 +399,10 @@ protected:
 
 	CTextObject						*m_pRedScoreText = NULL;
 	CTextObject						*m_pBlueScoreText = NULL;
+
+public:
+	void AddParticle(int nType, XMFLOAT3 xmf3Position);
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
 	virtual void DeleteObject(int nIndex);

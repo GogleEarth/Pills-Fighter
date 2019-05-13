@@ -1207,23 +1207,16 @@ void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureI
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Size)
+CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	CParticleVertex *pParticleVertex = new CParticleVertex();
-	m_nVertices = 1;
+	m_pd3dMappedVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(CParticleVertex) * MAX_TEMP_PARTICLE_VERTEX_COUNT);
 
-	pParticleVertex[0].m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	pParticleVertex[0].m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	pParticleVertex[0].m_xmf2Size = xmf2Size;
-	pParticleVertex[0].m_nType = PARTICLE_TYPE_EMITTER;
-	pParticleVertex[0].m_fAge = 0.0f;
+	m_d3MappedVertexBufferView.BufferLocation = m_pd3dMappedVertexBuffer->GetGPUVirtualAddress();
+	m_d3MappedVertexBufferView.SizeInBytes = sizeof(CParticleVertex) * MAX_TEMP_PARTICLE_VERTEX_COUNT;
+	m_d3MappedVertexBufferView.StrideInBytes = sizeof(CParticleVertex);
 
-	m_pd3dInitVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pParticleVertex, sizeof(CParticleVertex),
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dInitVertexUploadBuffer);
+	m_pd3dMappedVertexBuffer->Map(0, NULL, (void**)&m_pMappedParticleVertices);
 
-	m_d3dInitVertexBufferView.BufferLocation = m_pd3dInitVertexBuffer->GetGPUVirtualAddress();
-	m_d3dInitVertexBufferView.SizeInBytes = sizeof(CParticleVertex);
-	m_d3dInitVertexBufferView.StrideInBytes = sizeof(CParticleVertex);
 
 	m_pd3dBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
 		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
@@ -1256,9 +1249,7 @@ CParticle::~CParticle()
 	if (m_pd3dReadBackBuffer) m_pd3dReadBackBuffer->Release();
 
 	for (int i = 0; i < 2; i++) if (m_pd3dVertexBuffer[i]) m_pd3dVertexBuffer[i]->Release();
-	if (m_pd3dInitVertexBuffer) m_pd3dInitVertexBuffer->Release();
-	if (m_pd3dInitVertexUploadBuffer) m_pd3dInitVertexUploadBuffer->Release();
-	m_pd3dInitVertexUploadBuffer = NULL;
+	if (m_pd3dMappedVertexBuffer) m_pd3dMappedVertexBuffer->Release();
 }
 
 void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling,
@@ -1277,8 +1268,15 @@ void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float 
 
 	m_nDrawBufferIndex = 0;
 	m_nSOBufferIndex = 1;
+}
 
-	m_nInit = false;
+void CParticle::AddVertex(CParticleVertex *pParticleVertices, int nVertices)
+{
+	memcpy(&m_pMappedParticleVertices[m_nMappedParticleVertices], pParticleVertices, sizeof(CParticleVertex) * nVertices);
+
+	m_nMappedParticleVertices += nVertices;
+
+	delete[] pParticleVertices;
 }
 
 void CParticle::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1291,9 +1289,6 @@ void CParticle::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 
 void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt), dist1(mt), dist1(mt), dist1(mt));
-
-	m_pcbMappedParticle->m_vRandom = xmf4Random;
 	m_pcbMappedParticle->m_vPosition = m_xmf3Position;
 	m_pcbMappedParticle->m_fSpeed = m_fSpeed;
 	m_pcbMappedParticle->m_vDirection = m_xmf3Direction;
@@ -1319,13 +1314,6 @@ void CParticle::ReleaseShaderVariables()
 		m_pd3dcbParticle = NULL;
 	}
 }
-
-void CParticle::ReleaseUploadBuffers()
-{
-	if (m_pd3dInitVertexUploadBuffer) m_pd3dInitVertexUploadBuffer->Release();
-	m_pd3dInitVertexUploadBuffer = NULL;
-}
-
 void CParticle::SetFollowObject(CGameObject *pObject, CModel *pModel)
 {
 	m_pFollowObject = pObject;
@@ -1355,7 +1343,7 @@ void CParticle::Animate(float fTimeElapsed)
 
 void CParticle::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_nInit)
+	if (m_nVertices > 0)
 	{
 		if (m_nDrawBufferIndex == 0)
 		{
@@ -1374,6 +1362,7 @@ void CParticle::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_pd3dReadBackBuffer->Map(0, &d3dRange, (void**)&nFilledSize);
 
 		m_nVertices = static_cast<int>((*nFilledSize) / sizeof(CParticleVertex));
+		printf("%d\n", m_nVertices);
 
 		d3dRange = { 0, 0 };
 		m_pd3dReadBackBuffer->Unmap(0, &d3dRange);
@@ -1388,9 +1377,17 @@ void CParticle::SORender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	pd3dCommandList->SOSetTargets(0, 1, &m_d3dSOBufferView[m_nSOBufferIndex]);
 
-	if (!m_nInit) pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
-	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
-	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	if (m_nMappedParticleVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3MappedVertexBufferView);
+		pd3dCommandList->DrawInstanced(m_nMappedParticleVertices, 1, 0, 0);
+	}
+
+	if(m_nVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+		pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	}
 }
 
 void CParticle::Render(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1399,10 +1396,11 @@ void CParticle::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-	if (!m_nInit) pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
-	else pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
-
-	pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	if (m_nVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+		pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	}
 }
 
 void CParticle::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -1413,7 +1411,8 @@ void CParticle::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	pd3dCommandList->CopyResource(m_pd3dBuffer, m_pd3dDummyBuffer);
 	::TransitionResourceState(pd3dCommandList, m_pd3dBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_STREAM_OUT);
 
-	if (!m_nInit) m_nInit = true;
+	m_nVertices += m_nMappedParticleVertices;
+	m_nMappedParticleVertices = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
