@@ -41,11 +41,11 @@ void CScene::BuildObjects(CRepository* pRepository)
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Wall.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/WallSelfData.bin", 7);
 
-	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Brick_Garage.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_BrickGarageSelfData.bin", 8);
+	//m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/Brick_Garage.bin", NULL, NULL));
+	//InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_BrickGarageSelfData.bin", 8);
 
 	m_vpModels.emplace_back(pRepository->GetModel("./Resource/Buildings/fence.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/FenceSelfData.bin", 9);
+	InsertObjectFromLoadInfFromBin("./Resource/Buildings/FenceSelfData.bin", 8);
 
 	m_pGMMesh = pRepository->GetModel("./Resource/PlayerCollisionBox.bin", NULL, NULL);
 	m_pBulletMesh = pRepository->GetModel("./Resource/Bullet/Bullet.bin", NULL, NULL);
