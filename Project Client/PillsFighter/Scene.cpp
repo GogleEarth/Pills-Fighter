@@ -1988,7 +1988,7 @@ void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandL
 {
 	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
 
-	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt), dist1(mt), dist1(mt), dist1(mt));
+	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt) * 0.7f, dist1(mt) * 0.6f, dist1(mt) * 0.5f, dist1(mt) * 0.4f);
 	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
 	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
 }

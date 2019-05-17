@@ -817,7 +817,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 	{
 		if ((gParticle.m_bEmit == true) && (output.age > gParticle.m_fEmitInterval))
 		{
-			float4 vRandom = gvRandoms * input[0].verid * input[0].verid;
+			float4 vRandom = gvRandoms * (input[0].verid * input[0].verid + 5.0f);
 			float fX = fmod(vRandom.x, gParticle.m_vAngles.x) - gParticle.m_vAngles.x / 2.0f;
 			float fY = fmod(vRandom.y, gParticle.m_vAngles.y) - gParticle.m_vAngles.y / 2.0f;
 			float fZ = fmod(vRandom.z, gParticle.m_vAngles.z) - gParticle.m_vAngles.z / 2.0f;

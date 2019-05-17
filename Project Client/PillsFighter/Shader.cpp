@@ -1502,7 +1502,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 
 	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
-	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), 100.0f, 0.5f, 0.01f, false,
+	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 100.0f, 0.5f, 0.01f, false,
 		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f));
 	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
