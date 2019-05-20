@@ -2004,6 +2004,11 @@ void CColonyScene::ReleaseShaderVariables()
 	}
 }
 
+void CColonyScene::EndScene()
+{
+	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
+}
+
 //////////////////////////////// for Networking
 
 void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo)

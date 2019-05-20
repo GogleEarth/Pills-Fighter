@@ -84,6 +84,11 @@ void CGameFramework::OnDestroy()
 {
 	ReleaseObjects();
 
+	CScene::ReleaseDescHeapsAndGraphicsRootSign();
+	if (m_pRepository) delete m_pRepository;
+	m_Arial.Destroy();
+	m_HumanMagic.Destroy();
+
 	::CloseHandle(m_hFenceEvent);
 	::closesocket(m_Socket);
 	WSACleanup();
@@ -370,7 +375,7 @@ void CGameFramework::BuildObjects()
 
 	m_d3dViewport = { 0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT), 0.0f, 1.0f };
 	m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
-
+	
 	m_pd3dCommandList->Close();
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
@@ -389,20 +394,24 @@ void CGameFramework::BuildObjects()
 
 void CGameFramework::ReleaseObjects()
 {
-	if (m_pPlayer) delete m_pPlayer;
+	if (m_pPlayer)
+	{
+		delete m_pPlayer;
 
-	CScene::ReleaseDescHeapsAndGraphicsRootSign();
+		m_pPlayer = NULL;
+		m_pCamera = NULL;
+	}
 
 	if (m_pScene)
 	{
 		m_pScene->ReleaseObjects();
 		delete m_pScene;
+
+		m_pScene = NULL;
 	}
-
-	if (m_pRepository) delete m_pRepository;
-
-	m_Arial.Destroy();
-	m_HumanMagic.Destroy();
+	
+	m_Arial.ClearTexts();
+	m_HumanMagic.ClearTexts();
 }
 
 void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -817,7 +826,6 @@ void CGameFramework::ProcessPacket()
 		}
 		else
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_LIFE, (LPVOID)pPacket);
-
 		break;
 	}
 	case PKT_ID_CREATE_OBJECT:
@@ -876,13 +884,7 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_GAME_START:
 	{
-		if (m_pScene)
-		{
-			m_pScene->ReleaseObjects();
-			delete m_pScene;
-
-			m_pScene = NULL;
-		}
+		ReleaseObjects();
 
 		BuildScene(SCENE_TYPE_COLONY);
 
@@ -919,7 +921,12 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_GAME_END:
 	{
 		PKT_GAME_END *pPacket = (PKT_GAME_END*)m_pPacketBuffer;
-		// 게임종료 처리
+		
+		if(m_pScene) m_pScene->EndScene();
+
+		ReleaseObjects();
+
+		BuildScene(SCENE_TYPE_LOBBY);
 		break;
 	}
 	case PKT_ID_PICK_ITEM:
@@ -944,6 +951,11 @@ void CGameFramework::ProcessPacket()
 				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
 			}
 		}
+		break;
+	}
+	default:
+	{
+		printf("Received Unknown Packet\n");
 		break;
 	}
 	}

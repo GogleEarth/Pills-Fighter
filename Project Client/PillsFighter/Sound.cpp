@@ -75,4 +75,6 @@ void CFMODSound::PauseFMODSound(FMOD::Channel *pChannel)
 	pChannel->getPaused(&bPause);
 
 	if (!bPause) pChannel->setPaused(true);
+
+	pChannel->setPosition(0, FMOD_TIMEUNIT_MS);
 }

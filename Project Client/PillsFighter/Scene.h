@@ -91,7 +91,6 @@ public:
 
 protected:
 	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
-
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
 
@@ -166,6 +165,8 @@ protected:
 public:
 	void MoveCursor(float x, float y);
 	virtual int MouseClick() { return 0; };
+
+	virtual void EndScene() {};
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo) {}
@@ -402,6 +403,7 @@ protected:
 
 public:
 	void AddParticle(int nType, XMFLOAT3 xmf3Position);
+	virtual void EndScene();
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);

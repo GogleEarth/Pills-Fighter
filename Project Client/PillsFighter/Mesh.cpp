@@ -61,12 +61,13 @@ void CMesh::ReleaseUploadBuffers()
 
 	if (m_pd3dTextureCoord1UploadBuffer) m_pd3dTextureCoord1UploadBuffer->Release();
 	m_pd3dTextureCoord1UploadBuffer = NULL;
-
+	
 	if ((m_nSubMeshes > 0) && m_ppd3dSubSetIndexUploadBuffers)
 	{
 		for (int i = 0; i < m_nSubMeshes; i++)
 		{
 			if (m_ppd3dSubSetIndexUploadBuffers[i]) m_ppd3dSubSetIndexUploadBuffers[i]->Release();
+			m_ppd3dSubSetIndexUploadBuffers[i] = NULL;
 		}
 		if (m_ppd3dSubSetIndexUploadBuffers) delete[] m_ppd3dSubSetIndexUploadBuffers;
 		m_ppd3dSubSetIndexUploadBuffers = NULL;
