@@ -343,8 +343,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 		}
 		m.unlock();
 
-		BlueScore = 100;
-		RedScore = 100;
+		BlueScore = MAX_SCORE;
+		RedScore = MAX_SCORE;
 		PKT_SCORE scorepkt;
 		scorepkt.PktSize = sizeof(PKT_SCORE);
 		scorepkt.PktId = PKT_ID_SCORE;
@@ -1127,6 +1127,31 @@ void Framework::PlayGame(CScene * pScene)
 			playernum = 0;
 			count = get_players();
 			std::cout << "점수가 0이된 팀이 있어서 게임을 종료\n";
+
+			for (auto d : clients)
+			{
+				if (d.enable)
+				{
+					PKT_CLIENTID pkt_cid;
+					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
+					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
+					int id = d.id;
+					pkt_cid.Team = id % 2;
+					send(d.socket, (char*)&pkt_cid, pkt_cid.PktSize, 0);
+
+					PKT_PLAYER_IN pkt_pin;
+					pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
+					pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
+					for (auto c : clients)
+					{
+						if (c.id == d.id) continue;
+						if (c.enable == false) continue;
+						pkt_pin.id = c.id;
+						pkt_pin.Team = c.team;
+						send(d.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
+					}
+				}
+			}
 			break;
 		}
 	}
