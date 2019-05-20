@@ -1135,8 +1135,8 @@ void Framework::PlayGame(CScene * pScene)
 					PKT_CLIENTID pkt_cid;
 					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
 					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
-					int id = d.id;
-					pkt_cid.Team = id % 2;
+					pkt_cid.id = d.id;
+					pkt_cid.Team = d.team;
 					std::cout << d.id << "번 플레이어에게 정보 보냄\n";
 					send(d.socket, (char*)&pkt_cid, pkt_cid.PktSize, 0);
 
