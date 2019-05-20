@@ -902,12 +902,12 @@ CMinimapRobotRect::CMinimapRobotRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 CMinimapRobotRect::~CMinimapRobotRect()
 {
-	if (m_pd3dSizeBuffer) m_pd3dSizeBuffer->Release();
 
 	if (m_pxmf2Positions) delete[] m_pxmf2Positions;
 	if (m_pxmf2Sizes) delete[] m_pxmf2Sizes;
 	if (m_pnIndices) delete[] m_pnIndices;
 
+	if (m_pd3dSizeBuffer) m_pd3dSizeBuffer->Release();
 	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
 	
 }

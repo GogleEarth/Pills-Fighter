@@ -1383,6 +1383,7 @@ void CColonyScene::ReleaseObjects()
 	}
 
 	if (m_pd3dMinimapDepthStencilBuffer) m_pd3dMinimapDepthStencilBuffer->Release();
+	if (m_pd3dMinimapRsc) m_pd3dMinimapRsc->Release();
 
 	if (m_pMinimapShader)
 	{
