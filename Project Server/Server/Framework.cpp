@@ -1137,6 +1137,7 @@ void Framework::PlayGame(CScene * pScene)
 					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
 					int id = d.id;
 					pkt_cid.Team = id % 2;
+					std::cout << d.id << "번 플레이어에게 정보 보냄\n";
 					send(d.socket, (char*)&pkt_cid, pkt_cid.PktSize, 0);
 
 					PKT_PLAYER_IN pkt_pin;
@@ -1148,6 +1149,7 @@ void Framework::PlayGame(CScene * pScene)
 						if (c.enable == false) continue;
 						pkt_pin.id = c.id;
 						pkt_pin.Team = c.team;
+						std::cout << d.id << "번 플레이어에게 " << c.id << "의 정보 보냄\n";
 						send(d.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 					}
 				}
