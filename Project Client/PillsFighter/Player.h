@@ -134,13 +134,6 @@ public:
 
 	// For Animation	
 protected:
-	// Call Back Data
-	bool m_bShootStartEndPoint = false;
-	bool m_bShootReturnEndPoint = false;
-	bool m_bShootOnceEndPoint = false;
-	bool m_bSwordingEndPoint = false;
-	bool m_bJumpEndPoint = false;
-
 	// Others
 	bool m_bChangeableOnceAni = false;
 

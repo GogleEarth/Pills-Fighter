@@ -1611,6 +1611,23 @@ void CColonyScene::ReleaseUploadBuffers()
 
 void CColonyScene::CheckCollision()
 {
+	//std::vector<CGameObject*> vEnemys;
+	//vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
+
+	//for (const auto& Enemy : vEnemys)
+	//{
+	//	if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
+
+	//}
+
+	//if (m_pPlayer)
+	//{
+	//	if (m_pPlayer->GetState() & OBJECT_STATE_SWORDING)
+	//	{
+
+	//	}
+	//}
+
 #ifndef ON_NETWORKING
 	std::vector<CGameObject*> vEnemys;
 	std::vector<CGameObject*> vBullets;

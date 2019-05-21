@@ -5,38 +5,26 @@
 
 extern CFMODSound gFmodSound;
 
-void CSoundCallbackHandler::HandleCallback(void *pData)
+void CAnimationCallbackHandler::HandleCallback(CALLBACKDATA *pData)
 {
-	UINT nSoundType = *((int*)pData);
-
-	switch (nSoundType)
+	switch (pData->m_nType)
 	{
-	case CALLBACK_TYPE_SOUND_MOVE:
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMove);
+	case CALLBACK_TYPE_SOUND:
+	{
+		UINT nSoundType = *((int*)(pData->m_pData));
+
+		switch (nSoundType)
+		{
+		case CALLBACK_TYPE_SOUND_MOVE:
+			gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMove);
+			break;
+		case CALLBACK_TYPE_SOUND_SABER_ATTACK:
+			gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberAttack);
+			break;
+		}
 		break;
 	}
-}
-
-///////////////////////////
-
-void CSwitchCallbackHandler::HandleCallback(void *pData)
-{
-	SWITCH* bSwitchs = (SWITCH*)pData;
-
-	*(bSwitchs->pbSwitch) = bSwitchs->bCondition;
-}
-
-///////////////////////////
-
-void CSwitchinConditionCallbackHandler::HandleCallback(void *pData)
-{
-	//SWITCH* bSwitchs = (SWITCH*)pData;
-
-	//if (*(bSwitchs->pbCVariable) == bSwitchs->bCondition)
-	//{
-	//	//*(bSwitchs->pbFirst) = false;
-	//	//*(bSwitchs->pbSecond) = true;
-	//}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -64,13 +52,13 @@ CAnimation::~CAnimation()
 	if (m_pAnimationCallbackHandler) delete m_pAnimationCallbackHandler;
 }
 
-void* CAnimation::GetCallbackData()
+CALLBACKDATA *CAnimation::GetCallbackData()
 {
 	for (int i = 0; i < m_nCallbackKeys; i++)
 	{
 		if (::IsEqual(m_pCallbackKeys[i].m_fTime, m_fAnimationTimePosition, ANIMATION_CALLBACK_EPSILON))
 		{
-			return  m_pCallbackKeys[i].m_pData;
+			return  &m_pCallbackKeys[i].m_CallBackData;
 		}
 	}
 
@@ -113,7 +101,7 @@ void CAnimation::SetTimePosition(float fTrackTimePosition)
 
 	if (m_pAnimationCallbackHandler)
 	{
-		void *pData = GetCallbackData();
+		CALLBACKDATA *pData = GetCallbackData();
 
 		if(pData) 
 			m_pAnimationCallbackHandler->HandleCallback(pData);
@@ -144,10 +132,10 @@ void CAnimation::SetCallbackKeys(int nCallbackKeys)
 	ZeroMemory(m_pCallbackKeys, sizeof(CALLBACKKEY) * nCallbackKeys);
 }
 
-void CAnimation::SetCallbackKey(int nKeyIndex, float fKeyTime, void *pData)
+void CAnimation::SetCallbackKey(int nKeyIndex, float fKeyTime, CALLBACKDATA callbackData)
 {
 	m_pCallbackKeys[nKeyIndex].m_fTime = fKeyTime;
-	m_pCallbackKeys[nKeyIndex].m_pData = pData;
+	m_pCallbackKeys[nKeyIndex].m_CallBackData = callbackData;
 }
 
 void CAnimation::SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler)
@@ -213,12 +201,25 @@ void CAnimationSet::SetCallbackKeys(int nAnimationSet, int nCallbackKeys)
 	m_pAnimations[nAnimationSet].SetCallbackKeys(nCallbackKeys);
 }
 
-void CAnimationSet::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, void *pData)
+void CAnimationSet::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, int nType, int nKeyType, void *pData)
 {
-	if (fKeyTime >= m_pAnimations[nAnimationSet].GetLength()) fKeyTime = m_pAnimations[nAnimationSet].GetLength();
+	float fTimePos;
 
-	m_pAnimations[nAnimationSet].m_pCallbackKeys[nKeyIndex].m_fTime = fKeyTime;
-	m_pAnimations[nAnimationSet].m_pCallbackKeys[nKeyIndex].m_pData = pData;
+	switch (nKeyType)
+	{
+	case CALLBACK_POSITION_TIME:
+		fTimePos = fKeyTime;
+		break;
+	case CALLBACK_POSITION_END:
+		fTimePos = m_pAnimations[nAnimationSet].GetLength();
+		break;
+	case CALLBACK_POSITION_MIDDLE:
+		fTimePos = m_pAnimations[nAnimationSet].GetLength() * 0.5f;
+		break;
+	}
+
+	m_pAnimations[nAnimationSet].m_pCallbackKeys[nKeyIndex].m_fTime = fTimePos;
+	m_pAnimations[nAnimationSet].m_pCallbackKeys[nKeyIndex].m_CallBackData = CALLBACKDATA{ nType, pData };
 }
 
 void CAnimationSet::SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler)
@@ -277,9 +278,9 @@ void CAnimationController::SetCallbackKeys(int nAnimationSet, int nCallbackKeys)
 	if (m_pAnimationSet) m_pAnimationSet->SetCallbackKeys(nAnimationSet, nCallbackKeys);
 }
 
-void CAnimationController::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, void *pData)
+void CAnimationController::SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, int nType, int nKeyType, void *pData)
 {
-	if (m_pAnimationSet) m_pAnimationSet->SetCallbackKey(nAnimationSet, nKeyIndex, fKeyTime, pData);
+	if (m_pAnimationSet) m_pAnimationSet->SetCallbackKey(nAnimationSet, nKeyIndex, fKeyTime, nType, nKeyType, pData);
 }
 
 void CAnimationController::SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler)

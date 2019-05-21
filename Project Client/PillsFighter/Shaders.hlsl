@@ -767,6 +767,7 @@ struct PARTICLE
 	bool	m_bEmit;
 	float3	m_vAngles;
 	bool	m_bScaling;
+	float	m_fMass;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(b8);
@@ -831,7 +832,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 			VS_PARTICLE_INPUT particle;
 			particle.position = output.position + gParticle.m_vPosition;
 			particle.velocity = gParticle.m_fSpeed * vDirection;
-			particle.size = output.size;
+			particle.size = output.size * (frac(vRandom.x) + 1.0f);
 			particle.type = PARTICLE_TYPE_COMMON;
 			particle.age = 0.0f;
 
@@ -871,7 +872,8 @@ VS_PARTICLE_OUTPUT VSParticleDraw(VS_PARTICLE_INPUT input)
 	VS_PARTICLE_OUTPUT output;
 
 	float t = input.age;
-	output.position = (input.velocity * t * (gfGravity * 0.05f)) + input.position;
+	float3 vGravity = float3(0, -gfGravity, 0);
+	output.position = (input.velocity * t) + (vGravity * t * t * gParticle.m_fMass) + input.position;
 
 	float fOpacity = 1.0f - smoothstep(0.0f, gParticle.m_fDuration, input.age);
 	output.color = float4(1.0f, 1.0f, 1.0f, fOpacity);

@@ -9,10 +9,25 @@ class CSound;
 
 #define ANIMATION_CALLBACK_EPSILON	0.01f
 
+constexpr int CALLBACK_TYPE_SOUND = 1;
+
+constexpr int CALLBACK_POSITION_TIME = 0;
+constexpr int CALLBACK_POSITION_END = 1;
+constexpr int CALLBACK_POSITION_MIDDLE = 2;
+
+constexpr int CALLBACK_TYPE_SOUND_MOVE = 1;
+constexpr int CALLBACK_TYPE_SOUND_SABER_ATTACK = 2;
+
+struct CALLBACKDATA
+{
+	int		m_nType;
+	void	*m_pData;
+};
+
 struct CALLBACKKEY
 {
-	float  							m_fTime;
-	void							*m_pData;
+	float  					m_fTime;
+	CALLBACKDATA			m_CallBackData;
 };
 
 class CAnimationCallbackHandler
@@ -22,52 +37,8 @@ public:
 	~CAnimationCallbackHandler() { }
 
 public:
-	virtual void HandleCallback(void *pData) { }
+	virtual void HandleCallback(CALLBACKDATA *pData);
 };
-
-class CSoundCallbackHandler : public CAnimationCallbackHandler
-{
-public:
-	CSoundCallbackHandler() { }
-	~CSoundCallbackHandler() { }
-
-public:
-	virtual void HandleCallback(void *pData);
-};
-
-struct SWITCH
-{
-	bool bCondition;
-	bool *pbSwitch;
-};
-
-class CSwitchCallbackHandler : public CAnimationCallbackHandler
-{
-public:
-	CSwitchCallbackHandler() { }
-	~CSwitchCallbackHandler() { }
-
-public:
-	virtual void HandleCallback(void *pData);
-};
-
-struct CONDITIONALSWITCH
-{
-	bool *pbCVariable;
-	bool bCondition;
-	bool *pbSwitch;
-};
-
-class CSwitchinConditionCallbackHandler : public CAnimationCallbackHandler
-{
-public:
-	CSwitchinConditionCallbackHandler() { }
-	~CSwitchinConditionCallbackHandler() { }
-
-public:
-	virtual void HandleCallback(void *pData);
-};
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///////
@@ -105,11 +76,11 @@ public:
 	void LoadAnimationFromFile(FILE *pfile, int nFrames);
 
 	void SetCallbackKeys(int nCallbackKeys);
-	void SetCallbackKey(int nKeyIndex, float fTime, void *pData);
+	void SetCallbackKey(int nKeyIndex, float fTime, CALLBACKDATA callbackData);
 	void SetAnimationCallbackHandler(CAnimationCallbackHandler *pCallbackHandler);
 	void SetAnimationType(int nType) { m_nAnimationType = nType; }
 
-	void* GetCallbackData();
+	CALLBACKDATA* GetCallbackData();
 	float GetLength() { return m_fAnimationLength; }
 	int GetAnimationType() { return m_nAnimationType; }
 	float GetPosition() { return m_fAnimationTimePosition; }
@@ -140,7 +111,7 @@ public:
 	void SetAnimationFrameCaches(CModel **ppAnimationFrameCaches) { m_ppAnimationFrameCaches = ppAnimationFrameCaches; }
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, void *pData);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, int nType, int nKeyType, void *pData);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 };
 
@@ -168,7 +139,7 @@ public:
 	void SetEnable(bool bEnable) { m_bEnable = bEnable; }
 	void SetSpeed(float fSpeed) { m_fSpeed = fSpeed; }
 	void SetWeight(float fWeight) { m_fWeight = fWeight; }
-	void SetPosition(float fPosition) { m_fPosition = fPosition; }
+	void SetPosition(float fPosition) { m_fPosition = fPosition; m_pAnimation->SetTimePosition(fPosition); }
 	void SetAnimationType(int nType) { m_pAnimation->SetAnimationType(nType); }
 
 	float GetPosition() { return m_fPosition; }
@@ -213,7 +184,7 @@ public:
 	void ApplyTransform();
 
 	void SetCallbackKeys(int nAnimationSet, int nCallbackKeys);
-	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fTime, void *pData);
+	void SetCallbackKey(int nAnimationSet, int nKeyIndex, float fKeyTime, int nType, int nKeyType, void *pData);
 	void SetAnimationCallbackHandler(int nAnimationSet, CAnimationCallbackHandler *pCallbackHandler);
 
 	int GetTrackAnimationState(int nAnimationTrackIndex) { return m_pAnimationTracks[nAnimationTrackIndex].GetTrackAnimationState(); }
@@ -221,4 +192,5 @@ public:
 	float GetAnimationPosition(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(); }
 	float GetTrackPosition(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetPosition(); }
 	float GetTrackLength(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetLength(); }
+	bool IsEndPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(), m_pAnimationTracks[nAnimationTrack].GetLength()); }
 };

@@ -6,6 +6,8 @@
 #include "Animation.h"
 #include "Weapon.h"
 
+extern CFMODSound gFmodSound;
+
 #define CAMERA_POSITION XMFLOAT3(0.0f, 30.0f, -35.0f)
 
 CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, CRepository *pRepository, void *pContext, int nRobotType) : CRobotObject()
@@ -32,98 +34,6 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 		break;
 	}
 
-	int nAnimationControllers = 2;
-	CAnimationController **ppAnimationControllers = new CAnimationController*[nAnimationControllers];
-	ppAnimationControllers[ANIMATION_UP] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_UP));
-	ppAnimationControllers[ANIMATION_DOWN] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_DOWN));
-
-	ppAnimationControllers[ANIMATION_UP]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
-
-	CAnimationCallbackHandler *pAnimationCallbackHandler = new CSoundCallbackHandler();
-
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSoundCallbackHandler();
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, (void*)& CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSoundCallbackHandler();
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSoundCallbackHandler();
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	SWITCH *callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bShootStartEndPoint;
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_GM_GUN_SHOOT_START, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_GM_GUN_SHOOT_START, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_GM_GUN_SHOOT_START, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bShootReturnEndPoint;
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_GM_GUN_SHOOT_RETURN, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_GM_GUN_SHOOT_RETURN, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_GM_GUN_SHOOT_RETURN, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bShootOnceEndPoint;
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_SHOOT_ONCE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_SHOOT_ONCE, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_SHOOT_ONCE, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bSwordingEndPoint;
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_1_ONE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_1_ONE, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_1_ONE, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bSwordingEndPoint;
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_2_ONE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_2_ONE, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_2_ONE, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bSwordingEndPoint;
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_3_ONE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_3_ONE, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_3_ONE, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSwitchCallbackHandler();
-	callbackSwitch = new SWITCH();
-	callbackSwitch->bCondition = true;
-	callbackSwitch->pbSwitch = &m_bJumpEndPoint;
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_JUMP, 1);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_JUMP, 0, FLT_MAX, (void*)callbackSwitch);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_JUMP, pAnimationCallbackHandler);
-
-	SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
-	SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
-
 	SetModel(pModel);
 	
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -140,6 +50,8 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	CShader *pShader = new CShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetWeaponShader(pShader);
+
+	SetCallBackKeys(m_pModel);
 }
 
 CPlayer::~CPlayer()
@@ -390,8 +302,6 @@ void CPlayer::ActivationBooster()
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
 
 			m_nState |= OBJECT_STATE_JUMPING;
-
-			m_bJumpEndPoint = false;
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTERING;
@@ -507,16 +417,14 @@ void CPlayer::ProcessAnimation()
 	if (m_nState & OBJECT_STATE_SHOOTING)
 	{
 		// Start 자세 End Point
-		if (m_bShootStartEndPoint)
+		if (m_ppAnimationControllers[ANIMATION_UP]->IsEndPosition(0) && (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_GM_GUN_SHOOT_START))
 		{
-			m_bShootStartEndPoint = false;
 			m_bChangeableOnceAni = true;
 		}
 
 		// Return 자세 End Point
-		if (m_bShootReturnEndPoint)
+		if (m_ppAnimationControllers[ANIMATION_UP]->IsEndPosition(0) && (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_GM_GUN_SHOOT_RETURN))
 		{
-			m_bShootReturnEndPoint = false;
 			m_nState &= ~OBJECT_STATE_SHOOTING;
 		}
 
@@ -534,13 +442,12 @@ void CPlayer::ProcessAnimation()
 
 			if (m_LButtonDown)
 			{
-				if (m_bShootOnceEndPoint)
+				if (m_ppAnimationControllers[ANIMATION_UP]->IsEndPosition(0) && (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_SHOOT_ONCE))
 				{
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 					m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
 
 					m_bShootable = true;
-					m_bShootOnceEndPoint = false;
 				}
 			}
 
@@ -555,7 +462,6 @@ void CPlayer::ProcessAnimation()
 						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
 					}
 
-					m_bShootOnceEndPoint = false;
 					m_bChangeableOnceAni = false;
 				}
 			}
@@ -564,14 +470,13 @@ void CPlayer::ProcessAnimation()
 	
 	if (m_nState & OBJECT_STATE_FLYING)
 	{
-		if (m_bJumpEndPoint)
+		if (m_ppAnimationControllers[ANIMATION_UP]->IsEndPosition(0) && (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_JUMP))
 		{
 			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
 
 			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP_LOOP);
 
-			m_bJumpEndPoint = false;
 			m_nState &= ~OBJECT_STATE_JUMPING;
 		}
 
@@ -586,7 +491,10 @@ void CPlayer::ProcessAnimation()
 
 	if (m_nState & OBJECT_STATE_SWORDING)
 	{
-		if (m_bSwordingEndPoint)
+		if (m_ppAnimationControllers[ANIMATION_UP]->IsEndPosition(0) &&
+			( (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_BEAM_SABER_1_ONE) ||
+			  (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_BEAM_SABER_2_ONE) ||
+			  (m_pnAnimationState[ANIMATION_UP] == ANIMATION_STATE_BEAM_SABER_3_ONE)))
 		{
 			if (m_LButtonDown)
 			{
@@ -596,8 +504,6 @@ void CPlayer::ProcessAnimation()
 			}
 			else
 				m_nState &= ~OBJECT_STATE_SWORDING;
-
-			m_bSwordingEndPoint = false;
 		}
 	}
 
@@ -654,17 +560,12 @@ void CPlayer::Attack(CWeapon *pWeapon)
 			{
 				if (!(m_nState & OBJECT_STATE_SHOOTING))
 				{
-
 					ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
 					if (!(m_nState & OBJECT_STATE_MOVING) && (m_nState & OBJECT_STATE_ONGROUND))
 						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
 					m_nState |= OBJECT_STATE_SHOOTING;
-
-					m_bShootStartEndPoint = false;
-					m_bShootReturnEndPoint = false;
-					m_bShootOnceEndPoint = false;
 				}
 			}
 		}
@@ -677,8 +578,6 @@ void CPlayer::Attack(CWeapon *pWeapon)
 				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 
 				m_nState |= OBJECT_STATE_SWORDING;
-
-				m_bSwordingEndPoint = false;
 			}
 		}
 	}

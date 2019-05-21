@@ -988,6 +988,60 @@ void CRobotObject::AfterAdvanceAnimationController()
 	CGameObject::AfterAdvanceAnimationController();
 }
 
+void CRobotObject::SetCallBackKeys(CModel *pModel)
+{
+	int nAnimationControllers = 2;
+	CAnimationController **ppAnimationControllers = new CAnimationController*[nAnimationControllers];
+	ppAnimationControllers[ANIMATION_UP] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_UP));
+	ppAnimationControllers[ANIMATION_DOWN] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_DOWN));
+
+	ppAnimationControllers[ANIMATION_UP]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
+
+	CAnimationCallbackHandler *pAnimationCallbackHandler = new CAnimationCallbackHandler();
+
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CAnimationCallbackHandler();
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)& CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CAnimationCallbackHandler();
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CAnimationCallbackHandler();
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_TIME, (void*)&CALLBACK_TYPE_SOUND_MOVE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CAnimationCallbackHandler();
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_1_ONE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_1_ONE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_1_ONE, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CAnimationCallbackHandler();
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_2_ONE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_2_ONE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_2_ONE, pAnimationCallbackHandler);
+
+	pAnimationCallbackHandler = new CAnimationCallbackHandler();
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_3_ONE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_3_ONE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_3_ONE, pAnimationCallbackHandler);
+
+	SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
+	SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
@@ -1296,7 +1350,7 @@ CParticle::~CParticle()
 	if (m_pd3dMappedVertexBuffer) m_pd3dMappedVertexBuffer->Release();
 }
 
-void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling,
+void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling, float fMass,
 	XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles)
 {
 	m_xmf3Position = xmf3Position;
@@ -1309,6 +1363,7 @@ void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float 
 	m_xmf3Up = xmf3Up;
 	m_xmf3Look = xmf3Look;
 	m_bScaling = bScaling;
+	m_fMass = fMass;
 
 	m_nDrawBufferIndex = 0;
 	m_nSOBufferIndex = 1;
@@ -1345,6 +1400,7 @@ void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 	m_pcbMappedParticle->m_vLook = m_xmf3Look;
 	m_pcbMappedParticle->m_vAngles = m_xmf3Angles;
 	m_pcbMappedParticle->m_bScaling = m_bScaling;
+	m_pcbMappedParticle->m_fMass = m_fMass;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PARTICLE, m_pd3dcbParticle->GetGPUVirtualAddress());
 }

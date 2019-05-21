@@ -743,43 +743,9 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 {
 	CSkinnedObjectsShader::InsertObject(pd3dDevice, pd3dCommandList, pObject, nGroup, bPrepareRotate, pContext);
 
-	int nAnimationControllers = 2;
-	CAnimationController **ppAnimationControllers = new CAnimationController*[nAnimationControllers];
-	ppAnimationControllers[ANIMATION_UP] = new CAnimationController(1, m_vpModels[nGroup]->GetAnimationSet(ANIMATION_UP));
-	ppAnimationControllers[ANIMATION_DOWN] = new CAnimationController(1, m_vpModels[nGroup]->GetAnimationSet(ANIMATION_DOWN));
-
-	ppAnimationControllers[ANIMATION_UP]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
-
-	CAnimationCallbackHandler *pAnimationCallbackHandler = new CSoundCallbackHandler();
-
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_FORWARD, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 0, 0.1f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_FORWARD, 1, 0.6f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_FORWARD, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSoundCallbackHandler();
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_RIGHT, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 0, 0.2f, (void*)& CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_RIGHT, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_RIGHT, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSoundCallbackHandler();
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_LEFT, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 0, 0.2f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_LEFT, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_LEFT, pAnimationCallbackHandler);
-
-	pAnimationCallbackHandler = new CSoundCallbackHandler();
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKeys(ANIMATION_STATE_WALK_BACKWARD, 2);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 0, 0.13f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetCallbackKey(ANIMATION_STATE_WALK_BACKWARD, 1, 0.5f, (void*)&CALLBACK_TYPE_SOUND_MOVE);
-	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
-
-	pObject->SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
-	pObject->SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
-
 	CRobotObject *pRobot = (CRobotObject*)pObject;
+
+	pRobot->SetCallBackKeys(pRobot->GetModel());
 
 	CShader *pShader = new CShader();
 	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
@@ -1479,7 +1445,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		CParticle *pParticle = NULL;
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 40.0f, 1.0f, 0.01f, false,
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 1.0f, 0.01f, false, 2.0f,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
@@ -1496,7 +1462,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].push(pParticle);
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 4.0f, 0.1f, true,
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 5.0f, 4.0f, 0.1f, true, 0.1f,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));		
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
@@ -1527,7 +1493,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 
 	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
-	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 100.0f, 0.5f, 0.01f, false,
+	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 50.0f, 0.5f, 0.01f, false, 20.0,
 		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f));
 	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 

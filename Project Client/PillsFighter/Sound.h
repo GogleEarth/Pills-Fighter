@@ -26,4 +26,7 @@ public:
 	FMOD::Sound *m_pSoundBooster = NULL;
 	FMOD::Sound *m_pSoundPickAmmo = NULL;
 	FMOD::Sound *m_pSoundPickHeal = NULL;
+	FMOD::Sound *m_pSoundSaberAttack = NULL;
+	FMOD::Sound *m_pSoundSaberHit1 = NULL;
+	FMOD::Sound *m_pSoundSaberHit2 = NULL;
 };

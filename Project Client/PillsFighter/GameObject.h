@@ -175,11 +175,9 @@ protected:
 public:
 	void SetShader(CShader *pShader) { m_pShader = pShader; }
 
-protected:
-
-
 public:
 	virtual void AfterAdvanceAnimationController();
+	virtual void SetCallBackKeys(CModel *pModel) {};
 
 };
 
@@ -319,6 +317,7 @@ public:
 	virtual int GetWeaponIndex(int nType);
 	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType);
 	CWeapon* GetWeapon(int nIndex) { return m_vpWeapon[nIndex]; }
+	virtual void SetCallBackKeys(CModel *pModel);
 
 protected:
 	CModel *m_pLeftHand = NULL;
@@ -522,6 +521,7 @@ struct CB_PARTICLE_INFO
 	bool		m_bEmit;
 	XMFLOAT3	m_vAngles;
 	bool		m_bScaling;
+	float		m_fMass;
 };
 
 class CParticle
@@ -558,6 +558,7 @@ protected:
 	float								m_fEmitInterval;
 	XMFLOAT3							m_xmf3Angles;
 	bool								m_bScaling = false;
+	float								m_fMass = 0.0f;
 
 	int									m_nVertices = 0;
 
@@ -580,7 +581,7 @@ public:
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling,
+	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling, float fMass,
 		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles);
 
 	virtual void AddVertex(CParticleVertex *pParticleVertices, int nVertices);
