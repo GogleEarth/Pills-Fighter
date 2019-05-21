@@ -379,7 +379,7 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
-	virtual void AddParticle(int nType, XMFLOAT3 xmf3Position);
+	virtual void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
 
 	void SetFollowObject(CGameObject *pObject, CModel *pFrame);
 

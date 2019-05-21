@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Scene.h"
 #include "Repository.h"
+#include "Weapon.h"
 
 ID3D12DescriptorHeap			*CScene::m_pd3dDescriptorHeap = NULL;
 ID3D12RootSignature				*CScene::m_pd3dGraphicsRootSignature = NULL;
@@ -1611,30 +1612,103 @@ void CColonyScene::ReleaseUploadBuffers()
 
 void CColonyScene::CheckCollision()
 {
-	//std::vector<CGameObject*> vEnemys;
-	//vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
+	std::vector<CGameObject*> vEnemys;
 
-	//for (const auto& Enemy : vEnemys)
-	//{
-	//	if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
+	for (int i = 0; i < SKINNED_OBJECT_GROUP; i++)
+	{
+		vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(i);
 
-	//}
+		for (const auto& Enemy : vEnemys)
+		{
+			if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
+			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(3);
 
-	//if (m_pPlayer)
-	//{
-	//	if (m_pPlayer->GetState() & OBJECT_STATE_SWORDING)
-	//	{
+			for (const auto& anotherE : vEnemys)
+			{
+				if (Enemy == anotherE) continue;
+				if (!pWeapon->CollisionCheck(anotherE)) continue;
 
-	//	}
-	//}
+				switch (rand() % 2)
+				{
+				case 0:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+					break;
+				case 1:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+					break;
+				}
+
+				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+				XMFLOAT3 xmf3EPos = Enemy->GetPosition();
+				xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+				xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+				AddParticle(0, xmf3Pos, rand() % 10 + 10);
+			}
+
+			if (m_pPlayer)
+			{
+				if (!pWeapon->CollisionCheck(m_pPlayer)) continue;
+
+				switch (rand() % 2)
+				{
+				case 0:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+					break;
+				case 1:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+					break;
+				}
+
+				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+				XMFLOAT3 xmf3EPos = m_pPlayer->GetPosition();
+				xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+				xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+				AddParticle(0, xmf3Pos, rand() % 10 + 10);
+			}
+		}
+
+		if (m_pPlayer)
+		{
+			if (m_pPlayer->GetState() & OBJECT_STATE_SWORDING)
+			{
+				for (const auto& Enemy : vEnemys)
+				{
+					CWeapon *pWeapon = m_pPlayer->GetWeapon(3);
+					if (!pWeapon->CollisionCheck(Enemy)) continue;
+
+					switch (rand() % 2)
+					{
+					case 0:
+						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+						break;
+					case 1:
+						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+						break;
+					}
+
+					XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+					XMFLOAT3 xmf3EPos = Enemy->GetPosition();
+					xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+					xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+					xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+					AddParticle(0, xmf3Pos, rand() % 10 + 10);
+				}
+			}
+		}
+	}
 
 #ifndef ON_NETWORKING
-	std::vector<CGameObject*> vEnemys;
+	//std::vector<CGameObject*> vEnemys;
 	std::vector<CGameObject*> vBullets;
 	std::vector<CGameObject*> vBZKBullets;
 	std::vector<CGameObject*> vMGBullets;
 
-	vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
+	//vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
 	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
 	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
 	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
@@ -1662,7 +1736,7 @@ void CColonyScene::CheckCollision()
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
 
-					AddParticle(0, pBullet->GetPosition());
+					//AddParticle(0, pBullet->GetPosition());
 				}
 			}
 		}
@@ -1704,7 +1778,7 @@ void CColonyScene::CheckCollision()
 
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
 
-					AddParticle(0, pMGBullet->GetPosition());
+					//AddParticle(0, pMGBullet->GetPosition());
 				}
 			}
 		}
@@ -1786,9 +1860,9 @@ void CColonyScene::CheckCollisionPlayer()
 	//}
 }
 
-void CColonyScene::AddParticle(int nType, XMFLOAT3 xmf3Position)
+void CColonyScene::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
 {
-	m_pParticleShader->AddParticle(nType, xmf3Position);
+	m_pParticleShader->AddParticle(nType, xmf3Position, nNum);
 };
 
 void CColonyScene::FindAimToTargetDistance()

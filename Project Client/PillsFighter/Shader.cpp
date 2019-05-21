@@ -1493,7 +1493,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 
 	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
-	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 50.0f, 0.5f, 0.01f, false, 20.0,
+	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 30.0f, 0.5f, 0.01f, false, 20.0,
 		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f));
 	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
@@ -1503,20 +1503,20 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 }
 
-void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position)
+void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
 {
-	CParticleVertex *pParticleVertex = new CParticleVertex[25];
+	CParticleVertex *pParticleVertex = new CParticleVertex[nNum];
 
-	for (int i = 0; i < 25; i++)
+	for (int i = 0; i < nNum; i++)
 	{
 		pParticleVertex[i].m_xmf3Position = xmf3Position;
-		pParticleVertex[i].m_xmf3Velocity = XMFLOAT3(rand()%100/50.0f, rand() % 100 / 50.0f, rand() % 100 / 50.0f);
+		pParticleVertex[i].m_xmf3Velocity = XMFLOAT3(rand() % 100 / 50.0f, rand() % 100 / 50.0f, rand() % 100 / 50.0f);
 		pParticleVertex[i].m_xmf2Size = XMFLOAT2(1.0f, 1.0f);
 		pParticleVertex[i].m_nType = PARTICLE_TYPE_ONE_EMITTER;
 		pParticleVertex[i].m_fAge = 0.0f;
 	}
 
-	m_pHitParticle->AddVertex(pParticleVertex, 25);
+	m_pHitParticle->AddVertex(pParticleVertex, nNum);
 }
 
 void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)

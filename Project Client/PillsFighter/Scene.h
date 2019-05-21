@@ -385,7 +385,7 @@ protected:
 	CTextObject						*m_pBlueScoreText = NULL;
 
 public:
-	void AddParticle(int nType, XMFLOAT3 xmf3Position);
+	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
 	virtual void EndScene();
 
 public: // Network

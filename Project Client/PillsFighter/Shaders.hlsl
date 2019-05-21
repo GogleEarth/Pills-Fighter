@@ -829,10 +829,11 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 			if (fY > 0.0001f) vDirection = mul(vDirection, RotateAxis(gParticle.m_vUp, fY));
 			if (fZ > 0.0001f) vDirection = mul(vDirection, RotateAxis(gParticle.m_vLook, fZ));
 
+			float f = (frac(vRandom.x) + 1.0f);
 			VS_PARTICLE_INPUT particle;
 			particle.position = output.position + gParticle.m_vPosition;
-			particle.velocity = gParticle.m_fSpeed * vDirection;
-			particle.size = output.size * (frac(vRandom.x) + 1.0f);
+			particle.velocity = gParticle.m_fSpeed * f * vDirection;
+			particle.size = output.size * f;
 			particle.type = PARTICLE_TYPE_COMMON;
 			particle.age = 0.0f;
 
