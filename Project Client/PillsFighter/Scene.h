@@ -79,7 +79,7 @@ public:
 public:
 	static void CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
 	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews);
-	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement);
+	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement, bool bIsModelTexture);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType);
 	static void ReleaseDescHeapsAndGraphicsRootSign();
 	static void SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -91,8 +91,10 @@ public:
 
 protected:
 	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
-	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvCPUDescriptorStartHandle;
-	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGPUDescriptorStartHandle;
+	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvTextureCPUDescStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvTextureGPUDescStartHandle;
+	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvModelCPUDescStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvModelGPUDescStartHandle;
 
 	static ID3D12RootSignature				*m_pd3dGraphicsRootSignature;
 
@@ -376,17 +378,6 @@ protected:
 	D3D12_RECT						m_d3dEMScissorRect;
 
 protected:
-	ID3D12Resource					*m_pd3dMinimapRsc = NULL;
-	ID3D12Resource					*m_pd3dMinimapDepthStencilBuffer = NULL;
-	CTexture						*screenCaptureTexture = NULL;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvMinimapCPUHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvMinimapCPUHandle;
-
-	CCamera							*m_pMiniMapCamera = NULL;
-
-	D3D12_VIEWPORT 					m_d3dMMViewport;
-	D3D12_RECT						m_d3dMMScissorRect;
-
 	int								m_nRedScore = 0;
 	int								m_nBlueScore = 0;
 

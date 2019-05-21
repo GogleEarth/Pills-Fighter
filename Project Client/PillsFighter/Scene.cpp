@@ -5,8 +5,11 @@
 ID3D12DescriptorHeap			*CScene::m_pd3dDescriptorHeap = NULL;
 ID3D12RootSignature				*CScene::m_pd3dGraphicsRootSignature = NULL;
 
-D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvCPUDescriptorStartHandle;
-D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvGPUDescriptorStartHandle;
+D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvTextureCPUDescStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvTextureGPUDescStartHandle;
+
+D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvModelCPUDescStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvModelGPUDescStartHandle;
 
 ID3D12DescriptorHeap			*CScene::m_pd3dRtvDescriptorHeap;
 D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dRtvCPUDesciptorStartHandle;
@@ -564,13 +567,19 @@ void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews)
 	d3dDescriptorHeapDesc.NodeMask = 0;
 	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
 
-	m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	m_d3dSrvModelCPUDescStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dSrvModelGPUDescStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+	m_d3dSrvTextureCPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvTextureGPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement)
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement, bool bIsModelTexture)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dGPUDescHandle;
+
+	if (bIsModelTexture) d3dGPUDescHandle = m_d3dSrvModelGPUDescStartHandle;
+	else d3dGPUDescHandle = m_d3dSrvTextureGPUDescStartHandle;
 
 	if (pTexture)
 	{
@@ -582,30 +591,46 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
 			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
 			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
-			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
-			m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
 
-			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, m_d3dSrvGPUDescriptorStartHandle);
-			m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+			D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSrvCPUDescHandle;
+			D3D12_GPU_DESCRIPTOR_HANDLE *pd3dSrvGPUDescHandle;
+
+			if (bIsModelTexture)
+			{
+				pd3dSrvCPUDescHandle = &m_d3dSrvModelCPUDescStartHandle;
+				pd3dSrvGPUDescHandle = &m_d3dSrvModelGPUDescStartHandle;
+			}
+			else
+			{
+				pd3dSrvCPUDescHandle = &m_d3dSrvTextureCPUDescStartHandle;
+				pd3dSrvGPUDescHandle = &m_d3dSrvTextureGPUDescStartHandle;
+			}
+
+			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, *pd3dSrvCPUDescHandle);
+
+			pTexture->SetRootArgument(i, (bAutoIncrement) ? (nRootParameterStartIndex + i) : nRootParameterStartIndex, *pd3dSrvGPUDescHandle);
+
+			(*pd3dSrvCPUDescHandle).ptr += ::gnCbvSrvDescriptorIncrementSize;
+			(*pd3dSrvGPUDescHandle).ptr += ::gnCbvSrvDescriptorIncrementSize;
 		}
 	}
 
-	return d3dSrvGPUDescriptorHandle;
+	return d3dGPUDescHandle;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvGPUDescriptorStartHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvTextureGPUDescStartHandle;
 
 	if (pd3dResource)
 	{
 		D3D12_RESOURCE_DESC d3dResourceDesc = pd3dResource->GetDesc();
 		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nSrvType);
 
-		pd3dDevice->CreateShaderResourceView(pd3dResource, &d3dShaderResourceViewDesc, m_d3dSrvCPUDescriptorStartHandle);
+		pd3dDevice->CreateShaderResourceView(pd3dResource, &d3dShaderResourceViewDesc, m_d3dSrvTextureCPUDescStartHandle);
 
-		m_d3dSrvCPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-		m_d3dSrvGPUDescriptorStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvTextureCPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvTextureGPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
 	}
 
 	return d3dSrvGPUDescriptorHandle;
@@ -710,8 +735,8 @@ void CScene::CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd
 
 void CScene::ResetDescriptorHeapHandles()
 {
-	m_d3dSrvCPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dSrvGPUDescriptorStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	m_d3dSrvTextureCPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvTextureGPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
 
 	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
@@ -745,56 +770,56 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	m_ppTextures[UI_TEXTURE_BASE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Base.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_GAMESTART] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_GAMESTART]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/GameStart.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GAMESTART], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GAMESTART], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HL_GAMESTART] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_HL_GAMESTART]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGameStart.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GAMESTART], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GAMESTART], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_READY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_READY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Ready.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HL_READY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_HL_READY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLReady.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_SELECT_LEFT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_SELECT_LEFT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Left.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SELECT_LEFT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SELECT_LEFT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLLeft.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_SELECT_LEFT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_SELECT_RIGHT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_SELECT_RIGHT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Right.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SELECT_RIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SELECT_RIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLRight.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_SELECT_RIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 
 	m_ppTextures[UI_TEXTURE_GM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_GM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gim.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HL_GM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_HL_GM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGim.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_GUNDAM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_GUNDAM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Gundam.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GUNDAM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GUNDAM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/HLGundam.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HL_GUNDAM_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 
 	m_nUIRect = 6;
@@ -1374,14 +1399,6 @@ void CColonyScene::ReleaseObjects()
 		m_pCubeMapCamera[i]->ReleaseShaderVariables();
 		delete m_pCubeMapCamera[i];
 	}
-
-	if (screenCaptureTexture) delete screenCaptureTexture;
-
-
-	if (m_pd3dMinimapDepthStencilBuffer) m_pd3dMinimapDepthStencilBuffer->Release();
-	if (m_pd3dMinimapRsc) m_pd3dMinimapRsc->Release();
-
-
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
@@ -1417,7 +1434,7 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CUserInterface *pUserInterface = new CUserInterface();
 	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, screenCaptureTexture);
+	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	pUserInterface->SetPlayer(m_pPlayer);
 
 	m_pUserInterface = pUserInterface;
@@ -1519,9 +1536,6 @@ void CColonyScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	}
 
 }
-
-
-/////////////////////////////////////////////////////////////////////////
 
 void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
 {
@@ -1943,8 +1957,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
-
-
 		break;
 	case OBJECT_TYPE_OBSTACLE:
 		printf("Do not Apply Insert Obstacle\n");
@@ -2049,7 +2061,6 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
-
 
 		if (((PKT_PLAYER_INFO*)pktData)->isUpChangeAnimation)
 		{

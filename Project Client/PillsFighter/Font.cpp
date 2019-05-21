@@ -127,7 +127,7 @@ void CFont::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3d
 
 void CFont::SetSrv(ID3D12Device *pd3dDevice)
 {
-	CScene::CreateShaderResourceViews(pd3dDevice, m_pFontTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_pFontTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 }
 
 void CFont::ReleaseUploadBuffers()

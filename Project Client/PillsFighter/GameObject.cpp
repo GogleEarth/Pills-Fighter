@@ -678,7 +678,7 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile3.dds", 3);
 	pTileTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Stage/Tile4.dds", 4);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, pTileTexture, ROOT_PARAMETER_INDEX_TILES, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, pTileTexture, ROOT_PARAMETER_INDEX_TILES, false, false);
 
 	CMaterial **ppTileMaterial = new CMaterial*[1];
 	ppTileMaterial[0] = new CMaterial();
@@ -709,7 +709,7 @@ CSkyBox::CSkyBox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	//pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_0.dds", 0);
 	pSkyBoxTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Skybox/SkyBox_1.dds", 0);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, pSkyBoxTexture, ROOT_PARAMETER_INDEX_TEXTURE_CUBE, false, false);
 
 	CMaterial **ppSkyBoxMaterial = new CMaterial*[1];
 	ppSkyBoxMaterial[0] = new CMaterial();
@@ -933,8 +933,52 @@ void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamer
 
 void CRobotObject::AfterAdvanceAnimationController()
 {
-	if ((m_nState & OBJECT_STATE_SHOOTING) && ((m_nState & OBJECT_STATE_MOVING) || (m_nState & OBJECT_STATE_BOOSTERING)))
+	if (m_pnAnimationState[ANIMATION_UP] != m_pnAnimationState[ANIMATION_DOWN])
 	{
+		//XMFLOAT4X4 xmf4x4Pelvis = m_pPelvis->GetToParent();
+		//XMFLOAT4X4 xmf4x4Spine = m_pSpine->GetToParent();
+
+		//XMFLOAT3 xmf3PelvisRight = XMFLOAT3(xmf4x4Pelvis._11, xmf4x4Pelvis._12, xmf4x4Pelvis._13);
+		//XMFLOAT3 xmf3SpineRight = XMFLOAT3(xmf4x4Spine._11, xmf4x4Spine._12, xmf4x4Spine._13);
+
+		//float fTheta = XMConvertToRadians(Vector3::Angle(xmf3PelvisRight, xmf3SpineRight));
+		//if (!(fabsf(fTheta) < 0.001f))
+		//{
+		//	XMFLOAT3 xmf3Axis = Vector3::CrossProduct(xmf3PelvisRight, xmf3SpineRight, true);
+		//	XMFLOAT4X4 xmf4x4Rotate;
+		//	XMStoreFloat4x4(&xmf4x4Rotate, XMMatrixRotationAxis(XMLoadFloat3(&xmf3Axis), fTheta));
+
+		//	xmf4x4Pelvis = Matrix4x4::Multiply(xmf4x4Pelvis, xmf4x4Rotate);
+		//}
+
+		//XMFLOAT3 xmf3PelvisUp = XMFLOAT3(xmf4x4Pelvis._21, xmf4x4Pelvis._22, xmf4x4Pelvis._23);
+		//XMFLOAT3 xmf3SpineUp = XMFLOAT3(xmf4x4Spine._21, xmf4x4Spine._22, xmf4x4Spine._23);
+
+		//fTheta = XMConvertToRadians(Vector3::Angle(xmf3PelvisUp, xmf3SpineUp));
+		//if (!(fabsf(fTheta) < 0.001f))
+		//{
+		//	XMFLOAT3 xmf3Axis = Vector3::CrossProduct(xmf3PelvisUp, xmf3SpineUp, true);
+		//	XMFLOAT4X4 xmf4x4Rotate;
+		//	XMStoreFloat4x4(&xmf4x4Rotate, XMMatrixRotationAxis(XMLoadFloat3(&xmf3Axis), fTheta));
+
+		//	xmf4x4Pelvis = Matrix4x4::Multiply(xmf4x4Pelvis, xmf4x4Rotate);
+		//}
+
+		//XMFLOAT3 xmf3PelvisLook = XMFLOAT3(xmf4x4Pelvis._31, xmf4x4Pelvis._32, xmf4x4Pelvis._33);
+		//XMFLOAT3 xmf3SpineLook = XMFLOAT3(xmf4x4Spine._31, xmf4x4Spine._32, xmf4x4Spine._33);
+
+		//fTheta = XMConvertToRadians(Vector3::Angle(xmf3PelvisLook, xmf3SpineLook));
+		//if (!(fabsf(fTheta) < 0.001f))
+		//{
+		//	XMFLOAT3 xmf3Axis = Vector3::CrossProduct(xmf3PelvisLook, xmf3SpineLook, true);
+		//	XMFLOAT4X4 xmf4x4Rotate;
+		//	XMStoreFloat4x4(&xmf4x4Rotate, XMMatrixRotationAxis(XMLoadFloat3(&xmf3Axis), fTheta));
+
+		//	xmf4x4Pelvis = Matrix4x4::Multiply(xmf4x4Pelvis, xmf4x4Rotate);
+		//}
+
+		//m_pPelvis->SetToParent(xmf4x4Pelvis);
+
 		// pelvis의 회전 시키기 전 행렬을 저장.
 		// pelvis의 행렬을 spine 행렬로 바꾸기. ( 포지션은 바꾸지 않음 )
 		// pelvis의 바뀌기 전 행렬과 바뀐 후 행렬을 비교해서 각 축마다 몇 도씩 회전했는지 알아내기.
@@ -1362,7 +1406,6 @@ void CParticle::ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_pd3dReadBackBuffer->Map(0, &d3dRange, (void**)&nFilledSize);
 
 		m_nVertices = static_cast<int>((*nFilledSize) / sizeof(CParticleVertex));
-		printf("%d\n", m_nVertices);
 
 		d3dRange = { 0, 0 };
 		m_pd3dReadBackBuffer->Unmap(0, &d3dRange);
@@ -1429,7 +1472,7 @@ CCursor::CCursor(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Cursor.dds", 0);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 }
 
 CCursor::~CCursor()

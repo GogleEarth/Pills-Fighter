@@ -227,7 +227,7 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			m_nType |= MATERIAL_ALBEDO_MAP;
 
 			pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, 0);
-			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
+			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, true);
 			printf("Diffuse Map Name : [%s]\n", pstrFileName);
 			m_vTextures.emplace_back(pTexture);
 
@@ -255,7 +255,7 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			m_nType |= MATERIAL_NORMAL_MAP;
 
 			pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, 0);
-			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false);
+			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_NORMAL_TEXTURE, false, true);
 			printf("Normal Map Name : [%s]\n", pstrFileName);
 			m_vTextures.emplace_back(pTexture);
 
@@ -283,7 +283,7 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			m_nType |= MATERIAL_SPECULAR_FACTOR_MAP;
 
 			pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, 0);
-			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false);
+			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_SPECULAR_TEXTURE, false, true);
 			printf("Specular Factor Map Name : [%s]\n", pstrFileName);
 			m_vTextures.emplace_back(pTexture);
 
