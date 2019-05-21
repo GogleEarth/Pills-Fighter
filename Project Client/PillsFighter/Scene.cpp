@@ -401,7 +401,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dDescriptorRanges[5].RegisterSpace = 0;
 	pd3dDescriptorRanges[5].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER pd3dRootParameters[MAX_ROOT_PARAMETER_INDEX];
+	D3D12_ROOT_PARAMETER pd3dRootParameters[MAX_ROOT_PARAMETER_INDEX - 2];
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_OBJECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_OBJECT].Descriptor.ShaderRegister = 0; //Object
@@ -500,15 +500,15 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.ShaderRegister = 11;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 12;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 12;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.RegisterSpace = 0;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.ShaderRegister = 13;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.ShaderRegister = 13;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
+	//pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
 
@@ -1377,19 +1377,11 @@ void CColonyScene::ReleaseObjects()
 
 	if (screenCaptureTexture) delete screenCaptureTexture;
 
-	if (m_pMiniMapCamera) {
-		m_pMiniMapCamera->ReleaseShaderVariables();
-		delete m_pMiniMapCamera;
-	}
 
 	if (m_pd3dMinimapDepthStencilBuffer) m_pd3dMinimapDepthStencilBuffer->Release();
 	if (m_pd3dMinimapRsc) m_pd3dMinimapRsc->Release();
 
-	if (m_pMinimapShader)
-	{
-		m_pMinimapShader->ReleaseShaderVariables();
-		delete m_pMinimapShader;
-	}
+
 }
 
 void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
@@ -1398,9 +1390,6 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CreateEnvironmentMap(pd3dDevice);
 	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
-
-	CreateMinimapMap(pd3dDevice);
-	CreateMiniMapCamera(pd3dDevice, pd3dCommandList);
 
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
@@ -1432,12 +1421,6 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pUserInterface->SetPlayer(m_pPlayer);
 
 	m_pUserInterface = pUserInterface;
-
-	CMinimapShader *pMinimapShader = new CMinimapShader(pd3dDevice, pd3dCommandList);
-	pMinimapShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pMinimapShader->Initialize(pd3dDevice, pd3dCommandList);
-
-	m_pMinimapShader = pMinimapShader;
 
 	m_pRedScoreText = AddText("Arial", "0", XMFLOAT2(-0.05f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 	m_pBlueScoreText = AddText("Arial", "0", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
@@ -1537,82 +1520,7 @@ void CColonyScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 }
 
-///////////////////////////////////////////////////////////////////////// 미니맵
-void CColonyScene::CreateMinimapMap(ID3D12Device *pd3dDevice)
-{
-	// 렌더 타겟, 텍스처로 사용될 리소스를 생성.
-	screenCaptureTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 
-	D3D12_CLEAR_VALUE d3dClear = { DXGI_FORMAT_R8G8B8A8_UNORM, { 0.0f, 0.0f, 0.0f, 1.0f } };
-
-	m_pd3dMinimapRsc = screenCaptureTexture->CreateTexture(pd3dDevice, NULL, MINIMAP_BUFFER_WIDTH, MINIMAP_BUFFER_HEIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, 0);
-
-	// 렌더 타겟과 함께 Set해줘야하는 깊이 스텐실 버퍼를 생성. 
-	// [ 기존에 프레임워크에 있었을 때는 후면 버퍼의 깊이 스텐실 버퍼 크기[w, h]와 미니맵 리소스의 크기가 같아서 미니맵용 깊이 스텐실 버퍼를 따로 만들지 않고 Clear 해주면서 재사용했었음. ]
-	D3D12_RESOURCE_DESC d3dResourceDesc;
-	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	d3dResourceDesc.Alignment = 0;
-	d3dResourceDesc.Width = MINIMAP_BUFFER_WIDTH;
-	d3dResourceDesc.Height = MINIMAP_BUFFER_HEIGHT;
-	d3dResourceDesc.DepthOrArraySize = 1;
-	d3dResourceDesc.MipLevels = 1;
-	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	d3dResourceDesc.SampleDesc.Count = 1;
-	d3dResourceDesc.SampleDesc.Quality = 0;
-	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-	D3D12_HEAP_PROPERTIES d3dHeapProperties;
-	::ZeroMemory(&d3dHeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
-	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-	d3dHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	d3dHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	d3dHeapProperties.CreationNodeMask = 1;
-	d3dHeapProperties.VisibleNodeMask = 1;
-
-	d3dClear.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	d3dClear.DepthStencil.Depth = 1.0f;
-	d3dClear.DepthStencil.Stencil = 0;
-
-	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dMinimapDepthStencilBuffer);
-
-	// 미니맵 리소스의 렌더 타겟 뷰, 깊이 스텐실 뷰, 쉐이더 리소스 뷰를 생성.
-	CreateRtvDsvSrvMiniMap(pd3dDevice);
-}
-
-// 미니맵 카메라 생성
-void CColonyScene::CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	m_d3dMMViewport = { 0.0f, 0.0f, float(MINIMAP_BUFFER_WIDTH), float(MINIMAP_BUFFER_HEIGHT), 0.0f, 1.0f };
-	m_d3dMMScissorRect = { 0, 0, MINIMAP_BUFFER_WIDTH, MINIMAP_BUFFER_HEIGHT };
-
-	m_pMiniMapCamera = new CCamera();
-}
-
-void CColonyScene::CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice)
-{
-	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dMinimapRsc, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRtvMinimapCPUHandle);
-	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dMinimapDepthStencilBuffer, &m_d3dDsvMinimapCPUHandle);
-	CScene::CreateShaderResourceViews(pd3dDevice, screenCaptureTexture, ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false);
-}
-
-void CColonyScene::MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	pd3dCommandList->ClearRenderTargetView(m_d3dRtvMinimapCPUHandle, Colors::Black, 0, NULL);
-	pd3dCommandList->ClearDepthStencilView(m_d3dDsvMinimapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-	pd3dCommandList->OMSetRenderTargets(1, &m_d3dRtvMinimapCPUHandle, TRUE, &m_d3dDsvMinimapCPUHandle);
-
-	pd3dCommandList->RSSetViewports(1, &m_d3dMMViewport);
-	pd3dCommandList->RSSetScissorRects(1, &m_d3dMMScissorRect);
-
-	//UpdateShaderVariables(pd3dCommandList);
-
-	if (m_pMinimapShader) m_pMinimapShader->Render(pd3dCommandList, m_pMiniMapCamera);
-
-	::TransitionResourceState(pd3dCommandList, m_pd3dMinimapRsc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
-}
 /////////////////////////////////////////////////////////////////////////
 
 void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
@@ -1668,8 +1576,6 @@ void CColonyScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	{
 		RenderCubeMap(pd3dCommandList, m_pPlayer);
 	}
-
-	MinimapRender(pd3dCommandList);
 }
 
 void CColonyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -1686,7 +1592,6 @@ void CColonyScene::ReleaseUploadBuffers()
 	if (m_pGimGun) m_pGimGun->ReleaseUploadBuffers();
 	if (m_pBazooka) m_pBazooka->ReleaseUploadBuffers();
 	if (m_pMachineGun) m_pMachineGun->ReleaseUploadBuffers();
-	if (m_pMinimapShader) m_pMinimapShader->ReleaseUploadBuffers();
 	if (m_pSaber) m_pSaber->ReleaseUploadBuffers();
 }
 
@@ -2039,7 +1944,6 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
 
-		m_pMinimapShader->InsertMinimapRobot(pGameObject, pCreateObjectInfo->Object_Index);
 
 		break;
 	case OBJECT_TYPE_OBSTACLE:
@@ -2146,7 +2050,6 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
 
-		m_pMinimapShader->UpdateMinimapRobotInfo(m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID], ((PKT_PLAYER_INFO*)pktData)->ID);
 
 		if (((PKT_PLAYER_INFO*)pktData)->isUpChangeAnimation)
 		{

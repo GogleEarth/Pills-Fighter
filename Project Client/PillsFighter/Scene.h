@@ -375,12 +375,6 @@ protected:
 	D3D12_VIEWPORT 					m_d3dEMViewport;
 	D3D12_RECT						m_d3dEMScissorRect;
 
-public:
-	void CreateMinimapMap(ID3D12Device *pd3dDevice);
-	void CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	void CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice);
-	void MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList);
-
 protected:
 	ID3D12Resource					*m_pd3dMinimapRsc = NULL;
 	ID3D12Resource					*m_pd3dMinimapDepthStencilBuffer = NULL;
@@ -392,8 +386,6 @@ protected:
 
 	D3D12_VIEWPORT 					m_d3dMMViewport;
 	D3D12_RECT						m_d3dMMScissorRect;
-
-	CMinimapShader					*m_pMinimapShader = NULL;
 
 	int								m_nRedScore = 0;
 	int								m_nBlueScore = 0;
