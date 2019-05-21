@@ -727,20 +727,6 @@ void Framework::CheckCollision(CScene* pScene)
 					{
 						if ((pScene->m_BeamsaberCollisionmesh[i].GetAABB())[0].Intersects((pScene->m_pObjects[k]->GetAABB())[0]))
 						{
-							pktCE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-							pktCE.efType = EFFECT_TYPE_HIT_FONT;
-							pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							pktCE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
-							pktCE.xmf3Position.y += 20.0f;
-							effect_msg_queue.push(pktCE);
-							pktCDE.PktId = PKT_ID_CREATE_EFFECT;
-							pktCDE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-							pktCDE.efType = EFFECT_TYPE_HIT;
-							pktCDE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							pktCDE.xmf3Position = pScene->m_pObjects[k]->GetPosition();
-							pktCDE.xmf3Position.y += 10.0f;
-							effect_msg_queue.push(pktCDE);
 							pktLF.PktId = (char)PKT_ID_PLAYER_LIFE;
 							pktLF.PktSize = (char)sizeof(PKT_PLAYER_LIFE);
 							pktLF.ID = pScene->m_pObjects[k]->m_iId;
