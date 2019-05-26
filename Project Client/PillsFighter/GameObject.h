@@ -288,7 +288,7 @@ protected:
 public:
 	virtual void SetAnimationController(CAnimationController *pControllers, int nIndex);
 
-	void ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
+	virtual bool ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
 	int GetAnimationState(int nController) { return m_pnAnimationState[nController]; }
 	BOOL GetAnimationChanged(int nController) { return m_pbAnimationChanged[nController]; }
 	void SetAnimationChanged(int nController, BOOL bAnimationChagned) { m_pbAnimationChanged[nController] = bAnimationChagned; }
@@ -360,6 +360,14 @@ protected:
 	
 public:
 	virtual void AfterAdvanceAnimationController();
+
+protected:
+	bool m_bPlayedSaberHitSound = false;
+
+public:
+	bool PlayedSaberHitSound() { return m_bPlayedSaberHitSound; }
+	void PlaySaberHitSound() { m_bPlayedSaberHitSound = true; }
+	virtual bool ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

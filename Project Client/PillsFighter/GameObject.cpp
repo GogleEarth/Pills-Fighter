@@ -751,7 +751,7 @@ void CAnimationObject::Animate(float ElapsedTime, CCamera *pCamera)
 	CGameObject::Animate(ElapsedTime);
 }
 
-void CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition)
+bool CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition)
 {
 	if (m_ppAnimationControllers)
 	{
@@ -766,8 +766,12 @@ void CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimati
 			m_ppAnimationControllers[nController]->SetTrackAnimation(nTrack, nAnimation);
 
 			m_pbAnimationChanged[nController] = TRUE;
+
+			return true;
 		}
 	}
+
+	return false;
 }
 
 
@@ -929,6 +933,18 @@ void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamer
 
 	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
 	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
+}
+
+bool CRobotObject::ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition)
+{
+	if (CAnimationObject::ChangeAnimation(nController, nTrack, nAnimation, bResetPosition))
+	{
+		m_bPlayedSaberHitSound = false;
+
+		return true;
+	}
+
+	return false;
 }
 
 void CRobotObject::AfterAdvanceAnimationController()

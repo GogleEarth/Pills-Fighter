@@ -44,10 +44,14 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	m_pFontShader = new CFontShader();
 	m_pFontShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+
+	m_pPostProcessingShader = new CPostProcessingShader();
+	m_pPostProcessingShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 }
 
 void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
+	CreateOffScreenTexture(pd3dDevice);
 }
 
 void CScene::MoveCursor(float x, float y)
@@ -179,7 +183,75 @@ void CScene::ReleaseObjects()
 		pFont->ClearTexts();
 	}
 
+
+	if (m_pPostProcessingShader)
+	{
+		m_pPostProcessingShader->ReleaseShaderVariables();
+		m_pPostProcessingShader->ReleaseObjects();
+		delete m_pPostProcessingShader;
+		m_pPostProcessingShader = NULL;
+	}
+
+	if (m_pd3dOffScreenTexture) m_pd3dOffScreenTexture->Release();
+	if (m_pd3dOffScreenDSBuffer) m_pd3dOffScreenDSBuffer->Release();
+
 	ReleaseShaderVariables();
+}
+
+void CScene::CreateOffScreenTexture(ID3D12Device *pd3dDevice)
+{
+	D3D12_HEAP_PROPERTIES d3dHeapProperties;
+	::ZeroMemory(&d3dHeapProperties, sizeof(d3dHeapProperties));
+	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	d3dHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	d3dHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	d3dHeapProperties.CreationNodeMask = 1;
+	d3dHeapProperties.VisibleNodeMask = 1;
+
+	D3D12_HEAP_FLAGS d3dHeapFlags = D3D12_HEAP_FLAG_NONE;
+
+	D3D12_RESOURCE_DESC d3dResourceDesc;
+	::ZeroMemory(&d3dResourceDesc, sizeof(d3dResourceDesc));
+	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3dResourceDesc.Alignment = 0;
+	d3dResourceDesc.Width = FRAME_BUFFER_WIDTH;
+	d3dResourceDesc.Height = FRAME_BUFFER_HEIGHT;
+	d3dResourceDesc.DepthOrArraySize = 1;
+	d3dResourceDesc.MipLevels = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dResourceDesc.SampleDesc.Count = 1;
+	d3dResourceDesc.SampleDesc.Quality = 0;
+	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+	D3D12_CLEAR_VALUE d3dClearValue;
+	::ZeroMemory(&d3dClearValue, sizeof(d3dClearValue));
+	d3dClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dClearValue.Color[0] = 0.0f;
+	d3dClearValue.Color[1] = 0.0f;
+	d3dClearValue.Color[2] = 0.0f;
+	d3dClearValue.Color[3] = 1.0f;
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dOffScreenTexture);
+
+	d3dResourceDesc.DepthOrArraySize = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	d3dClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dClearValue.DepthStencil.Depth = 1.0f;
+	d3dClearValue.DepthStencil.Stencil = 0;
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue, __uuidof(ID3D12Resource), (void **)&m_pd3dOffScreenDSBuffer);
+
+	CreateRtvDsvSrvOffScreen(pd3dDevice);
+}
+
+void CScene::CreateRtvDsvSrvOffScreen(ID3D12Device *pd3dDevice)
+{
+	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dOffScreenTexture, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRrvOffScreenCPUHandle);
+	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dOffScreenDSBuffer, &m_d3dDsvOffScreenCPUHandle);
+	m_d3dSrvOffScreenGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dOffScreenTexture, RESOURCE_TEXTURE2D);
 }
 
 void CScene::ReleaseUploadBuffers()
@@ -247,6 +319,13 @@ void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	pd3dCommandList->ClearRenderTargetView(m_d3dRrvOffScreenCPUHandle, Colors::Black, 0, NULL);
+	pd3dCommandList->ClearDepthStencilView(m_d3dDsvOffScreenCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+
+	pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvOffScreenCPUHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
+
 	if (pCamera)
 	{
 		pCamera->GenerateViewMatrix();
@@ -301,6 +380,9 @@ void CScene::RenderEffects(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *
 
 void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
+	m_pPostProcessingShader->Render(pd3dCommandList, NULL);
+
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, NULL);
 
 	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
@@ -313,6 +395,8 @@ void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+
 	for (int i = 0; i < m_nEffectShaders; i++)
 	{
 		if (m_ppEffectShaders[i])
@@ -682,7 +766,7 @@ void CScene::CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice)
 	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-	d3dDescriptorHeapDesc.NumDescriptors = 2;
+	d3dDescriptorHeapDesc.NumDescriptors = 1 + 1;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	hResult = pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDsvDescriptorHeap);
 	m_d3dDsvCPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -902,6 +986,8 @@ void CLobbyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 void CLobbyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
+	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
+
 #ifndef ON_NETWORKING
 	JoinPlayer(0, "1 : First Player");
 	JoinPlayer(1, "2 : Second Player");
@@ -1173,6 +1259,8 @@ void CLobbyScene::LeavePlayer(int nServerIndex)
 
 void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	CScene::Render(pd3dCommandList, pCamera);
+
 	if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, pCamera);
 
 	m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
@@ -1233,9 +1321,7 @@ void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 		m_ppPlayerRobotRects[nSlotIndex]->Render(pd3dCommandList, 0);
 	}
-
-	CScene::Render(pd3dCommandList, pCamera);
-
+	
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
 }
 
@@ -1580,6 +1666,7 @@ void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 		if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 
 	}
+
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
@@ -1620,6 +1707,8 @@ void CColonyScene::CheckCollision()
 
 		for (const auto& Enemy : vEnemys)
 		{
+			CRobotObject *enemy = (CRobotObject*)Enemy;
+
 			if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
 			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(3);
 
@@ -1628,15 +1717,6 @@ void CColonyScene::CheckCollision()
 				if (Enemy == anotherE) continue;
 				if (!pWeapon->CollisionCheck(anotherE)) continue;
 
-				switch (rand() % 2)
-				{
-				case 0:
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
-					break;
-				case 1:
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
-					break;
-				}
 
 				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
 				XMFLOAT3 xmf3EPos = Enemy->GetPosition();
@@ -1645,11 +1725,9 @@ void CColonyScene::CheckCollision()
 				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
 
 				AddParticle(0, xmf3Pos, rand() % 10 + 10);
-			}
 
-			if (m_pPlayer)
-			{
-				if (!pWeapon->CollisionCheck(m_pPlayer)) continue;
+				if (enemy->PlayedSaberHitSound()) continue;
+				enemy->PlaySaberHitSound();
 
 				switch (rand() % 2)
 				{
@@ -1660,6 +1738,11 @@ void CColonyScene::CheckCollision()
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
 					break;
 				}
+			}
+
+			if (m_pPlayer)
+			{
+				if (!pWeapon->CollisionCheck(m_pPlayer)) continue;
 
 				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
 				XMFLOAT3 xmf3EPos = m_pPlayer->GetPosition();
@@ -1668,6 +1751,19 @@ void CColonyScene::CheckCollision()
 				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
 
 				AddParticle(0, xmf3Pos, rand() % 10 + 10);
+
+				if (enemy->PlayedSaberHitSound()) continue;
+				enemy->PlaySaberHitSound();
+
+				switch (rand() % 2)
+				{
+				case 0:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+					break;
+				case 1:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+					break;
+				}
 			}
 		}
 
@@ -1680,6 +1776,17 @@ void CColonyScene::CheckCollision()
 					CWeapon *pWeapon = m_pPlayer->GetWeapon(3);
 					if (!pWeapon->CollisionCheck(Enemy)) continue;
 
+					XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+					XMFLOAT3 xmf3EPos = Enemy->GetPosition();
+					xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+					xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+					xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+					AddParticle(0, xmf3Pos, rand() % 10 + 10);
+
+					if (m_pPlayer->PlayedSaberHitSound()) continue;
+					m_pPlayer->PlaySaberHitSound();
+
 					switch (rand() % 2)
 					{
 					case 0:
@@ -1689,14 +1796,6 @@ void CColonyScene::CheckCollision()
 						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
 						break;
 					}
-
-					XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
-					XMFLOAT3 xmf3EPos = Enemy->GetPosition();
-					xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
-					xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
-					xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
-
-					AddParticle(0, xmf3Pos, rand() % 10 + 10);
 				}
 			}
 		}

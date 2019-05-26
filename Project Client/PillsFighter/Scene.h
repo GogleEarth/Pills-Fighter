@@ -170,6 +170,19 @@ public:
 
 	virtual void EndScene() {};
 
+public:
+	void CreateOffScreenTexture(ID3D12Device *pd3dDevice);
+	void CreateRtvDsvSrvOffScreen(ID3D12Device *pd3dDevice);
+
+protected:
+	ID3D12Resource					*m_pd3dOffScreenTexture = NULL;
+	ID3D12Resource					*m_pd3dOffScreenDSBuffer = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvOffScreenCPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvOffScreenCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvOffScreenGPUHandle;
+
+	CPostProcessingShader			*m_pPostProcessingShader = NULL;
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo) {}
 	virtual void DeleteObject(int nIndex) {}
