@@ -805,7 +805,7 @@ VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID :
 }
 
 [maxvertexcount(2)]
-void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream<VS_PARTICLE_INPUT> pointStream)
+void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream<VS_PARTICLE_INPUT> pointStream, uint nGSIID : SV_GSInstanceID)
 {
 	VS_PARTICLE_INPUT output;
 	output.position = input[0].position;

@@ -2318,6 +2318,73 @@ void CCursorShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *
 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+
+CComputeShader::CComputeShader()
+{
+
+}
+
+CComputeShader::~CComputeShader()
+{
+	if (m_pd3dHorzPipelineState) m_pd3dHorzPipelineState->Release();
+	if (m_pd3dVertPipelineState) m_pd3dVertPipelineState->Release();
+}
+
+D3D12_SHADER_BYTECODE CComputeShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob)
+{
+	UINT nCompileFlags = 0;
+#if defined(_DEBUG)
+	nCompileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	ID3DBlob *pd3dErrorBlob = NULL;
+	::D3DCompileFromFile(pszFileName, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, pszShaderName, pszShaderProfile, nCompileFlags, 0, ppd3dShaderBlob, NULL);
+
+	D3D12_SHADER_BYTECODE d3dShaderByteCode;
+	d3dShaderByteCode.BytecodeLength = (*ppd3dShaderBlob)->GetBufferSize();
+	d3dShaderByteCode.pShaderBytecode = (*ppd3dShaderBlob)->GetBufferPointer();
+
+	return(d3dShaderByteCode);
+}
+
+D3D12_SHADER_BYTECODE CComputeShader::CreateHorzComputeShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"ComputeShader.hlsl", "HorzBlurCS", "cs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CComputeShader::CreateVertComputeShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"ComputeShader.hlsl", "VertBlurCS", "cs_5_1", ppd3dShaderBlob));
+}
+
+void CComputeShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dRootSignature)
+{
+	ID3DBlob *pd3dShaderBlob = NULL;
+	D3D12_COMPUTE_PIPELINE_STATE_DESC d3dCPSDesc;
+	::ZeroMemory(&d3dCPSDesc, sizeof(d3dCPSDesc));
+	
+	d3dCPSDesc.pRootSignature = pd3dRootSignature;
+	d3dCPSDesc.CS = CreateHorzComputeShader(&pd3dShaderBlob);
+	HRESULT hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dHorzPipelineState);
+
+	d3dCPSDesc.CS = CreateVertComputeShader(&pd3dShaderBlob);
+	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dVertPipelineState);
+
+	if (pd3dShaderBlob) pd3dShaderBlob->Release();
+}
+
+void CComputeShader::SetHorzPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetPipelineState(m_pd3dHorzPipelineState);
+}
+
+void CComputeShader::SetVertPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetPipelineState(m_pd3dVertPipelineState);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

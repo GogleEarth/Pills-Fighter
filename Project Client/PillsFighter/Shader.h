@@ -545,6 +545,29 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
+class CComputeShader
+{
+public:
+	CComputeShader();
+	virtual ~CComputeShader();
+
+	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
+
+	virtual D3D12_SHADER_BYTECODE CreateHorzComputeShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateVertComputeShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dRootSignature);
+	virtual void SetHorzPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SetVertPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
+
+protected:
+	ID3D12PipelineState					*m_pd3dHorzPipelineState = NULL;
+	ID3D12PipelineState					*m_pd3dVertPipelineState = NULL;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
 class CPostProcessingShader : public CShader
 {
 public:

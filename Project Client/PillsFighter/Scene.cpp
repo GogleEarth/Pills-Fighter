@@ -3,11 +3,12 @@
 #include "Repository.h"
 #include "Weapon.h"
 
-ID3D12DescriptorHeap			*CScene::m_pd3dDescriptorHeap = NULL;
+ID3D12DescriptorHeap			*CScene::m_pd3dSrvUavDescriptorHeap = NULL;
 ID3D12RootSignature				*CScene::m_pd3dGraphicsRootSignature = NULL;
+ID3D12RootSignature				*CScene::m_pd3dComputeRootSignature = NULL;
 
-D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvTextureCPUDescStartHandle;
-D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvTextureGPUDescStartHandle;
+D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvUavTextureCPUDescStartHandle;
+D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvUavTextureGPUDescStartHandle;
 
 D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvModelCPUDescStartHandle;
 D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dSrvModelGPUDescStartHandle;
@@ -47,11 +48,15 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 
 	m_pPostProcessingShader = new CPostProcessingShader();
 	m_pPostProcessingShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+
+	m_pComputeShader = new CComputeShader();
+	m_pComputeShader->CreateShader(pd3dDevice, m_pd3dComputeRootSignature);
 }
 
 void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateOffScreenTexture(pd3dDevice);
+	CreateTempTexture(pd3dDevice);
 }
 
 void CScene::MoveCursor(float x, float y)
@@ -192,8 +197,16 @@ void CScene::ReleaseObjects()
 		m_pPostProcessingShader = NULL;
 	}
 
+	if (m_pComputeShader)
+	{
+		delete m_pComputeShader;
+		m_pComputeShader = NULL;
+	}
+
 	if (m_pd3dOffScreenTexture) m_pd3dOffScreenTexture->Release();
 	if (m_pd3dOffScreenDSBuffer) m_pd3dOffScreenDSBuffer->Release();
+
+	if (m_pd3dTempTexture) m_pd3dTempTexture->Release();
 
 	ReleaseShaderVariables();
 }
@@ -244,14 +257,60 @@ void CScene::CreateOffScreenTexture(ID3D12Device *pd3dDevice)
 
 	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue, __uuidof(ID3D12Resource), (void **)&m_pd3dOffScreenDSBuffer);
 
-	CreateRtvDsvSrvOffScreen(pd3dDevice);
+	CreateRtvDsvSrvUavOffScreen(pd3dDevice);
 }
 
-void CScene::CreateRtvDsvSrvOffScreen(ID3D12Device *pd3dDevice)
+void CScene::CreateRtvDsvSrvUavOffScreen(ID3D12Device *pd3dDevice)
 {
 	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dOffScreenTexture, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRrvOffScreenCPUHandle);
 	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dOffScreenDSBuffer, &m_d3dDsvOffScreenCPUHandle);
 	m_d3dSrvOffScreenGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dOffScreenTexture, RESOURCE_TEXTURE2D);
+	m_d3dUavOffScreenGPUHandle = CScene::CreateUnorderedAccessViews(pd3dDevice, m_pd3dOffScreenTexture);
+}
+
+void CScene::CreateTempTexture(ID3D12Device *pd3dDevice)
+{
+	D3D12_HEAP_PROPERTIES d3dHeapProperties;
+	::ZeroMemory(&d3dHeapProperties, sizeof(d3dHeapProperties));
+	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	d3dHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	d3dHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	d3dHeapProperties.CreationNodeMask = 1;
+	d3dHeapProperties.VisibleNodeMask = 1;
+
+	D3D12_HEAP_FLAGS d3dHeapFlags = D3D12_HEAP_FLAG_NONE;
+
+	D3D12_RESOURCE_DESC d3dResourceDesc;
+	::ZeroMemory(&d3dResourceDesc, sizeof(d3dResourceDesc));
+	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3dResourceDesc.Alignment = 0;
+	d3dResourceDesc.Width = FRAME_BUFFER_WIDTH;
+	d3dResourceDesc.Height = FRAME_BUFFER_HEIGHT;
+	d3dResourceDesc.DepthOrArraySize = 1;
+	d3dResourceDesc.MipLevels = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dResourceDesc.SampleDesc.Count = 1;
+	d3dResourceDesc.SampleDesc.Quality = 0;
+	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+	D3D12_CLEAR_VALUE d3dClearValue;
+	::ZeroMemory(&d3dClearValue, sizeof(d3dClearValue));
+	d3dClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dClearValue.Color[0] = 0.0f;
+	d3dClearValue.Color[1] = 0.0f;
+	d3dClearValue.Color[2] = 0.0f;
+	d3dClearValue.Color[3] = 1.0f;
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dTempTexture);
+
+	CreateRtvDsvSrvUavTemp(pd3dDevice);
+}
+
+void CScene::CreateRtvDsvSrvUavTemp(ID3D12Device *pd3dDevice)
+{
+	m_d3dSrvTempTextureGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dTempTexture, RESOURCE_TEXTURE2D);
+	m_d3dUavTempTextureGPUHandle = CScene::CreateUnorderedAccessViews(pd3dDevice, m_pd3dTempTexture);
 }
 
 void CScene::ReleaseUploadBuffers()
@@ -404,6 +463,29 @@ void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pParticleShader) m_pParticleShader->AfterRender(pd3dCommandList);
+}
+
+void CScene::Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight, int nBlurCount)
+{
+	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
+	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
+
+	if (m_pd3dComputeRootSignature) pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
+
+	for (int i = 0; i < nBlurCount; i++)
+	{
+		m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
+
+		pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvOffScreenGPUHandle);
+		pd3dCommandList->SetComputeRootDescriptorTable(1, m_d3dUavTempTextureGPUHandle);
+		pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
+
+		m_pComputeShader->SetVertPipelineState(pd3dCommandList);
+
+		pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvTempTextureGPUHandle);
+		pd3dCommandList->SetComputeRootDescriptorTable(1, m_d3dUavOffScreenGPUHandle);
+		pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
+	}
 }
 
 D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
@@ -643,6 +725,51 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	if (pd3dErrorBlob) pd3dErrorBlob->Release();
 }
 
+void CScene::CreateComputeRootSignature(ID3D12Device *pd3dDevice)
+{
+	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[2];
+
+	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	pd3dDescriptorRanges[0].NumDescriptors = 1;
+	pd3dDescriptorRanges[0].BaseShaderRegister = 0;
+	pd3dDescriptorRanges[0].RegisterSpace = 0;
+	pd3dDescriptorRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	pd3dDescriptorRanges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	pd3dDescriptorRanges[1].NumDescriptors = 1;
+	pd3dDescriptorRanges[1].BaseShaderRegister = 0;
+	pd3dDescriptorRanges[1].RegisterSpace = 0;
+	pd3dDescriptorRanges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER pd3dRootParameters[2];
+
+	pd3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[0].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[0]); // SRV
+	pd3dRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[1].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[1]); // UAV
+	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
+	::ZeroMemory(&d3dRootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
+	d3dRootSignatureDesc.NumParameters = _countof(pd3dRootParameters);
+	d3dRootSignatureDesc.pParameters = pd3dRootParameters;
+	d3dRootSignatureDesc.NumStaticSamplers = 0;
+	d3dRootSignatureDesc.pStaticSamplers = NULL;
+	d3dRootSignatureDesc.Flags = d3dRootSignatureFlags;
+
+	ID3DBlob *pd3dSignatureBlob = NULL;
+	ID3DBlob *pd3dErrorBlob = NULL;
+	D3D12SerializeRootSignature(&d3dRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &pd3dSignatureBlob, &pd3dErrorBlob);
+	pd3dDevice->CreateRootSignature(0, pd3dSignatureBlob->GetBufferPointer(), pd3dSignatureBlob->GetBufferSize(), __uuidof(ID3D12RootSignature), (void **)&m_pd3dComputeRootSignature);
+	if (pd3dSignatureBlob) pd3dSignatureBlob->Release();
+	if (pd3dErrorBlob) pd3dErrorBlob->Release();
+}
+
 void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
@@ -650,13 +777,13 @@ void CScene::CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews)
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
-	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDescriptorHeap);
+	pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dSrvUavDescriptorHeap);
 
-	m_d3dSrvModelCPUDescStartHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dSrvModelGPUDescStartHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	m_d3dSrvModelCPUDescStartHandle = m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_d3dSrvModelGPUDescStartHandle = m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-	m_d3dSrvTextureCPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
-	m_d3dSrvTextureGPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvUavTextureCPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvUavTextureGPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameterStartIndex, bool bAutoIncrement, bool bIsModelTexture)
@@ -664,7 +791,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 	D3D12_GPU_DESCRIPTOR_HANDLE d3dGPUDescHandle;
 
 	if (bIsModelTexture) d3dGPUDescHandle = m_d3dSrvModelGPUDescStartHandle;
-	else d3dGPUDescHandle = m_d3dSrvTextureGPUDescStartHandle;
+	else d3dGPUDescHandle = m_d3dSrvUavTextureGPUDescStartHandle;
 
 	if (pTexture)
 	{
@@ -687,8 +814,8 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 			}
 			else
 			{
-				pd3dSrvCPUDescHandle = &m_d3dSrvTextureCPUDescStartHandle;
-				pd3dSrvGPUDescHandle = &m_d3dSrvTextureGPUDescStartHandle;
+				pd3dSrvCPUDescHandle = &m_d3dSrvUavTextureCPUDescStartHandle;
+				pd3dSrvGPUDescHandle = &m_d3dSrvUavTextureGPUDescStartHandle;
 			}
 
 			pd3dDevice->CreateShaderResourceView(pShaderResource, &d3dShaderResourceViewDesc, *pd3dSrvCPUDescHandle);
@@ -705,23 +832,38 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 
 D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvTextureGPUDescStartHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvUavTextureGPUDescStartHandle;
 
 	if (pd3dResource)
 	{
 		D3D12_RESOURCE_DESC d3dResourceDesc = pd3dResource->GetDesc();
 		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nSrvType);
 
-		pd3dDevice->CreateShaderResourceView(pd3dResource, &d3dShaderResourceViewDesc, m_d3dSrvTextureCPUDescStartHandle);
+		pd3dDevice->CreateShaderResourceView(pd3dResource, &d3dShaderResourceViewDesc, m_d3dSrvUavTextureCPUDescStartHandle);
 
-		m_d3dSrvTextureCPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
-		m_d3dSrvTextureGPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvUavTextureCPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvUavTextureGPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
 	}
 
 	return d3dSrvGPUDescriptorHandle;
 }
 
-void CScene::ReleaseDescHeapsAndGraphicsRootSign()
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateUnorderedAccessViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE d3dUavGPUDescriptorHandle = m_d3dSrvUavTextureGPUDescStartHandle;
+
+	if (pd3dResource)
+	{
+		pd3dDevice->CreateUnorderedAccessView(pd3dResource, NULL, NULL, m_d3dSrvUavTextureCPUDescStartHandle);
+
+		m_d3dSrvUavTextureCPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+		m_d3dSrvUavTextureGPUDescStartHandle.ptr += ::gnCbvSrvDescriptorIncrementSize;
+	}
+
+	return d3dUavGPUDescriptorHandle;
+}
+
+void CScene::ReleaseDescHeapsAndRootSignature()
 {
 	if (m_pd3dGraphicsRootSignature)
 	{
@@ -729,10 +871,16 @@ void CScene::ReleaseDescHeapsAndGraphicsRootSign()
 		m_pd3dGraphicsRootSignature = NULL;
 	}
 
-	if (m_pd3dDescriptorHeap)
+	if (m_pd3dComputeRootSignature)
 	{
-		m_pd3dDescriptorHeap->Release();
-		m_pd3dDescriptorHeap = NULL;
+		m_pd3dComputeRootSignature->Release();
+		m_pd3dComputeRootSignature = NULL;
+	}
+
+	if (m_pd3dSrvUavDescriptorHeap)
+	{
+		m_pd3dSrvUavDescriptorHeap->Release();
+		m_pd3dSrvUavDescriptorHeap = NULL;
 	}
 
 	if (m_pd3dRtvDescriptorHeap)
@@ -751,7 +899,7 @@ void CScene::ReleaseDescHeapsAndGraphicsRootSign()
 void CScene::SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pd3dGraphicsRootSignature)	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
-	if (m_pd3dDescriptorHeap)			pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dDescriptorHeap);
+	if (m_pd3dSrvUavDescriptorHeap)		pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvUavDescriptorHeap);
 }
 
 void CScene::CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice)
@@ -820,8 +968,8 @@ void CScene::CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd
 
 void CScene::ResetDescriptorHeapHandles()
 {
-	m_d3dSrvTextureCPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
-	m_d3dSrvTextureGPUDescStartHandle.ptr = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvUavTextureCPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvUavTextureGPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
 
 	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();

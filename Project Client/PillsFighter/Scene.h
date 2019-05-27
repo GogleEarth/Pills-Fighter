@@ -78,10 +78,12 @@ public:
 
 public:
 	static void CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
+	static void CreateComputeRootSignature(ID3D12Device *pd3dDevice);
 	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement, bool bIsModelTexture);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType);
-	static void ReleaseDescHeapsAndGraphicsRootSign();
+	static D3D12_GPU_DESCRIPTOR_HANDLE CreateUnorderedAccessViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource);
+	static void ReleaseDescHeapsAndRootSignature();
 	static void SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	static void CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice);
@@ -90,13 +92,14 @@ public:
 	static void ResetDescriptorHeapHandles();
 
 protected:
-	static ID3D12DescriptorHeap				*m_pd3dDescriptorHeap;
-	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvTextureCPUDescStartHandle;
-	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvTextureGPUDescStartHandle;
+	static ID3D12DescriptorHeap				*m_pd3dSrvUavDescriptorHeap;
+	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvUavTextureCPUDescStartHandle;
+	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvUavTextureGPUDescStartHandle;
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvModelCPUDescStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvModelGPUDescStartHandle;
 
 	static ID3D12RootSignature				*m_pd3dGraphicsRootSignature;
+	static ID3D12RootSignature				*m_pd3dComputeRootSignature;
 
 	static ID3D12DescriptorHeap				*m_pd3dRtvDescriptorHeap;
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvCPUDesciptorStartHandle;
@@ -172,7 +175,10 @@ public:
 
 public:
 	void CreateOffScreenTexture(ID3D12Device *pd3dDevice);
-	void CreateRtvDsvSrvOffScreen(ID3D12Device *pd3dDevice);
+	void CreateRtvDsvSrvUavOffScreen(ID3D12Device *pd3dDevice);
+	void CreateTempTexture(ID3D12Device *pd3dDevice);
+	void CreateRtvDsvSrvUavTemp(ID3D12Device *pd3dDevice);
+	void Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight, int nBlurCount);
 
 protected:
 	ID3D12Resource					*m_pd3dOffScreenTexture = NULL;
@@ -180,7 +186,13 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvOffScreenCPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvOffScreenCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvOffScreenGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavOffScreenGPUHandle;
 
+	ID3D12Resource					*m_pd3dTempTexture = NULL;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvTempTextureGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavTempTextureGPUHandle;
+
+	CComputeShader					*m_pComputeShader = NULL;
 	CPostProcessingShader			*m_pPostProcessingShader = NULL;
 
 public: // Network

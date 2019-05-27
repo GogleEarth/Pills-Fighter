@@ -84,7 +84,7 @@ void CGameFramework::OnDestroy()
 {
 	ReleaseObjects();
 
-	CScene::ReleaseDescHeapsAndGraphicsRootSign();
+	CScene::ReleaseDescHeapsAndRootSignature();
 	if (m_pRepository) delete m_pRepository;
 	m_Arial.Destroy();
 	m_HumanMagic.Destroy();
@@ -365,6 +365,7 @@ void CGameFramework::BuildObjects()
 	m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 
 	CScene::CreateGraphicsRootSignature(m_pd3dDevice);
+	CScene::CreateComputeRootSignature(m_pd3dDevice);
 	CScene::CreateDescriptorHeaps(m_pd3dDevice, MAX_SRV_DESCRIPTOR_HEAP_COUNT);
 	CScene::CreateRtvAndDsvDescriptorHeaps(m_pd3dDevice);
 
@@ -681,6 +682,8 @@ void CGameFramework::FrameAdvance()
 			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
 
 			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
+
+			//m_pScene->Blurring(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 5);
 
 			m_pScene->AfterRender(m_pd3dCommandList);
 

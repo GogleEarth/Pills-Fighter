@@ -143,6 +143,7 @@
     <FxCompile Include="Shaders.hlsl" />
     <FxCompile Include="Light.hlsl" />
     <FxCompile Include="Math.hlsl" />
+    <FxCompile Include="ComputeShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Project.txt" />
