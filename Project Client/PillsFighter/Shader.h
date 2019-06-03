@@ -408,7 +408,22 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class CSkyBoxShader : public CShader
+{
+public:
+	CSkyBoxShader();
+	virtual ~CSkyBoxShader();
 
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// UIs
 struct CB_PLAYER_VALUE
 {
 	int nMaxValue;
@@ -472,22 +487,6 @@ protected:
 
 public:
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class CSkyBoxShader : public CShader
-{
-public:
-	CSkyBoxShader();
-	virtual ~CSkyBoxShader();
-
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
-
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

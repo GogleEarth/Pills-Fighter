@@ -213,14 +213,14 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 			if (!strcmp(pstrFileName, "null")) continue;
 
-			char pstrDiffuseFile[64] = { 0 };
-			strcpy_s(pstrDiffuseFile, pstrFilePath);
-			strcat_s(pstrDiffuseFile, pstrFileName);
-			strcat_s(pstrDiffuseFile, ".dds");
+			char pstrDDSFile[64] = { 0 };
+			strcpy_s(pstrDDSFile, pstrFilePath);
+			strcat_s(pstrDDSFile, pstrFileName);
+			strcat_s(pstrDDSFile, ".dds");
 
-			INT nLen = (int)(strlen(pstrDiffuseFile)) + 1;
+			INT nLen = (int)(strlen(pstrDDSFile)) + 1;
 			WCHAR* pwstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
-			MultiByteToWideChar(949, 0, pstrDiffuseFile, -1, pwstrFileName, nLen);
+			MultiByteToWideChar(949, 0, pstrDDSFile, -1, pwstrFileName, nLen);
 
 			CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 
@@ -241,14 +241,14 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 			if (!strcmp(pstrFileName, "null")) continue;
 
-			char pstrDiffuseFile[64] = { 0 };
-			strcpy_s(pstrDiffuseFile, pstrFilePath);
-			strcat_s(pstrDiffuseFile, pstrFileName);
-			strcat_s(pstrDiffuseFile, ".dds");
+			char pstrDDSFile[64] = { 0 };
+			strcpy_s(pstrDDSFile, pstrFilePath);
+			strcat_s(pstrDDSFile, pstrFileName);
+			strcat_s(pstrDDSFile, ".dds");
 
-			INT nLen = (int)(strlen(pstrDiffuseFile)) + 1;
+			INT nLen = (int)(strlen(pstrDDSFile)) + 1;
 			WCHAR* pwstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
-			MultiByteToWideChar(949, 0, pstrDiffuseFile, -1, pwstrFileName, nLen);
+			MultiByteToWideChar(949, 0, pstrDDSFile, -1, pwstrFileName, nLen);
 
 			CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 
@@ -269,14 +269,14 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 			if(!strcmp(pstrFileName, "null")) continue;
 
-			char pstrDiffuseFile[64] = { 0 };
-			strcpy_s(pstrDiffuseFile, pstrFilePath);
-			strcat_s(pstrDiffuseFile, pstrFileName);
-			strcat_s(pstrDiffuseFile, ".dds");
+			char pstrDDSFile[64] = { 0 };
+			strcpy_s(pstrDDSFile, pstrFilePath);
+			strcat_s(pstrDDSFile, pstrFileName);
+			strcat_s(pstrDDSFile, ".dds");
 
-			INT nLen = (int)(strlen(pstrDiffuseFile)) + 1;
+			INT nLen = (int)(strlen(pstrDDSFile)) + 1;
 			WCHAR* pwstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
-			MultiByteToWideChar(949, 0, pstrDiffuseFile, -1, pwstrFileName, nLen);
+			MultiByteToWideChar(949, 0, pstrDDSFile, -1, pwstrFileName, nLen);
 
 			CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 
@@ -296,6 +296,34 @@ void CMaterial::LoadMaterialFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 			fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
 
 			if (!strcmp(pstrFileName, "null")) continue;
+		}
+		else if (!strcmp(pstrToken, "<EmissiveMap>:"))
+		{
+			char pstrFileName[64] = { 0 };
+			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
+			fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+
+			if (!strcmp(pstrFileName, "null")) continue;
+
+			char pstrDDSFile[64] = { 0 };
+			strcpy_s(pstrDDSFile, pstrFilePath);
+			strcat_s(pstrDDSFile, pstrFileName);
+			strcat_s(pstrDDSFile, ".dds");
+
+			INT nLen = (int)(strlen(pstrDDSFile)) + 1;
+			WCHAR* pwstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
+			MultiByteToWideChar(949, 0, pstrDDSFile, -1, pwstrFileName, nLen);
+
+			CTexture *pTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+
+			m_nType |= MATERIAL_EMISSION_MAP;
+
+			pTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, 0);
+			CScene::CreateShaderResourceViews(pd3dDevice, pTexture, ROOT_PARAMETER_INDEX_EMISSIVE_TEXTURE, false, true);
+			printf("Emissive Map Name : [%s]\n", pstrFileName);
+			m_vTextures.emplace_back(pTexture);
+
+			delete pwstrFileName;
 		}
 		else if (!strcmp(pstrToken, "</Material>"))
 		{

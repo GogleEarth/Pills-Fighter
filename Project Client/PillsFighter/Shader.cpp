@@ -163,12 +163,12 @@ D3D12_INPUT_LAYOUT_DESC CShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE CShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) 
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "VSTextured", "vs_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "VSTextured", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "PSTextured", "ps_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "PSTextured", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob) 
@@ -261,7 +261,7 @@ D3D12_INPUT_LAYOUT_DESC CSkinnedAnimationShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE CSkinnedAnimationShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -302,12 +302,12 @@ D3D12_INPUT_LAYOUT_DESC CWireShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE CWireShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob) 
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "VSWire", "vs_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "VSWire", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CWireShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "PSWire", "ps_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "PSWire", "ps_5_1", ppd3dShaderBlob));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -452,12 +452,12 @@ CInstancingObjectsShader::~CInstancingObjectsShader()
 
 D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "VSInsTextured", "vs_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "VSInsTextured", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CompileShaderFromFile(L"Shaders.hlsl", "PSInsTextured", "ps_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "PSInsTextured", "ps_5_1", ppd3dShaderBlob));
 }
 
 void CInstancingObjectsShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -680,7 +680,7 @@ D3D12_INPUT_LAYOUT_DESC CSkinnedObjectsShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
 }
 
 void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -1015,27 +1015,27 @@ D3D12_STREAM_OUTPUT_DESC CTimedEffectShader::CreateStreamOutput()
 
 D3D12_SHADER_BYTECODE CTimedEffectShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSEffectStreamOut", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSEffectStreamOut", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CTimedEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CTimedEffectShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSEffectDraw", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSEffectDraw", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CTimedEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSEffectDraw", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSEffectDraw", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CTimedEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSEffectDraw", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSEffectDraw", "ps_5_1", ppd3dShaderBlob));
 }
 
 void CTimedEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
@@ -1187,27 +1187,27 @@ D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 
 D3D12_SHADER_BYTECODE CSpriteShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSpriteDraw", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSSpriteDraw", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CSpriteShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSSpriteDraw", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSSpriteDraw", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CSpriteShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSSpriteDraw", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSSpriteDraw", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CSpriteShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSpriteStreamOut", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSSpriteStreamOut", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CSpriteShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSSpriteStreamOut", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSSpriteStreamOut", "gs_5_1", ppd3dShaderBlob));
 }
 
 void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
@@ -1341,27 +1341,27 @@ D3D12_STREAM_OUTPUT_DESC CParticleShader::CreateStreamOutput()
 
 D3D12_SHADER_BYTECODE CParticleShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSParticleStreamOut", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSParticleStreamOut", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CParticleShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSParticleStreamOut", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSParticleStreamOut", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CParticleShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSParticleDraw", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSParticleDraw", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CParticleShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSParticleDraw", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSParticleDraw", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CParticleShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSParticleDraw", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSParticleDraw", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_RASTERIZER_DESC CParticleShader::CreateRasterizerState()
@@ -1642,12 +1642,12 @@ D3D12_INPUT_LAYOUT_DESC CTerrainShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE CTerrainShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSTerrain", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"TerrainShaders.hlsl", "VSTerrain", "vs_5_1", ppd3dShaderBlob));
 }
 	
 D3D12_SHADER_BYTECODE CTerrainShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSTerrain", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"TerrainShaders.hlsl", "PSTerrain", "ps_5_1", ppd3dShaderBlob));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1697,12 +1697,12 @@ D3D12_DEPTH_STENCIL_DESC CSkyBoxShader::CreateDepthStencilState()
 
 D3D12_SHADER_BYTECODE CSkyBoxShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSSkyBox", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"SkyBoxShaders.hlsl", "VSSkyBox", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CSkyBoxShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSSkyBox", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"SkyBoxShaders.hlsl", "PSSkyBox", "ps_5_1", ppd3dShaderBlob));
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1732,27 +1732,27 @@ CUserInterface::~CUserInterface()
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VS_UI", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUi", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI_Bar", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUiBar", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI_BULLET", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUiBullet", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
@@ -2034,17 +2034,17 @@ CFontShader::~CFontShader()
 
 D3D12_SHADER_BYTECODE CFontShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSFont", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSFont", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CFontShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSFont", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSFont", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CFontShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSFont", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSFont", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CFontShader::CreateInputLayout()
@@ -2128,17 +2128,17 @@ CLobbyShader::~CLobbyShader()
 
 D3D12_SHADER_BYTECODE CLobbyShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VS_UI", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CLobbyShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GS_UI", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUi", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CLobbyShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CLobbyShader::CreateInputLayout()
@@ -2241,17 +2241,17 @@ CCursorShader::~CCursorShader()
 
 D3D12_SHADER_BYTECODE CCursorShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VS_UI", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CCursorShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "GSCursor", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSCursor", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CCursorShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PS_UI", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CCursorShader::CreateInputLayout()
@@ -2399,12 +2399,12 @@ CPostProcessingShader::~CPostProcessingShader()
 
 D3D12_SHADER_BYTECODE CPostProcessingShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "VSPostProcessing", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "VSPostProcessing", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CPostProcessingShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"Shaders.hlsl", "PSPostProcessing", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSPostProcessing", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CPostProcessingShader::CreateInputLayout()

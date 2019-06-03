@@ -1,0 +1,63 @@
+#define GAME_OBJECT_INFO				b0
+#define CAMERA_INFO						b1
+#define LIGHTS_INFO						b2
+#define UI_INFO							b3
+#define SPRITE_INFO						b4
+#define BONE_OFFSETS					b5
+#define BONE_TRANSFOMRS					b6
+#define EFFECT_INFO						b7
+#define PARTICLE_INFO					b8
+#define CURSOR_INFO						b10
+#define SCENE_INFO						b11
+
+#define DIFFUSE_TEXTURES				t1 // t1 ~ t3
+#define SPECULAR_TEXTURE				t4
+#define NORMAL_TEXTURE					t5
+#define SKYCUBE_TEXTURE					t6
+#define TILE_TEXTURES					t7 // t7 ~ t11
+#define INSTANCING_GAME_OBJECTS_INFO	t12
+#define ENVIRCUBE_TEXTURE				t13
+#define EMISSIVE_TEXTURE				t14
+
+#define WRAP_SAMPLERSTATE				s0
+#define CLAMP_SAMPLERSTATE				s1
+
+#define MATERIAL_ALBEDO_MAP				0x01
+#define MATERIAL_SPECULAR_FACTOR_MAP	0x02
+#define MATERIAL_NORMAL_MAP				0x04
+#define MATERIAL_EMISSION_MAP			0x08
+
+SamplerState gssWrap : register(WRAP_SAMPLERSTATE);
+SamplerState gssClamp : register(CLAMP_SAMPLERSTATE);
+
+TextureCube gtxtSkyCubeTexture : register(SKYCUBE_TEXTURE);
+Texture2D gtxtTileTexture[5] : register(TILE_TEXTURES); //	t7~t11
+
+Texture2D gtxtTexture[3] : register(DIFFUSE_TEXTURES); //	t1 ~ t3
+Texture2D gtxtSpecularTexture : register(SPECULAR_TEXTURE);
+Texture2D gtxtNormalTexture : register(NORMAL_TEXTURE);
+Texture2D gtxtEmissiveTexture : register(EMISSIVE_TEXTURE);
+TextureCube gtxtEnvirCubeTexture : register(ENVIRCUBE_TEXTURE);
+
+struct MATERIAL
+{
+	float4		m_cAmbient;
+	float4		m_cDiffuse;
+	float4		m_cSpecular; //a = power
+	float4		m_cEmissive;
+	float		m_cReflectionFactor;
+};
+
+cbuffer cbGameObjectInfo : register(GAME_OBJECT_INFO)
+{
+	matrix		gmtxGameObject : packoffset(c0);
+	MATERIAL	gMaterial : packoffset(c4);
+	uint		gnTexturesMask : packoffset(c8.y);
+};
+
+cbuffer cbCameraInfo : register(CAMERA_INFO)
+{
+	matrix		gmtxView : packoffset(c0);
+	matrix		gmtxProjection : packoffset(c4);
+	float3		gvCameraPosition : packoffset(c8);
+};

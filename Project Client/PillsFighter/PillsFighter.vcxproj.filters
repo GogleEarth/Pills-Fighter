@@ -133,6 +133,9 @@
     <Filter Include="리소스 파일">
       <UniqueIdentifier>{26a91eff-e3e5-483f-9429-f165624cbcf5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="쉐이더 파일">
+      <UniqueIdentifier>{9bcdf5ce-2efb-4e8d-81a9-484d14a370c6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PillsFighter.rc">
@@ -140,10 +143,36 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders.hlsl" />
-    <FxCompile Include="Light.hlsl" />
-    <FxCompile Include="Math.hlsl" />
-    <FxCompile Include="ComputeShader.hlsl" />
+    <FxCompile Include="ComputeShader.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="Define.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="Light.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="Math.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="PostProcessingShaders.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyBoxShaders.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="TerrainShaders.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="UIShaders.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="EffectShaders.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
+    <FxCompile Include="ModelShaders.hlsl">
+      <Filter>쉐이더 파일</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Project.txt" />

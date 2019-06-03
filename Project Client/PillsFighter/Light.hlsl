@@ -26,7 +26,7 @@ struct LIGHT
 	float				padding;
 };
 
-cbuffer cbLights : register(b2)
+cbuffer cbLights : register(LIGHTS_INFO)
 {
 	LIGHT				gLights[MAX_LIGHTS];
 	float4				gcGlobalAmbientLight;
