@@ -26,6 +26,7 @@
 					<DiffuseMap>: Saber_Color
 					<NormalMap>: Saber_Normal
 					<SpecularFactorMap>: Saber_Specular
+					<EmissiveMap>: Saber_Color
 					<SpecularMap>: null
 				</Material>
 			<Children>: 0

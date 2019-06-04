@@ -683,7 +683,7 @@ void CGameFramework::FrameAdvance()
 
 			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
 
-			//m_pScene->Blurring(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, 5);
+			m_pScene->Blooming(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
 			m_pScene->AfterRender(m_pd3dCommandList);
 
@@ -700,6 +700,8 @@ void CGameFramework::FrameAdvance()
 
 			m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvHandle, TRUE, &d3dDsvHandle);
 			
+			m_pScene->RenderOffScreen(m_pd3dCommandList);
+
 			m_pScene->RenderUI(m_pd3dCommandList);
 
 			::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

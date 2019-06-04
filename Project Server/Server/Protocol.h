@@ -1,5 +1,7 @@
 #pragma once
 
+//#define ON_NETWORKING
+
 typedef enum PKT_ID
 {
 	PKT_ID_PLAYER_INFO,

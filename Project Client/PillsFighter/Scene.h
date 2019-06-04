@@ -67,6 +67,7 @@ public:
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderEffects(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
@@ -174,11 +175,11 @@ public:
 	virtual void EndScene() {};
 
 public:
-	void CreateOffScreenTexture(ID3D12Device *pd3dDevice);
-	void CreateRtvDsvSrvUavOffScreen(ID3D12Device *pd3dDevice);
+	void CreateOffScreenTextures(ID3D12Device *pd3dDevice);
+	void CreateRtvDsvSrvUavOffScreens(ID3D12Device *pd3dDevice);
 	void CreateTempTexture(ID3D12Device *pd3dDevice);
 	void CreateRtvDsvSrvUavTemp(ID3D12Device *pd3dDevice);
-	void Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight, int nBlurCount);
+	void Blooming(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
 
 protected:
 	ID3D12Resource					*m_pd3dOffScreenTexture = NULL;
@@ -187,6 +188,11 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvOffScreenCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvOffScreenGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavOffScreenGPUHandle;
+
+	ID3D12Resource					*m_pd3dGlowScreenTexture = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvGlowScreenCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGlowScreenGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavGlowScreenGPUHandle;
 
 	ID3D12Resource					*m_pd3dTempTexture = NULL;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvTempTextureGPUHandle;
@@ -207,6 +213,7 @@ public: // Network
 
 protected:
 	int	m_nMyIndex = 0;
+	bool m_bActiveBloom = true;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,7 +282,7 @@ public:
 
 	XMFLOAT2 GetPlayerTextPosition(int nServerIndex);
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:
 	CLobbyShader						*m_pLobbyShader = NULL;

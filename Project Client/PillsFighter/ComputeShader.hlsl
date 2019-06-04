@@ -1,24 +1,25 @@
-Texture2D<float4> gtxtInput : register(t0);
+Texture2D<float4> gtxtInputA : register(t0);
+Texture2D<float4> gtxtInputB : register(t1);
 RWTexture2D<float4> gtxtRWOutput : register(u0);
 
 groupshared float4 gTextureCache[(256 + 2 * 5)];
 
-static float gfWeights[11] = { 0.05f, 0.05f, 0.1f, 0.1f, 0.1f, 0.2f, 0.1f, 0.1f, 0.1f, 0.05f, 0.05f };
+static float gfWeights[11] = { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.2f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f };
 
 [numthreads(256, 1, 1)]
-void HorzBlurCS(int3 vGroupThreadID : SV_GroupThreadID, int3 vDispatchThreadID : SV_DispatchThreadID )
+void HorzBlurCS(int3 vGroupThreadID : SV_GroupThreadID, int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	if (vGroupThreadID.x < 5)
 	{
 		int x = max(vDispatchThreadID.x - 5, 0);
-		gTextureCache[vGroupThreadID.x] = gtxtInput[int2(x, vDispatchThreadID.y)];
+		gTextureCache[vGroupThreadID.x] = gtxtInputA[int2(x, vDispatchThreadID.y)];
 	}
 	else if (vGroupThreadID.x >= 256 - 5)
 	{
-		int x = min(vDispatchThreadID.x + 5, gtxtInput.Length.x - 1);
-		gTextureCache[vGroupThreadID.x + 2 * 5] = gtxtInput[int2(x, vDispatchThreadID.y)];
+		int x = min(vDispatchThreadID.x + 5, gtxtInputA.Length.x - 1);
+		gTextureCache[vGroupThreadID.x + 2 * 5] = gtxtInputA[int2(x, vDispatchThreadID.y)];
 	}
-	gTextureCache[vGroupThreadID.x + 5] = gtxtInput[min(vDispatchThreadID.xy, gtxtInput.Length.xy - 1)];
+	gTextureCache[vGroupThreadID.x + 5] = gtxtInputA[min(vDispatchThreadID.xy, gtxtInputA.Length.xy - 1)];
 
 	GroupMemoryBarrierWithGroupSync();
 
@@ -38,14 +39,14 @@ void VertBlurCS(int3 vGroupThreadID : SV_GroupThreadID, int3 vDispatchThreadID :
 	if (vGroupThreadID.y < 5)
 	{
 		int y = max(vDispatchThreadID.y - 5, 0);
-		gTextureCache[vGroupThreadID.y] = gtxtInput[int2(vDispatchThreadID.x, y)];
+		gTextureCache[vGroupThreadID.y] = gtxtInputA[int2(vDispatchThreadID.x, y)];
 	}
 	else if (vGroupThreadID.y >= 256 - 5)
 	{
-		int y = min(vDispatchThreadID.y + 5, gtxtInput.Length.y - 1);
-		gTextureCache[vGroupThreadID.y + 2 * 5] = gtxtInput[int2(vDispatchThreadID.x, y)];
+		int y = min(vDispatchThreadID.y + 5, gtxtInputA.Length.y - 1);
+		gTextureCache[vGroupThreadID.y + 2 * 5] = gtxtInputA[int2(vDispatchThreadID.x, y)];
 	}
-	gTextureCache[vGroupThreadID.y + 5] = gtxtInput[min(vDispatchThreadID.xy, gtxtInput.Length.xy - 1)];
+	gTextureCache[vGroupThreadID.y + 5] = gtxtInputA[min(vDispatchThreadID.xy, gtxtInputA.Length.xy - 1)];
 
 	GroupMemoryBarrierWithGroupSync();
 
@@ -57,4 +58,10 @@ void VertBlurCS(int3 vGroupThreadID : SV_GroupThreadID, int3 vDispatchThreadID :
 	}
 
 	gtxtRWOutput[vDispatchThreadID.xy] = cBlurredColor;
+}
+
+[numthreads(4, 4, 1)]
+void AddCS(int3 vDispatchThreadID : SV_DispatchThreadID)
+{
+	gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy] + gtxtInputB[vDispatchThreadID.xy];
 }

@@ -57,8 +57,14 @@ VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 	return(output);
 }
 
-float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
+PS_OUTPUT PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
+	PS_OUTPUT output;
+
+	float4 f4GlowColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_EMISSION_MAP)
+		f4GlowColor = gtxtEmissiveTexture.Sample(gssWrap, input.uv);
+
 	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
 	float4 cCubeColor = gtxtEnvirCubeTexture.Sample(gssClamp, input.reflection);
 	cCubeColor.w = gMaterial.m_cReflectionFactor;
@@ -91,7 +97,10 @@ float4 PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
 
-	return(cColor * cIllumination);
+	output.color = cColor * cIllumination;
+	output.glow = f4GlowColor;
+
+	return output;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

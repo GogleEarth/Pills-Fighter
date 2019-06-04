@@ -89,7 +89,7 @@ protected:
 	float							m_fMetallic = 0.0f;
 	float							m_fGlossyReflection = 0.0f;
 
-	std::vector<CTexture*>			m_vTextures; //Albedo, Specular, Metallic, Normal, Emission, DetailAlbedo, DetailNormal
+	std::vector<CTexture*>			m_vTextures; 
 
 
 public:
