@@ -24,9 +24,7 @@ struct Client_arg
 
 class Framework
 {
-	WSADATA wsa;
-	SOCKET listen_sock;
-
+public:
 	HANDLE thread[MAX_CLIENT];
 	HANDLE update_thread;
 

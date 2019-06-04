@@ -25,36 +25,11 @@ Framework::~Framework()
 
 void Framework::Build()
 {
-	int retval;
-
 	game_start = false;
 
 	m_pScene = new CScene();
 	m_pScene->BuildObjects(m_pRepository);
 
-	// 윈속 초기화
-	if (WSAStartup(WS22, &wsa) != 0)
-		return;
-
-	// socket()
-	listen_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (listen_sock == INVALID_SOCKET)
-		err_quit("socket()");
-
-	// bind()
-	SOCKADDR_IN serveraddr;
-	ZeroMemory(&serveraddr, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(SERVERPORT);
-	retval = bind(listen_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
-	if (retval == SOCKET_ERROR)
-		err_quit("bind()");
-
-	// listen()
-	retval = listen(listen_sock, SOMAXCONN);
-	if (retval == SOCKET_ERROR)
-		err_quit("listen()");
 }
 
 void Framework::Release()
@@ -69,17 +44,10 @@ void Framework::Release()
 	// closesocket()
 	for (auto client_sock : clients)
 		closesocket(client_sock.socket);
-	closesocket(listen_sock);
-
-	// 윈속 종료
-	WSACleanup();
 }
 
 void Framework::main_loop()
 {
-	int addrlen;
-	int retval;
-
 	Update_Arg* arg = new Update_Arg;
 	arg->pthis = this;
 	arg->pScene = m_pScene;
@@ -87,106 +55,6 @@ void Framework::main_loop()
 	update_thread = CreateThread(
 		NULL, 0, Update,
 		(LPVOID)arg, 0, NULL);
-
-	while (true)
-	{
-		if (count < MAX_CLIENT && count != -1)
-		{
-			SOCKET client_sock;
-			SOCKADDR_IN clientaddr;
-			// accept()
-			addrlen = sizeof(clientaddr);
-			std::cout << count << std::endl;
-			client_sock = accept(listen_sock, (SOCKADDR*)&clientaddr, &addrlen);
-			if (client_sock == INVALID_SOCKET)
-			{
-				std::cout << "main_loop ERROR : ";
-				err_display("accept()");
-				break;
-			}
-			else
-			{
-				if (!game_start)
-				{
-					PKT_CLIENTID pkt_cid;
-					pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
-					pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
-					int id = findindex();
-					pkt_cid.Team = id % 2;
-					if (id != -1)
-						pkt_cid.id = id;
-					else
-						std::cout << "풀방임.\n";
-					if (send(client_sock, (char*)&pkt_cid, pkt_cid.PktSize, 0) == SOCKET_ERROR)
-					{
-						std::cout << "main_loop ERROR : ";
-						err_display("send()");
-						break;
-					}
-
-
-					m.lock();
-					int numclients = searchenables();
-					m.unlock();
-
-					if (numclients > 0)
-					{
-						PKT_PLAYER_IN pkt_pin;
-						pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
-						pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
-						for (int i = 0; i < MAX_CLIENT; ++i)
-						{
-							m.lock();
-							bool enable = clients[i].enable;
-							char team = clients[i].team;
-							m.unlock();
-							if (enable)
-							{
-								pkt_pin.id = i;
-								pkt_pin.Team = team;
-								std::cout << i << "번쨰 플레이어 정보를 새로 들어온 클라이언트에게 보냄\n";
-								retval = send(client_sock, (char*)&pkt_pin, pkt_pin.PktSize, 0);
-							}
-						}
-						m.lock();
-						for (auto client : clients)
-						{
-							if (client.enable)
-							{
-								pkt_pin.id = id;
-								pkt_pin.Team = id % 2;
-								std::cout << id << "번쨰 플레이어의 입장 다른 플레이어에게 알려줌\n";
-								retval = send(client.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
-							}
-						}
-						m.unlock();
-					}
-
-					m.lock();
-					clients[id].id = id;
-					clients[id].enable = true;
-					clients[id].socket = client_sock;
-					clients[id].selected_robot = ROBOT_TYPE_GM;
-					clients[id].team = id % 2;
-					m.unlock();
-
-					Arg* arg = new Arg;
-					arg->pthis = this;
-					arg->client_socket = client_sock;
-					arg->id = id;
-
-					thread[id] = CreateThread(
-						NULL, 0, client_thread,
-						(LPVOID)arg, 0, NULL);
-					count++;
-				}
-				else
-				{
-					closesocket(client_sock);
-				}
-			}
-		}
-	}
 }
 
 void Framework::err_quit(char * msg)
