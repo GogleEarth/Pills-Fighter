@@ -55,7 +55,6 @@ void CScene::BuildObjects(CRepository* pRepository)
 		m_pObjects[i] = new CGameObject();
 		m_pObjects[i]->m_Object_Type = OBJECT_TYPE_PLAYER;
 		m_pObjects[i]->m_iId = i;
-		//m_pObjects[i]->SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		m_pObjects[i]->SetModel(m_pGMMesh);
 		m_pObjects[i]->hp = PLAYER_HP;
 		m_pObjects[i]->m_bPlay = false;
@@ -72,7 +71,6 @@ void CScene::BuildObjects(CRepository* pRepository)
 	for (int i = 0; i < 24; ++i)
 	{
 		m_BeamsaberCollisionmesh[i].in_used = false;
-		//m_BeamsaberCollisionmesh[i].SetPrepareRotate(-90.0f, 0.0f, 0.0f);
 		m_BeamsaberCollisionmesh[i].SetModel(m_pGMMesh);
 		m_BeamsaberCollisionmesh[i].index = i;
 		m_BeamsaberCollisionmesh[i].hp = 3;

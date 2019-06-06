@@ -74,9 +74,9 @@ void Accept_Process()
 		/* 여기서입장할 방 번호 받음 */
 		//recv()
 
-		if (rooms[0].count < MAX_CLIENT)
+		if (rooms[0].get_players() < MAX_CLIENT)
 		{
-			if (rooms[0].count == 0)
+			if (rooms[0].get_players() == 0)
 			{
 				rooms[0].main_loop();
 			}
@@ -151,7 +151,6 @@ void Accept_Process()
 				rooms[0].thread[id] = CreateThread(
 					NULL, 0, rooms[0].client_thread,
 					(LPVOID)arg, 0, NULL);
-				rooms[0].count++;
 			}
 			else
 			{

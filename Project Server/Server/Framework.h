@@ -86,7 +86,7 @@ public:
 
 	void SendCreateEffect(CScene* pScene);
 	void SendPlayerInfo(CScene* pScene);
-	void SendUpfateObject(CScene* pScene);
+	void SendUpdateObject(CScene* pScene);
 	void SendDeleteObject(CScene* pScene);
 	void SendPlayerLife(CScene* pScene);
 	void SendCreateBullet(CScene* pScene);

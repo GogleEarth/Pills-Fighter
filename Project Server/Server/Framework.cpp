@@ -221,6 +221,8 @@ DWORD Framework::Update_Process(CScene* pScene)
 		Send_msg((char*)&scorepkt, scorepkt.PktSize, 0);
 
 		PlayGame(pScene);
+		if (get_players() == 0)
+			break;
 	}
 
 	return 0;
@@ -684,7 +686,7 @@ void Framework::SendPlayerInfo(CScene* pScene)
 	}
 }
 
-void Framework::SendUpfateObject(CScene* pScene)
+void Framework::SendUpdateObject(CScene* pScene)
 {
 	while (!update_msg_queue.empty())
 	{
@@ -924,9 +926,8 @@ void Framework::PlayGame(CScene * pScene)
 			// 잔탄 아이템 생성 패킷 보내기(10초마다 생성)
 			SendCreateAmmo(pScene);
 
-
 			// 오브젝트 업데이트 패킷 보내기
-			SendUpfateObject(pScene);
+			SendUpdateObject(pScene);
 
 			// 오브젝트 삭제 패킷 보내기
 			SendDeleteObject(pScene);
@@ -981,6 +982,22 @@ void Framework::PlayGame(CScene * pScene)
 			playernum = 0;
 			count = get_players();
 			std::cout << "점수가 0이된 팀이 있어서 게임을 종료\n";
+
+			while (!msg_queue.empty())
+				msg_queue.pop();
+			while (!life_msg_queue.empty())
+				life_msg_queue.pop();
+			while (!delete_msg_queue.empty())
+				delete_msg_queue.pop();
+			while (!update_msg_queue.empty())
+				update_msg_queue.pop();
+			while (!effect_msg_queue.empty())
+				effect_msg_queue.pop();
+			while (!shoot_msg_queue.empty())
+				shoot_msg_queue.pop();
+			while (!lobby_player_msg_queue.empty())
+				lobby_player_msg_queue.pop();
+			break;
 
 			for (auto d : clients)
 			{
