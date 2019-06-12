@@ -179,6 +179,45 @@ public:
 		CRepository *pRepository, void *pContext = NULL);
 };
 
+
+////////////////////////////////////////
+
+class CSpaceObstacleShader : public CInstancingObjectsShader
+{
+public:
+	CSpaceObstacleShader();
+	virtual ~CSpaceObstacleShader();
+
+	void InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup);
+
+	float ReadFloatFromFile(FILE *pInFile) {
+		float fValue = 0;
+		UINT nReads = (UINT)::fread(&fValue, sizeof(float), 1, pInFile);
+		return(fValue);
+	}
+	BYTE LeftByteFromFile(FILE *pInFile, int byte) {
+		UINT nReads = 0;
+		char waste[64] = { '\0' };
+		nReads = (UINT)::fread(waste, sizeof(char), byte, pInFile);
+
+		return(nReads);
+	}
+	BYTE ReadPosrotFromFile(FILE *pInFile, char *pstrToken) {
+		BYTE nStrLength = 41;
+		BYTE m_value = 7;
+		UINT nReads = 0;
+		nReads = (UINT)::fread(pstrToken, sizeof(char), nStrLength, pInFile);
+		nReads = (UINT)::fread(pstrToken, sizeof(char), m_value, pInFile);
+		pstrToken[m_value] = '\0';
+
+		return(nReads);
+	}
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+		CRepository *pRepository, void *pContext = NULL);
+};
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CSkinnedObjectsShader : public CObjectsShader

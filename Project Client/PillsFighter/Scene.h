@@ -335,7 +335,7 @@ protected:
 #define STANDARD_OBJECT_INDEX_AMMO_ITEM 4
 
 // Instancing Shader's Object Group
-#define INSTANCING_OBJECT_GROUP 10
+#define INSTANCING_OBJECT_GROUP 9
 
 #define INSTANCING_OBJECT_INDEX_HANGAR 0
 #define INSTANCING_OBJECT_INDEX_DOUBLESQUARE 1
@@ -345,8 +345,7 @@ protected:
 #define INSTANCING_OBJECT_INDEX_SQUARE 5
 #define INSTANCING_OBJECT_INDEX_STEEPLETOP 6
 #define INSTANCING_OBJECT_INDEX_WALL 7
-#define INSTANCING_OBJECT_INDEX_BRICKGARAGE 8
-#define INSTANCING_OBJECT_INDEX_FENCE 9
+#define INSTANCING_OBJECT_INDEX_FENCE 8
 
 // Standard Shader's Object Group
 #define SKINNED_OBJECT_GROUP 2
@@ -368,6 +367,87 @@ class CColonyScene : public CScene
 public:
 	CColonyScene();
 	virtual ~CColonyScene();
+
+	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void ReleaseObjects();
+	virtual void ReleaseUploadBuffers();
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+
+	virtual void CheckCollision();
+	virtual void CheckCollisionPlayer();
+	virtual void FindAimToTargetDistance();
+
+	virtual void BuildLightsAndMaterials();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void StartScene();
+
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject);
+
+	void CreateEnvironmentMap(ID3D12Device *pd3dDevice);
+	void CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice);
+
+protected:
+	ID3D12Resource					*m_pd3dEnvirCube = NULL;
+	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvEnvirCubeMapGPUHandle;
+
+	CCamera							*m_pCubeMapCamera[6];
+
+	D3D12_VIEWPORT 					m_d3dEMViewport;
+	D3D12_RECT						m_d3dEMScissorRect;
+
+protected:
+	int								m_nRedScore = 0;
+	int								m_nBlueScore = 0;
+
+	CTextObject						*m_pRedScoreText = NULL;
+	CTextObject						*m_pBlueScoreText = NULL;
+
+public:
+	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
+	virtual void EndScene();
+
+public: // Network
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
+	virtual void DeleteObject(int nIndex);
+	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo);
+	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
+	virtual void LeavePlayer(int nServerIndex);
+
+protected:
+	CGameObject* m_pObjects[MAX_NUM_OBJECT];
+
+	CModel		*m_pGimGun = NULL;
+	CModel		*m_pBazooka = NULL;
+	CModel		*m_pMachineGun = NULL;
+	CModel		*m_pSaber = NULL;
+};
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+class CSpaceScene : public CScene
+{
+public:
+	CSpaceScene();
+	virtual ~CSpaceScene();
 
 	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);

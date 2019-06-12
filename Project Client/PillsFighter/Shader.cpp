@@ -637,8 +637,132 @@ void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin", INSTANCING_OBJECT_INDEX_WALL);
 
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Brick_Garage.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_BrickGarageSelfData.bin", INSTANCING_OBJECT_INDEX_BRICKGARAGE);
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/fence.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/FenceSelfData.bin", INSTANCING_OBJECT_INDEX_FENCE);
+
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CSpaceObstacleShader::CSpaceObstacleShader()
+{
+}
+
+CSpaceObstacleShader::~CSpaceObstacleShader()
+{
+}
+
+void CSpaceObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup)
+{
+	CGameObject *pObject = new CGameObject();
+
+	FILE *pInFile = NULL;
+	::fopen_s(&pInFile, pstrFileName, "rb");
+	if (!pInFile) {
+		std::cout << "lose bin file" << std::endl;
+	}
+	::rewind(pInFile);
+
+	char pstrToken[64] = { '\0' };
+	UINT nReads = 0;
+	float loadedToken = 0;
+	UINT cycle = 0;
+	XMFLOAT3 posLoader = XMFLOAT3(0, 0, 0);
+	XMFLOAT3 rotLoader = XMFLOAT3(0, 0, 0);
+
+	while (feof(pInFile) == 0)
+	{
+		ReadPosrotFromFile(pInFile, pstrToken);
+
+		if (!strcmp(pstrToken, "m_value"))
+		{
+			switch (cycle) {
+			case 0:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				posLoader.x = loadedToken;
+				++cycle;
+				break;
+			case 1:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				posLoader.y = loadedToken;
+				++cycle;
+				break;
+			case 2:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				posLoader.z = loadedToken;
+				++cycle;
+				break;
+			case 3:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.x = loadedToken;
+				++cycle;
+				break;
+			case 4:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.y = loadedToken;
+				++cycle;
+				break;
+			case 5:
+				nReads = LeftByteFromFile(pInFile, 2);
+				loadedToken = ReadFloatFromFile(pInFile);
+				nReads = LeftByteFromFile(pInFile, 1);
+				rotLoader.z = loadedToken;
+				pObject = new CGameObject();
+				pObject->SetPosition(posLoader);
+				pObject->SetPrepareRotate(rotLoader.x, rotLoader.y, rotLoader.z);
+				InsertObject(pd3dDevice, pd3dCommandList, pObject, nGroup, true, NULL);
+				cycle = 0;
+				break;
+			}
+		}
+		else
+		{
+			std::cout << "bin file load error" << std::endl;
+			break;
+		}
+	}
+
+}
+
+void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+{
+	m_nObjectGroup = INSTANCING_OBJECT_GROUP;
+	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Hangar.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_HangarSelfData.bin", INSTANCING_OBJECT_INDEX_HANGAR);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_DoubleSquareSelfData.bin", INSTANCING_OBJECT_INDEX_DOUBLESQUARE);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_OctagonSelfData.bin", INSTANCING_OBJECT_INDEX_OCTAGON);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_OctagonLongTierSelfData.bin", INSTANCING_OBJECT_INDEX_OCTAGONLONGTIER);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_Slope_TopSelfData.bin", INSTANCING_OBJECT_INDEX_SLOPETOP);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_SquareSelfData.bin", INSTANCING_OBJECT_INDEX_SQUARE);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_Steeple_TopSelfData.bin", INSTANCING_OBJECT_INDEX_STEEPLETOP);
+
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin", INSTANCING_OBJECT_INDEX_WALL);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/fence.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/FenceSelfData.bin", INSTANCING_OBJECT_INDEX_FENCE);
