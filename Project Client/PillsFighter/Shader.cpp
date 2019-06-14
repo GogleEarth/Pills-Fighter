@@ -737,36 +737,37 @@ void CSpaceObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevi
 
 void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-	m_nObjectGroup = INSTANCING_OBJECT_GROUP;
+	
+	m_nObjectGroup = INSTANCING_OBJECT_GROUP_SPACE;
 	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
 
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Hangar.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_HangarSelfData.bin", INSTANCING_OBJECT_INDEX_HANGAR);
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids1.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_1SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID1);
 
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Double_Square.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_DoubleSquareSelfData.bin", INSTANCING_OBJECT_INDEX_DOUBLESQUARE);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Octagon.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_OctagonSelfData.bin", INSTANCING_OBJECT_INDEX_OCTAGON);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_OctagonLongTier.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_OctagonLongTierSelfData.bin", INSTANCING_OBJECT_INDEX_OCTAGONLONGTIER);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Slope_top.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_Slope_TopSelfData.bin", INSTANCING_OBJECT_INDEX_SLOPETOP);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Square.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_SquareSelfData.bin", INSTANCING_OBJECT_INDEX_SQUARE);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Building_Steeple_top.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/B_Steeple_TopSelfData.bin", INSTANCING_OBJECT_INDEX_STEEPLETOP);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Wall.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/WallSelfData.bin", INSTANCING_OBJECT_INDEX_WALL);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/fence.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/FenceSelfData.bin", INSTANCING_OBJECT_INDEX_FENCE);
-
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids2.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_2SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID2);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids3_1.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_1);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids3_2.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3-1SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_2);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids3_3.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3-2SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_3);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids4.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_4SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID4);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids5.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_5SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID5);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/SpaceShip.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_SpaceShipSelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_SPACESHIP);
+	
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/StarShip_Light.bin", NULL, NULL));
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_StarShipSelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_STARSHIP);
+	
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 

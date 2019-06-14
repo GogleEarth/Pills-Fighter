@@ -339,8 +339,8 @@ void CGameFramework::BuildScene(int nSceneType)
 
 void CGameFramework::BuildColonyScene()
 {
-	m_pScene = new CColonyScene();
-	//m_pScene = new CSpaceScene();
+	//m_pScene = new CColonyScene();
+	m_pScene = new CSpaceScene();
 
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 

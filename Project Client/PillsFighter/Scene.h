@@ -347,6 +347,7 @@ protected:
 #define INSTANCING_OBJECT_INDEX_WALL 7
 #define INSTANCING_OBJECT_INDEX_FENCE 8
 
+
 // Standard Shader's Object Group
 #define SKINNED_OBJECT_GROUP 2
 
@@ -441,6 +442,19 @@ protected:
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Instancing Shader's Object Group _ Space Stage
+#define INSTANCING_OBJECT_GROUP_SPACE				9
+
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID1		0
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID2		1
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_1	2
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_2	3
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_3	4
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID4		5
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID5		6
+#define INSTANCING_OBJECT_SPACE_INDEX_SPACESHIP		7
+#define INSTANCING_OBJECT_SPACE_INDEX_STARSHIP		8
 
 
 class CSpaceScene : public CScene
