@@ -2587,6 +2587,11 @@ void CSpaceScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 		{
 		case VK_SPACE:
 			m_pPlayer->DeactivationBooster();
+			m_pPlayer->DeactivationDescent();
+			break;
+		case 'V':
+			m_pPlayer->DeactivationBooster();
+			m_pPlayer->DeactivationDescent();
 			break;
 		}
 	case WM_KEYDOWN:

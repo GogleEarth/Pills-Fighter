@@ -63,6 +63,7 @@ protected:
 	float				m_fElapsedBGChargeTime = 0.0f;
 	float				m_fKeepBoosteringTime = 0.0f;
 	float				m_fMaxSpeed = 5.0f;
+	float				m_fMinSpeed = -5.0f;
 	float				m_fBoosterBasicForce = 3.0f;
 	bool				m_bChargeBG = false;
 
@@ -76,7 +77,9 @@ protected:
 
 public:
 	void ActivationBooster();
+	void ActivationDescent();
 	void DeactivationBooster() { m_nState &= ~OBJECT_STATE_BOOSTERING; }
+	void DeactivationDescent() { m_nState &= ~OBJECT_STATE_DESCENTING; }
 	void SetElapsedBGConsumeTime() { m_fElapsedBGConsumeTime = 1.0f; }
 	void SetElapsedBGChargeTime() { m_fElapsedBGChargeTime = 1.0f; }
 

@@ -193,7 +193,7 @@ void CPlayer::Update(float fTimeElapsed)
 	}
 	else if (m_fVelocityY < 0) {
 		m_StopRange = m_fVelocityY * 0.03;
-		m_fVelocityY += m_StopRange;
+		m_fVelocityY -= m_StopRange;
 	}
 }
 
@@ -320,10 +320,30 @@ void CPlayer::ActivationBooster()
 		SetElapsedBGConsumeTime();
 	}
 }
+void CPlayer::ActivationDescent()
+{
+	// Active by V
+	if (!(m_nState & OBJECT_STATE_DESCENTING) && m_nBoosterGauge > 0)
+	{
+		if (!(m_nState & OBJECT_STATE_FLYING))
+		{
+			ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP, true);
 
+			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
+				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
+
+			m_nState |= OBJECT_STATE_JUMPING;
+		}
+
+		m_nState |= OBJECT_STATE_DESCENTING;
+
+		m_bChargeBG = false;
+		SetElapsedBGConsumeTime();
+	}
+}
 void CPlayer::ProcessBoosterGauge(float fTimeElapsed)
 {
-	if (m_nState & OBJECT_STATE_BOOSTERING)
+	if (m_nState & OBJECT_STATE_BOOSTERING || m_nState & OBJECT_STATE_DESCENTING)
 	{
 		if (m_fElapsedBGConsumeTime <= 0.0f)
 		{
@@ -375,16 +395,22 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 {
 	m_fGravity = m_fGravAcc * m_fMass * fTimeElapsed;
 	m_fAccelerationY = -m_fGravity;
-
 	if (m_nState & OBJECT_STATE_BOOSTERING)
 	{
 		float fBoosterPower = m_fGravity + m_fKeepBoosteringTime * m_fBoosterBasicForce;
 
 		m_fAccelerationY += fBoosterPower;
 	}
+	if (m_nState & OBJECT_STATE_DESCENTING)
+	{
+		float fDescentPower = m_fGravity + m_fKeepBoosteringTime * m_fBoosterBasicForce;
+
+		m_fAccelerationY -= fDescentPower;
+	}
 
 	m_fVelocityY += (m_fAccelerationY * fTimeElapsed);
 	if (m_fVelocityY > m_fMaxSpeed) m_fVelocityY = m_fMaxSpeed;
+	if (m_fVelocityY < m_fMinSpeed) m_fVelocityY = m_fMinSpeed;
 
 	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 

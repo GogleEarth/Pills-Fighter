@@ -582,6 +582,7 @@ void CGameFramework::ProcessInput()
 			if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
 			if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
 			if (pKeyBuffer[VK_SPACE] & 0xF0) m_pPlayer->ActivationBooster();
+			if (pKeyBuffer['V'] & 0xF0) m_pPlayer->ActivationDescent();
 			if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 
 			if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);

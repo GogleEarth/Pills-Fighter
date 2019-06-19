@@ -156,7 +156,7 @@ public:
 protected:
 	std::vector<CParticle*>		m_vpParticles;
 
-	int							m_nState = 0x00;
+	int							m_nState = 0x000;
 	int							m_nType = 0x00;
 
 public:
