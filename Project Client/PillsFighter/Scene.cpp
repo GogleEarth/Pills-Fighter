@@ -507,6 +507,11 @@ void CScene::Blooming(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, in
 
 	if (m_pd3dComputeRootSignature) pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
 
+	m_pComputeShader->SetBrightFilterPipelineState(pd3dCommandList);
+	pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvOffScreenGPUHandle);
+	pd3dCommandList->SetComputeRootDescriptorTable(2, m_d3dUavGlowScreenGPUHandle);
+	pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+
 	for (int i = 0; i < 1; i++)
 	{
 		m_pComputeShader->SetHorzPipelineState(pd3dCommandList);

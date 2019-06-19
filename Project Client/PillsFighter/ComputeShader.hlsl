@@ -65,3 +65,11 @@ void AddCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy] + gtxtInputB[vDispatchThreadID.xy];
 }
+
+[numthreads(4, 4, 1)]
+void BrightFilterCS(int3 vDispatchThreadID : SV_DispatchThreadID)
+{
+	float brightness = dot(gtxtInputA[vDispatchThreadID.xy].rgb, float3(0.2126f, 0.7152f, 0.0722));
+	if (brightness > 0.85f)
+		gtxtRWOutput[vDispatchThreadID.xy] = gtxtRWOutput[vDispatchThreadID.xy] + gtxtInputA[vDispatchThreadID.xy];
+}

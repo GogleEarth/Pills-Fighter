@@ -594,16 +594,19 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateHorzComputeShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateVertComputeShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateAddComputeShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateBrightFilterComputeShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dRootSignature);
 	virtual void SetHorzPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void SetVertPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void SetAddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SetBrightFilterPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:
 	ID3D12PipelineState					*m_pd3dHorzPipelineState = NULL;
 	ID3D12PipelineState					*m_pd3dVertPipelineState = NULL;
 	ID3D12PipelineState					*m_pd3dAddPipelineState = NULL;
+	ID3D12PipelineState					*m_pd3dBrightFilterPipelineState = NULL;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

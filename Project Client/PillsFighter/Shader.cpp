@@ -2457,6 +2457,7 @@ CComputeShader::~CComputeShader()
 	if (m_pd3dHorzPipelineState) m_pd3dHorzPipelineState->Release();
 	if (m_pd3dVertPipelineState) m_pd3dVertPipelineState->Release();
 	if (m_pd3dAddPipelineState) m_pd3dAddPipelineState->Release();
+	if (m_pd3dBrightFilterPipelineState) m_pd3dBrightFilterPipelineState->Release();
 }
 
 D3D12_SHADER_BYTECODE CComputeShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob)
@@ -2491,6 +2492,11 @@ D3D12_SHADER_BYTECODE CComputeShader::CreateAddComputeShader(ID3DBlob **ppd3dSha
 	return(CompileShaderFromFile(L"ComputeShader.hlsl", "AddCS", "cs_5_1", ppd3dShaderBlob));
 }
 
+D3D12_SHADER_BYTECODE CComputeShader::CreateBrightFilterComputeShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"ComputeShader.hlsl", "BrightFilterCS", "cs_5_1", ppd3dShaderBlob));
+}
+
 void CComputeShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dRootSignature)
 {
 	ID3DBlob *pd3dShaderBlob = NULL;
@@ -2506,6 +2512,9 @@ void CComputeShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 	d3dCPSDesc.CS = CreateAddComputeShader(&pd3dShaderBlob);
 	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dAddPipelineState);
+
+	d3dCPSDesc.CS = CreateBrightFilterComputeShader(&pd3dShaderBlob);
+	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dBrightFilterPipelineState);
 
 	if (pd3dShaderBlob) pd3dShaderBlob->Release();
 }
@@ -2523,6 +2532,11 @@ void CComputeShader::SetVertPipelineState(ID3D12GraphicsCommandList *pd3dCommand
 void CComputeShader::SetAddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->SetPipelineState(m_pd3dAddPipelineState);
+}
+
+void CComputeShader::SetBrightFilterPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetPipelineState(m_pd3dBrightFilterPipelineState);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
