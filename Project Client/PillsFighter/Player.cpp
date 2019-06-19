@@ -185,6 +185,16 @@ void CPlayer::Update(float fTimeElapsed)
 	m_pCamera->SetLookAt(xmf3LookAt);
 
 	CRobotObject::Animate(fTimeElapsed);
+
+	// 시간 지나면 상승/하강 속도 0되기 (우주 전용)
+	if (m_fVelocityY > 0) {
+		m_StopRange = m_fVelocityY * 0.03;
+		m_fVelocityY -= m_StopRange;
+	}
+	else if (m_fVelocityY < 0) {
+		m_StopRange = m_fVelocityY * 0.03;
+		m_fVelocityY += m_StopRange;
+	}
 }
 
 void CPlayer::Rotate(float x, float y, float z)
@@ -377,6 +387,7 @@ void CPlayer::ProcessGravity(float fTimeElapsed)
 	if (m_fVelocityY > m_fMaxSpeed) m_fVelocityY = m_fMaxSpeed;
 
 	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+
 }
 
 void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB)

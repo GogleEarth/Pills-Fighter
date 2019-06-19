@@ -2542,8 +2542,6 @@ void CColonyScene::LeavePlayer(int nServerIndex)
 
 
 
-// Ã¥°¥ÇÇ
-
 CSpaceScene::CSpaceScene() : CScene()
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)

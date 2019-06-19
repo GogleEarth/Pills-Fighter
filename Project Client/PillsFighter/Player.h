@@ -72,10 +72,11 @@ protected:
 	float				m_fVelocityY = 0.0f;
 	float				m_fAccelerationY = 0.0f;
 	float				m_fGravity = 0.0f;
+	float				m_StopRange = 0.0f;
 
 public:
 	void ActivationBooster();
-	void DeactivationBooster() {m_nState &= ~OBJECT_STATE_BOOSTERING;};
+	void DeactivationBooster() { m_nState &= ~OBJECT_STATE_BOOSTERING; }
 	void SetElapsedBGConsumeTime() { m_fElapsedBGConsumeTime = 1.0f; }
 	void SetElapsedBGChargeTime() { m_fElapsedBGChargeTime = 1.0f; }
 
