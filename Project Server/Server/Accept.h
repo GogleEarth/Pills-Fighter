@@ -11,3 +11,4 @@ public:
 };
 
 	void Accept_Process();
+	int Find_Room_Num();

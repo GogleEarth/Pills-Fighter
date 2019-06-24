@@ -23,7 +23,9 @@ typedef enum PKT_ID
 	PKT_ID_SHOOT,
 	PKT_ID_SCORE,
 	PKT_ID_GAME_END,
-	PKT_ID_PICK_ITEM
+	PKT_ID_PICK_ITEM,
+	PKT_ID_CREATE_ROOM,
+	PKT_ID_ROOM_IN
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -250,6 +252,20 @@ struct PKT_GAME_END
 	BYTE PktId;
 	BYTE WinTeam;
 };
+
+struct PKT_CREATE_ROOM
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_ROOM_IN
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+};
+
 
 #pragma pack(pop)
 

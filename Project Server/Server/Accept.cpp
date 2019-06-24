@@ -53,6 +53,18 @@ void Accept::Release()
 	WSACleanup();
 }
 
+int Find_Room_Num()
+{
+	int ret = -1;
+	for (int i = 0; i < 10; i++)
+	{
+		if (rooms[i].get_players() > 0) continue;
+		ret = i;
+		return ret;
+	}
+	return ret;
+}
+
 void Accept_Process()
 {
 	int addrlen;
@@ -72,20 +84,52 @@ void Accept_Process()
 		}
 
 		/* 여기서입장할 방 번호 받음 */
-		//recv()
 
-		if (rooms[0].get_players() < MAX_CLIENT)
+		int room_num;
+		PKT_ID iPktID;
+		int nPktSize = 0;
+		char* buf;
+		retval = recvn(client_sock, (char*)&iPktID, sizeof(PKT_ID), 0);
+		if (iPktID == PKT_ID_CREATE_ROOM) nPktSize = sizeof(PKT_CREATE_ROOM); // 플레이어 정보 [ 행렬, 상태 ]
+		else if (iPktID == PKT_ID_ROOM_IN) nPktSize = sizeof(PKT_ROOM_IN);
+		//recv()
+		buf = new char[nPktSize];
+		retval = recvn(client_sock, buf, nPktSize, 0);
+		if (iPktID == PKT_ID_CREATE_ROOM)
 		{
-			if (rooms[0].get_players() == 0)
+			room_num = Find_Room_Num();
+		}
+		else if (iPktID == PKT_ID_ROOM_IN)
+		{
+			room_num = ((PKT_ROOM_IN*)buf)->Room_num;
+			if (room_num > 10 || room_num < 0)
 			{
-				rooms[0].main_loop();
+				std::cout << "잘못된 방 번호\n";
+				closesocket(client_sock);
+				continue;
 			}
-			if (!rooms[0].game_start)
+		}
+		else
+		{
+			std::cout << "알수없는 패킷\n";
+			closesocket(client_sock);
+			continue;
+		}
+
+
+
+		if (rooms[room_num].get_players() < MAX_CLIENT)
+		{
+			if (rooms[room_num].get_players() == 0)
+			{
+				rooms[room_num].main_loop();
+			}
+			if (!rooms[room_num].game_start)
 			{
 				PKT_CLIENTID pkt_cid;
 				pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
 				pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
-				int id = rooms[0].findindex();
+				int id = rooms[room_num].findindex();
 				pkt_cid.Team = id % 2;
 				if (id != -1)
 					pkt_cid.id = id;
@@ -98,9 +142,9 @@ void Accept_Process()
 				}
 
 
-				rooms[0].m.lock();
-				int numclients = rooms[0].searchenables();
-				rooms[0].m.unlock();
+				rooms[room_num].m.lock();
+				int numclients = rooms[room_num].searchenables();
+				rooms[room_num].m.unlock();
 
 				if (numclients > 0)
 				{
@@ -109,10 +153,10 @@ void Accept_Process()
 					pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 					for (int i = 0; i < MAX_CLIENT; ++i)
 					{
-						rooms[0].m.lock();
-						bool enable = rooms[0].clients[i].enable;
-						char team = rooms[0].clients[i].team;
-						rooms[0].m.unlock();
+						rooms[room_num].m.lock();
+						bool enable = rooms[room_num].clients[i].enable;
+						char team = rooms[room_num].clients[i].team;
+						rooms[room_num].m.unlock();
 						if (enable)
 						{
 							pkt_pin.id = i;
@@ -121,8 +165,8 @@ void Accept_Process()
 							retval = send(client_sock, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 						}
 					}
-					rooms[0].m.lock();
-					for (auto client : rooms[0].clients)
+					rooms[room_num].m.lock();
+					for (auto client : rooms[room_num].clients)
 					{
 						if (client.enable)
 						{
@@ -132,24 +176,24 @@ void Accept_Process()
 							retval = send(client.socket, (char*)&pkt_pin, pkt_pin.PktSize, 0);
 						}
 					}
-					rooms[0].m.unlock();
+					rooms[room_num].m.unlock();
 				}
 
-				rooms[0].m.lock();
-				rooms[0].clients[id].id = id;
-				rooms[0].clients[id].enable = true;
-				rooms[0].clients[id].socket = client_sock;
-				rooms[0].clients[id].selected_robot = ROBOT_TYPE_GM;
-				rooms[0].clients[id].team = id % 2;
-				rooms[0].m.unlock();
+				rooms[room_num].m.lock();
+				rooms[room_num].clients[id].id = id;
+				rooms[room_num].clients[id].enable = true;
+				rooms[room_num].clients[id].socket = client_sock;
+				rooms[room_num].clients[id].selected_robot = ROBOT_TYPE_GM;
+				rooms[room_num].clients[id].team = id % 2;
+				rooms[room_num].m.unlock();
 
 				Arg* arg = new Arg;
-				arg->pthis = &rooms[0];
+				arg->pthis = &rooms[room_num];
 				arg->client_socket = client_sock;
 				arg->id = id;
 
 				rooms[0].thread[id] = CreateThread(
-					NULL, 0, rooms[0].client_thread,
+					NULL, 0, rooms[room_num].client_thread,
 					(LPVOID)arg, 0, NULL);
 			}
 			else
