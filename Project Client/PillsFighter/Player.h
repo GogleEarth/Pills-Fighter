@@ -13,7 +13,7 @@
 class CShader;
 class CUserInterface;
 class CRepository;
-class CScene;
+class CBattleScene;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -35,6 +35,7 @@ public:
 
 	void Move(ULONG nDirection, float fDistance);
 	void Move(const XMFLOAT3& xmf3Shift);
+	void DashMove(ULONG dwDirection, float fDistance);
 	virtual void Rotate(float x, float y, float z);
 
 	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
@@ -55,50 +56,48 @@ public:
 
 	virtual CCamera *SetCamera(float fTimeElapsed);
 
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-
 protected:
-	int					m_nBoosterGauge = 100;
-	float				m_fElapsedBGConsumeTime = 0.0f;
-	float				m_fElapsedBGChargeTime = 0.0f;
-	float				m_fKeepBoosteringTime = 0.0f;
-	float				m_fMaxSpeed = 5.0f;
-	float				m_fMinSpeed = -5.0f;
-	float				m_fBoosterBasicForce = 3.0f;
-	bool				m_bChargeBG = false;
+#define BOOSTER_POWER 3.0f
+#define MAX_UP_POWER 5.0f
+#define MAX_DOWN_POWER 5.0f
+#define INTERVAL_BOOSTER_GAUGE_CHARGE 2.0f
+#define INTERVAL_BOOSTER_GAUGE_CONSUME 1.0f
 
-	float				m_fGravAcc;
+	int					m_nBoosterGauge = 100;
+	float				m_fTimeForConsumeBoosterGauge = 0.0f;
+	float				m_fTimeForChargeBoosterGauge = 0.0f;
+	float				m_fTimeForBoostUp = 0.0f;
+	float				m_fTimeForBoostDown = 0.0f;
+
 	float				m_fMass = 15.0f;
 
 	float				m_fVelocityY = 0.0f;
 	float				m_fAccelerationY = 0.0f;
-	float				m_fGravity = 0.0f;
 	float				m_StopRange = 0.0f;
 
 public:
 	void ActivationBooster();
-	void ActivationDescent();
-	void DeactivationBooster() { m_nState &= ~OBJECT_STATE_BOOSTERING; }
-	void DeactivationDescent() { m_nState &= ~OBJECT_STATE_DESCENTING; }
-	void SetElapsedBGConsumeTime() { m_fElapsedBGConsumeTime = 1.0f; }
-	void SetElapsedBGChargeTime() { m_fElapsedBGChargeTime = 1.0f; }
+	void ActivationDash();
+	void DeactivationBooster() { if(!IsDash()) m_nState &= ~OBJECT_STATE_BOOSTER; m_bChangedSpaceStart = false; }
+	void DeactivationDash() { m_nState &= ~OBJECT_STATE_BOOSTER; m_nState &= ~OBJECT_STATE_DASH;  m_nDashDirection = 0; m_bChangedDashStart = false; }
+	void ApplyGravity(float fGravity, float fTimeElapsed);
 
 	int GetBoosterGauge() { return m_nBoosterGauge; }
-	void SetGravity(float fGravity) { m_fGravAcc = fGravity; }
 
 	float GetVelocity() { return m_fVelocityY; }
 	void SetVelocity(float fVelocity) { m_fVelocityY = fVelocity; }
 
 public:
-	void ProcessBoosterGauge(float fElapsedTime);
+	void ProcessBooster(float fElapsedTime);
+	void ProcessBoosterCharge(float fElapsedTime);
+	void ProcessBoosterConsume(float fElapsedTime);
 	void ProcessHitPoint();
-	void ProcessGravity(float fTimeElapsed);
 
 protected:
-	CScene			*m_pScene = NULL;
+	CBattleScene			*m_pScene = NULL;
 
 public:
-	void SetScene(CScene *pCScene) { m_pScene = pCScene; }
+	void SetScene(CBattleScene *pCScene) { m_pScene = pCScene; }
 
 public:
 	XMFLOAT4X4 GetToTarget(XMFLOAT3 xmf3Position);
@@ -127,36 +126,74 @@ public:
 
 protected:
 	BOOL		m_bWeaponChanged = FALSE;
+	ULONG		m_nDashDirection = 0;
+	bool		m_bShiftDown = false;
+	bool		m_bChangedDashStart = false;
 
+	bool		m_bSpaceDown = false;
+	bool		m_bChangedSpaceStart = false;
+
+	bool		m_bVDown = false;
 public:
+	void ShiftUp() { m_bShiftDown = false; }
+
+	void SpaceUp() { m_bSpaceDown = false; }
+	void SpaceDown() { m_bSpaceDown = true; }
+
+	void VUp() { m_bVDown = false; }
+	void VDown() { m_bVDown = true; }
+
 	BOOL GetWeaponChanged() { return m_bWeaponChanged; }
 	void SetWeaponChanged(BOOL bWeaponChanged) { m_bWeaponChanged = bWeaponChanged; }
 
 	void ProcessAnimation();
+	void ProcessDashAnimation();
+	void ProcessJumpAnimation();
+	void ProcessShootAnimation();
 
-	void DeactiveMoving() { m_nState &= ~OBJECT_STATE_MOVING; }
+	void DeactiveMoving() { m_nState &= ~OBJECT_STATE_WALK; }
 
 	// For Animation	
 protected:
 	// Others
-	bool m_bChangeableOnceAni = false;
+	bool m_bChangeableOnceAniShoot = false;
 
-	int m_nAnimationList[3] = { ANIMATION_STATE_BEAM_SABER_1_ONE , ANIMATION_STATE_BEAM_SABER_2_ONE, ANIMATION_STATE_BEAM_SABER_3_ONE };
+	int m_nAnimationList[3] = { ANIMATION_STATE_BEAM_SABER_1_ONCE , ANIMATION_STATE_BEAM_SABER_2_ONCE, ANIMATION_STATE_BEAM_SABER_3_ONCE };
 	int m_nSaberAnimationIndex = 0;
+
+public:
+	bool IsSameUpDownAnimation() { return m_ppAnimationControllers[ANIMATION_UP] && m_ppAnimationControllers[ANIMATION_DOWN]; }
+	bool IsOnGround() { return m_nState & OBJECT_STATE_ONGROUND; }
+	bool IsJumping() { return m_nState & OBJECT_STATE_JUMP; }
+	bool IsWalking() { return m_nState & OBJECT_STATE_WALK; }
+	bool IsBoostering() { return m_nState & OBJECT_STATE_BOOSTER; }
+	bool IsDash() { return m_nState & OBJECT_STATE_DASH; }
+	bool IsDoingAttack() { return (m_nState & OBJECT_STATE_SHOOTING) || (m_nState & OBJECT_STATE_SWORDING); }
+	bool IsShooting() { return m_nState & OBJECT_STATE_SHOOTING; }
+	bool IsSwording() { return m_nState & OBJECT_STATE_SWORDING; }
+	bool IsAnimationSwording() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_1_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_2_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_3_ONCE); }
+	bool IsMoving() { return IsJumping() || IsWalking() || IsBoostering() || IsDoingAttack(); }
+	bool IsIdle() { return !IsMoving(); }
+	bool IsUnderBodyChangeable() { return !IsJumping() && !IsWalking() && !IsDash() && IsOnGround(); }
+	bool AnimationIsShootStart() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_GM_GUN_SHOOT_START) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_DASH_SHOOT_START_ONCE); }
+	bool AnimationIsShootOnce() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_SHOOT_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_DASH_SHOOT_START_ONCE); }
+	bool AnimationIsShootReturn() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_GM_GUN_SHOOT_RETURN) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_DASH_SHOOT_RETURN_ONCE); }
+	bool IsPrepareDashAnimation();
 
 	// For Attack
 protected:
 	bool m_bShootable = false;
 	bool m_LButtonDown = false;
-	bool m_bShootBullet = false;
 	float m_fMouseUpTime = 0.0f;
+	bool m_bShooted = false;
 
 public:
 	bool IsShootable() { return m_bShootable; }
 	void SetShootable(bool bShot) { m_bShootable = bShot; }
 	void LButtonUp() { m_LButtonDown = false; m_fMouseUpTime = 0.0f;}
-	bool GetShootBullet() { return m_bShootBullet; }
-	void SetShootBullet(bool b) { m_bShootBullet = b; }
+	bool IsShooted() { return m_bShooted; }
+	void Shooted() { m_bShooted = false; }
+	void Shoot() { m_bShooted = true; }
 
 	void ProcessMouseUpTime(float fElapsedTime);
 };

@@ -437,7 +437,10 @@ void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 	UpdateShaderVariables(pd3dCommandList);
 
 	int i = 0;
-	if(m_pModel) m_pModel->RenderWire(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, nInstances);
+	if (m_pModel)
+	{
+		m_pModel->RenderWire(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, nInstances);
+	}
 }
 
 void CGameObject::UpdateInstanceShaderVariables(VS_VB_INSTANCE *pcbMappedGameObjects, int *pnIndex)
@@ -878,7 +881,7 @@ void CRobotObject::ApplyToParticle(CParticle *pParticle)
 {
 	CGameObject::ApplyToParticle(pParticle);
 
-	if (m_nState & OBJECT_STATE_BOOSTERING) 
+	if (m_nState & OBJECT_STATE_BOOSTER) 
  		pParticle->SetEmit(true);
 	else pParticle->SetEmit(false);
 
@@ -892,25 +895,13 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
 	CGameObject::Animate(fTimeElapsed, pCamera);
 
-	if (m_nState & OBJECT_STATE_BOOSTERING)
+	if (m_nState & OBJECT_STATE_BOOSTER)
 	{
 		gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBooster, &m_pChannelBooster);
 	}
 	else
 	{
 		gFmodSound.PauseFMODSound(m_pChannelBooster);
-	}
-
-	if (m_ppAnimationControllers[ANIMATION_UP] && m_ppAnimationControllers[ANIMATION_DOWN])
-	{
-		// 하반신이 우선인 상태
-		if (m_nState & OBJECT_STATE_MOVING)
-		{
-			if (!(m_nState & OBJECT_STATE_SHOOTING) && !(m_nState & OBJECT_STATE_SWORDING))
-			{
-				m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_DOWN]->GetTrackPosition(0));
-			}
-		}
 	}
 
 	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
@@ -1040,19 +1031,19 @@ void CRobotObject::SetCallBackKeys(CModel *pModel)
 	ppAnimationControllers[ANIMATION_DOWN]->SetAnimationCallbackHandler(ANIMATION_STATE_WALK_BACKWARD, pAnimationCallbackHandler);
 
 	pAnimationCallbackHandler = new CAnimationCallbackHandler();
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_1_ONE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_1_ONE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_1_ONE, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_1_ONCE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_1_ONCE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_1_ONCE, pAnimationCallbackHandler);
 
 	pAnimationCallbackHandler = new CAnimationCallbackHandler();
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_2_ONE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_2_ONE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_2_ONE, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_2_ONCE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_2_ONCE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_2_ONCE, pAnimationCallbackHandler);
 
 	pAnimationCallbackHandler = new CAnimationCallbackHandler();
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_3_ONE, 1);
-	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_3_ONE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
-	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_3_ONE, pAnimationCallbackHandler);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKeys(ANIMATION_STATE_BEAM_SABER_3_ONCE, 1);
+	ppAnimationControllers[ANIMATION_UP]->SetCallbackKey(ANIMATION_STATE_BEAM_SABER_3_ONCE, 0, FLT_MAX, CALLBACK_TYPE_SOUND, CALLBACK_POSITION_MIDDLE, (void*)&CALLBACK_TYPE_SOUND_SABER_ATTACK);
+	ppAnimationControllers[ANIMATION_UP]->SetAnimationCallbackHandler(ANIMATION_STATE_BEAM_SABER_3_ONCE, pAnimationCallbackHandler);
 
 	SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
 	SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);

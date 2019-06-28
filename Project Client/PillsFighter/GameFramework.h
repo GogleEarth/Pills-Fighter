@@ -101,6 +101,7 @@ protected:
 protected:
 	CFont							m_Arial;
 	CFont							m_HumanMagic;
+	bool							m_bWireRender = false;
 
 protected: // for Network
 	SOCKET	m_Socket;

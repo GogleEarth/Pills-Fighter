@@ -518,6 +518,19 @@ void CInstancingObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Instancing Shader's Object Group
+#define INSTANCING_OBJECT_GROUP 9
+
+#define INSTANCING_OBJECT_INDEX_HANGAR 0
+#define INSTANCING_OBJECT_INDEX_DOUBLESQUARE 1
+#define INSTANCING_OBJECT_INDEX_OCTAGON 2
+#define INSTANCING_OBJECT_INDEX_OCTAGONLONGTIER 3
+#define INSTANCING_OBJECT_INDEX_SLOPETOP 4
+#define INSTANCING_OBJECT_INDEX_SQUARE 5
+#define INSTANCING_OBJECT_INDEX_STEEPLETOP 6
+#define INSTANCING_OBJECT_INDEX_WALL 7
+#define INSTANCING_OBJECT_INDEX_FENCE 8
+
 CObstacleShader::CObstacleShader()
 {
 }
@@ -644,6 +657,19 @@ void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Instancing Shader's Object Group _ Space Stage
+#define INSTANCING_OBJECT_GROUP_SPACE				9
+
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID1		0
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID2		1
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_1	2
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_2	3
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_3	4
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID4		5
+#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID5		6
+#define INSTANCING_OBJECT_SPACE_INDEX_SPACESHIP		7
+#define INSTANCING_OBJECT_SPACE_INDEX_STARSHIP		8
 
 CSpaceObstacleShader::CSpaceObstacleShader()
 {

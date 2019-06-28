@@ -123,8 +123,6 @@ public:
 
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
 
-	float GetToTargetDistance() { return m_fCameraToTarget; }
-
 protected:
 	LIGHTS								*m_pLights = NULL;
 	ID3D12Resource						*m_pd3dcbLights = NULL;
@@ -145,10 +143,6 @@ protected:
 
 	CUserInterface						*m_pUserInterface = NULL;
 
-protected:
-	float			m_fGravAcc = 9.8f;
-	float			m_fCameraToTarget = 0.0f;
-
 public:
 	virtual void StartScene() {};
 
@@ -163,7 +157,7 @@ protected:
 
 protected:
 	BOOL							m_LButtonDown = FALSE;
-	BOOL							m_bRenderWire = FALSE;
+	//BOOL							m_bRenderWire = FALSE;
 
 protected:
 	CCursor							*m_pCursor = NULL;
@@ -334,26 +328,11 @@ protected:
 #define STANDARD_OBJECT_INDEX_REPAIR_ITEM 3
 #define STANDARD_OBJECT_INDEX_AMMO_ITEM 4
 
-// Instancing Shader's Object Group
-#define INSTANCING_OBJECT_GROUP 9
-
-#define INSTANCING_OBJECT_INDEX_HANGAR 0
-#define INSTANCING_OBJECT_INDEX_DOUBLESQUARE 1
-#define INSTANCING_OBJECT_INDEX_OCTAGON 2
-#define INSTANCING_OBJECT_INDEX_OCTAGONLONGTIER 3
-#define INSTANCING_OBJECT_INDEX_SLOPETOP 4
-#define INSTANCING_OBJECT_INDEX_SQUARE 5
-#define INSTANCING_OBJECT_INDEX_STEEPLETOP 6
-#define INSTANCING_OBJECT_INDEX_WALL 7
-#define INSTANCING_OBJECT_INDEX_FENCE 8
-
-
 // Standard Shader's Object Group
 #define SKINNED_OBJECT_GROUP 2
 
 #define SKINNED_OBJECT_INDEX_GM 0
 #define SKINNED_OBJECT_INDEX_GUNDAM 1
-
 
 // Scene's Effect Shader Index
 #define EFFECT_SHADER_INDEX 3
@@ -362,32 +341,35 @@ protected:
 #define INDEX_SHADER_SPRITE_EFFECTS 1
 #define INDEX_SHADER_TEXT_EEFECTS 2
 
-
-class CColonyScene : public CScene
+class CBattleScene : public CScene
 {
 public:
-	CColonyScene();
-	virtual ~CColonyScene();
+	CBattleScene();
+	virtual ~CBattleScene();
 
 	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository) {}
+	virtual void BuildTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
 	virtual void ReleaseObjects();
 	virtual void ReleaseUploadBuffers();
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 
 	virtual void CheckCollision();
 	virtual void CheckCollisionPlayer();
 	virtual void FindAimToTargetDistance();
 
-	virtual void BuildLightsAndMaterials();
+	virtual void BuildLightsAndMaterials() {}
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void ReleaseShaderVariables() {}
 
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables();
-
-	virtual void StartScene();
+	virtual void StartScene() {}
+	virtual void EndScene() {}
 
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -416,9 +398,13 @@ protected:
 	CTextObject						*m_pRedScoreText = NULL;
 	CTextObject						*m_pBlueScoreText = NULL;
 
+	float							m_fGravAcc = 0.0f;
+	float							m_fCameraToTarget = 0.0f;
+
 public:
+	float GetToTargetDistance() { return m_fCameraToTarget; }
+
 	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
-	virtual void EndScene();
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
@@ -436,45 +422,17 @@ protected:
 	CModel		*m_pSaber = NULL;
 };
 
-
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Instancing Shader's Object Group _ Space Stage
-#define INSTANCING_OBJECT_GROUP_SPACE				9
-
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID1		0
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID2		1
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_1	2
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_2	3
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_3	4
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID4		5
-#define INSTANCING_OBJECT_SPACE_INDEX_ASTROID5		6
-#define INSTANCING_OBJECT_SPACE_INDEX_SPACESHIP		7
-#define INSTANCING_OBJECT_SPACE_INDEX_STARSHIP		8
-
-
-class CSpaceScene : public CScene
+class CColonyScene : public CBattleScene
 {
 public:
-	CSpaceScene();
-	virtual ~CSpaceScene();
+	CColonyScene();
+	virtual ~CColonyScene();
 
-	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
-	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-
-	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
-	virtual void ReleaseObjects();
-	virtual void ReleaseUploadBuffers();
-	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
-
-	virtual void CheckCollision();
-	virtual void CheckCollisionPlayer();
-	virtual void FindAimToTargetDistance();
-
+	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void BuildTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void BuildLightsAndMaterials();
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
@@ -482,50 +440,27 @@ public:
 	virtual void ReleaseShaderVariables();
 
 	virtual void StartScene();
-
-	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
-	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject);
-
-	void CreateEnvironmentMap(ID3D12Device *pd3dDevice);
-	void CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	void CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice);
-
-protected:
-	ID3D12Resource					*m_pd3dEnvirCube = NULL;
-	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvEnvirCubeMapGPUHandle;
-
-	CCamera							*m_pCubeMapCamera[6];
-
-	D3D12_VIEWPORT 					m_d3dEMViewport;
-	D3D12_RECT						m_d3dEMScissorRect;
-
-protected:
-	int								m_nRedScore = 0;
-	int								m_nBlueScore = 0;
-
-	CTextObject						*m_pRedScoreText = NULL;
-	CTextObject						*m_pBlueScoreText = NULL;
-
-public:
-	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
 	virtual void EndScene();
+};
 
-public: // Network
-	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
-	virtual void DeleteObject(int nIndex);
-	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo);
-	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
-	virtual void LeavePlayer(int nServerIndex);
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-protected:
-	CGameObject* m_pObjects[MAX_NUM_OBJECT];
+class CSpaceScene : public CBattleScene
+{
+public:
+	CSpaceScene();
+	virtual ~CSpaceScene();
 
-	CModel		*m_pGimGun = NULL;
-	CModel		*m_pBazooka = NULL;
-	CModel		*m_pMachineGun = NULL;
-	CModel		*m_pSaber = NULL;
+	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+
+	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void BuildLightsAndMaterials();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void StartScene();
+	virtual void EndScene();
 };

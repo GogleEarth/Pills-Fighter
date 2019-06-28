@@ -339,8 +339,8 @@ void CGameFramework::BuildScene(int nSceneType)
 
 void CGameFramework::BuildColonyScene()
 {
-	//m_pScene = new CColonyScene();
-	m_pScene = new CSpaceScene();
+	m_pScene = new CColonyScene();
+	//m_pScene = new CSpaceScene();
 
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
@@ -518,6 +518,9 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 			}
 			break;
+		case 'B':
+			m_bWireRender = !m_bWireRender;
+			break;
 		default:
 			break;
 		}
@@ -571,7 +574,7 @@ void CGameFramework::ProcessInput()
 
 	if(m_pPlayer) m_pPlayer->DeactiveMoving();
 
-	if (::GetKeyboardState(pKeyBuffer))
+	if (::GetKeyboardState(pKeyBuffer) || m_pPlayer->IsDash())
 	{
 		if (m_pPlayer)
 		{
@@ -581,11 +584,8 @@ void CGameFramework::ProcessInput()
 			if (pKeyBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
 			if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
 			if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
-			if (pKeyBuffer[VK_SPACE] & 0xF0) m_pPlayer->ActivationBooster();
-			if (pKeyBuffer['V'] & 0xF0) m_pPlayer->ActivationDescent();
-			if (pKeyBuffer['R'] & 0xF0) m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
-
-			if (dwDirection) m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
+			
+			m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
 		}
 	}
 
@@ -601,6 +601,15 @@ void CGameFramework::ProcessInput()
 		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / MOUSE_SENSITIVITY;
 		cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / MOUSE_SENSITIVITY;
 
+		if (m_pPlayer)
+		{
+			if (m_pPlayer->IsDash())
+			{
+				cxDelta *= 0.6f;
+				cyDelta *= 0.8f;
+			}
+		}
+
 		::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
 	}
 
@@ -612,8 +621,6 @@ void CGameFramework::ProcessInput()
 			if (m_pPlayer) m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 	}
-
-	if (m_pPlayer) m_pPlayer->Update(m_fElapsedTime);
 }
 
 void CGameFramework::AnimateObjects(float fElapsedTime)
@@ -675,13 +682,18 @@ void CGameFramework::FrameAdvance()
 		m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
 		m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
 
-		if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
+		if (m_pScene)
+		{
+			m_pScene->Render(m_pd3dCommandList, m_pCamera);
+
+			if (m_bWireRender)
+				m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
+		}
 
 		if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 
 		if (m_pScene)
 		{
-			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
 
 			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
 
@@ -1046,10 +1058,10 @@ void CGameFramework::SendToServer()
 
 		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
 
-		if (m_pPlayer->GetShootBullet())
+		if (m_pPlayer->IsShooted())
 		{
 			pktPlayerInfo.IsShooting = TRUE;
-			m_pPlayer->SetShootBullet(false);
+			m_pPlayer->Shooted();
 
 			//총알 생성 패킷 보내기
 			PKT_SHOOT pktShoot;

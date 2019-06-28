@@ -83,9 +83,9 @@ void CAnimation::SetTimePosition(float fTrackTimePosition)
 	{
 		m_fAnimationTimePosition = m_fAnimationTimePosition > m_fAnimationLength ? m_fAnimationLength : m_fAnimationTimePosition;
 
-		TCHAR pstrDebug[256] = { 0 };
-		_stprintf_s(pstrDebug, 256, _T("Length : %f, Time Position : %f\n"), m_fAnimationLength, m_fAnimationTimePosition);
-		OutputDebugString(pstrDebug);
+		//TCHAR pstrDebug[256] = { 0 };
+		//_stprintf_s(pstrDebug, 256, _T("Length : %f, Time Position : %f\n"), m_fAnimationLength, m_fAnimationTimePosition);
+		//OutputDebugString(pstrDebug);
 		break;
 	}
 	case ANIMATION_TYPE_PINGPONG:

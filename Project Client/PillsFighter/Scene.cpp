@@ -21,7 +21,7 @@ ID3D12DescriptorHeap			*CScene::m_pd3dDsvDescriptorHeap;
 D3D12_CPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvCPUDesciptorStartHandle;
 D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvGPUDesciptorStartHandle;
 
-int								CScene::m_nPlayerRobotType = SKINNED_OBJECT_INDEX_GUNDAM;
+int								CScene::m_nPlayerRobotType = SKINNED_OBJECT_INDEX_GM;
 
 extern CFMODSound gFmodSound;
 
@@ -347,6 +347,7 @@ void CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPar
 		default:
 			break;
 		}
+		break;
 	default:
 		break;
 	}
@@ -358,6 +359,8 @@ void CScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
 
 void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
+	if (m_pPlayer) m_pPlayer->Update(fTimeElapsed);
+
 	for (int i = 0; i < m_nShaders; i++)
 	{
 		if (m_ppShaders[i])
@@ -437,15 +440,12 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_bRenderWire)
-	{
-		if (m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
+	if (m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
 
-		for (int i = 0; i < m_nShaders; i++)
-		{
-			if (m_ppShaders[i])
-				m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
-		}
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		if (m_ppShaders[i])
+			m_ppShaders[i]->RenderWire(pd3dCommandList, pCamera);
 	}
 }
 
@@ -1546,17 +1546,17 @@ void CLobbyScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CColonyScene::CColonyScene() : CScene()
+CBattleScene::CBattleScene() : CScene()
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 		m_pObjects[i] = NULL;
 }
 
-CColonyScene::~CColonyScene()
+CBattleScene::~CBattleScene()
 {
 }
 
-void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+void CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 	switch (nMessageID)
 	{
@@ -1580,7 +1580,7 @@ void CColonyScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM w
 	}
 }
 
-void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 	CScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 
@@ -1589,10 +1589,16 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 	case WM_KEYUP:
 		switch (wParam)
 		{
+		case VK_SHIFT:
+			m_pPlayer->ShiftUp();
+			break;
 		case VK_SPACE:
-			m_pPlayer->DeactivationBooster();
+			m_pPlayer->SpaceUp();
+			break;
+		default:
 			break;
 		}
+		break;
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
@@ -1608,8 +1614,15 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case '4':
 			m_pPlayer->ChangeWeapon(3);
 			break;
-		case 'B':
-			m_bRenderWire = !m_bRenderWire;
+		case 'R': 
+			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
+			break;
+		case VK_SPACE:
+			m_pPlayer->ActivationBooster();
+			m_pPlayer->SpaceDown();
+			break;
+		case VK_SHIFT:
+			m_pPlayer->ActivationDash();
 			break;
 		default:
 			break;
@@ -1620,7 +1633,7 @@ void CColonyScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 	}
 }
 
-void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
+void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
 	
@@ -1636,10 +1649,7 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS] = pStandardObjectsShader;
 
 	/* 그룹 2 [ Instancing Shader ] */
-	CObstacleShader *pInstancingObstacleShader = new CObstacleShader();
-	pInstancingObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pInstancingObstacleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS] = pInstancingObstacleShader;
+	BuildObstacleObjetcs(pd3dDevice, pd3dCommandList, pRepository);
 
 	/* 그룹 3 [ Skinned Animation Shader ] */
 	CRobotObjectsShader *pSkinnedRobotShader = new CRobotObjectsShader();
@@ -1669,7 +1679,6 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS] = pSpriteShader;
 	   
-	
 	// Particle
 	m_pParticleShader = new CParticleShader();
 	m_pParticleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -1681,12 +1690,10 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 
 	// Terrain
-	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
-	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
-	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/Stage/HeightMap.raw"), 514, 514, 514, 514, xmf3Scale, xmf4Color);
+	BuildTerrain(pd3dDevice, pd3dCommandList);
 
 	// SkyBox
-	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+	BuildSkybox(pd3dDevice, pd3dCommandList);
 
 	// Weapons
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL);
@@ -1695,7 +1702,7 @@ void CColonyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
 }
 
-void CColonyScene::ReleaseObjects()
+void CBattleScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
 
@@ -1709,7 +1716,14 @@ void CColonyScene::ReleaseObjects()
 	}
 }
 
-void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+void CBattleScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
+{
+	if (m_pPlayer) m_pPlayer->ApplyGravity(m_fGravAcc, fTimeElapsed);
+
+	CScene::AnimateObjects(fTimeElapsed, pCamera);
+}
+
+void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
 
@@ -1721,7 +1735,6 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	if (m_pPlayer)
 	{
-		m_pPlayer->SetGravity(m_fGravAcc);
 		m_pPlayer->SetScene(this);
 	}
 
@@ -1751,12 +1764,7 @@ void CColonyScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pBlueScoreText = AddText("Arial", "0", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
 }
 
-void CColonyScene::StartScene()
-{
-	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
-}
-
-void CColonyScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
+void CBattleScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
 {
 	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
 	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
@@ -1798,14 +1806,14 @@ void CColonyScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
 	CreateRtvDsvSrvEnvironmentMap(pd3dDevice);
 }
 
-void CColonyScene::CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice)
+void CBattleScene::CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice)
 {
 	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle); 
 	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dEnvirCubeDSBuffer, &m_d3dDsvEnvirCubeMapCPUHandle);
 	m_d3dSrvEnvirCubeMapGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dEnvirCube, RESOURCE_TEXTURE_CUBE);
 }
 
-void CColonyScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CBattleScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	XMFLOAT3 xmf3Looks[6] = {
 		XMFLOAT3(1.0f, 0.0f, 0.0f),
@@ -1845,7 +1853,7 @@ void CColonyScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 }
 
-void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
+void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
 {
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -1891,7 +1899,7 @@ void CColonyScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
-void CColonyScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	CScene::PrepareRender(pd3dCommandList);
 
@@ -1901,14 +1909,14 @@ void CColonyScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
-void CColonyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
 
 	CScene::Render(pd3dCommandList, pCamera);
 }
 
-void CColonyScene::ReleaseUploadBuffers()
+void CBattleScene::ReleaseUploadBuffers()
 {
 	CScene::ReleaseUploadBuffers();
 
@@ -1918,7 +1926,7 @@ void CColonyScene::ReleaseUploadBuffers()
 	if (m_pSaber) m_pSaber->ReleaseUploadBuffers();
 }
 
-void CColonyScene::CheckCollision()
+void CBattleScene::CheckCollision()
 {
 	std::vector<CGameObject*> vEnemys;
 
@@ -2127,7 +2135,7 @@ void CColonyScene::CheckCollision()
 	FindAimToTargetDistance();
 }
 
-void CColonyScene::CheckCollisionPlayer()
+void CBattleScene::CheckCollisionPlayer()
 {
 	//std::vector<CGameObject*> *vObstacles;
 
@@ -2180,12 +2188,12 @@ void CColonyScene::CheckCollisionPlayer()
 	//}
 }
 
-void CColonyScene::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
+void CBattleScene::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
 {
 	m_pParticleShader->AddParticle(nType, xmf3Position, nNum);
 };
 
-void CColonyScene::FindAimToTargetDistance()
+void CBattleScene::FindAimToTargetDistance()
 {
 	std::vector<CGameObject*> vGMs = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
 	std::vector<CGameObject*> vGundams = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
@@ -2251,97 +2259,40 @@ void CColonyScene::FindAimToTargetDistance()
 				// 카메라 이동 O
 				if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 				{
-					if (fDistance > fTemp)
+					float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+
+					if (fDistBetweenCnP < fTemp)
 					{
-						fDistance = fTemp;
-						pTarget = Obstacle;
+						if (fDistance > fTemp)
+						{
+							fDistance = fTemp;
+							pTarget = Obstacle;
+						}
 					}
 				}
 			}
 		}
 	}
 	
-	if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+	if (m_pTerrain)
 	{
-		if (fDistance > fTemp) fDistance = fTemp;
+		if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		{
+			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+
+			if (fDistBetweenCnP < fTemp)
+			{
+				if (fDistance > fTemp) fDistance = fTemp;
+			}
+		}
 	}
 
 	m_fCameraToTarget = fDistance;
 }
 
-void CColonyScene::BuildLightsAndMaterials()
-{
-	m_pLights = new LIGHTS;
-	::ZeroMemory(m_pLights, sizeof(LIGHTS));
-
-	m_pLights->m_xmf4GlobalAmbient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-
-	m_pLights->m_pLights[0].m_bEnable = false;
-	m_pLights->m_pLights[0].m_nType = POINT_LIGHT;
-	m_pLights->m_pLights[0].m_fRange = 100.0f;
-	m_pLights->m_pLights[0].m_xmf4Ambient = XMFLOAT4(0.1f, 0.0f, 0.0f, 1.0f);
-	m_pLights->m_pLights[0].m_xmf4Diffuse = XMFLOAT4(0.8f, 0.0f, 0.0f, 1.0f);
-	m_pLights->m_pLights[0].m_xmf4Specular = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	m_pLights->m_pLights[0].m_xmf3Position = XMFLOAT3(130.0f, 30.0f, 30.0f);
-	m_pLights->m_pLights[0].m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_pLights->m_pLights[0].m_xmf3Attenuation = XMFLOAT3(1.0f, 0.001f, 0.0001f);
-
-	m_pLights->m_pLights[1].m_bEnable = false;
-	m_pLights->m_pLights[1].m_nType = SPOT_LIGHT;
-	m_pLights->m_pLights[1].m_fRange = 50.0f;
-	m_pLights->m_pLights[1].m_xmf4Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	m_pLights->m_pLights[1].m_xmf4Diffuse = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
-	m_pLights->m_pLights[1].m_xmf4Specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	m_pLights->m_pLights[1].m_xmf3Position = XMFLOAT3(-50.0f, 20.0f, -5.0f);
-	m_pLights->m_pLights[1].m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	m_pLights->m_pLights[1].m_xmf3Attenuation = XMFLOAT3(1.0f, 0.01f, 0.0001f);
-	m_pLights->m_pLights[1].m_fFalloff = 8.0f;
-	m_pLights->m_pLights[1].m_fPhi = (float)cos(XMConvertToRadians(40.0f));
-	m_pLights->m_pLights[1].m_fTheta = (float)cos(XMConvertToRadians(20.0f));
-
-	m_pLights->m_pLights[2].m_bEnable = true;
-	m_pLights->m_pLights[2].m_nType = DIRECTIONAL_LIGHT;
-	m_pLights->m_pLights[2].m_xmf4Ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	m_pLights->m_pLights[2].m_xmf4Diffuse = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
-	m_pLights->m_pLights[2].m_xmf4Specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	m_pLights->m_pLights[2].m_xmf3Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
-}
-
-void CColonyScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	UINT ncbElementBytes = ((sizeof(LIGHTS) + 255) & ~255);
-	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
-		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
-	m_pd3dcbLights->Map(0, NULL, (void **)&m_pcbMappedLights);
-}
-
-void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
-
-	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt) * 0.7f, dist1(mt) * 0.6f, dist1(mt) * 0.5f, dist1(mt) * 0.4f);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
-}
-
-void CColonyScene::ReleaseShaderVariables()
-{
-	if (m_pd3dcbLights)
-	{
-		m_pd3dcbLights->Unmap(0, NULL);
-		m_pd3dcbLights->Release();
-		m_pd3dcbLights = NULL;
-	}
-}
-
-void CColonyScene::EndScene()
-{
-	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
-}
-
 //////////////////////////////// for Networking
 
-void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo)
+void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo)
 {
 	CGameObject* pGameObject = NULL;
 	//pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
@@ -2425,7 +2376,7 @@ void CColonyScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pObjects[pCreateObjectInfo->Object_Index] = pGameObject;
 }
 
-void CColonyScene::DeleteObject(int nIndex)
+void CBattleScene::DeleteObject(int nIndex)
 {
 	if (m_pObjects[nIndex])
 	{
@@ -2439,7 +2390,7 @@ void CColonyScene::DeleteObject(int nIndex)
 	}
 }
 
-void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo)
+void CBattleScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo)
 {
 	EFFECT_TYPE nEffectType = pCreateEffectInfo->efType;
 	EFFECT_ANIMATION_TYPE nEffectAniType = pCreateEffectInfo->EftAnitType;
@@ -2463,7 +2414,7 @@ void CColonyScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	}
 }
 
-void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
+void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 {
 	switch (pktID)
 	{
@@ -2529,7 +2480,7 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	}
 }
 
-void CColonyScene::LeavePlayer(int nServerIndex)
+void CBattleScene::LeavePlayer(int nServerIndex)
 {
 	if (!m_pObjects[nServerIndex]) return;
 
@@ -2538,81 +2489,142 @@ void CColonyScene::LeavePlayer(int nServerIndex)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+CColonyScene::CColonyScene() : CBattleScene()
+{
+	m_fGravAcc = -9.8f;
+}
+
+CColonyScene::~CColonyScene()
+{
+}
+
+void CColonyScene::BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
+{
+	CObstacleShader *pInstancingObstacleShader = new CObstacleShader();
+	pInstancingObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pInstancingObstacleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
+	m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS] = pInstancingObstacleShader;
+}
+
+void CColonyScene::BuildTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT3 xmf3Scale(4.0f, 1.0f, 4.0f);
+	XMFLOAT4 xmf4Color(1.f, 1.f, 1.f, 1.0f);
+	m_pTerrain = new CHeightMapTerrain(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, _T("./Resource/Stage/HeightMap.raw"), 514, 514, 514, 514, xmf3Scale, xmf4Color);
+}
+
+void CColonyScene::BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
+}
+
+void CColonyScene::BuildLightsAndMaterials()
+{
+	m_pLights = new LIGHTS;
+	::ZeroMemory(m_pLights, sizeof(LIGHTS));
+
+	m_pLights->m_xmf4GlobalAmbient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+
+	m_pLights->m_pLights[0].m_bEnable = false;
+	m_pLights->m_pLights[0].m_nType = POINT_LIGHT;
+	m_pLights->m_pLights[0].m_fRange = 100.0f;
+	m_pLights->m_pLights[0].m_xmf4Ambient = XMFLOAT4(0.1f, 0.0f, 0.0f, 1.0f);
+	m_pLights->m_pLights[0].m_xmf4Diffuse = XMFLOAT4(0.8f, 0.0f, 0.0f, 1.0f);
+	m_pLights->m_pLights[0].m_xmf4Specular = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_pLights->m_pLights[0].m_xmf3Position = XMFLOAT3(130.0f, 30.0f, 30.0f);
+	m_pLights->m_pLights[0].m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	m_pLights->m_pLights[0].m_xmf3Attenuation = XMFLOAT3(1.0f, 0.001f, 0.0001f);
+
+	m_pLights->m_pLights[1].m_bEnable = false;
+	m_pLights->m_pLights[1].m_nType = SPOT_LIGHT;
+	m_pLights->m_pLights[1].m_fRange = 50.0f;
+	m_pLights->m_pLights[1].m_xmf4Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	m_pLights->m_pLights[1].m_xmf4Diffuse = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
+	m_pLights->m_pLights[1].m_xmf4Specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	m_pLights->m_pLights[1].m_xmf3Position = XMFLOAT3(-50.0f, 20.0f, -5.0f);
+	m_pLights->m_pLights[1].m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	m_pLights->m_pLights[1].m_xmf3Attenuation = XMFLOAT3(1.0f, 0.01f, 0.0001f);
+	m_pLights->m_pLights[1].m_fFalloff = 8.0f;
+	m_pLights->m_pLights[1].m_fPhi = (float)cos(XMConvertToRadians(40.0f));
+	m_pLights->m_pLights[1].m_fTheta = (float)cos(XMConvertToRadians(20.0f));
+
+	m_pLights->m_pLights[2].m_bEnable = true;
+	m_pLights->m_pLights[2].m_nType = DIRECTIONAL_LIGHT;
+	m_pLights->m_pLights[2].m_xmf4Ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	m_pLights->m_pLights[2].m_xmf4Diffuse = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
+	m_pLights->m_pLights[2].m_xmf4Specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	m_pLights->m_pLights[2].m_xmf3Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
+}
+
+void CColonyScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(LIGHTS) + 255) & ~255);
+	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+	m_pd3dcbLights->Map(0, NULL, (void **)&m_pcbMappedLights);
+}
+
+void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
+
+	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt) * 0.7f, dist1(mt) * 0.6f, dist1(mt) * 0.5f, dist1(mt) * 0.4f);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
+}
+
+void CColonyScene::ReleaseShaderVariables()
+{
+	if (m_pd3dcbLights)
+	{
+		m_pd3dcbLights->Unmap(0, NULL);
+		m_pd3dcbLights->Release();
+		m_pd3dcbLights = NULL;
+	}
+}
+
+void CColonyScene::StartScene()
+{
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
+}
+
+void CColonyScene::EndScene()
+{
+	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-CSpaceScene::CSpaceScene() : CScene()
+CSpaceScene::CSpaceScene() : CBattleScene()
 {
-	for (int i = 0; i < MAX_NUM_OBJECT; i++)
-		m_pObjects[i] = NULL;
+	m_fGravAcc = 0.0f;
 }
 
 CSpaceScene::~CSpaceScene()
 {
 }
 
-void CSpaceScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	switch (nMessageID)
-	{
-	case WM_LBUTTONDOWN:
-		if (::GetCapture() == hWnd)
-		{
-			if (!m_LButtonDown) m_pPlayer->PrepareAttack(m_pPlayer->GetRHWeapon());
-
-			m_LButtonDown = TRUE;
-			m_pPlayer->Attack(m_pPlayer->GetRHWeapon());
-		}
-		break;
-	case WM_LBUTTONUP:
-	{
-		m_LButtonDown = FALSE;
-		m_pPlayer->LButtonUp();
-		break;
-	}
-	default:
-		break;
-	}
-}
-
 void CSpaceScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	CScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+	CBattleScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 
 	switch (nMessageID)
 	{
 	case WM_KEYUP:
 		switch (wParam)
 		{
-		case VK_SPACE:
-			m_pPlayer->DeactivationBooster();
-			m_pPlayer->DeactivationDescent();
-			break;
 		case 'V':
-			m_pPlayer->DeactivationBooster();
-			m_pPlayer->DeactivationDescent();
+			m_pPlayer->VUp();
 			break;
 		}
+		break;
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
-		case '1':
-			m_pPlayer->ChangeWeapon(0);
-			break;
-		case '2':
-			m_pPlayer->ChangeWeapon(1);
-			break;
-		case '3':
-			m_pPlayer->ChangeWeapon(2);
-			break;
-		case '4':
-			m_pPlayer->ChangeWeapon(3);
-			break;
-		case 'B':
-			m_bRenderWire = !m_bRenderWire;
-			break;
-		default:
+		case 'V':
+			m_pPlayer->ActivationBooster();
+			m_pPlayer->VDown();
 			break;
 		}
 		break;
@@ -2621,642 +2633,22 @@ void CSpaceScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 	}
 }
 
-void CSpaceScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
+void CSpaceScene::BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
-	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
-
-	// Objects
-	m_nShaders = SHADER_INDEX;
-	m_ppShaders = new CShader*[m_nShaders];
-	ZeroMemory(m_ppShaders, sizeof(CShader*) * m_nShaders);
-
-	/* 그룹 1 [ Standard Shader ] */
-	CStandardObjectsShader *pStandardObjectsShader = new CStandardObjectsShader();
-	pStandardObjectsShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pStandardObjectsShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-	m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS] = pStandardObjectsShader;
-
-	/* 그룹 2 [ Instancing Shader ] */
 	CSpaceObstacleShader *pInstancingObstacleShader = new CSpaceObstacleShader();
 	pInstancingObstacleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pInstancingObstacleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
 	m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS] = pInstancingObstacleShader;
+}
 
-	/* 그룹 3 [ Skinned Animation Shader ] */
-	CRobotObjectsShader *pSkinnedRobotShader = new CRobotObjectsShader();
-	pSkinnedRobotShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pSkinnedRobotShader->Initialize(pd3dDevice, pd3dCommandList, pRepository, m_pd3dGraphicsRootSignature);
-	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS] = pSkinnedRobotShader;
-
-	// Effects
-	m_nEffectShaders = EFFECT_SHADER_INDEX;
-	m_ppEffectShaders = new CEffectShader*[m_nEffectShaders];
-
-	// 그룹 1 [ Text Effect Shader ]
-	CTextEffectShader *pTextEffectShader = new CTextEffectShader();
-	pTextEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pTextEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS] = pTextEffectShader;
-
-	// 그룹 2 [ Timed Effect Shader ]
-	CTimedEffectShader *pTimedEffectShader = new CTimedEffectShader();
-	pTimedEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pTimedEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS] = pTimedEffectShader;
-
-	// 그룹 3 [ Sprite Shader ]
-	CSpriteShader *pSpriteShader = new CSpriteShader();
-	pSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS] = pSpriteShader;
-
-
-	// Particle
-	m_pParticleShader = new CParticleShader();
-	m_pParticleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	m_pParticleShader->Initialize(pd3dDevice, pd3dCommandList, pRepository);
-
-	////
-	// Wire
-	m_pWireShader = new CWireShader();
-	m_pWireShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-
-	// SkyBox
+void CSpaceScene::BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
 	m_pSkyBox = new CSkyBox(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
-
-	// Weapons
-	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL);
-	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
-	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
-	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
-}
-
-void CSpaceScene::ReleaseObjects()
-{
-	CScene::ReleaseObjects();
-
-	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
-	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
-
-	for (int i = 0; i < 6; i++)
-	{
-		m_pCubeMapCamera[i]->ReleaseShaderVariables();
-		delete m_pCubeMapCamera[i];
-	}
-}
-
-void CSpaceScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
-{
-	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
-
-	CreateEnvironmentMap(pd3dDevice);
-	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
-
-	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
-	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
-
-	if (m_pPlayer)
-	{
-		m_pPlayer->SetGravity(0.f);
-		m_pPlayer->SetScene(this);
-	}
-
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
-
-#ifndef ON_NETWORKING
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
-#endif
-
-	CUserInterface *pUserInterface = new CUserInterface();
-	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	pUserInterface->SetPlayer(m_pPlayer);
-
-	m_pUserInterface = pUserInterface;
-
-	m_pRedScoreText = AddText("Arial", "0", XMFLOAT2(-0.05f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
-	m_pBlueScoreText = AddText("Arial", "0", XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
 }
 
 void CSpaceScene::StartScene()
 {
 	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
-}
-
-void CSpaceScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
-{
-	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
-	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
-	d3dHeapPropertiesDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
-	d3dHeapPropertiesDesc.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	d3dHeapPropertiesDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	d3dHeapPropertiesDesc.CreationNodeMask = 1;
-	d3dHeapPropertiesDesc.VisibleNodeMask = 1;
-
-	D3D12_RESOURCE_DESC d3dResourceDesc;
-	ZeroMemory(&d3dResourceDesc, sizeof(D3D12_RESOURCE_DESC));
-
-	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	d3dResourceDesc.Alignment = 0;
-	d3dResourceDesc.Width = CUBE_MAP_WIDTH;
-	d3dResourceDesc.Height = CUBE_MAP_HEIGHT;
-	d3dResourceDesc.DepthOrArraySize = 6;
-	d3dResourceDesc.MipLevels = 1;
-	d3dResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	d3dResourceDesc.SampleDesc.Count = 1;
-	d3dResourceDesc.SampleDesc.Quality = 0;
-	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
-	D3D12_CLEAR_VALUE d3dClear = { DXGI_FORMAT_R8G8B8A8_UNORM, { 0.0f, 0.0f, 0.0f, 1.0f } };
-
-	pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dEnvirCube);
-
-	d3dResourceDesc.DepthOrArraySize = 1;
-	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-	d3dClear.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	d3dClear.DepthStencil.Depth = 1.0f;
-	d3dClear.DepthStencil.Stencil = 0;
-
-	pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dEnvirCubeDSBuffer);
-
-	CreateRtvDsvSrvEnvironmentMap(pd3dDevice);
-}
-
-void CSpaceScene::CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice)
-{
-	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dEnvirCube, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 6, m_d3dRrvEnvirCubeMapCPUHandle);
-	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dEnvirCubeDSBuffer, &m_d3dDsvEnvirCubeMapCPUHandle);
-	m_d3dSrvEnvirCubeMapGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dEnvirCube, RESOURCE_TEXTURE_CUBE);
-}
-
-void CSpaceScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	XMFLOAT3 xmf3Looks[6] = {
-		XMFLOAT3(1.0f, 0.0f, 0.0f),
-		XMFLOAT3(-1.0f, 0.0f, 0.0f),
-		XMFLOAT3(0.0f, 1.0f, 0.0f),
-		XMFLOAT3(0.0f, -1.0f, 0.0f),
-		XMFLOAT3(0.0f, 0.0f, 1.0f),
-		XMFLOAT3(0.0f, 0.0f, -1.0f)
-	};
-
-	XMFLOAT3 xmf3Ups[6] = {
-		XMFLOAT3(0.0f, 1.0f, 0.0f),
-		XMFLOAT3(0.0f, 1.0f, 0.0f),
-		XMFLOAT3(0.0f, 0.0f, -1.0f),
-		XMFLOAT3(0.0f, 0.0f, 1.0f),
-		XMFLOAT3(0.0f, 1.0f, 0.0f),
-		XMFLOAT3(0.0f, 1.0f, 0.0f)
-	};
-
-	m_d3dEMViewport = { 0.0f, 0.0f, float(CUBE_MAP_WIDTH), float(CUBE_MAP_HEIGHT), 0.0f, 1.0f };
-	m_d3dEMScissorRect = { 0, 0, CUBE_MAP_WIDTH, CUBE_MAP_HEIGHT };
-
-	for (int i = 0; i < 6; i++)
-	{
-		XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks[i], xmf3Ups[i], true);
-
-		m_pCubeMapCamera[i] = new CCamera();
-
-		m_pCubeMapCamera[i]->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		m_pCubeMapCamera[i]->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
-		m_pCubeMapCamera[i]->SetRight(xmf3Right);
-		m_pCubeMapCamera[i]->SetUp(xmf3Ups[i]);
-		m_pCubeMapCamera[i]->SetLook(xmf3Looks[i]);
-
-		m_pCubeMapCamera[i]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	}
-
-}
-
-void CSpaceScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
-{
-	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	for (int i = 0; i < 6; i++)
-	{
-		m_pCubeMapCamera[i]->SetPosition(pMainObject->GetPosition());
-		m_pCubeMapCamera[i]->GenerateViewMatrix();
-		m_pCubeMapCamera[i]->UpdateShaderVariables(pd3dCommandList);
-
-		pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
-		pd3dCommandList->ClearDepthStencilView(m_d3dDsvEnvirCubeMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
-
-		pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvEnvirCubeMapCPUHandle[i], TRUE, &m_d3dDsvEnvirCubeMapCPUHandle);
-
-		pd3dCommandList->RSSetViewports(1, &m_d3dEMViewport);
-		pd3dCommandList->RSSetScissorRects(1, &m_d3dEMScissorRect);
-
-		if (m_pd3dcbLights)
-		{
-			D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
-			pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
-		}
-
-		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i], true);
-
-		for (int i = 0; i < m_nShaders; i++)
-		{
-			if (m_ppShaders[i])
-				m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-		}
-
-		for (int i = 0; i < m_nEffectShaders; i++)
-		{
-			if (m_ppEffectShaders[i])
-				m_ppEffectShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-		}
-
-		if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-
-	}
-
-	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
-}
-
-void CSpaceScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	CScene::PrepareRender(pd3dCommandList);
-
-	if (m_nFPS % 5 == 0)
-	{
-		RenderCubeMap(pd3dCommandList, m_pPlayer);
-	}
-}
-
-void CSpaceScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
-
-	CScene::Render(pd3dCommandList, pCamera);
-}
-
-void CSpaceScene::ReleaseUploadBuffers()
-{
-	CScene::ReleaseUploadBuffers();
-
-	if (m_pGimGun) m_pGimGun->ReleaseUploadBuffers();
-	if (m_pBazooka) m_pBazooka->ReleaseUploadBuffers();
-	if (m_pMachineGun) m_pMachineGun->ReleaseUploadBuffers();
-	if (m_pSaber) m_pSaber->ReleaseUploadBuffers();
-}
-
-void CSpaceScene::CheckCollision()
-{
-	std::vector<CGameObject*> vEnemys;
-
-	for (int i = 0; i < SKINNED_OBJECT_GROUP; i++)
-	{
-		vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(i);
-
-		for (const auto& Enemy : vEnemys)
-		{
-			CRobotObject *enemy = (CRobotObject*)Enemy;
-
-			if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
-			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(3);
-
-			for (const auto& anotherE : vEnemys)
-			{
-				if (Enemy == anotherE) continue;
-				if (!pWeapon->CollisionCheck(anotherE)) continue;
-
-
-				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
-				XMFLOAT3 xmf3EPos = Enemy->GetPosition();
-				xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
-				xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
-				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
-
-				AddParticle(0, xmf3Pos, rand() % 10 + 10);
-
-				if (enemy->PlayedSaberHitSound()) continue;
-				enemy->PlaySaberHitSound();
-
-				switch (rand() % 2)
-				{
-				case 0:
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
-					break;
-				case 1:
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
-					break;
-				}
-			}
-
-			if (m_pPlayer)
-			{
-				if (!pWeapon->CollisionCheck(m_pPlayer)) continue;
-
-				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
-				XMFLOAT3 xmf3EPos = m_pPlayer->GetPosition();
-				xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
-				xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
-				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
-
-				AddParticle(0, xmf3Pos, rand() % 10 + 10);
-
-				if (enemy->PlayedSaberHitSound()) continue;
-				enemy->PlaySaberHitSound();
-
-				switch (rand() % 2)
-				{
-				case 0:
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
-					break;
-				case 1:
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
-					break;
-				}
-			}
-		}
-
-		if (m_pPlayer)
-		{
-			if (m_pPlayer->GetState() & OBJECT_STATE_SWORDING)
-			{
-				for (const auto& Enemy : vEnemys)
-				{
-					CWeapon *pWeapon = m_pPlayer->GetWeapon(3);
-					if (!pWeapon->CollisionCheck(Enemy)) continue;
-
-					XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
-					XMFLOAT3 xmf3EPos = Enemy->GetPosition();
-					xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
-					xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
-					xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
-
-					AddParticle(0, xmf3Pos, rand() % 10 + 10);
-
-					if (m_pPlayer->PlayedSaberHitSound()) continue;
-					m_pPlayer->PlaySaberHitSound();
-
-					switch (rand() % 2)
-					{
-					case 0:
-						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
-						break;
-					case 1:
-						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
-						break;
-					}
-				}
-			}
-		}
-	}
-
-#ifndef ON_NETWORKING
-	//std::vector<CGameObject*> vEnemys;
-	std::vector<CGameObject*> vBullets;
-	std::vector<CGameObject*> vBZKBullets;
-	std::vector<CGameObject*> vMGBullets;
-
-	//vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
-	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
-	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
-	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
-
-	for (const auto& Enemy : vEnemys)
-	{
-		if (m_pPlayer->CollisionCheck(Enemy))
-		{
-			std::cout << "Collision Player By Enemy\n" << std::endl;
-		}
-
-		for (const auto& pBullet : vBullets)
-		{
-			if (!pBullet->IsDelete())
-			{
-				if (Enemy->CollisionCheck(pBullet))
-				{
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
-
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
-
-					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
-
-					pBullet->Delete();
-					std::cout << "Collision Enemy By Bullet\n" << std::endl;
-
-					//AddParticle(0, pBullet->GetPosition());
-				}
-			}
-		}
-
-		for (const auto& pBZKBullet : vBZKBullets)
-		{
-			if (!pBZKBullet->IsDelete())
-			{
-				if (Enemy->CollisionCheck(pBZKBullet))
-				{
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
-
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
-
-					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), XMFLOAT2(fSize * 2, fSize * 2), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
-
-					pBZKBullet->Delete();
-
-					std::cout << "Collision Enemy By Bullet\n" << std::endl;
-				}
-			}
-		}
-
-		for (const auto& pMGBullet : vMGBullets)
-		{
-			if (!pMGBullet->IsDelete())
-			{
-				if (Enemy->CollisionCheck(pMGBullet))
-				{
-					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
-
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
-
-					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pMGBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
-
-					pMGBullet->Delete();
-
-					std::cout << "Collision Enemy By Bullet\n" << std::endl;
-
-					//AddParticle(0, pMGBullet->GetPosition());
-				}
-			}
-		}
-	}
-#endif
-
-	std::vector<CGameObject*> vObstacles;
-	CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
-
-	int nGroups = pObjectsShader->GetGroups();
-	for (int i = 0; i < nGroups; i++)
-	{
-		vObstacles = pObjectsShader->GetObjects(i);
-
-		for (const auto& Obstacle : vObstacles)
-		{
-			// 카메라 이동 O
-			if (m_pPlayer->CollisionCheck(Obstacle))
-			{
-				//std::cout << "Collision Player By Building\n" << std::endl;
-				m_pPlayer->MoveToCollision(Obstacle);
-			}
-		}
-	}
-
-	FindAimToTargetDistance();
-}
-
-void CSpaceScene::CheckCollisionPlayer()
-{
-	//std::vector<CGameObject*> *vObstacles;
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_HANGAR])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_DOUBLESQUARE])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGON])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_OCTAGONLONGTIER])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SLOPETOP])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SQUARE])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STEEPLETOP])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-
-	//vObstacles = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_WALL])->GetObjects();
-	//for (const auto& Obstacle : *vObstacles)
-	//{
-	//	m_pPlayer->MoveToCollision(Obstacle);
-	//}
-}
-
-void CSpaceScene::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
-{
-	m_pParticleShader->AddParticle(nType, xmf3Position, nNum);
-};
-
-void CSpaceScene::FindAimToTargetDistance()
-{
-	std::vector<CGameObject*> vGMs = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
-	std::vector<CGameObject*> vGundams = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
-
-	float fDistance = 1000.0f;
-	float fTemp = 0.0f;
-	CGameObject *pTarget = NULL;
-	XMFLOAT3 xmf3CameraPos = m_pPlayer->GetCamera()->GetPosition();
-	XMVECTOR xmvCameraPos = XMLoadFloat3(&xmf3CameraPos);
-	XMVECTOR xmvLook = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetLookVector()));
-
-	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
-
-	for (const auto& GM : vGMs)
-	{
-		// 카메라 이동 X 단 목표가 되지 않음.
-		if (GM->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-		{
-			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
-
-			if (fDistBetweenCnP < fTemp)
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = GM;
-				}
-			}
-		}
-	}
-
-	for (const auto& Gundam : vGundams)
-	{
-		// 카메라 이동 X 단 목표가 되지 않음.
-		if (Gundam->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-		{
-			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
-
-			if (fDistBetweenCnP < fTemp)
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Gundam;
-				}
-			}
-		}
-	}
-
-	if (m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS])
-	{
-		std::vector<CGameObject*> vObstacles;
-		CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
-
-		int nGroups = pObjectsShader->GetGroups();
-
-		for (int i = 0; i < nGroups; i++)
-		{
-			vObstacles = pObjectsShader->GetObjects(i);
-
-			for (const auto& Obstacle : vObstacles)
-			{
-				// 카메라 이동 O
-				if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-				{
-					if (fDistance > fTemp)
-					{
-						fDistance = fTemp;
-						pTarget = Obstacle;
-					}
-				}
-			}
-		}
-	}
-
-	m_fCameraToTarget = fDistance;
 }
 
 void CSpaceScene::BuildLightsAndMaterials()
@@ -3327,201 +2719,4 @@ void CSpaceScene::ReleaseShaderVariables()
 void CSpaceScene::EndScene()
 {
 	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
-}
-
-//////////////////////////////// for Networking
-
-void CSpaceScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo)
-{
-	CGameObject* pGameObject = NULL;
-	//pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-	if (m_pObjects[pCreateObjectInfo->Object_Index])
-	{
-		m_pObjects[pCreateObjectInfo->Object_Index]->Delete();
-	}
-
-	XMFLOAT3 xmf3Position = XMFLOAT3(pCreateObjectInfo->WorldMatrix._41, pCreateObjectInfo->WorldMatrix._42, pCreateObjectInfo->WorldMatrix._43);
-
-	CObjectsShader *pObjectsShader = NULL;
-	CEffectShader *pEffectShader = NULL;
-
-	switch (pCreateObjectInfo->Object_Type)
-	{
-	case OBJECT_TYPE_PLAYER:
-		pGameObject = new CRobotObject();
-		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_SKINND_OBJECTS];
-
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, pCreateObjectInfo->Robot_Type, true, NULL);
-
-		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
-		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
-		break;
-	case OBJECT_TYPE_OBSTACLE:
-		printf("Do not Apply Insert Obstacle\n");
-		//((CObjectsShader*)m_ppShaders[INDEX_SHADER_OBSTACLE])->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, true);
-		break;
-	case OBJECT_TYPE_MACHINE_BULLET:
-		pGameObject = new Bullet();
-		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
-		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_MG_BULLET, true, NULL);
-
-		pEffectShader = (CEffectShader*)m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS];
-		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(0.05f, 0.05f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
-		break;
-	case OBJECT_TYPE_ITEM_HEALING:
-		pGameObject = new RotateObject();
-		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, NULL);
-		break;
-	case OBJECT_TYPE_BZK_BULLET:
-		pGameObject = new Bullet();
-		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
-		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_BZK_BULLET, true, NULL);
-
-		pEffectShader = (CEffectShader*)m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS];
-		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(0.05f, 0.05f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
-		break;
-	case OBJECT_TYPE_BEAM_BULLET:
-		pGameObject = new Bullet();
-		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
-		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_GG_BULLET, true, NULL);
-
-		pEffectShader = (CEffectShader*)m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS];
-		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(0.05f, 0.05f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
-		break;
-	case OBJECT_TYPE_ITEM_AMMO:
-		pGameObject = new RotateObject();
-		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
-
-		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_AMMO_ITEM, true, NULL);
-		break;
-	}
-
-	m_pObjects[pCreateObjectInfo->Object_Index] = pGameObject;
-}
-
-void CSpaceScene::DeleteObject(int nIndex)
-{
-	if (m_pObjects[nIndex])
-	{
-		if (m_pObjects[nIndex]->GetType() & OBJECT_TYPE_ROBOT)
-		{
-			std::vector<CParticle*> vpParticles = ((CRobotObject*)m_pObjects[nIndex])->GetParticles();
-			for (CParticle *pParticle : vpParticles) pParticle->Delete();
-		}
-		m_pObjects[nIndex]->Delete();
-		m_pObjects[nIndex] = NULL;
-	}
-}
-
-void CSpaceScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo)
-{
-	EFFECT_TYPE nEffectType = pCreateEffectInfo->efType;
-	EFFECT_ANIMATION_TYPE nEffectAniType = pCreateEffectInfo->EftAnitType;
-	CEffect *pEffect = NULL;
-	CSprite *pSprite = NULL;
-	float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
-
-	switch (nEffectType)
-	{
-	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
-		m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0);
-		break;
-	case EFFECT_TYPE::EFFECT_TYPE_HIT:
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
-		m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize, fSize), nEffectAniType, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
-		break;
-	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
-		m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize * 2, fSize * 2), nEffectAniType, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
-		break;
-	}
-}
-
-void CSpaceScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
-{
-	switch (pktID)
-	{
-	case PKT_ID_PLAYER_INFO:
-		if (!m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]) break;
-
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
-
-		if (((PKT_PLAYER_INFO*)pktData)->isUpChangeAnimation)
-		{
-			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeAnimation(ANIMATION_UP, 0, ((PKT_PLAYER_INFO*)pktData)->Player_Up_Animation);
-			pObject->SetAnimationTrackPosition(ANIMATION_UP, ((PKT_PLAYER_INFO*)pktData)->UpAnimationPosition);
-		}
-
-		if (((PKT_PLAYER_INFO*)pktData)->isDownChangeAnimation)
-		{
-			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeAnimation(ANIMATION_DOWN, 0, ((PKT_PLAYER_INFO*)pktData)->Player_Down_Animation);
-			pObject->SetAnimationTrackPosition(ANIMATION_DOWN, ((PKT_PLAYER_INFO*)pktData)->DownAnimationPosition);
-		}
-
-		if (((PKT_PLAYER_INFO*)pktData)->isChangeWeapon)
-		{
-			CRobotObject *pObject = (CRobotObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeWeaponByType((WEAPON_TYPE)((PKT_PLAYER_INFO*)pktData)->Player_Weapon);
-		}
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetState(((PKT_PLAYER_INFO*)pktData)->State);
-		break;
-	case PKT_ID_PLAYER_LIFE:
-		if (!m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]) break;
-
-		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
-		break;
-	case PKT_ID_CREATE_OBJECT:
-		break;
-	case PKT_ID_DELETE_OBJECT:
-		if (!m_pObjects[((PKT_DELETE_OBJECT*)pktData)->Object_Index]) break;
-
-		DeleteObject(((PKT_DELETE_OBJECT*)pktData)->Object_Index);
-		break;
-	case PKT_ID_TIME_INFO:
-		break;
-	case PKT_ID_UPDATE_OBJECT:
-		if (!m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]) break;
-
-		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
-		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
-		break;
-	case PKT_ID_CREATE_EFFECT:
-		break;
-	case PKT_ID_SCORE:
-	{
-		PKT_SCORE *pktScore = (PKT_SCORE*)pktData;
-		char pstrText[16];
-		sprintf(pstrText, "%d", pktScore->RedScore);
-		ChangeText(m_pRedScoreText, "Arial", pstrText, XMFLOAT2(-0.055f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
-		sprintf(pstrText, "%d", pktScore->BlueScore);
-		ChangeText(m_pBlueScoreText, "Arial", pstrText, XMFLOAT2(0.02f, 0.79f), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
-		break;
-	}
-	}
-}
-
-void CSpaceScene::LeavePlayer(int nServerIndex)
-{
-	if (!m_pObjects[nServerIndex]) return;
-
-	DeleteObject(nServerIndex);
 }

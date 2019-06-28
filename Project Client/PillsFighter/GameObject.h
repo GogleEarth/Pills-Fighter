@@ -290,8 +290,10 @@ public:
 
 	virtual bool ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
 	int GetAnimationState(int nController) { return m_pnAnimationState[nController]; }
-	BOOL GetAnimationChanged(int nController) { return m_pbAnimationChanged[nController]; }
-	void SetAnimationChanged(int nController, BOOL bAnimationChagned) { m_pbAnimationChanged[nController] = bAnimationChagned; }
+	bool GetAnimationChanged(int nController) { return m_pbAnimationChanged[nController]; }
+	void SetAnimationChanged(int nController, bool bAnimationChagned) { m_pbAnimationChanged[nController] = bAnimationChagned; }
+	bool IsAnimationEnd(int nUpperUnder, int nTrack) { return m_ppAnimationControllers[nUpperUnder]->IsEndPosition(nTrack); }
+	bool AnimationIs(int nUpperUnder, int nAnimation) {	return m_pnAnimationState[nUpperUnder] == nAnimation; }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

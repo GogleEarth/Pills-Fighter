@@ -471,24 +471,6 @@ void CModel::UpdateCollisionBox(std::vector<BoundingBox>& vxmAABB, int *pnIndex)
 	if (m_pChild) m_pChild->UpdateCollisionBox(vxmAABB, pnIndex);
 }
 
-void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances)
-{
-	if ((*pnIndex) == vd3dcbGameObject.size())
-		return;
-
-	if (m_pCubeMesh)
-	{
-		if (m_nMeshes > 0 && nInstances == 1) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
-
-		m_pCubeMesh->Render(pd3dCommandList, 0, nInstances);
-
-		(*pnIndex)++;
-	}
-
-	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
-	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
-}
-
 void CModel::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource* pd3dcbGameObject, CB_GAMEOBJECT_INFO* pcbMappedGameObject)
 {
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = pd3dcbGameObject->GetGPUVirtualAddress();
@@ -548,6 +530,24 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 
 	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
+}
+
+void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances)
+{
+	if ((*pnIndex) == vd3dcbGameObject.size())
+		return;
+
+	if (m_pCubeMesh)
+	{
+		if (m_nMeshes > 0 && nInstances == 1) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
+
+		m_pCubeMesh->Render(pd3dCommandList, 0, nInstances);
+
+		(*pnIndex)++;
+	}
+
+	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
+	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
 }
 
 void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
