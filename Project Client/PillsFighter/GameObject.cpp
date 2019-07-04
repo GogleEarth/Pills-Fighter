@@ -169,6 +169,18 @@ void CGameObject::OnPrepareRender()
 
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPreparePitch), XMConvertToRadians(m_fPrepareYaw), XMConvertToRadians(m_fPrepareRoll));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+
+	if (m_ppAnimationControllers[ANIMATION_UP])
+	{
+		m_ppAnimationControllers[ANIMATION_UP]->ApplyTransform();
+	}
+
+	if (m_ppAnimationControllers[ANIMATION_DOWN])
+	{
+		m_ppAnimationControllers[ANIMATION_DOWN]->ApplyTransform();
+	}
+
+	UpdateWorldTransform();
 }
 
 void CGameObject::UpdateWorldTransform()
@@ -402,18 +414,6 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	}
 
 	OnPrepareRender();
-
-	if (m_ppAnimationControllers[ANIMATION_UP])
-	{
-		m_ppAnimationControllers[ANIMATION_UP]->ApplyTransform();
-	}
-
-	if (m_ppAnimationControllers[ANIMATION_DOWN])
-	{
-		m_ppAnimationControllers[ANIMATION_DOWN]->ApplyTransform();
-	}
-
-	UpdateWorldTransform();
 
 	UpdateShaderVariables(pd3dCommandList);
 
@@ -881,9 +881,9 @@ void CRobotObject::ApplyToParticle(CParticle *pParticle)
 {
 	CGameObject::ApplyToParticle(pParticle);
 
-	if (m_nState & OBJECT_STATE_BOOSTER) 
+	//if (m_nState & OBJECT_STATE_BOOSTER) 
  		pParticle->SetEmit(true);
-	else pParticle->SetEmit(false);
+	//else pParticle->SetEmit(false);
 
 	XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Right), XMConvertToRadians(135));
 
@@ -1357,14 +1357,13 @@ CParticle::~CParticle()
 	if (m_pd3dMappedVertexBuffer) m_pd3dMappedVertexBuffer->Release();
 }
 
-void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling, float fMass,
+void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, bool bScaling, float fMass,
 	XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles)
 {
 	m_xmf3Position = xmf3Position;
 	m_xmf3Direction = xmf3Direction;
 	m_fSpeed = fSpeed;
 	m_fDuration = fDuration;
-	m_fEmitInterval = fEmitInterval;
 	m_xmf3Angles = xmf3Angles;
 	m_xmf3Right = xmf3Right;
 	m_xmf3Up = xmf3Up;
@@ -1401,7 +1400,6 @@ void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 	m_pcbMappedParticle->m_fDuration = m_fDuration;
 	m_pcbMappedParticle->m_fElapsedTime = m_fElapsedTime;
 	m_pcbMappedParticle->m_bEmit = m_bEmit;
-	m_pcbMappedParticle->m_fEmitInterval = m_fEmitInterval;
 	m_pcbMappedParticle->m_vRight = m_xmf3Right;
 	m_pcbMappedParticle->m_vUp = m_xmf3Up;
 	m_pcbMappedParticle->m_vLook = m_xmf3Look;

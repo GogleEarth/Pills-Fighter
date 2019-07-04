@@ -3,6 +3,15 @@
 #include "Define.hlsl"
 #endif
 
+cbuffer cbMotionBlurInfo : register(b12)
+{
+	float4x4 gmtxPrevViewProjection;
+	float4x4 gmtxInverseViewProjection;
+	int gnWidth;
+	int gnHeight;
+	int gnSamples;
+}
+
 float4 VSPostProcessing(uint nVertexID : SV_VertexID) : SV_POSITION
 {
 	if (nVertexID == 0) return(float4(-1.0f, +1.0f, 0.0f, 1.0f));

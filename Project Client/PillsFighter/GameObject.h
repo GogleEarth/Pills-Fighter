@@ -526,12 +526,11 @@ struct CB_PARTICLE_INFO
 	XMFLOAT3	m_vRight;
 	float		m_fElapsedTime;
 	XMFLOAT3	m_vUp;
-	float		m_fEmitInterval;
+	float		m_fMass;
 	XMFLOAT3	m_vLook;
 	bool		m_bEmit;
 	XMFLOAT3	m_vAngles;
 	bool		m_bScaling;
-	float		m_fMass;
 };
 
 class CParticle
@@ -565,7 +564,6 @@ protected:
 	float								m_fElapsedTime;
 	float								m_fDuration;
 	bool								m_bEmit = true;
-	float								m_fEmitInterval;
 	XMFLOAT3							m_xmf3Angles;
 	bool								m_bScaling = false;
 	float								m_fMass = 0.0f;
@@ -591,7 +589,7 @@ public:
 	virtual void SORender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, float fEmitInterval, bool bScaling, float fMass,
+	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, bool bScaling, float fMass,
 		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles);
 
 	virtual void AddVertex(CParticleVertex *pParticleVertices, int nVertices);

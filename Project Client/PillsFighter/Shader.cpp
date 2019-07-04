@@ -84,7 +84,7 @@ D3D12_DEPTH_STENCIL_DESC CShader::CreateSODepthStencilState()
 {
 	D3D12_DEPTH_STENCIL_DESC d3dDepthStencilDesc;
 	::ZeroMemory(&d3dDepthStencilDesc, sizeof(D3D12_DEPTH_STENCIL_DESC));
-	d3dDepthStencilDesc.DepthEnable = false;
+	d3dDepthStencilDesc.DepthEnable = FALSE;
 	d3dDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	d3dDepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 	d3dDepthStencilDesc.StencilEnable = FALSE;
@@ -129,16 +129,16 @@ D3D12_DEPTH_STENCIL_DESC CShader::CreateAlwaysDepthStencilState()
 	d3dDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	d3dDepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	d3dDepthStencilDesc.StencilEnable = FALSE;
-	d3dDepthStencilDesc.StencilReadMask = 0xff;
-	d3dDepthStencilDesc.StencilWriteMask = 0xff;
+	d3dDepthStencilDesc.StencilReadMask = 0x00;
+	d3dDepthStencilDesc.StencilWriteMask = 0x00;
 	d3dDepthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_INCR;
+	d3dDepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	d3dDepthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dDepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 	d3dDepthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_DECR;
+	d3dDepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	d3dDepthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dDepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 
 	return(d3dDepthStencilDesc);
 }
@@ -203,8 +203,8 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -262,6 +262,42 @@ D3D12_INPUT_LAYOUT_DESC CSkinnedAnimationShader::CreateInputLayout()
 D3D12_SHADER_BYTECODE CSkinnedAnimationShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CPlayerShader::CPlayerShader()
+{
+
+}
+
+CPlayerShader::~CPlayerShader()
+{
+
+}
+
+D3D12_SHADER_BYTECODE CPlayerShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "PSPlayer", "ps_5_1", ppd3dShaderBlob));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CPlayerWeaponShader::CPlayerWeaponShader()
+{
+
+}
+
+CPlayerWeaponShader::~CPlayerWeaponShader()
+{
+
+}
+
+D3D12_SHADER_BYTECODE CPlayerWeaponShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "PSPlayer", "ps_5_1", ppd3dShaderBlob));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1014,8 +1050,8 @@ void CEffectShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -1235,8 +1271,8 @@ void CTextEffectShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignatu
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -1551,8 +1587,8 @@ void CParticleShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -1596,7 +1632,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		CParticle *pParticle = NULL;
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 1.0f, 0.01f, false, 2.0f,
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 1.0f, false, 2.0f,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
@@ -1613,7 +1649,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FLARE].push(pParticle);
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
-		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 5.0f, 4.0f, 0.1f, true, 0.1f,
+		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 5.0f, 4.0f, true, 0.1f,
 			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));		
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
@@ -1644,7 +1680,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 
 	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
-	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 30.0f, 0.5f, 0.01f, false, 20.0,
+	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 30.0f, 0.5f, false, 20.0,
 		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f));
 	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
@@ -1680,11 +1716,11 @@ void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
 	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FLARE].emplace_back(pParticle);
 
 	// Fog
-	pParticle = m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].front();
-	m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].pop();
+	//pParticle = m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].front();
+	//m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].pop();
 
-	pParticle->SetFollowObject(pObject, pFrame);
-	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FOG].emplace_back(pParticle);
+	//pParticle->SetFollowObject(pObject, pFrame);
+	//m_pvpParticles[PARTICLE_INDEX_BOOSTER_FOG].emplace_back(pParticle);
 }
 
 void CParticleShader::CheckDeleteObjects()
@@ -1832,16 +1868,16 @@ D3D12_DEPTH_STENCIL_DESC CSkyBoxShader::CreateDepthStencilState()
 	d3dDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	d3dDepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_NEVER;
 	d3dDepthStencilDesc.StencilEnable = FALSE;
-	d3dDepthStencilDesc.StencilReadMask = 0xff;
-	d3dDepthStencilDesc.StencilWriteMask = 0xff;
+	d3dDepthStencilDesc.StencilReadMask = 0x00;
+	d3dDepthStencilDesc.StencilWriteMask = 0x00;
 	d3dDepthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_INCR;
+	d3dDepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	d3dDepthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dDepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 	d3dDepthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_DECR;
+	d3dDepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	d3dDepthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dDepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 
 	return(d3dDepthStencilDesc);
 }
@@ -1956,8 +1992,8 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -2251,8 +2287,8 @@ void CFontShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -2333,16 +2369,16 @@ D3D12_DEPTH_STENCIL_DESC CLobbyShader::CreateDepthStencilState()
 	d3dDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	d3dDepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	d3dDepthStencilDesc.StencilEnable = FALSE;
-	d3dDepthStencilDesc.StencilReadMask = 0xff;
-	d3dDepthStencilDesc.StencilWriteMask = 0xff;
+	d3dDepthStencilDesc.StencilReadMask = 0x00;
+	d3dDepthStencilDesc.StencilWriteMask = 0x00;
 	d3dDepthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_INCR;
+	d3dDepthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	d3dDepthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dDepthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 	d3dDepthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_DECR;
+	d3dDepthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	d3dDepthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	d3dDepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dDepthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_NEVER;
 
 	return(d3dDepthStencilDesc);
 }
@@ -2363,8 +2399,8 @@ void CLobbyShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *p
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -2455,8 +2491,8 @@ void CCursorShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -2482,8 +2518,10 @@ CComputeShader::~CComputeShader()
 {
 	if (m_pd3dHorzPipelineState) m_pd3dHorzPipelineState->Release();
 	if (m_pd3dVertPipelineState) m_pd3dVertPipelineState->Release();
-	if (m_pd3dAddPipelineState) m_pd3dAddPipelineState->Release();
+	if (m_pd3d2AddPipelineState) m_pd3d2AddPipelineState->Release();
+	if (m_pd3d3AddPipelineState) m_pd3d3AddPipelineState->Release();
 	if (m_pd3dBrightFilterPipelineState) m_pd3dBrightFilterPipelineState->Release();
+	if (m_pd3dMotionBlurPipelineState) m_pd3dMotionBlurPipelineState->Release();
 }
 
 D3D12_SHADER_BYTECODE CComputeShader::CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob)
@@ -2513,14 +2551,24 @@ D3D12_SHADER_BYTECODE CComputeShader::CreateVertComputeShader(ID3DBlob **ppd3dSh
 	return(CompileShaderFromFile(L"ComputeShader.hlsl", "VertBlurCS", "cs_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CComputeShader::CreateAddComputeShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CComputeShader::Create2AddComputeShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CompileShaderFromFile(L"ComputeShader.hlsl", "AddCS", "cs_5_1", ppd3dShaderBlob));
+	return(CompileShaderFromFile(L"ComputeShader.hlsl", "Add2CS", "cs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CComputeShader::Create3AddComputeShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"ComputeShader.hlsl", "Add3CS", "cs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CComputeShader::CreateBrightFilterComputeShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CompileShaderFromFile(L"ComputeShader.hlsl", "BrightFilterCS", "cs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CComputeShader::CreateMotionBlurComputeShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"ComputeShader.hlsl", "MotionBlurCS", "cs_5_1", ppd3dShaderBlob));
 }
 
 void CComputeShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dRootSignature)
@@ -2536,11 +2584,17 @@ void CComputeShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dCPSDesc.CS = CreateVertComputeShader(&pd3dShaderBlob);
 	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dVertPipelineState);
 
-	d3dCPSDesc.CS = CreateAddComputeShader(&pd3dShaderBlob);
-	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dAddPipelineState);
+	d3dCPSDesc.CS = Create2AddComputeShader(&pd3dShaderBlob);
+	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3d2AddPipelineState);
+
+	d3dCPSDesc.CS = Create3AddComputeShader(&pd3dShaderBlob);
+	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3d3AddPipelineState);
 
 	d3dCPSDesc.CS = CreateBrightFilterComputeShader(&pd3dShaderBlob);
 	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dBrightFilterPipelineState);
+
+	d3dCPSDesc.CS = CreateMotionBlurComputeShader(&pd3dShaderBlob);
+	hResult = pd3dDevice->CreateComputePipelineState(&d3dCPSDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dMotionBlurPipelineState);
 
 	if (pd3dShaderBlob) pd3dShaderBlob->Release();
 }
@@ -2555,14 +2609,24 @@ void CComputeShader::SetVertPipelineState(ID3D12GraphicsCommandList *pd3dCommand
 	pd3dCommandList->SetPipelineState(m_pd3dVertPipelineState);
 }
 
-void CComputeShader::SetAddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
+void CComputeShader::Set2AddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	pd3dCommandList->SetPipelineState(m_pd3dAddPipelineState);
+	pd3dCommandList->SetPipelineState(m_pd3d2AddPipelineState);
+}
+
+void CComputeShader::Set3AddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetPipelineState(m_pd3d3AddPipelineState);
 }
 
 void CComputeShader::SetBrightFilterPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->SetPipelineState(m_pd3dBrightFilterPipelineState);
+}
+
+void CComputeShader::SetMotionBlurPipelineState(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetPipelineState(m_pd3dMotionBlurPipelineState);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2610,8 +2674,8 @@ void CPostProcessingShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSig
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	d3dPipelineStateDesc.NumRenderTargets = 2;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 3;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;

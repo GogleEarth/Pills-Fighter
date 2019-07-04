@@ -1,5 +1,8 @@
 Texture2D<float4> gtxtInputA : register(t0);
 Texture2D<float4> gtxtInputB : register(t1);
+Texture2D<float4> gtxtInputC : register(t2);
+Texture2D<float> gtxtDepth : register(t3);
+Texture2D<float4> gtxtMask : register(t4);
 RWTexture2D<float4> gtxtRWOutput : register(u0);
 
 groupshared float4 gTextureCache[(256 + 2 * 5)];
@@ -61,9 +64,15 @@ void VertBlurCS(int3 vGroupThreadID : SV_GroupThreadID, int3 vDispatchThreadID :
 }
 
 [numthreads(4, 4, 1)]
-void AddCS(int3 vDispatchThreadID : SV_DispatchThreadID)
+void Add2CS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy] + gtxtInputB[vDispatchThreadID.xy];
+}
+
+[numthreads(4, 4, 1)]
+void Add3CS(int3 vDispatchThreadID : SV_DispatchThreadID)
+{
+	gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy] + gtxtInputB[vDispatchThreadID.xy] + gtxtInputC[vDispatchThreadID.xy];
 }
 
 [numthreads(4, 4, 1)]
@@ -71,5 +80,77 @@ void BrightFilterCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	float brightness = dot(gtxtInputA[vDispatchThreadID.xy].rgb, float3(0.2126f, 0.7152f, 0.0722));
 	if (brightness > 0.85f)
-		gtxtRWOutput[vDispatchThreadID.xy] = gtxtRWOutput[vDispatchThreadID.xy] + gtxtInputA[vDispatchThreadID.xy];
+		gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy];
+}
+
+cbuffer cbMotionBlurInfo : register(b0)
+{
+	matrix gmtxPrevViewProjection;
+	matrix gmtxInverseViewProjection;
+	int gnWidth;
+	int gnHeight;
+	float gDeltaTime;
+}
+
+#define SAMPLES 32
+#define MAXVELOCITY 0.1f
+
+[numthreads(4, 4, 1)]
+void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
+{
+	float zOverW = gtxtDepth[vDispatchThreadID.xy];
+	float mask = gtxtMask[vDispatchThreadID.xy].r;
+	if (mask > 0.5f)
+	{
+		gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy];
+		return;
+	}
+
+	float2 oriTex;
+	oriTex.x = float(vDispatchThreadID.x) / float(gnWidth);
+	oriTex.y = float(vDispatchThreadID.y) / float(gnHeight);
+
+	float4 H = float4(oriTex.x * 2.0f - 1.0f, (1.0f - oriTex.y) * 2.0f - 1.0f, zOverW, 1.0f);
+
+	float4 D = mul(gmtxInverseViewProjection, H);
+
+	float4 worldPos = D / D.w;
+
+	float4 currPos = H;
+
+	float4 prevPos = mul(gmtxPrevViewProjection, worldPos);
+
+	prevPos /= prevPos.w;
+
+	float2 velocity = (currPos - prevPos).xy * 0.5f;
+	//velocity *= 1.0f - gDeltaTime;
+
+	float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	float2 du = velocity / SAMPLES;
+
+	float2 texcoord = oriTex += du;
+
+	int nSamples = 0;
+	for (int i = 1; i < SAMPLES; ++i, texcoord -= du)
+	{
+		if (texcoord.x >= 1.0f) break;
+		if (texcoord.y >= 1.0f) break;
+		if (texcoord.x <= 0.0f) break;
+		if (texcoord.y <= 0.0f) break;
+		if (abs(texcoord.x - oriTex.x) > 0.1f) break;
+		if (abs(texcoord.y - oriTex.y) > 0.1f) break;
+
+		int2 nIndex = int2(texcoord.x * gnWidth, texcoord.y * gnHeight);
+		if (gtxtDepth[nIndex].r - zOverW > 0.1f) continue;
+		mask = gtxtMask[nIndex].r;
+		if (mask > 0.5f) continue;
+
+		float4 currColor = gtxtInputA[nIndex];
+
+		color += currColor;
+		nSamples++;
+	}
+
+	gtxtRWOutput[vDispatchThreadID.xy] = color / nSamples;
 }

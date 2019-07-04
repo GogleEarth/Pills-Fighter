@@ -56,7 +56,6 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 void CScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateOffScreenTextures(pd3dDevice);
-	CreateTempTexture(pd3dDevice);
 }
 
 void CScene::MoveCursor(float x, float y)
@@ -205,9 +204,10 @@ void CScene::ReleaseObjects()
 
 	if (m_pd3dOffScreenTexture) m_pd3dOffScreenTexture->Release();
 	if (m_pd3dGlowScreenTexture) m_pd3dGlowScreenTexture->Release();
-	if (m_pd3dOffScreenDSBuffer) m_pd3dOffScreenDSBuffer->Release();
-
+	if (m_pd3dDepthStencilBuffer) m_pd3dDepthStencilBuffer->Release();
+	if (m_pd3dMotionBlurScreenTexture) m_pd3dMotionBlurScreenTexture->Release();
 	if (m_pd3dTempTexture) m_pd3dTempTexture->Release();
+	if (m_pd3dMaskTexture) m_pd3dMaskTexture->Release();
 
 	ReleaseShaderVariables();
 }
@@ -248,16 +248,20 @@ void CScene::CreateOffScreenTextures(ID3D12Device *pd3dDevice)
 
 	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dOffScreenTexture);
 	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dGlowScreenTexture);
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dTempTexture);
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dMotionBlurScreenTexture);
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dMaskTexture);
 
 	d3dResourceDesc.DepthOrArraySize = 1;
-	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dResourceDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	
 	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
 	d3dClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dClearValue.DepthStencil.Depth = 1.0f;
 	d3dClearValue.DepthStencil.Stencil = 0;
 
-	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue, __uuidof(ID3D12Resource), (void **)&m_pd3dOffScreenDSBuffer);
+	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, &d3dClearValue, __uuidof(ID3D12Resource), (void **)&m_pd3dDepthStencilBuffer);
 
 	CreateRtvDsvSrvUavOffScreens(pd3dDevice);
 }
@@ -265,58 +269,23 @@ void CScene::CreateOffScreenTextures(ID3D12Device *pd3dDevice)
 void CScene::CreateRtvDsvSrvUavOffScreens(ID3D12Device *pd3dDevice)
 {
 	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dOffScreenTexture, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRrvOffScreenCPUHandle);
-	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dOffScreenDSBuffer, &m_d3dDsvOffScreenCPUHandle);
+	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dDepthStencilBuffer, &m_d3dDsvOffScreenCPUHandle);
 	m_d3dSrvOffScreenGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dOffScreenTexture, RESOURCE_TEXTURE2D);
 	m_d3dUavOffScreenGPUHandle = CScene::CreateUnorderedAccessViews(pd3dDevice, m_pd3dOffScreenTexture);
+	m_d3dSrvDepthStencilGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dDepthStencilBuffer, RESOURCE_TEXTURE2D, true);
 
 	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dGlowScreenTexture, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRrvGlowScreenCPUHandle);
 	m_d3dSrvGlowScreenGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dGlowScreenTexture, RESOURCE_TEXTURE2D);
 	m_d3dUavGlowScreenGPUHandle = CScene::CreateUnorderedAccessViews(pd3dDevice, m_pd3dGlowScreenTexture);
-}
 
-void CScene::CreateTempTexture(ID3D12Device *pd3dDevice)
-{
-	D3D12_HEAP_PROPERTIES d3dHeapProperties;
-	::ZeroMemory(&d3dHeapProperties, sizeof(d3dHeapProperties));
-	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-	d3dHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	d3dHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	d3dHeapProperties.CreationNodeMask = 1;
-	d3dHeapProperties.VisibleNodeMask = 1;
+	m_d3dSrvMotionBlurScreenGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dMotionBlurScreenTexture, RESOURCE_TEXTURE2D);
+	m_d3dUavMotionBlurScreenGPUHandle = CScene::CreateUnorderedAccessViews(pd3dDevice, m_pd3dMotionBlurScreenTexture);
 
-	D3D12_HEAP_FLAGS d3dHeapFlags = D3D12_HEAP_FLAG_NONE;
-
-	D3D12_RESOURCE_DESC d3dResourceDesc;
-	::ZeroMemory(&d3dResourceDesc, sizeof(d3dResourceDesc));
-	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	d3dResourceDesc.Alignment = 0;
-	d3dResourceDesc.Width = FRAME_BUFFER_WIDTH;
-	d3dResourceDesc.Height = FRAME_BUFFER_HEIGHT;
-	d3dResourceDesc.DepthOrArraySize = 1;
-	d3dResourceDesc.MipLevels = 1;
-	d3dResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	d3dResourceDesc.SampleDesc.Count = 1;
-	d3dResourceDesc.SampleDesc.Quality = 0;
-	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-
-	D3D12_CLEAR_VALUE d3dClearValue;
-	::ZeroMemory(&d3dClearValue, sizeof(d3dClearValue));
-	d3dClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	d3dClearValue.Color[0] = 0.0f;
-	d3dClearValue.Color[1] = 0.0f;
-	d3dClearValue.Color[2] = 0.0f;
-	d3dClearValue.Color[3] = 1.0f;
-
-	pd3dDevice->CreateCommittedResource(&d3dHeapProperties, d3dHeapFlags, &d3dResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClearValue, __uuidof(ID3D12Resource), (void**)&m_pd3dTempTexture);
-
-	CreateRtvDsvSrvUavTemp(pd3dDevice);
-}
-
-void CScene::CreateRtvDsvSrvUavTemp(ID3D12Device *pd3dDevice)
-{
 	m_d3dSrvTempTextureGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dTempTexture, RESOURCE_TEXTURE2D);
 	m_d3dUavTempTextureGPUHandle = CScene::CreateUnorderedAccessViews(pd3dDevice, m_pd3dTempTexture);
+
+	CScene::CreateRenderTargetView(pd3dDevice, m_pd3dMaskTexture, D3D12_RTV_DIMENSION_TEXTURE2D, 1, &m_d3dRrvMaskTextureCPUHandle);
+	m_d3dSrvMaskTextureGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dMaskTexture, RESOURCE_TEXTURE2D);
 }
 
 void CScene::ReleaseUploadBuffers()
@@ -342,7 +311,7 @@ void CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPar
 		switch (wParam)
 		{
 		case VK_F1:
-			m_bActiveBloom = !m_bActiveBloom;
+			//m_bActiveBloom = !m_bActiveBloom;
 			break;
 		default:
 			break;
@@ -384,6 +353,8 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	}
 
 	CheckCollision();
+
+	m_fFPS = fTimeElapsed;
 }
 
 void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -406,10 +377,15 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	pd3dCommandList->ClearRenderTargetView(m_d3dRrvOffScreenCPUHandle, Colors::Black, 0, NULL);
 	pd3dCommandList->ClearRenderTargetView(m_d3dRrvGlowScreenCPUHandle, Colors::Black, 0, NULL);
+	pd3dCommandList->ClearRenderTargetView(m_d3dRrvMaskTextureCPUHandle, Colors::Black, 0, NULL);
 	pd3dCommandList->ClearDepthStencilView(m_d3dDsvOffScreenCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE d3dCPUDescHandle[2] = { m_d3dRrvOffScreenCPUHandle , m_d3dRrvGlowScreenCPUHandle };
-	pd3dCommandList->OMSetRenderTargets(_countof(d3dCPUDescHandle), d3dCPUDescHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
+	if (m_bSelfIllumination)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE d3dCPUDescHandle[3] = { m_d3dRrvOffScreenCPUHandle , m_d3dRrvGlowScreenCPUHandle, m_d3dRrvMaskTextureCPUHandle };
+		pd3dCommandList->OMSetRenderTargets(_countof(d3dCPUDescHandle), d3dCPUDescHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
+	}
+	else pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvOffScreenCPUHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
 
 	if (pCamera)
 	{
@@ -422,8 +398,9 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		D3D12_GPU_VIRTUAL_ADDRESS d3dcbLightsGpuVirtualAddress = m_pd3dcbLights->GetGPUVirtualAddress();
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
-	
+
 	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
+
 	if (m_pTerrain)
 	{
 		m_pTerrain->Render(pd3dCommandList, pCamera, true);
@@ -436,6 +413,8 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	}
 	
 	m_nFPS = (m_nFPS + 1) % 5;
+
+	if(pCamera) m_xmf4x4CurrViewProjection = pCamera->GetViewProjMatrix();
 }
 
 void CScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -474,19 +453,12 @@ void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_bActiveBloom)
-	{
-		if (m_pd3dTempTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvTempTextureGPUHandle);
-	}
-	else 
-	{
-		if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
-	}
-
+	if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
+	
 	m_pPostProcessingShader->Render(pd3dCommandList, NULL);
 }
 
-void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 	::TransitionResourceState(pd3dCommandList, m_pd3dGlowScreenTexture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -498,47 +470,139 @@ void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pParticleShader) m_pParticleShader->AfterRender(pd3dCommandList);
+
+	if(pCamera) m_xmf4x4PrevViewProjection = pCamera->GetViewProjMatrix();
+	if(m_pPlayer) m_xmf3PrevPlayerPosition = m_pPlayer->GetPosition();
 }
 
-void CScene::Blooming(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+void CScene::PreparePostProcessing(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_bMotionBlur || m_bSelfIllumination || m_bBloom)
+		if (m_pd3dComputeRootSignature) pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
+}
+
+void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
 {
 	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
 	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
 
-	if (m_pd3dComputeRootSignature) pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
-
-	m_pComputeShader->SetBrightFilterPipelineState(pd3dCommandList);
-	pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvOffScreenGPUHandle);
-	pd3dCommandList->SetComputeRootDescriptorTable(2, m_d3dUavGlowScreenGPUHandle);
-	pd3dCommandList->Dispatch(nWidth, nHeight, 1);
-
-	for (int i = 0; i < 1; i++)
+	if (m_bMotionBlur)
 	{
-		m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
+		m_pComputeShader->SetMotionBlurPipelineState(pd3dCommandList);
 
-		pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvGlowScreenGPUHandle);
-		pd3dCommandList->SetComputeRootDescriptorTable(2, m_d3dUavTempTextureGPUHandle);
-		pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
+		XMFLOAT3 xmf3PrevPosition = XMFLOAT3(m_xmf4x4PrevViewProjection._41, m_xmf4x4PrevViewProjection._42, m_xmf4x4PrevViewProjection._43);
+		XMFLOAT3 xmf3Position = XMFLOAT3(m_xmf4x4CurrViewProjection._41, m_xmf4x4CurrViewProjection._42, m_xmf4x4CurrViewProjection._43);
 
-		m_pComputeShader->SetVertPipelineState(pd3dCommandList);
+		float rotVel = Vector3::Length(Vector3::Subtract(xmf3Position, xmf3PrevPosition));
 
-		pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvTempTextureGPUHandle);
-		pd3dCommandList->SetComputeRootDescriptorTable(2, m_d3dUavGlowScreenGPUHandle);
-		pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
+		float moveVel = 0.0f;
+		if(m_pPlayer)
+			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
+
+		if ((rotVel > 10.0f) || (moveVel > 2.0f))
+		{
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
+
+			XMFLOAT4X4 xmf4x4Inverse = Matrix4x4::Inverse(m_xmf4x4CurrViewProjection);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &xmf4x4Inverse, 16);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nWidth, 32);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nHeight, 33);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fFPS, 34);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_DEPTH, m_d3dSrvDepthStencilGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_MASK, m_d3dSrvMaskTextureGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavMotionBlurScreenGPUHandle);
+			pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+
+			m_bMotionBlurred = true;
+		}
 	}
-
-	m_pComputeShader->SetAddPipelineState(pd3dCommandList);
-
-	pd3dCommandList->SetComputeRootDescriptorTable(0, m_d3dSrvOffScreenGPUHandle);
-	pd3dCommandList->SetComputeRootDescriptorTable(1, m_d3dSrvGlowScreenGPUHandle);
-	pd3dCommandList->SetComputeRootDescriptorTable(2, m_d3dUavTempTextureGPUHandle);
-	pd3dCommandList->Dispatch(nWidth, nHeight, 1);
 }
 
-D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType)
+void CScene::Bloom(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
+	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
+
+	if (m_bBloom)
+	{
+		m_pComputeShader->SetBrightFilterPipelineState(pd3dCommandList);
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
+		pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+	}
+
+	if (m_bBloom || m_bSelfIllumination)
+	{
+		for (int i = 0; i < 1; i++)
+		{
+			m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvGlowScreenGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavTempTextureGPUHandle);
+			pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
+
+			m_pComputeShader->SetVertPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvTempTextureGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
+			pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
+		}
+	}
+}
+
+void CScene::Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
+	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
+
+	if (m_bBloom || m_bSelfIllumination)
+	{
+		for (int i = 0; i < 1; i++)
+		{
+			m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvGlowScreenGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavTempTextureGPUHandle);
+			pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
+
+			m_pComputeShader->SetVertPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvTempTextureGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
+			pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
+		}
+	}
+}
+
+void CScene::Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	if (m_bBloom || m_bSelfIllumination || m_bMotionBlurred)
+	{
+		m_pComputeShader->Set2AddPipelineState(pd3dCommandList);
+
+		if ((m_bBloom || m_bSelfIllumination) && m_bMotionBlurred)
+		{
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvMotionBlurScreenGPUHandle);
+		}
+		else
+		{
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
+		}
+
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B, m_d3dSrvGlowScreenGPUHandle);
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavOffScreenGPUHandle);
+		pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+
+		m_bMotionBlurred = false;
+	}
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType, DXGI_FORMAT dxFormat)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
-	d3dShaderResourceViewDesc.Format = d3dResourceDesc.Format;
+	d3dShaderResourceViewDesc.Format = dxFormat;
 	d3dShaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	switch (nTextureType)
 	{
@@ -785,7 +849,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 
 void CScene::CreateComputeRootSignature(ID3D12Device *pd3dDevice)
 {
-	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[3];
+	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[6];
 
 	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[0].NumDescriptors = 1;
@@ -799,29 +863,68 @@ void CScene::CreateComputeRootSignature(ID3D12Device *pd3dDevice)
 	pd3dDescriptorRanges[1].RegisterSpace = 0;
 	pd3dDescriptorRanges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	pd3dDescriptorRanges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	pd3dDescriptorRanges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[2].NumDescriptors = 1;
-	pd3dDescriptorRanges[2].BaseShaderRegister = 0;
+	pd3dDescriptorRanges[2].BaseShaderRegister = 2;
 	pd3dDescriptorRanges[2].RegisterSpace = 0;
 	pd3dDescriptorRanges[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER pd3dRootParameters[3];
+	pd3dDescriptorRanges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	pd3dDescriptorRanges[3].NumDescriptors = 1;
+	pd3dDescriptorRanges[3].BaseShaderRegister = 3;
+	pd3dDescriptorRanges[3].RegisterSpace = 0;
+	pd3dDescriptorRanges[3].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	pd3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	pd3dRootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[0].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[0]); // SRV
-	pd3dRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dDescriptorRanges[4].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	pd3dDescriptorRanges[4].NumDescriptors = 1;
+	pd3dDescriptorRanges[4].BaseShaderRegister = 0;
+	pd3dDescriptorRanges[4].RegisterSpace = 0;
+	pd3dDescriptorRanges[4].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	pd3dRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	pd3dRootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[1].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[1]); // SRV
-	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dDescriptorRanges[5].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	pd3dDescriptorRanges[5].NumDescriptors = 1;
+	pd3dDescriptorRanges[5].BaseShaderRegister = 4;
+	pd3dDescriptorRanges[5].RegisterSpace = 0;
+	pd3dDescriptorRanges[5].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	pd3dRootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
-	pd3dRootParameters[2].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[2]); // UAV
-	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	D3D12_ROOT_PARAMETER pd3dRootParameters[MAX_COMPUTE_ROOT_PARAMETER_INDEX];
 
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[0]); // SRV
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[1]); // SRV
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_C].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_C].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_C].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[2]); // SRV
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_INPUT_C].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_DEPTH].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_DEPTH].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_DEPTH].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[3]); // SRV
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_DEPTH].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MASK].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MASK].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MASK].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[5]); // SRV
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MASK].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT].DescriptorTable.pDescriptorRanges = &(pd3dDescriptorRanges[4]); // UAV
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO].Constants.Num32BitValues = 35;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO].Constants.ShaderRegister = 0;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
 	::ZeroMemory(&d3dRootSignatureDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
@@ -871,7 +974,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 		{
 			ID3D12Resource *pShaderResource = pTexture->GetTexture(i);
 			D3D12_RESOURCE_DESC d3dResourceDesc = pShaderResource->GetDesc();
-			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType);
+			D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nTextureType, d3dResourceDesc.Format);
 
 			D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSrvCPUDescHandle;
 			D3D12_GPU_DESCRIPTOR_HANDLE *pd3dSrvGPUDescHandle;
@@ -899,14 +1002,20 @@ D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3d
 	return d3dGPUDescHandle;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType)
+D3D12_GPU_DESCRIPTOR_HANDLE CScene::CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType, bool bIsDS)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUDescriptorHandle = m_d3dSrvUavTextureGPUDescStartHandle;
 
 	if (pd3dResource)
 	{
 		D3D12_RESOURCE_DESC d3dResourceDesc = pd3dResource->GetDesc();
-		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nSrvType);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
+		
+		if(bIsDS)
+			d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nSrvType, DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
+		else
+			d3dShaderResourceViewDesc = GetShaderResourceViewDesc(d3dResourceDesc, nSrvType, d3dResourceDesc.Format);
 
 		pd3dDevice->CreateShaderResourceView(pd3dResource, &d3dShaderResourceViewDesc, m_d3dSrvUavTextureCPUDescStartHandle);
 
@@ -1550,6 +1659,8 @@ CBattleScene::CBattleScene() : CScene()
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 		m_pObjects[i] = NULL;
+
+	m_xmf4x4PrevViewProjection = Matrix4x4::Identity();
 }
 
 CBattleScene::~CBattleScene()
@@ -1914,6 +2025,13 @@ void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *p
 	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
 
 	CScene::Render(pd3dCommandList, pCamera);
+}
+
+void CBattleScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
+	
+	m_pPostProcessingShader->Render(pd3dCommandList, NULL);
 }
 
 void CBattleScene::ReleaseUploadBuffers()

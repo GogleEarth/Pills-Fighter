@@ -57,6 +57,28 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+class CPlayerShader : public CSkinnedAnimationShader
+{
+public:
+	CPlayerShader();
+	virtual ~CPlayerShader();
+
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CPlayerWeaponShader : public CShader
+{
+public:
+	CPlayerWeaponShader();
+	virtual ~CPlayerWeaponShader();
+
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class CWireShader : public CShader
 {
 public:
@@ -593,20 +615,26 @@ public:
 
 	virtual D3D12_SHADER_BYTECODE CreateHorzComputeShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateVertComputeShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateAddComputeShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE Create2AddComputeShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE Create3AddComputeShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateBrightFilterComputeShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateMotionBlurComputeShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dRootSignature);
 	virtual void SetHorzPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void SetVertPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void SetAddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Set2AddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void Set3AddPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void SetBrightFilterPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void SetMotionBlurPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:
 	ID3D12PipelineState					*m_pd3dHorzPipelineState = NULL;
 	ID3D12PipelineState					*m_pd3dVertPipelineState = NULL;
-	ID3D12PipelineState					*m_pd3dAddPipelineState = NULL;
+	ID3D12PipelineState					*m_pd3d2AddPipelineState = NULL;
+	ID3D12PipelineState					*m_pd3d3AddPipelineState = NULL;
 	ID3D12PipelineState					*m_pd3dBrightFilterPipelineState = NULL;
+	ID3D12PipelineState					*m_pd3dMotionBlurPipelineState = NULL;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -43,11 +43,11 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	SetPlayerUpdatedContext(pTerrain);
 	SetCameraUpdatedContext(pTerrain);
 
-	CSkinnedAnimationShader *pPlayerShader = new CSkinnedAnimationShader();
+	CPlayerShader *pPlayerShader = new CPlayerShader();
 	pPlayerShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetShader(pPlayerShader);
 
-	CShader *pShader = new CShader();
+	CPlayerWeaponShader *pShader = new CPlayerWeaponShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetWeaponShader(pShader);
 
@@ -298,9 +298,22 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 	m_pCamera->Move(xmf3Shift);
 }
 
+void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+{
+	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
+
+	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
+
+	if (m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
+	if (m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
+}
+
 void CPlayer::Update(float fTimeElapsed)
 {
 	CRobotObject::Animate(fTimeElapsed);
+
+	if (m_fVelocityY > MAX_UP_POWER) m_fVelocityY = MAX_UP_POWER;
+	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
@@ -430,6 +443,8 @@ void CPlayer::ActivationBooster()
 				ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_JUMP, true);
 
 			m_nState |= OBJECT_STATE_JUMP;
+
+			m_fVelocityY = 0.0f;
 		}
 
 		m_nState |= OBJECT_STATE_BOOSTER;
@@ -511,12 +526,9 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 	{
 		float fUpPower = 0.0f;
 
-		fUpPower = m_fTimeForBoostUp * BOOSTER_POWER;
+		fUpPower = BOOSTER_POWER * fTimeElapsed;
 
-		if (fUpPower > MAX_UP_POWER)
-			fUpPower = MAX_UP_POWER;
-
-		Move(XMFLOAT3(0.0f, fUpPower, 0.0f));
+		m_fVelocityY += fUpPower;
 	}
 	if (m_fTimeForBoostDown > 0.0f)
 	{
@@ -535,7 +547,7 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 	else
 	{
 		if (m_fTimeForBoostUp > 0.0f)
-			m_fTimeForBoostUp = m_fTimeForBoostUp - fTimeElapsed < 0.0f ? 0.0f : m_fTimeForBoostUp - fTimeElapsed;
+			m_fTimeForBoostUp = m_fTimeForBoostUp - pow(fTimeElapsed, 2) < 0.0f ? 0.0f : m_fTimeForBoostUp - fTimeElapsed;
 	}
 
 	if (m_bVDown)
@@ -600,7 +612,7 @@ void CPlayer::ApplyGravity(float fGravity, float fTimeElapsed)
 {
 	float fGravAcc = fGravity * m_fMass * fTimeElapsed;
 
-	Move(XMFLOAT3(0.0f, fGravAcc, 0.0f));
+	if(!IsBoostering() || IsDash()) m_fVelocityY += fGravAcc;
 }
 
 void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB)

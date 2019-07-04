@@ -38,14 +38,12 @@ public:
 	void DashMove(ULONG dwDirection, float fDistance);
 	virtual void Rotate(float x, float y, float z);
 
-	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
 	void Update(float fTimeElapsed);
 
-	//플레이어의 위치가 바뀔 때마다 호출되는 함수와 그 함수에서 사용하는 정보를 설정하는 함수이다.
 	virtual void OnPlayerUpdateCallback(float fTimeElapsed);
 	void SetPlayerUpdatedContext(LPVOID pContext) { m_pPlayerUpdatedContext = pContext; }
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, int nInstances = 1);
 
-	//카메라의 위치가 바뀔 때마다 호출되는 함수와 그 함수에서 사용하는 정보를 설정하는 함수이다. 
 	virtual void OnCameraUpdateCallback(float fTimeElapsed);
 	void SetCameraUpdatedContext(LPVOID pContext) { m_pCameraUpdatedContext = pContext; }
 
@@ -58,8 +56,8 @@ public:
 
 protected:
 #define BOOSTER_POWER 3.0f
-#define MAX_UP_POWER 5.0f
-#define MAX_DOWN_POWER 5.0f
+#define MAX_UP_POWER 8.0f
+#define MAX_DOWN_POWER 8.0f
 #define INTERVAL_BOOSTER_GAUGE_CHARGE 2.0f
 #define INTERVAL_BOOSTER_GAUGE_CONSUME 1.0f
 
@@ -69,10 +67,9 @@ protected:
 	float				m_fTimeForBoostUp = 0.0f;
 	float				m_fTimeForBoostDown = 0.0f;
 
-	float				m_fMass = 15.0f;
+	float				m_fMass = 2.0f;
 
 	float				m_fVelocityY = 0.0f;
-	float				m_fAccelerationY = 0.0f;
 	float				m_StopRange = 0.0f;
 
 public:

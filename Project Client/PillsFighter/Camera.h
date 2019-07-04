@@ -6,8 +6,7 @@ class CPlayer;
 
 struct VS_CB_CAMERA_INFO
 {
-	XMFLOAT4X4	m_xmf4x4View;
-	XMFLOAT4X4	m_xmf4x4Projection;
+	XMFLOAT4X4	m_xmf4x4ViewProjection;
 	XMFLOAT3	m_xmf3Position;
 };
 
@@ -29,6 +28,7 @@ protected:
 
 	XMFLOAT4X4 						m_xmf4x4View;
 	XMFLOAT4X4 						m_xmf4x4Projection;
+	XMFLOAT4X4						m_xmf4x4ViewProjection;
 
 	CPlayer							*m_pPlayer;
 
@@ -73,6 +73,7 @@ public:
 
 	XMFLOAT4X4 GetViewMatrix() { return(m_xmf4x4View); }
 	XMFLOAT4X4 GetProjectionMatrix() { return(m_xmf4x4Projection); }
+	XMFLOAT4X4 GetViewProjMatrix() { return(m_xmf4x4ViewProjection); }
 
 	virtual void Move(const XMFLOAT3& xmf3Shift) { m_xmf3Position.x += xmf3Shift.x; m_xmf3Position.y += xmf3Shift.y; m_xmf3Position.z += xmf3Shift.z; }
 

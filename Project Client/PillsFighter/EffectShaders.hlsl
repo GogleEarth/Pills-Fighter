@@ -91,7 +91,7 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 
 	for (int i = 0; i < 4; i++)
 	{
-		output.position = mul(mul(fVertices[i], gmtxView), gmtxProjection);
+		output.position = mul(fVertices[i], gmtxViewProjection);
 		output.uv = fUVs[i];
 
 		outStream.Append(output);
@@ -199,7 +199,7 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 
 	for (int i = 0; i < 4; i++)
 	{
-		output.position = mul(mul(fVertices[i], gmtxView), gmtxProjection);
+		output.position = mul(fVertices[i], gmtxViewProjection);
 		float3x3 f3x3Sprite = float3x3(gSprite.m_f2SpriteSize.x, 0.0f, 0.0f, 0.0f, gSprite.m_f2SpriteSize.y, 0.0f, fUVs[i].x * gSprite.m_f2SpriteSize.x, fUVs[i].y * gSprite.m_f2SpriteSize.y, 1.0f);
 		float3 f3Sprite = float3(input[0].spritepos, 1.0f);
 		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
@@ -271,12 +271,11 @@ struct PARTICLE
 	float3  m_vRight;
 	float	m_fElapsedTime;
 	float3  m_vUp;
-	float	m_fEmitInterval;
+	float	m_fMass;
 	float3  m_vLook;
 	bool	m_bEmit;
 	float3	m_vAngles;
 	bool	m_bScaling;
-	float	m_fMass;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(PARTICLE_INFO);
@@ -314,7 +313,7 @@ VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID :
 }
 
 [maxvertexcount(2)]
-void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream<VS_PARTICLE_INPUT> pointStream, uint nGSIID : SV_GSInstanceID)
+void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream<VS_PARTICLE_INPUT> pointStream)
 {
 	VS_PARTICLE_INPUT output;
 	output.position = input[0].position;
@@ -325,7 +324,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 
 	if ((input[0].type == PARTICLE_TYPE_EMITTER) || (input[0].type == PARTICLE_TYPE_ONE_EMITTER))
 	{
-		if ((gParticle.m_bEmit == true) && (output.age > gParticle.m_fEmitInterval))
+		if (gParticle.m_bEmit == true)
 		{
 			float4 vRandom = gvRandoms * (input[0].verid * input[0].verid + 5.0f);
 			float fX = fmod(vRandom.x, gParticle.m_vAngles.x) - gParticle.m_vAngles.x / 2.0f;
@@ -382,7 +381,7 @@ VS_PARTICLE_OUTPUT VSParticleDraw(VS_PARTICLE_INPUT input)
 	VS_PARTICLE_OUTPUT output;
 
 	float t = input.age;
-	float3 vGravity = float3(0, -gfGravity, 0);
+	float3 vGravity = float3(0, gfGravity, 0);
 	output.position = (input.velocity * t) + (vGravity * t * t * gParticle.m_fMass) + input.position;
 
 	float fOpacity = 1.0f - smoothstep(0.0f, gParticle.m_fDuration, input.age);
@@ -420,12 +419,10 @@ void GSParticleDraw(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_P
 	vQuads[2] = float4(input[0].position - fHalfWidth * vRight - fHalfHeight * vUp, 1.0f);
 	vQuads[3] = float4(input[0].position - fHalfWidth * vRight + fHalfHeight * vUp, 1.0f);
 
-	matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
-
 	GS_PARTICLE_OUTPUT output;
 	for (int i = 0; i < 4; i++)
 	{
-		output.position = mul(vQuads[i], mtxViewProjection);
+		output.position = mul(vQuads[i], gmtxViewProjection);
 		output.uv = gvQuadTexCoord[i];
 		output.color = input[0].color;
 		triStream.Append(output);

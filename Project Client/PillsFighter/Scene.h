@@ -69,7 +69,7 @@ public:
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	virtual void BuildLightsAndMaterials() {}
 
@@ -82,7 +82,7 @@ public:
 	static void CreateComputeRootSignature(ID3D12Device *pd3dDevice);
 	static void CreateDescriptorHeaps(ID3D12Device *pd3dDevice, int nViews);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, CTexture *pTexture, UINT nRootParameter, bool bAutoIncrement, bool bIsModelTexture);
-	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType);
+	static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, UINT nSrvType, bool bIsDS = false);
 	static D3D12_GPU_DESCRIPTOR_HANDLE CreateUnorderedAccessViews(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource);
 	static void ReleaseDescHeapsAndRootSignature();
 	static void SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -143,6 +143,16 @@ protected:
 
 	CUserInterface						*m_pUserInterface = NULL;
 
+	XMFLOAT4X4							m_xmf4x4PrevViewProjection;
+	XMFLOAT4X4							m_xmf4x4CurrViewProjection;
+	XMFLOAT3							m_xmf3PrevPlayerPosition;
+	float								m_fFPS = 0.0f;
+
+	bool								m_bSelfIllumination = true;
+	bool								m_bBloom = true;
+	bool								m_bMotionBlur = true;
+	bool								m_bMotionBlurred = false;
+
 public:
 	virtual void StartScene() {};
 
@@ -171,26 +181,37 @@ public:
 public:
 	void CreateOffScreenTextures(ID3D12Device *pd3dDevice);
 	void CreateRtvDsvSrvUavOffScreens(ID3D12Device *pd3dDevice);
-	void CreateTempTexture(ID3D12Device *pd3dDevice);
-	void CreateRtvDsvSrvUavTemp(ID3D12Device *pd3dDevice);
-	void Blooming(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void PreparePostProcessing(ID3D12GraphicsCommandList *pd3dCommandList);
+	void MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void Bloom(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
 
 protected:
 	ID3D12Resource					*m_pd3dOffScreenTexture = NULL;
-	ID3D12Resource					*m_pd3dOffScreenDSBuffer = NULL;
+	ID3D12Resource					*m_pd3dDepthStencilBuffer = NULL;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvOffScreenCPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvOffScreenCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvOffScreenGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavOffScreenGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvDepthStencilGPUHandle;
 
 	ID3D12Resource					*m_pd3dGlowScreenTexture = NULL;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvGlowScreenCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGlowScreenGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavGlowScreenGPUHandle;
 
+	ID3D12Resource					*m_pd3dMotionBlurScreenTexture = NULL;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvMotionBlurScreenGPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavMotionBlurScreenGPUHandle;
+
 	ID3D12Resource					*m_pd3dTempTexture = NULL;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvTempTextureGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavTempTextureGPUHandle;
+
+	ID3D12Resource					*m_pd3dMaskTexture = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvMaskTextureCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvMaskTextureGPUHandle;
 
 	CComputeShader					*m_pComputeShader = NULL;
 	CPostProcessingShader			*m_pPostProcessingShader = NULL;
@@ -207,7 +228,6 @@ public: // Network
 
 protected:
 	int	m_nMyIndex = 0;
-	bool m_bActiveBloom = true;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -341,6 +361,15 @@ protected:
 #define INDEX_SHADER_SPRITE_EFFECTS 1
 #define INDEX_SHADER_TEXT_EEFECTS 2
 
+struct MOTIONBLUR
+{
+	XMFLOAT4X4 m_xmf4x4PrevViewProj;
+	XMFLOAT4X4 m_xmf4x4InverseViewProj;
+	int m_nWidth;
+	int m_nHeight;
+	int m_nSamples;
+};
+
 class CBattleScene : public CScene
 {
 public:
@@ -374,6 +403,7 @@ public:
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject);
+	virtual void RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void CreateEnvironmentMap(ID3D12Device *pd3dDevice);
 	void CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);

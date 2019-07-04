@@ -18,7 +18,7 @@ VS_SKYBOX_CUBEMAP_OUTPUT VSSkyBox(VS_SKYBOX_CUBEMAP_INPUT input)
 {
 	VS_SKYBOX_CUBEMAP_OUTPUT output;
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.position = mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxViewProjection);
 	output.positionL = input.position;
 
 	return(output);

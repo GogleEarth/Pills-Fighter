@@ -50,7 +50,7 @@ VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 	output.binormalW = mul(input.binormal, (float3x3)gmtxGameObject);
 	output.tangentW = mul(input.tangent, (float3x3)gmtxGameObject);
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gmtxGameObject);
-	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
+	output.position = mul(float4(output.positionW, 1.0f), gmtxViewProjection);
 	output.uv = input.uv;
 	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
@@ -105,6 +105,62 @@ PS_OUTPUT PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+struct PS_PLAYER
+{
+	float4 color : SV_Target0;
+	float4 glow : SV_Target1;
+	float4 mask : SV_Target2;
+};
+
+PS_PLAYER PSPlayer(VS_STANDARD_OUTPUT input) : SV_TARGET
+{
+	PS_PLAYER output;
+
+	float4 f4GlowColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_EMISSION_MAP)
+		f4GlowColor = gtxtEmissiveTexture.Sample(gssWrap, input.uv);
+
+	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
+	float4 cCubeColor = gtxtEnvirCubeTexture.Sample(gssClamp, input.reflection);
+	cCubeColor.w = gMaterial.m_cReflectionFactor;
+
+	// 임시 텍스처 배열 인덱스는 0
+	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_ALBEDO_MAP)
+		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	float4 f4NormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
+		f4NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
+
+	float fSpecularFactor = 0.0f;
+	if (gnTexturesMask & MATERIAL_SPECULAR_FACTOR_MAP)
+		fSpecularFactor = gtxtSpecularTexture.Sample(gssWrap, input.uv).x;
+
+	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	//float4 cColor = f4AlbedoColor;
+	float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.5);
+
+	float3 normalW = normalize(input.normalW);
+
+	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
+	{
+		float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.binormalW), normalW);
+		float3 vNormal = normalize(f4NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
+		normalW = normalize(mul(vNormal, TBN));
+	}
+
+	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
+
+	output.color = cColor * cIllumination;
+	output.glow = f4GlowColor;
+	output.mask = 1;
+
+	return output;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 struct VS_WIRE_INPUT
 {
 	float3 position : POSITION;
@@ -119,7 +175,7 @@ VS_WIRE_OUTPUT VSWire(VS_WIRE_INPUT input)
 {
 	VS_WIRE_OUTPUT output;
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxView), gmtxProjection);
+	output.position = mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxViewProjection);
 
 	return(output);
 }
@@ -160,7 +216,7 @@ VS_INSTANCING_OUTPUT VSInsTextured(VS_STANDARD_INPUT input, uint nInsID : SV_Ins
 	output.binormalW = mul(input.binormal, (float3x3)gGameObjectsInfo[nInsID].m_mtxGameObject);
 	output.tangentW = mul(input.tangent, (float3x3)gGameObjectsInfo[nInsID].m_mtxGameObject);
 	output.positionW = (float3)mul(float4(input.position, 1.0f), gGameObjectsInfo[nInsID].m_mtxGameObject);
-	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
+	output.position = mul(float4(output.positionW, 1.0f), gmtxViewProjection);
 	output.uv = input.uv;
 	//output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 	output.instanceID = nInsID;
@@ -209,7 +265,7 @@ VS_WIRE_OUTPUT VSInsWire(VS_WIRE_INPUT input, uint nInsID : SV_InstanceID)
 {
 	VS_WIRE_OUTPUT output;
 
-	output.position = mul(mul(mul(float4(input.position, 1.0f), gGameObjectsInfo[nInsID].m_mtxGameObject), gmtxView), gmtxProjection);
+	output.position = mul(mul(float4(input.position, 1.0f), gGameObjectsInfo[nInsID].m_mtxGameObject), gmtxViewProjection);
 
 	return(output);
 }
@@ -263,7 +319,7 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 		output.binormalW += input.weights[i] * mul(input.binormal, (float3x3)mtxVertexToBoneWorld);
 	}
 
-	output.position = mul(mul(float4(output.positionW, 1.0f), gmtxView), gmtxProjection);
+	output.position = mul(float4(output.positionW, 1.0f), gmtxViewProjection);
 	output.uv = input.uv;
 	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
