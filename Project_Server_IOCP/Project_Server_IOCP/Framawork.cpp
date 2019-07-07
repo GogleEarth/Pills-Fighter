@@ -158,12 +158,25 @@ int Framawork::accept_process()
 
 		clients_[new_id].socket = clientSocket;
 		clients_[new_id].prev_size = 0;
+		clients_[new_id].in_use = true;
 		ZeroMemory(&clients_[new_id].over_ex.over,
 			sizeof(clients_[new_id].over_ex.over));
 		flags = 0;
 
 		CreateIoCompletionPort(reinterpret_cast<HANDLE>(clientSocket),
 			iocp_, new_id, 0);
+
+		for (int i = 0; i < 10; ++i)
+		{
+			if (rooms_[i].get_is_use())
+			{
+				PKT_ADD_ROOM pkt_ar;
+				pkt_ar.PktId = PKT_ID_ADD_ROOM;
+				pkt_ar.PktSize = sizeof(pkt_ar);
+				pkt_ar.Room_num = i;
+				send_packet_to_player(new_id, (char*)&pkt_ar);
+			}
+		}
 
 		do_recv(new_id);
 	}
@@ -336,7 +349,13 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_player(id, (char*)&pkt_cro);
 			send_packet_to_player(id, (char*)&pkt_cid);
 			rooms_[room_num].set_is_use(true);
-			rooms_[room_num].add_player(id);
+			rooms_[room_num].add_player(id, clients_[id].socket);
+
+			PKT_ADD_ROOM pkt_ar;
+			pkt_ar.PktId = PKT_ID_ADD_ROOM;
+			pkt_ar.PktSize = sizeof(pkt_ar);
+			pkt_ar.Room_num = room_num;
+			send_packet_to_all_player((char*)&pkt_ar);
 		}
 		else
 			std::cout << "더이상 방을 생성할 수 없음\n";
@@ -344,12 +363,45 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_ROOM_IN:
 	{
-		PKT_ROOM_IN_OK pkt_rio;
-		pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
-		pkt_rio.PktSize = sizeof(PKT_ROOM_IN_OK);
+		int room_num = reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num;
+		if (rooms_[room_num].get_num_player_in_room() < MAX_CLIENT)
+		{
+			PKT_ROOM_IN_OK pkt_rio;
+			pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
+			pkt_rio.PktSize = sizeof(PKT_ROOM_IN_OK);
 
-		send_packet_to_player(id, (char*)&pkt_rio);
-		rooms_[reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num].add_player(id);
+			PKT_CLIENTID pkt_cid;
+			pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
+			pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
+			int player_id = rooms_[room_num].findindex();
+			pkt_cid.id = player_id;
+			pkt_cid.Team = player_id % 2;
+
+			send_packet_to_player(id, (char*)&pkt_rio);
+
+			PKT_PLAYER_IN pkt_pin;
+			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
+			pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
+			for (int i = 0; i < MAX_CLIENT; ++i)
+			{
+				auto player = rooms_[room_num].get_player(i);
+				if (player->get_use())
+				{
+					pkt_pin.id = i;
+					pkt_pin.Team = player->get_team();
+					send_packet_to_player(id, (char*)&pkt_pin);
+				}
+			}
+
+			pkt_pin.id = player_id;
+			pkt_pin.Team = player_id % 2;
+			send_packet_to_room_player(room_num, (char*)&pkt_pin);
+
+			send_packet_to_player(id, (char*)&pkt_cid);
+			rooms_[room_num].add_player(id, clients_[id].socket);
+		}
+		else
+			std::cout << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 더이상 참가 불가\n";
 		break;
 	}
 	case PKT_ID_SHOOT:
@@ -359,11 +411,11 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
-		//rooms_[reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->RoomNum].
-		//	set_player_lobby_info(id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot, 
-		//		reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team);
+		int room_num = search_client_in_room(clients_[id].socket);
+		rooms_[room_num].set_player_lobby_info(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot,
+				reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team);
 		
-		//send_packet_to_room_player(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->RoomNum, packet);
+		send_packet_to_room_player(room_num, packet);
 		break;
 	}
 	case PKT_ID_GAME_START:

@@ -12,6 +12,17 @@ Room::~Room()
 {
 }
 
+int Room::get_num_player_in_room()
+{
+	int num = 0;
+	for (int i = 0; i < 8; ++i)
+	{
+		if (players_[i].get_use())
+			num += 1;
+	}
+	return num;
+}
+
 void Room::init(CRepository* repository)
 {
 	for (int i = 0; i < 2; ++i)
@@ -25,7 +36,10 @@ bool Room::search_client(SOCKET client)
 	bool ret = false;
 	
 	for (int i = 0; i < 8; ++i)
+	{
+		if (!players_[i].get_use()) continue;
 		if (players_[i].get_socket() == client) ret = true;
+	}
 
 	return ret;
 }
@@ -48,11 +62,12 @@ int Room::findindex()
 	return num;
 }
 
-void Room::add_player(int id)
+void Room::add_player(int id, SOCKET socket)
 {
 	int num = findindex();
 	players_[num].set_use(true);
 	players_[num].set_serverid(id);
+	players_[num].set_socket(socket);
 }
 
 void Room::set_player_lobby_info(int id, char selectedrobot, char team)

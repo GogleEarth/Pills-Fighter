@@ -46,11 +46,12 @@ public:
 	inline bool get_is_use() { return in_use_; }
 	inline void set_is_use(bool use) { in_use_ = use; };
 
+	int get_num_player_in_room();
 	void init(CRepository* repository);
 	bool search_client(SOCKET client);
 	void disconnect_client(SOCKET client);
 	int findindex();
-	void add_player(int id);
+	void add_player(int id, SOCKET socket);
 	void set_player_lobby_info(int id, char selectedrobot, char team);
 	void shoot(int id);
 	void player_load_complete(int id);
