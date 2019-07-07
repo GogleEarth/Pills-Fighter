@@ -52,7 +52,7 @@ void Room::add_player(int id)
 {
 	int num = findindex();
 	players_[num].set_use(true);
-	players_[num].set_serverid = id;
+	players_[num].set_serverid(id);
 }
 
 void Room::set_player_lobby_info(int id, char selectedrobot, char team)
@@ -109,4 +109,15 @@ int Room::find_player_by_socket(SOCKET client)
 void Room::player_info_inqueue(char* packet)
 {
 	player_info_queue.push(reinterpret_cast<PKT_PLAYER_INFO*>(packet));
+}
+
+void Player::init()
+{
+	socket_ = -1;
+	used_ = false;
+	serverid_ = -1;
+	robot_ = -1;
+	team_ = -1;
+	load_ = false;
+	send_ = false;
 }

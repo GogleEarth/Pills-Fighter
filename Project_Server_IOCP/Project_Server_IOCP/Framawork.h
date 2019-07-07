@@ -17,13 +17,21 @@ struct OVER_EX {
 	EVENT_TYPE		event_t;
 };
 
-struct Client
+class Client
 {
+public:
 	bool in_use;
 	OVER_EX over_ex;
 	SOCKET socket;
 	char packet_buffer[MAX_BUFFER];
 	int	prev_size;
+
+	Client() {
+		in_use = false;
+		over_ex.dataBuffer.len = MAX_BUFFER;
+		over_ex.dataBuffer.buf = over_ex.messageBuffer;
+		over_ex.event_t = EVENT_TYPE_RECV;
+	}
 };
 
 struct EVENT_ST {

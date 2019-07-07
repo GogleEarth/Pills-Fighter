@@ -1172,7 +1172,7 @@ void CGameFramework::SendToServer()
 
 			//총알 생성 패킷 보내기
 			PKT_SHOOT pktShoot;
-			PKT_ID id = PKT_ID_SHOOT;
+			//PKT_ID id = PKT_ID_SHOOT;
 			pktShoot.PktId = (char)PKT_ID_SHOOT;
 			pktShoot.PktSize = sizeof(PKT_SHOOT);
 			pktShoot.ID = m_nClinetIndex;
@@ -1180,7 +1180,7 @@ void CGameFramework::SendToServer()
 
 			CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
 			pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget(pGun->GetMuzzlePos());
-			send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+			//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 			if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
 			{
 				printf("Send Shoot Error\n");
@@ -1209,7 +1209,7 @@ void CGameFramework::SendToServer()
 
 		pktPlayerInfo.State = m_pPlayer->GetState();
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (retval = send(m_Socket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
 			printf("Send Player Info Error\n");
 
@@ -1228,7 +1228,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		pktToServer.PktID = (char)PKT_ID_GAME_START;
 		pktToServer.PktSize = sizeof(pktToServer);
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Game Start Error\n");
 
@@ -1241,7 +1241,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		pktToServer.PktID = (char)PKT_ID_LOAD_COMPLETE;
 		pktToServer.PktSize = sizeof(pktToServer);
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
@@ -1255,7 +1255,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.Room_num = m_pScene->GetSelectRoom();
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
@@ -1268,7 +1268,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		packet.PktId = (char)PKT_ID_CREATE_ROOM;
 		packet.PktSize = sizeof(packet);
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&packet, sizeof(packet), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
@@ -1283,7 +1283,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.selected_robot = m_pScene->GetPlayerRobotType();
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send LOBBY Player Info Error\n");
 		break;
@@ -1295,7 +1295,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		pktToServer.PktId = PKT_ID_LEAVE_ROOM;
 		pktToServer.PktSize = sizeof(pktToServer);
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Leave Room Error\n");
 		break;
@@ -1308,7 +1308,7 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.map = m_pScene->GetSelectedMap();
 
-		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Change Map Error\n");
 		break;

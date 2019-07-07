@@ -38,6 +38,7 @@ int Framawork::thread_process()
 			int err_no = WSAGetLastError();
 			if (64 == err_no) {
 				disconnect_client(key);
+				std::cout << "플레이어 접속 종료\n";
 				continue;
 			}
 			else error_display("GQCS : ", err_no);
@@ -45,11 +46,12 @@ int Framawork::thread_process()
 
 		if (0 == io_byte) {
 			disconnect_client(key);
+			std::cout << "플레이어 접속 종료\n";
 			continue;
 		}
 
 		if (EVENT_TYPE_RECV == over_ex->event_t) {
-			// wcout << "Packet from Client:" << key << endl;
+			std::wcout << "Packet from Client:" << key << std::endl;
 			int rest = io_byte;
 			char *ptr = over_ex->messageBuffer;
 			char packet_size = 0;
@@ -151,6 +153,8 @@ int Framawork::accept_process()
 			std::cout << "MAX USER overflow\n";
 			continue;
 		}
+
+		std::cout << "플레이어 접속\n";
 
 		clients_[new_id].socket = clientSocket;
 		clients_[new_id].prev_size = 0;
@@ -290,27 +294,27 @@ PKT_ID_PICK_ITEM,
 PKT_ID_CREATE_ROOM,
 PKT_ID_ROOM_IN
 */
-void Framawork::process_packet(int id, char * packet)
+void Framawork::process_packet(int id, char* packet)
 {
 	switch (packet[1])
 	{
 	case PKT_ID_PLAYER_INFO:
 	{
-		rooms_[reinterpret_cast<PKT_PLAYER_INFO*>(packet)->RoomNum].player_info_inqueue(packet);
+		//rooms_[reinterpret_cast<PKT_PLAYER_INFO*>(packet)->RoomNum].player_info_inqueue(packet);
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE:
 	{
-		rooms_[reinterpret_cast<PKT_LOAD_COMPLETE*>(packet)->RoomNum].player_load_complete(id);
-		if (rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].all_load_complete())
-			add_timer(reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum, EVENT_TYPE_LOAD_ALL, std::chrono::high_resolution_clock::now());
+		//rooms_[reinterpret_cast<PKT_LOAD_COMPLETE*>(packet)->RoomNum].player_load_complete(id);
+		//if (rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].all_load_complete())
+		//	add_timer(reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum, EVENT_TYPE_LOAD_ALL, std::chrono::high_resolution_clock::now());
 		break;
 	}
 	case PKT_ID_SEND_COMPLETE:
 	{
-		rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].player_send_complete(id);
-		if (rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].all_send_complete())
-			add_timer(reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum, EVENT_TYPE_ROOM_UPDATE, std::chrono::high_resolution_clock::now());
+		//rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].player_send_complete(id);
+		//if (rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].all_send_complete())
+		//	add_timer(reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum, EVENT_TYPE_ROOM_UPDATE, std::chrono::high_resolution_clock::now());
 		break;
 	}
 	case PKT_ID_CREATE_ROOM:
@@ -322,8 +326,14 @@ void Framawork::process_packet(int id, char * packet)
 			pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
 			pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
 			int player_id = rooms_[room_num].findindex();
+			pkt_cid.id = player_id;
 			pkt_cid.Team = player_id % 2;
+			
+			PKT_CREATE_ROOM_OK pkt_cro;
+			pkt_cro.PktId = PKT_ID_CREATE_ROOM_OK;
+			pkt_cro.PktSize = sizeof(PKT_CREATE_ROOM_OK);
 
+			send_packet_to_player(id, (char*)&pkt_cro);
 			send_packet_to_player(id, (char*)&pkt_cid);
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id);
@@ -334,21 +344,31 @@ void Framawork::process_packet(int id, char * packet)
 	}
 	case PKT_ID_ROOM_IN:
 	{
+		PKT_ROOM_IN_OK pkt_rio;
+		pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
+		pkt_rio.PktSize = sizeof(PKT_ROOM_IN_OK);
+
+		send_packet_to_player(id, (char*)&pkt_rio);
 		rooms_[reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num].add_player(id);
 		break;
 	}
 	case PKT_ID_SHOOT:
 	{
-		rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].shoot(id);
+		//rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].shoot(id);
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
-		rooms_[reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->RoomNum].
-			set_player_lobby_info(id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot, 
-				reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team);
+		//rooms_[reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->RoomNum].
+		//	set_player_lobby_info(id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot, 
+		//		reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team);
 		
-		send_packet_to_room_player(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->RoomNum, packet);
+		//send_packet_to_room_player(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->RoomNum, packet);
+		break;
+	}
+	case PKT_ID_GAME_START:
+	{
+		std::cout << "gamestartpacket\n";
 		break;
 	}
 	default:
@@ -404,7 +424,7 @@ int Framawork::find_empty_room()
 	for (int i = 0; i < 10; ++i)
 	{
 		if (rooms_[i].get_is_use()) continue;
-		room_num = 1;
+		room_num = i;
 		break;
 	}
 	return room_num;

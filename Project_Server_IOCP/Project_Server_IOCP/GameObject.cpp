@@ -40,6 +40,10 @@ void GameObject::SetMesh(CMesh * pMesh, CCubeMesh * pCubeMesh)
 		model_->SetMesh(pMesh, pCubeMesh, false);
 }
 
+void GameObject::Animate(float fTimeElapsed)
+{
+}
+
 void GameObject::OnPrepareRender()
 {
 	m_xmf4x4World._11 = m_xmf3Right.x;

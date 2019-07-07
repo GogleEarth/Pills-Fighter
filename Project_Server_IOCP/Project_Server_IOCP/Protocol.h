@@ -25,7 +25,13 @@ typedef enum PKT_ID
 	PKT_ID_GAME_END,
 	PKT_ID_PICK_ITEM,
 	PKT_ID_CREATE_ROOM,
-	PKT_ID_ROOM_IN
+	PKT_ID_CREATE_ROOM_OK,
+	PKT_ID_ROOM_IN,
+	PKT_ID_ROOM_IN_OK,
+	PKT_ID_LEAVE_ROOM,
+	PKT_ID_CHANGE_MAP,
+	PKT_ID_ADD_ROOM,
+	PKT_ID_DELETE_ROOM
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -136,7 +142,6 @@ typedef struct PKT_PLAYER_INFO
 	BOOL			isDownChangeAnimation;
 	float			DownAnimationPosition;
 	int				State;
-	BYTE			RoomNum;
 }PKT_PLAYER_INFO;
 
 typedef struct PKT_PLAYER_LIFE
@@ -222,14 +227,13 @@ struct PKT_LOBBY_PLAYER_INFO
 	int			id;
 	BYTE		selected_robot;
 	BYTE		Team;
-	BYTE		RoomNum;
 };
 
 typedef struct PKT_GAME_START
 {
 	BYTE PktSize;
 	BYTE PktID;
-	BYTE			RoomNum;
+	BYTE map;
 }PKT_GAME_START, PKT_LOAD_COMPLETE, PKT_SEND_COMPLETE;
 
 struct PKT_SHOOT
@@ -238,8 +242,7 @@ struct PKT_SHOOT
 	BYTE			PktId;
 	BYTE			ID;
 	WEAPON_TYPE		Player_Weapon;
-	XMFLOAT4X4		BulletWorldMatrix;	
-	BYTE			RoomNum;
+	XMFLOAT4X4		BulletWorldMatrix;
 };
 
 struct PKT_SCORE
@@ -263,6 +266,19 @@ struct PKT_CREATE_ROOM
 	BYTE PktId;
 };
 
+struct PKT_CREATE_ROOM_OK
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_ADD_ROOM
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+};
+
 struct PKT_ROOM_IN
 {
 	BYTE PktSize;
@@ -270,6 +286,31 @@ struct PKT_ROOM_IN
 	BYTE Room_num;
 };
 
+struct PKT_ROOM_IN_OK
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_ROOM_DELETE
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+};
+
+struct PKT_LEAVE_ROOM
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_CHANGE_MAP
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE map;
+};
 
 #pragma pack(pop)
 

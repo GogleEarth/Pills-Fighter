@@ -2,7 +2,35 @@
 
 #include "Scene.h"
 
-class Player{};
+class Player
+{
+	SOCKET socket_;
+	bool used_;
+	int serverid_;
+	char robot_;
+	char team_;
+	bool load_;
+	bool send_;
+
+public:
+	Player() {}
+	~Player() {}
+	void init();
+	inline void set_socket(SOCKET s) { socket_ = s; }
+	inline SOCKET get_socket() { return socket_; }
+	inline void set_use(bool use) { used_ = use; }
+	inline bool get_use() { return used_; }
+	inline void set_serverid(int id) { serverid_ = id; }
+	inline int get_serverid() { return serverid_; }
+	inline void set_robot(char robot) { robot_ = robot; }
+	inline char get_robot() { return robot_; }
+	inline void set_load(bool load) { load_ = load; }
+	inline bool get_load() { return load_; }
+	inline void set_send(bool send) { send_ = send; }
+	inline bool get_send() { return send_; }
+	inline void set_team(char team) { team_ = team; }
+	inline char get_team() { return team_; }
+};
 
 class Room
 {
