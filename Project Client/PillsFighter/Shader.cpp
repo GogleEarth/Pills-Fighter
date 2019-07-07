@@ -1716,11 +1716,11 @@ void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
 	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FLARE].emplace_back(pParticle);
 
 	// Fog
-	//pParticle = m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].front();
-	//m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].pop();
+	pParticle = m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].front();
+	m_pvpTempParticles[PARTICLE_INDEX_BOOSTER_FOG].pop();
 
-	//pParticle->SetFollowObject(pObject, pFrame);
-	//m_pvpParticles[PARTICLE_INDEX_BOOSTER_FOG].emplace_back(pParticle);
+	pParticle->SetFollowObject(pObject, pFrame);
+	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FOG].emplace_back(pParticle);
 }
 
 void CParticleShader::CheckDeleteObjects()

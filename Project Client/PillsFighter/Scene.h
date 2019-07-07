@@ -40,8 +40,10 @@ struct LIGHTS
 };
 
 // Scene Type
-#define SCENE_TYPE_LOBBY 1
-#define SCENE_TYPE_COLONY 2
+#define SCENE_TYPE_LOBBY_MAIN 1
+#define SCENE_TYPE_LOBBY_ROOM 2
+#define SCENE_TYPE_COLONY 3
+#define SCENE_TYPE_SPACE 4
 
 class CScene
 {
@@ -54,7 +56,7 @@ public:
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 	virtual void ReleaseUploadBuffers();
 
-	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	virtual void ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime);
 
@@ -110,6 +112,8 @@ protected:
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvCPUDesciptorStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dDsvGPUDesciptorStartHandle;
 
+#define SELECT_CHARACTER_GM 0
+#define SELECT_CHARACTER_GUNDAM 1
 	static int								m_nPlayerRobotType;
 	int										m_nFPS = 0;
 
@@ -120,6 +124,9 @@ public:
 
 	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 	int GetPlayerRobotType() { return m_nPlayerRobotType; }
+	virtual int GetSelectedMap() { return 0; }
+	virtual void ChangeMap(int nMap) {}
+	virtual int GetSelectRoom() { return -1; }
 
 	CShader* GetBulletShader(UINT index) { return m_ppShaders[index]; }
 
@@ -155,27 +162,26 @@ protected:
 
 public:
 	virtual void StartScene() {};
+	virtual void MoveCursor(float x, float y) {}
+	virtual void SetCursorPosition(XMFLOAT2 xmf2Position) {}
+	virtual XMFLOAT2 GetCursorPos() { return XMFLOAT2(0.0f, 0.0f); }
+	virtual void AddRoom(int n) {}
+	virtual void DeleteRoom(int n) {}
 
 public:
-	void AddFont(ID3D12Device *pd3dDevice, CFont *pFont);
-	CTextObject* AddText(const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	void ChangeText(CTextObject *pTextObject, const char *pstrFont, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void SetFont(ID3D12Device *pd3dDevice, CFont *pFont);
+	CTextObject* AddText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void ChangeText(CTextObject *pTextObject,const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 
 protected:
 	CFontShader						*m_pFontShader = NULL;
-	std::vector<CFont*>				m_vpFonts;
+	CFont*							m_pFont = NULL;
 
 protected:
 	BOOL							m_LButtonDown = FALSE;
 	//BOOL							m_bRenderWire = FALSE;
 
-protected:
-	CCursor							*m_pCursor = NULL;
-
 public:
-	void MoveCursor(float x, float y);
-	virtual int MouseClick() { return 0; };
-
 	virtual void EndScene() {};
 
 public:
@@ -232,53 +238,163 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct SERVERINFO
-{
-	int nSlotIndex;
-	int nRobotType;
-};
-
-// Lobby Scene's Shader Index
-#define LOBBY_SHADER_INDEX 1
-
-#define INDEX_LOBBY_SHADER_UI 0
-
-// Lobby UI Click Type
-#define MOUSE_CLICK_TYPE_START 1
-#define MOUSE_CLICK_SELECT_ROBOT 2
-
-// UI Texture Index
-#define UI_TEXTURE_COUNT 13
-
-#define UI_TEXTURE_BASE 0
-#define UI_TEXTURE_GAMESTART 1
-#define UI_TEXTURE_HL_GAMESTART 2
-#define UI_TEXTURE_READY 3
-#define UI_TEXTURE_HL_READY 4
-#define UI_TEXTURE_SELECT_LEFT 5
-#define UI_TEXTURE_HL_SELECT_LEFT 6
-#define UI_TEXTURE_SELECT_RIGHT 7
-#define UI_TEXTURE_HL_SELECT_RIGHT 8
-#define UI_TEXTURE_GM_TEXT 9
-#define UI_TEXTURE_HL_GM_TEXT 10
-#define UI_TEXTURE_GUNDAM_TEXT 11
-#define UI_TEXTURE_HL_GUNDAM_TEXT 12
-
-// UI Rect Index
-#define UI_RECT_BASE 0
-#define UI_RECT_START_BUTTON 1
-#define UI_RECT_SELECT_LEFT 2
-#define UI_RECT_SELECT_RIGHT 3
-#define UI_RECT_GM_TEXT 4
-#define UI_RECT_GUNDAM_TEXT 5
-
 class CLobbyScene : public CScene
 {
 public:
 	CLobbyScene();
 	virtual ~CLobbyScene();
 
-	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual void ReleaseObjects();
+	virtual void ReleaseUploadBuffers();
+
+	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+
+	virtual void MoveCursor(float x, float y);
+	virtual void SetCursorPosition(XMFLOAT2 xmf2Position) { m_pCursor->SetCursorPos(xmf2Position); }
+	virtual int MouseClick() { return 0; };
+	virtual XMFLOAT2 GetCursorPos() { return m_pCursor->GetPosition(); }
+
+protected:
+	CLobbyShader					*m_pLobbyShader = NULL;
+
+	int								m_nUIRect = 0;
+	CRect							**m_ppUIRects = NULL;
+
+	int								m_nTextures;
+	CTexture						**m_ppTextures = NULL;
+
+	CCursor							*m_pCursor = NULL;
+};
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// UI Texture Index
+#define LOBBY_MAIN_UI_TEXTURE_COUNT 8
+
+#define LOBBY_MAIN_UI_TEXTURE_BASE 0
+#define LOBBY_MAIN_UI_TEXTURE_CREATE_ROOM 1
+#define LOBBY_MAIN_UI_TEXTURE_HL_CREATE_ROOM 2
+#define LOBBY_MAIN_UI_TEXTURE_UP 3
+#define LOBBY_MAIN_UI_TEXTURE_HL_UP 4
+#define LOBBY_MAIN_UI_TEXTURE_DOWN 5
+#define LOBBY_MAIN_UI_TEXTURE_HL_DOWN 6
+#define LOBBY_MAIN_UI_TEXTURE_HL_ROOM 7
+
+// UI Rect Index
+#define LOBBY_MAIN_UI_RECT_COUNT 12
+
+#define LOBBY_MAIN_UI_RECT_BASE 0
+#define LOBBY_MAIN_UI_RECT_CREATE_ROOM_BUTTON 1
+#define LOBBY_MAIN_UI_RECT_UP_BUTTON 2
+#define LOBBY_MAIN_UI_RECT_DOWN_BUTTON 3
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_1 4
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_2 5
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_3 6
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_4 7
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_5 8
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_6 9
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_7 10
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_8 11
+
+struct ROOM_INFO_TEXT
+{
+	int			nRoom_num;
+	CTextObject *pRoom_num;
+	CTextObject *pRoom_name;
+	CTextObject *pRoom_map;
+	CTextObject *pRoom_num_people;
+};
+
+class CLobbyMainScene : public CLobbyScene
+{
+public:
+	CLobbyMainScene();
+	virtual ~CLobbyMainScene();
+
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+	virtual void ReleaseObjects();
+	virtual void ReleaseUploadBuffers();
+
+	virtual void CheckCollision();
+	virtual void StartScene();
+
+	virtual int MouseClick();
+
+	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
+
+	virtual void AddRoom(int n);
+	virtual void DeleteRoom(int n);
+	virtual int GetSelectRoom() { return m_nSelectRoom; }
+
+protected:
+	BoundingBox		m_CreateRoomButton;
+	bool			m_bHLCreateRoomButton = false;
+
+	BoundingBox		m_UpButton;
+	bool			m_bHLUpButton = false;
+
+	BoundingBox		m_DownButton;
+	bool			m_bHLDownButton = false;
+
+	BoundingBox		m_RoomButton[8];
+	bool			m_bHLRoomButton[8];
+
+	int				m_RoomStart = 0;
+	std::vector<ROOM_INFO_TEXT> m_Rooms;
+
+	int				m_nSelectRoom = -1;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct SERVERINFO
+{
+	int nSlotIndex;
+	int nRobotType;
+};
+
+// UI Texture Index
+#define LOBBY_ROOM_UI_TEXTURE_COUNT 20
+
+#define LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER 0
+#define LOBBY_ROOM_UI_TEXTURE_BASE_MEMBER 1
+#define LOBBY_ROOM_UI_TEXTURE_START 2
+#define LOBBY_ROOM_UI_TEXTURE_START_HL 3
+#define LOBBY_ROOM_UI_TEXTURE_READY 4
+#define LOBBY_ROOM_UI_TEXTURE_READY_HL 5
+#define LOBBY_ROOM_UI_TEXTURE_LEAVE 6
+#define LOBBY_ROOM_UI_TEXTURE_LEAVE_HL 7
+#define LOBBY_ROOM_UI_TEXTURE_COLONY 8
+#define LOBBY_ROOM_UI_TEXTURE_COLONY_HL 9
+#define LOBBY_ROOM_UI_TEXTURE_COLONY_SELECT 10
+#define LOBBY_ROOM_UI_TEXTURE_SPACE 11
+#define LOBBY_ROOM_UI_TEXTURE_SPACE_HL 12
+#define LOBBY_ROOM_UI_TEXTURE_SPACE_SELECT 13
+#define LOBBY_ROOM_UI_TEXTURE_GM 14
+#define LOBBY_ROOM_UI_TEXTURE_GM_HL 15
+#define LOBBY_ROOM_UI_TEXTURE_GM_SELECT 16
+#define LOBBY_ROOM_UI_TEXTURE_GUNDAM 17
+#define LOBBY_ROOM_UI_TEXTURE_GUNDAM_HL 18
+#define LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT 19
+
+// UI Rect Index
+#define LOBBY_ROOM_UI_RECT_COUNT 8
+
+#define LOBBY_ROOM_UI_RECT_BASE 0
+#define LOBBY_ROOM_UI_RECT_START_BUTTON 1
+#define LOBBY_ROOM_UI_RECT_READY_BUTTON 2
+#define LOBBY_ROOM_UI_RECT_LEAVE_BUTTON 3
+#define LOBBY_ROOM_UI_RECT_COLONY 4
+#define LOBBY_ROOM_UI_RECT_SPACE 5
+#define LOBBY_ROOM_UI_RECT_GM 6
+#define LOBBY_ROOM_UI_RECT_GUNDAM 7
+
+class CLobbyRoomScene : public CLobbyScene
+{
+public:
+	CLobbyRoomScene();
+	virtual ~CLobbyRoomScene();
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
@@ -292,16 +408,16 @@ public:
 	virtual void LeavePlayer(int nServerIndex);
 	virtual void SetPlayerIndex(int nServerIndex);
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);
+	virtual void ChangeMap(int nMap) { m_nCurrentMap = nMap; }
 	virtual int MouseClick();
 
 	XMFLOAT2 GetPlayerTextPosition(int nServerIndex);
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual int GetSelectedMap() { return m_nCurrentMap; }
 
 protected:
-	CLobbyShader						*m_pLobbyShader = NULL;
-
-	int									m_nChoiceCharactor = 0;
+	int									m_nCurrentMap = 0;
 	int									m_nCurrentSlotIndex = 0;
 	CTextObject							*m_ppTextObjects[8] = { NULL }; // ServerIndex
 	std::unordered_map<int, SERVERINFO>	m_umPlayerInfo;			// ServerIndex, Info
@@ -312,22 +428,25 @@ protected:
 	BoundingBox		m_StartButton;
 	bool			m_bHLStartButton = false;
 
-	BoundingBox		m_SelectLeft;
-	bool			m_bHLSelectLeft = false;
+	BoundingBox		m_ReadyButton;
+	bool			m_bHLReadyButton = false;
 
-	BoundingBox		m_SelectRight;
-	bool			m_bHLSelectRight = false;
-	
-	BoundingBox		m_PlayerSlots[8];
+	BoundingBox		m_LeaveButton;
+	bool			m_bHLLeaveButton = false;
+
+	BoundingBox		m_ColonyButton;
+	bool			m_bHLColonyButton = false;
+
+	BoundingBox		m_SpaceButton;
+	bool			m_bHLSpaceButton = false;
+
+	BoundingBox		m_GMButton;
+	bool			m_bHLGMButton = false;
+
+	BoundingBox		m_GundamButton;
+	bool			m_bHLGundamButton = false;
 
 	std::vector<char*> m_vstrPlayerNames;
-
-protected:
-	int								m_nUIRect = 0;
-	CRect							**m_ppUIRects = NULL;
-
-	int								m_nTextures;
-	CTexture						**m_ppTextures = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -376,7 +495,7 @@ public:
 	CBattleScene();
 	virtual ~CBattleScene();
 
-	virtual void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);

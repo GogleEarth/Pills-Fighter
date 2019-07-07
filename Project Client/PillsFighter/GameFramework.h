@@ -75,7 +75,8 @@ public:
 	void BuildObjects();
 	void BuildScene(int nSceneType = 0);
 	void BuildColonyScene();
-	void BuildLobbyScene();
+	void BuildLobbyMainScene();
+	void BuildLobbyRoomScene();
 	void ReleaseObjects();
 
 	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
@@ -91,6 +92,7 @@ public:
 	void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	void ProcessSceneReturnVal(int n);
 
 protected:
 	CRepository						*m_pRepository = NULL;
@@ -99,8 +101,7 @@ protected:
 	D3D12_RECT						m_d3dScissorRect;
 	
 protected:
-	CFont							m_Arial;
-	CFont							m_HumanMagic;
+	CFont							m_Font;
 	bool							m_bWireRender = false;
 
 protected: // for Network

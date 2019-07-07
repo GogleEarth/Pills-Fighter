@@ -86,8 +86,7 @@ void CGameFramework::OnDestroy()
 
 	CScene::ReleaseDescHeapsAndRootSignature();
 	if (m_pRepository) delete m_pRepository;
-	m_Arial.Destroy();
-	m_HumanMagic.Destroy();
+	m_Font.Destroy();
 
 	::CloseHandle(m_hFenceEvent);
 	::closesocket(m_Socket);
@@ -312,16 +311,18 @@ void CGameFramework::BuildScene(int nSceneType)
 
 	switch (nSceneType)
 	{
-	case SCENE_TYPE_LOBBY:
-		BuildLobbyScene();
+	case SCENE_TYPE_LOBBY_MAIN:
+		BuildLobbyMainScene();
+		break;
+	case SCENE_TYPE_LOBBY_ROOM:
+		BuildLobbyRoomScene();
 		break;
 	case SCENE_TYPE_COLONY:
 		BuildColonyScene();
 		break;
 	}
 	
-	m_pScene->AddFont(m_pd3dDevice, &m_Arial);
-	m_pScene->AddFont(m_pd3dDevice, &m_HumanMagic);
+	m_pScene->SetFont(m_pd3dDevice, &m_Font);
 
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList, NULL);
 	m_pScene->StartScene();
@@ -354,9 +355,16 @@ void CGameFramework::BuildColonyScene()
 	m_pCamera = m_pPlayer->GetCamera();
 }
 
-void CGameFramework::BuildLobbyScene()
+void CGameFramework::BuildLobbyMainScene()
 {
-	m_pScene = new CLobbyScene();
+	m_pScene = new CLobbyMainScene();
+
+	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+}
+
+void CGameFramework::BuildLobbyRoomScene()
+{
+	m_pScene = new CLobbyRoomScene();
 
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 }
@@ -372,9 +380,8 @@ void CGameFramework::BuildObjects()
 
 	m_pRepository = new CRepository();
 
-	m_Arial.Initialize(m_pd3dDevice, m_pd3dCommandList, "./Resource/Font/Arial.fnt");
-	m_HumanMagic.Initialize(m_pd3dDevice, m_pd3dCommandList, "./Resource/Font/ÈÞ¸Õ¸ÅÁ÷Ã¼.fnt");
-
+	m_Font.Initialize(m_pd3dDevice, m_pd3dCommandList, "./Resource/Font/Font.fnt");
+	
 	m_d3dViewport = { 0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT), 0.0f, 1.0f };
 	m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
 	
@@ -384,13 +391,12 @@ void CGameFramework::BuildObjects()
 
 	WaitForGpuComplete();
 
-	m_Arial.ReleaseUploadBuffers();
-	m_HumanMagic.ReleaseUploadBuffers();
+	m_Font.ReleaseUploadBuffers();
 
 	::pDevice = m_pd3dDevice;
 	::pCommandList = m_pd3dCommandList;
 
-	BuildScene(SCENE_TYPE_LOBBY);
+	BuildScene(SCENE_TYPE_LOBBY_MAIN);
 	//BuildScene(SCENE_TYPE_COLONY);
 }
 
@@ -412,13 +418,90 @@ void CGameFramework::ReleaseObjects()
 		m_pScene = NULL;
 	}
 	
-	m_Arial.ClearTexts();
-	m_HumanMagic.ClearTexts();
+	m_Font.ClearTexts();
+}
+
+void CGameFramework::ProcessSceneReturnVal(int n)
+{
+	switch (n)
+	{
+	case LOBBY_MOUSE_CLICK_CREATE_ROOM:
+	{
+#ifdef ON_NETWORKING
+		SendToServer(PKT_ID_CREATE_ROOM);
+#else
+		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
+
+		BuildScene(SCENE_TYPE_LOBBY_ROOM);
+		m_pScene->SetCursorPosition(xmf2Pos);
+#endif
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_JOIN_ROOM:
+	{
+#ifdef ON_NETWORKING
+		SendToServer(PKT_ID_ROOM_IN);
+#else
+		std::cout << m_pScene->GetSelectRoom() << "\n";
+#endif
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_START:
+	{
+#ifdef ON_NETWORKING
+		SendToServer(PKT_ID_GAME_START);
+#else
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
+
+		BuildScene(SCENE_TYPE_COLONY);
+#endif
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_LEAVE:
+	{
+#ifdef ON_NETWORKING
+		SendToServer(PKT_ID_LEAVE_ROOM);
+#else
+		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
+
+		BuildScene(SCENE_TYPE_LOBBY_MAIN);
+		m_pScene->SetCursorPosition(xmf2Pos);
+#endif
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_SELECT_ROBOT:
+	{
+#ifdef ON_NETWORKING
+		SendToServer(PKT_ID_LOBBY_PLAYER_INFO);
+#endif
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_SELECT_MAP:
+	{
+#ifdef ON_NETWORKING
+		SendToServer(PKT_ID_CHANGE_MAP);
+#endif
+		break;
+	}
+	}
 }
 
 void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_pScene) m_pScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
+	int rev = 0;
+	if (m_pScene) rev = m_pScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
+	if (rev) ProcessSceneReturnVal(rev);
 
 	switch (nMessageID)
 	{
@@ -433,38 +516,6 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 		break;
 	case WM_RBUTTONUP:
 		break;
-	case WM_LBUTTONUP:
-		if (m_pScene)
-		{
-			switch (m_pScene->MouseClick())
-			{
-			case MOUSE_CLICK_TYPE_START:
-			{
-#ifdef ON_NETWORKING
-				SendToServer(PKT_ID_GAME_START);
-#else
-				if (m_pScene)
-				{
-					m_pScene->ReleaseObjects();
-					delete m_pScene;
-
-					m_pScene = NULL;
-				}
-
-				BuildScene(SCENE_TYPE_COLONY);
-#endif
-				break;
-			}
-			case MOUSE_CLICK_SELECT_ROBOT:
-			{
-#ifdef ON_NETWORKING
-				SendToServer(PKT_ID_LOBBY_PLAYER_INFO);
-#endif
-				break;
-			}
-			}
-			break;
-		}
 	case WM_MOUSEMOVE:
 		m_ptCursorPos.x = LOWORD(lParam);
 		m_ptCursorPos.y = HIWORD(lParam);
@@ -657,8 +708,7 @@ void CGameFramework::FrameAdvance()
 
 	ProcessInput();
 
-	m_Arial.CheckUsingTexts();
-	m_HumanMagic.CheckUsingTexts();
+	m_Font.CheckUsingTexts();
 
 	AnimateObjects(m_fElapsedTime);
 
@@ -913,9 +963,11 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_GAME_START:
 	{
+		PKT_GAME_START *pPacket = (PKT_GAME_START*)m_pPacketBuffer;
+
 		ReleaseObjects();
 
-		BuildScene(SCENE_TYPE_COLONY);
+		BuildScene(pPacket->map);
 
 		m_bDrawScene = false;
 
@@ -955,7 +1007,8 @@ void CGameFramework::ProcessPacket()
 
 		ReleaseObjects();
 
-		BuildScene(SCENE_TYPE_LOBBY);
+		//BuildScene(SCENE_TYPE_LOBBY_MAIN);
+		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		break;
 	}
 	case PKT_ID_PICK_ITEM:
@@ -980,6 +1033,52 @@ void CGameFramework::ProcessPacket()
 				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
 			}
 		}
+		break;
+	}
+	case PKT_ID_CHANGE_MAP:
+	{
+		PKT_CHANGE_MAP *pPacket = (PKT_CHANGE_MAP*)m_pPacketBuffer;
+
+		if (m_pScene) m_pScene->ChangeMap(pPacket->map);
+		break;
+	}
+	case PKT_ID_ADD_ROOM:
+	{
+		PKT_ADD_ROOM *pPacket = (PKT_ADD_ROOM*)m_pPacketBuffer;
+
+		if (m_pScene) m_pScene->AddRoom(pPacket->Room_num);
+		break;
+	}
+	case PKT_ID_DELETE_ROOM:
+	{
+		PKT_ROOM_DELETE *pPacket = (PKT_ROOM_DELETE*)m_pPacketBuffer;
+
+		if (m_pScene) m_pScene->DeleteRoom(pPacket->Room_num);
+		break;
+	}
+	case PKT_ID_CREATE_ROOM_OK:
+	{
+		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
+
+		BuildScene(SCENE_TYPE_LOBBY_ROOM);
+		m_pScene->SetCursorPosition(xmf2Pos);
+		break;
+	}
+	case PKT_ID_ROOM_IN_OK:
+	{
+		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
+
+		BuildScene(SCENE_TYPE_LOBBY_ROOM);
+		m_pScene->SetCursorPosition(xmf2Pos);
+
 		break;
 	}
 	default:
@@ -1148,6 +1247,33 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 
 		break;
 	}
+	case PKT_ID_ROOM_IN:
+	{
+		PKT_ROOM_IN pktToServer;
+		PKT_ID id = PKT_ID_ROOM_IN;
+		pktToServer.PktId = (char)PKT_ID_ROOM_IN;
+		pktToServer.PktSize = sizeof(pktToServer);
+		pktToServer.Room_num = m_pScene->GetSelectRoom();
+
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Load Complete Error\n");
+
+		break;
+	}
+	case PKT_ID_CREATE_ROOM:
+	{
+		PKT_CREATE_ROOM packet;
+		PKT_ID id = PKT_ID_CREATE_ROOM;
+		packet.PktId = (char)PKT_ID_CREATE_ROOM;
+		packet.PktSize = sizeof(packet);
+
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(m_Socket, (char*)&packet, sizeof(packet), 0) == SOCKET_ERROR)
+			printf("Send Load Complete Error\n");
+
+		break;
+	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
 		PKT_LOBBY_PLAYER_INFO pktToServer;
@@ -1160,6 +1286,31 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send LOBBY Player Info Error\n");
+		break;
+	}
+	case PKT_ID_LEAVE_ROOM:
+	{
+		PKT_LEAVE_ROOM pktToServer;
+		PKT_ID id = PKT_ID_LEAVE_ROOM;
+		pktToServer.PktId = PKT_ID_LEAVE_ROOM;
+		pktToServer.PktSize = sizeof(pktToServer);
+
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Leave Room Error\n");
+		break;
+	}
+	case PKT_ID_CHANGE_MAP:
+	{
+		PKT_CHANGE_MAP pktToServer;
+		PKT_ID id = PKT_ID_CHANGE_MAP;
+		pktToServer.PktId = PKT_ID_CHANGE_MAP;
+		pktToServer.PktSize = sizeof(pktToServer);
+		pktToServer.map = m_pScene->GetSelectedMap();
+
+		send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Change Map Error\n");
 		break;
 	}
 	default:

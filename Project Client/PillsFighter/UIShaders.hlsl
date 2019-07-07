@@ -128,6 +128,12 @@ float4 PSUiMinimap(GS_UI_OUT input) : SV_TARGET
 
 ////////////////////////////////////////////
 
+cbuffer cbFontInfo : register(FONT_INFO)
+{
+	float4 gf4Color;
+	float2 gf2Position;
+}
+
 struct VS_FONT_IN
 {
 	float2 pos : POSITION;
@@ -154,7 +160,7 @@ void GSFont(point VS_FONT_IN input[1], inout TriangleStream<GS_FONT_OUT> outStre
 {
 	float fWidth = input[0].size.x;
 	float fHeight = input[0].size.y;
-	float2 pos = input[0].pos;
+	float2 pos = input[0].pos + gf2Position;
 
 	float4 fVertices[4];
 	fVertices[0] = float4(pos.x, pos.y, 0.0f, 1.0f);
@@ -188,7 +194,7 @@ float4 PSFont(GS_FONT_OUT input) : SV_TARGET
 {
 	float4 fColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return fColor * input.color;
+	return fColor * input.color * gf4Color;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -203,20 +209,20 @@ void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStr
 {
 	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
+	float fWidth = input[0].size.x * 2.0f;
+	float fHeight = input[0].size.y * 2.0f;
 
 	float4 fVertices[4];
-	fVertices[0] = float4(gvCursorPos + input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[1] = float4(gvCursorPos + input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[2] = float4(gvCursorPos + input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[3] = float4(gvCursorPos + input[0].center + fHalfW * vRight, 0.0f, 1.0f);
+	fVertices[0] = float4(gvCursorPos + input[0].center, 0.0f, 1.0f);
+	fVertices[1] = float4(gvCursorPos + input[0].center - vUp * fHeight, 0.0f, 1.0f);
+	fVertices[2] = float4(gvCursorPos + input[0].center + vRight * fWidth, 0.0f, 1.0f);
+	fVertices[3] = float4(gvCursorPos + input[0].center + vRight * fWidth - vUp * fHeight, 0.0f, 1.0f);
 
 	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, 1.0f);
-	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, 1.0f);
-	fUVs[3] = float2(1.0f, 0.0f);
+	fUVs[0] = float2(0.0f, 0.0f);
+	fUVs[1] = float2(0.0f, 1.0f);
+	fUVs[2] = float2(1.0f, 0.0f);
+	fUVs[3] = float2(1.0f, 1.0f);
 
 	GS_UI_OUT output;
 

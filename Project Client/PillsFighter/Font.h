@@ -1,6 +1,6 @@
 #pragma once
 
-class CTexture;
+#include"Model.h"
 class CFontShader;
 
 struct CFontCharacter
@@ -35,10 +35,14 @@ public:
 	virtual ~CTextObject();
 
 	virtual void UpdateVertexBuffer(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void SetText(const char *pstrText, CFontVertex *pFontVertex, int nLength);
+	virtual void SetPosition(XMFLOAT2 xmf2Position) { m_xmf2Position = xmf2Position; };
+	virtual void MovePosition(XMFLOAT2 xmf2Position) { m_xmf2Position.x += xmf2Position.x; m_xmf2Position.y += xmf2Position.y; };
+	virtual void SetColor(XMFLOAT4 xmf4Color) { m_xmf4Color = xmf4Color; };
 
 	virtual void Release();
 	virtual bool IsUsed() { return m_bUse; }
@@ -57,6 +61,9 @@ protected:
 
 	bool						m_bUse;
 	char						m_pText[MAX_TEXT_LENGTH];
+
+	XMFLOAT2					m_xmf2Position;
+	XMFLOAT4					m_xmf4Color;
 };
 
 class CFont
@@ -71,6 +78,7 @@ public:
 	void CheckUsingTexts();
 	void Destroy();
 	void ReleaseUploadBuffers();
+	void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList) { m_pFontTexture->UpdateShaderVariables(pd3dCommandList); }
 	void ClearTexts();
 
 	CFontCharacter* GetChar(char c);

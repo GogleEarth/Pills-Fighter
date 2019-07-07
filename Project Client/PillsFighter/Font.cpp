@@ -19,6 +19,9 @@ CTextObject::CTextObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd
 	m_d3dFontView.BufferLocation = m_pd3dcbFont->GetGPUVirtualAddress();
 	m_d3dFontView.SizeInBytes = sizeof(CFontVertex) * MAX_TEXT_LENGTH;
 	m_d3dFontView.StrideInBytes = sizeof(CFontVertex);
+
+	m_xmf2Position = XMFLOAT2(0.0f, 0.0f);
+	m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 CTextObject::~CTextObject()
@@ -34,9 +37,16 @@ void CTextObject::UpdateVertexBuffer(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
+void CTextObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_FONT_INFO, 4, &m_xmf4Color, 0);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_FONT_INFO, 2, &m_xmf2Position, 4);
+}
+
 void CTextObject::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	UpdateVertexBuffer(pd3dCommandList);
+	UpdateShaderVariables(pd3dCommandList);
 
 	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 	pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dFontView);

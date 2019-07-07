@@ -619,8 +619,10 @@ public:
 	void ReleaseUploadBuffer();
 	
 	void MoveCursorPos(float x, float y);
+	void SetCursorPos(XMFLOAT2 xmf2Position);
 	void UpdateShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	XMFLOAT2 GetPosition() { return m_xmf2CursorPos; }
 
 	bool CollisionCheck(BoundingBox& xmAABB);
 

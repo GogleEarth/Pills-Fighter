@@ -9,6 +9,7 @@
 #define PARTICLE_INFO					b8
 #define CURSOR_INFO						b10
 #define SCENE_INFO						b11
+#define FONT_INFO						b12
 
 #define DIFFUSE_TEXTURES				t1 // t1 ~ t3
 #define SPECULAR_TEXTURE				t4
