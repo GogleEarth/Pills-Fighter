@@ -64,12 +64,12 @@ void CScene::SetFont(ID3D12Device *pd3dDevice, CFont *pFont)
 	m_pFont = pFont;
 }
 
-CTextObject* CScene::AddText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+CTextObject* CScene::AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
 {
 	return (m_pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType));
 }
 
-void CScene::ChangeText(CTextObject *pTextObject, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+void CScene::ChangeText(CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
 {
 	m_pFont->ChangeText(pTextObject, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType);
 }
@@ -1432,7 +1432,8 @@ int CLobbyMainScene::MouseClick()
 		{
 			m_nSelectRoom = m_RoomStart + i;
 #ifndef ON_NETWORKING
-			DeleteRoom(m_Rooms[m_nSelectRoom].nRoom_num);
+			//DeleteRoom(m_Rooms[m_nSelectRoom].nRoom_num);
+			ChangeRoomInfo(m_Rooms[m_nSelectRoom].nRoom_num, SCENE_TYPE_SPACE, 5);
 #endif
 			return LOBBY_MOUSE_CLICK_JOIN_ROOM;
 		}
@@ -1469,20 +1470,20 @@ void CLobbyMainScene::AddRoom(int n)
 {
 	ROOM_INFO_TEXT newRoom;
 
-	char pstrNumber[6];
-	sprintf_s(pstrNumber, "%d", n);
+	wchar_t pstrNumber[6];
+	wsprintfW(pstrNumber, L"%d", n);
 
 	newRoom.nRoom_num = n;
-	newRoom.pRoom_map = AddText(pstrNumber, XMFLOAT2(-0.943750f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_name = AddText("name", XMFLOAT2(-0.806250f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_num = AddText("map", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_num_people = AddText("people", XMFLOAT2(0.776562f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	newRoom.pRoom_num = AddText(pstrNumber, XMFLOAT2(-0.943750f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	newRoom.pRoom_name = AddText(L"name", XMFLOAT2(-0.806250f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	newRoom.pRoom_map = AddText(L"콜로니", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	newRoom.pRoom_num_people = AddText(L"1/8", XMFLOAT2(0.776562f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 
 	float yPos = (m_RoomStart + m_Rooms .size())* 0.1162f;
 	XMFLOAT2 xmf2Position = XMFLOAT2(0.0f, 0.730222f - yPos);
-	newRoom.pRoom_map->SetPosition(xmf2Position);
-	newRoom.pRoom_name->SetPosition(xmf2Position);
 	newRoom.pRoom_num->SetPosition(xmf2Position);
+	newRoom.pRoom_name->SetPosition(xmf2Position);
+	newRoom.pRoom_map->SetPosition(xmf2Position);
 	newRoom.pRoom_num_people->SetPosition(xmf2Position);
 
 	m_Rooms.emplace_back(newRoom);
@@ -1516,10 +1517,29 @@ void CLobbyMainScene::DeleteRoom(int n)
 
 	for (int i = nStart; i < m_Rooms.size(); i++)
 	{
-		m_Rooms[i].pRoom_map->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-		m_Rooms[i].pRoom_name->MovePosition(XMFLOAT2(0.0f, 0.1162f));
 		m_Rooms[i].pRoom_num->MovePosition(XMFLOAT2(0.0f, 0.1162f));
+		m_Rooms[i].pRoom_name->MovePosition(XMFLOAT2(0.0f, 0.1162f));
+		m_Rooms[i].pRoom_map->MovePosition(XMFLOAT2(0.0f, 0.1162f));
 		m_Rooms[i].pRoom_num_people->MovePosition(XMFLOAT2(0.0f, 0.1162f));
+	}
+}
+
+void CLobbyMainScene::ChangeRoomInfo(int index, int map, int people)
+{
+	wchar_t pstr[6];
+	wsprintfW(pstr, L"%d/8", people);
+
+	for (auto& room : m_Rooms)
+	{
+		if (room.nRoom_num == index)
+		{
+			if (map == SCENE_TYPE_COLONY)
+				m_pFont->ChangeText(room.pRoom_map, L"콜로니", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+			else if (map == SCENE_TYPE_SPACE)
+				m_pFont->ChangeText(room.pRoom_map, L"스페이스", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+
+			m_pFont->ChangeText(room.pRoom_num_people, pstr, XMFLOAT2(0.776562f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+		}
 	}
 }
 
@@ -1798,14 +1818,14 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	CLobbyScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
 
 #ifndef ON_NETWORKING
-	JoinPlayer(0, "1 : First Player");
-	JoinPlayer(1, "2 : Second Player");
-	JoinPlayer(2, "3 : Third Player");
-	JoinPlayer(3, "4 : Fourth Player");
-	JoinPlayer(4, "5 : Fifth Player");
-	JoinPlayer(5, "6 : Sixth Player");
-	JoinPlayer(6, "7 : Seventh Player");
-	JoinPlayer(7, "8 : Ehighth Player");
+	JoinPlayer(0, L"1 : First Player");
+	JoinPlayer(1, L"2 : Second Player");
+	JoinPlayer(2, L"3 : Third Player");
+	JoinPlayer(3, L"4 : Fourth Player");
+	JoinPlayer(4, L"5 : Fifth Player");
+	JoinPlayer(5, L"6 : Sixth Player");
+	JoinPlayer(6, L"7 : Seventh Player");
+	JoinPlayer(7, L"8 : Ehighth Player");
 #endif
 
 	float width = 185.0f / FRAME_BUFFER_WIDTH;
@@ -1854,8 +1874,8 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 
 void CLobbyRoomScene::SetPlayerIndex(int nServerIndex)
 {
-	char id[32];
-	sprintf(id, "%d", nServerIndex);
+	wchar_t id[32];
+	wsprintfW(id, L"%d", nServerIndex);
 
 	m_nMyIndex = nServerIndex;
 	JoinPlayer(nServerIndex, id);
@@ -1992,7 +2012,7 @@ XMFLOAT2 CLobbyRoomScene::GetPlayerTextPosition(int nServerIndex)
 	return xmf2Pos;
 }
 
-void CLobbyRoomScene::JoinPlayer(int nServerIndex, const char *pstrPlayerName)
+void CLobbyRoomScene::JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName)
 {
 	m_umPlayerInfo[nServerIndex].nSlotIndex = m_nCurrentSlotIndex;
 	m_umPlayerInfo[nServerIndex].nRobotType = SKINNED_OBJECT_INDEX_GM;
@@ -2351,8 +2371,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pUserInterface = pUserInterface;
 
-	m_pRedScoreText = AddText("0", XMFLOAT2(-0.05f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
-	m_pBlueScoreText = AddText("0", XMFLOAT2(0.02f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
+	m_pRedScoreText = AddText(L"0", XMFLOAT2(-0.05f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
+	m_pBlueScoreText = AddText(L"0", XMFLOAT2(0.02f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
 }
 
 void CBattleScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
@@ -3068,10 +3088,10 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_SCORE:
 	{
 		PKT_SCORE *pktScore = (PKT_SCORE*)pktData;
-		char pstrText[16];
-		sprintf(pstrText, "%d", pktScore->RedScore);
+		wchar_t pstrText[16];
+		wsprintfW(pstrText, L"%d", pktScore->RedScore);
 		ChangeText(m_pRedScoreText, pstrText, XMFLOAT2(-0.055f, 0.79f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
-		sprintf(pstrText, "%d", pktScore->BlueScore);
+		wsprintfW(pstrText, L"%d", pktScore->BlueScore);
 		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.79f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
 		break;
 	}

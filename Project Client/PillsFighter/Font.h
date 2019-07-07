@@ -39,7 +39,7 @@ public:
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void SetText(const char *pstrText, CFontVertex *pFontVertex, int nLength);
+	virtual void SetText(const wchar_t *pstrText, CFontVertex *pFontVertex, int nLength);
 	virtual void SetPosition(XMFLOAT2 xmf2Position) { m_xmf2Position = xmf2Position; };
 	virtual void MovePosition(XMFLOAT2 xmf2Position) { m_xmf2Position.x += xmf2Position.x; m_xmf2Position.y += xmf2Position.y; };
 	virtual void SetColor(XMFLOAT4 xmf4Color) { m_xmf4Color = xmf4Color; };
@@ -48,7 +48,7 @@ public:
 	virtual bool IsUsed() { return m_bUse; }
 
 	virtual void FreeText();
-	char* GetText() { return m_pText; }
+	wchar_t* GetText() { return m_pText; }
 
 protected:
 #define MAX_TEXT_LENGTH 100
@@ -60,7 +60,7 @@ protected:
 	D3D12_VERTEX_BUFFER_VIEW	m_d3dFontView;
 
 	bool						m_bUse;
-	char						m_pText[MAX_TEXT_LENGTH];
+	wchar_t						m_pText[MAX_TEXT_LENGTH];
 
 	XMFLOAT2					m_xmf2Position;
 	XMFLOAT4					m_xmf4Color;
@@ -81,17 +81,17 @@ public:
 	void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList) { m_pFontTexture->UpdateShaderVariables(pd3dCommandList); }
 	void ClearTexts();
 
-	CFontCharacter* GetChar(char c);
+	CFontCharacter* GetChar(wchar_t c);
 	const char* GetName() { return m_pstrName; }
-	float GetKerning(char cFirst, char cSecond);
+	float GetKerning(wchar_t cFirst, wchar_t cSecond);
 
 	void SetSrv(ID3D12Device *pd3dDevice);
 
 #define LEFT_ALIGN 0
 #define RIGHT_ALIGN 1
-	void CreateText(int nLength, CFontVertex* pFontVertices, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	CTextObject* SetText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	void ChangeText(CTextObject *pTextObject, const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void CreateText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	CTextObject* SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void ChangeText(CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:

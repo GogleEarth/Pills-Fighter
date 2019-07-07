@@ -167,11 +167,12 @@ public:
 	virtual XMFLOAT2 GetCursorPos() { return XMFLOAT2(0.0f, 0.0f); }
 	virtual void AddRoom(int n) {}
 	virtual void DeleteRoom(int n) {}
+	virtual void ChangeRoomInfo(int index, int map, int people) {}
 
 public:
 	void SetFont(ID3D12Device *pd3dDevice, CFont *pFont);
-	CTextObject* AddText(const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	void ChangeText(CTextObject *pTextObject,const char *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	CTextObject* AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void ChangeText(CTextObject *pTextObject,const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 
 protected:
 	CFontShader						*m_pFontShader = NULL;
@@ -227,7 +228,7 @@ public: // Network
 	virtual void DeleteObject(int nIndex) {}
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
-	virtual void JoinPlayer(int nServerIndex, const char *pstrPlayerName) {};
+	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName) {};
 	virtual void LeavePlayer(int nServerIndex) {};
 	virtual void SetPlayerIndex(int nServerIndex) {}
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
@@ -325,7 +326,8 @@ public:
 
 	virtual void AddRoom(int n);
 	virtual void DeleteRoom(int n);
-	virtual int GetSelectRoom() { return m_nSelectRoom; }
+	virtual void ChangeRoomInfo(int index, int map, int people);
+	virtual int GetSelectRoom() { return m_Rooms[m_nSelectRoom].nRoom_num; }
 
 protected:
 	BoundingBox		m_CreateRoomButton;
@@ -404,7 +406,7 @@ public:
 	virtual void CheckCollision();
 	virtual void StartScene();
 
-	virtual void JoinPlayer(int nServerIndex, const char *pstrPlayerName);
+	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName);
 	virtual void LeavePlayer(int nServerIndex);
 	virtual void SetPlayerIndex(int nServerIndex);
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);

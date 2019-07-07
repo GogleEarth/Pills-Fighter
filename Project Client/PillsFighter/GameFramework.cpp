@@ -939,8 +939,8 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_PLAYER_IN *pPacket = (PKT_PLAYER_IN*)m_pPacketBuffer;
 
-		char pstrid[32];
-		sprintf(pstrid, "%d", pPacket->id);
+		wchar_t pstrid[32];
+		wsprintfW(pstrid, L"%d", pPacket->id);
 
 		m_pScene->JoinPlayer(pPacket->id, pstrid);
 		break;
@@ -1054,6 +1054,13 @@ void CGameFramework::ProcessPacket()
 		PKT_ROOM_DELETE *pPacket = (PKT_ROOM_DELETE*)m_pPacketBuffer;
 
 		if (m_pScene) m_pScene->DeleteRoom(pPacket->Room_num);
+		break;
+	}
+	case PKT_ID_CHANGE_ROOM_INFO:
+	{
+		PKT_CHANGE_ROOM_INFO *pPacket = (PKT_CHANGE_ROOM_INFO*)m_pPacketBuffer;
+
+		if (m_pScene) m_pScene->ChangeRoomInfo(pPacket->Room_num, pPacket->map, pPacket->numpeople);
 		break;
 	}
 	case PKT_ID_CREATE_ROOM_OK:
