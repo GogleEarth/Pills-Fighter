@@ -25,6 +25,11 @@ int Room::get_num_player_in_room()
 
 void Room::init(CRepository* repository)
 {
+	in_use_ = false;
+	using_scene_ = COLONY;
+	blue_score_ = 0;
+	red_score_ = 0;
+
 	for (int i = 0; i < 2; ++i)
 		scenes_[i].BuildObjects(repository);
 	for (int i = 0; i < 8; ++i)
@@ -118,6 +123,17 @@ int Room::find_player_by_socket(SOCKET client)
 	for (int i = 0; i < 8; ++i)
 		if (players_[i].get_socket() == client) ret = i;
 
+	return ret;
+}
+
+int Room::get_players_in_room()
+{
+	int ret = 0;
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		if (!players_[i].get_use()) continue;
+		ret += 1;
+	}
 	return ret;
 }
 

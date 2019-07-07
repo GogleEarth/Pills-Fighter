@@ -2,6 +2,9 @@
 
 #include "Scene.h"
 
+#define COLONY 0
+#define SPACE 1
+
 class Player
 {
 	SOCKET socket_;
@@ -39,12 +42,21 @@ class Room
 	int	using_scene_;
 	bool in_use_;
 	std::queue<PKT_PLAYER_INFO*> player_info_queue;
+
+	char blue_score_;
+	char red_score_;
 public:
 	Room();
 	~Room();
 
 	inline bool get_is_use() { return in_use_; }
 	inline void set_is_use(bool use) { in_use_ = use; };
+	inline void set_map(int map) { using_scene_ = map; }
+	inline int get_map() { return using_scene_; }
+	inline void set_blue_score(char score) { blue_score_ = score; }
+	inline char get_blue_score() { return blue_score_; }
+	inline void set_red_score(char score) { red_score_ = score; }
+	inline char get_red_score() { return red_score_; }
 
 	int get_num_player_in_room();
 	void init(CRepository* repository);
@@ -60,6 +72,7 @@ public:
 	bool all_load_complete();
 	Player* get_player(int id);
 	int find_player_by_socket(SOCKET client);
+	int get_players_in_room();
 
 	void player_info_inqueue(char* packet);
 };

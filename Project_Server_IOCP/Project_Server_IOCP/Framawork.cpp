@@ -175,6 +175,14 @@ int Framawork::accept_process()
 				pkt_ar.PktSize = sizeof(pkt_ar);
 				pkt_ar.Room_num = i;
 				send_packet_to_player(new_id, (char*)&pkt_ar);
+
+				PKT_CHANGE_ROOM_INFO pkt_cmi;
+				pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+				pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+				pkt_cmi.Room_num = i;
+				pkt_cmi.numpeople = rooms_[i].get_num_player_in_room();
+				pkt_cmi.map = rooms_[i].get_map();
+				send_packet_to_player(new_id, (char*)&pkt_cmi);
 			}
 		}
 
@@ -283,30 +291,6 @@ int Framawork::search_client_in_room(SOCKET socket)
 	return room_num;
 }
 
-/*
-PKT_ID_PLAYER_INFO,
-PKT_ID_PLAYER_LIFE,
-PKT_ID_CREATE_OBJECT,
-PKT_ID_DELETE_OBJECT,
-PKT_ID_TIME_INFO,
-PKT_ID_SEND_COMPLETE,
-PKT_ID_UPDATE_OBJECT,
-PKT_ID_CREATE_EFFECT,
-PKT_ID_GAME_STATE,
-PKT_ID_PLAYER_IN,
-PKT_ID_PLAYER_OUT,
-PKT_ID_LOBBY_PLAYER_INFO,
-PKT_ID_LOAD_COMPLETE,
-PKT_ID_LOAD_COMPLETE_ALL,
-PKT_ID_PLAYER_ID,
-PKT_ID_GAME_START,
-PKT_ID_SHOOT,
-PKT_ID_SCORE,
-PKT_ID_GAME_END,
-PKT_ID_PICK_ITEM,
-PKT_ID_CREATE_ROOM,
-PKT_ID_ROOM_IN
-*/
 void Framawork::process_packet(int id, char* packet)
 {
 	switch (packet[1])
@@ -318,9 +302,57 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_LOAD_COMPLETE:
 	{
-		//rooms_[reinterpret_cast<PKT_LOAD_COMPLETE*>(packet)->RoomNum].player_load_complete(id);
-		//if (rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].all_load_complete())
-		//	add_timer(reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum, EVENT_TYPE_LOAD_ALL, std::chrono::high_resolution_clock::now());
+		int room_num = search_client_in_room(clients_[id].socket);
+		std::cout << "로드완료패킷\n";
+		rooms_[room_num].player_load_complete(id);
+		if (rooms_[room_num].all_load_complete())
+		{
+			PKT_LOAD_COMPLETE pktgamestate;
+			pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
+			pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
+			send_packet_to_room_player(room_num, (char*)&pktgamestate);
+			std::cout << "전원 로드 완료\n";
+
+			//for (auto d : clients)
+			//{
+			//	if (d.enable)
+			//	{
+			//		PKT_PLAYER_INFO pktdata;
+			//		pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
+			//		pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
+			//		pktdata.ID = d.id;
+			//		pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
+			//		m_pScene->m_pObjects[d.id]->m_bPlay = true;
+			//		m_pScene->m_pObjects[d.id]->m_iId = d.id;
+			//		pktdata.IsShooting = false;
+			//		PKT_CREATE_OBJECT anotherpktdata;
+			//		for (int i = 0; i < playernum; ++i)
+			//		{
+			//			if (i != d.id)
+			//			{
+			//				anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
+			//				anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+			//				anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
+			//				anotherpktdata.Object_Index = i;
+			//				anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
+			//				anotherpktdata.Robot_Type = clients[i].selected_robot;
+			//				retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
+			//				retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
+			//			}
+			//		}
+			//	}
+			//}
+
+			rooms_[room_num].set_blue_score(MAX_SCORE);
+			rooms_[room_num].set_red_score(MAX_SCORE);
+
+			PKT_SCORE scorepkt;
+			scorepkt.PktSize = sizeof(PKT_SCORE);
+			scorepkt.PktId = PKT_ID_SCORE;
+			scorepkt.BlueScore = rooms_[room_num].get_blue_score();
+			scorepkt.RedScore = rooms_[room_num].get_red_score();
+			send_packet_to_room_player(room_num, (char*)&scorepkt);
+		}
 		break;
 	}
 	case PKT_ID_SEND_COMPLETE:
@@ -350,12 +382,21 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_player(id, (char*)&pkt_cid);
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id, clients_[id].socket);
+			rooms_[room_num].set_map(COLONY);
 
 			PKT_ADD_ROOM pkt_ar;
 			pkt_ar.PktId = PKT_ID_ADD_ROOM;
 			pkt_ar.PktSize = sizeof(pkt_ar);
 			pkt_ar.Room_num = room_num;
 			send_packet_to_all_player((char*)&pkt_ar);
+
+			PKT_CHANGE_ROOM_INFO pkt_cmi;
+			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+			pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+			pkt_cmi.Room_num = room_num;
+			pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
+			pkt_cmi.map = rooms_[room_num].get_map();
+			send_packet_to_all_player((char*)&pkt_cmi);
 		}
 		else
 			std::cout << "더이상 방을 생성할 수 없음\n";
@@ -399,6 +440,14 @@ void Framawork::process_packet(int id, char* packet)
 
 			send_packet_to_player(id, (char*)&pkt_cid);
 			rooms_[room_num].add_player(id, clients_[id].socket);
+
+			PKT_CHANGE_ROOM_INFO pkt_cmi;
+			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+			pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+			pkt_cmi.Room_num = room_num;
+			pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
+			pkt_cmi.map = rooms_[room_num].get_map();
+			send_packet_to_all_player((char*)&pkt_cmi);
 		}
 		else
 			std::cout << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 더이상 참가 불가\n";
@@ -418,9 +467,35 @@ void Framawork::process_packet(int id, char* packet)
 		send_packet_to_room_player(room_num, packet);
 		break;
 	}
+	case PKT_ID_CHANGE_MAP:
+	{
+		int room_num = search_client_in_room(clients_[id].socket);
+		rooms_[room_num].set_map(reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map);
+
+		PKT_CHANGE_MAP pkt_cm;
+		pkt_cm.map = reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map;
+		pkt_cm.PktId = PKT_ID_CHANGE_MAP;
+		pkt_cm.PktSize = sizeof(PKT_CHANGE_MAP);
+		send_packet_to_room_player(room_num, (char*)&pkt_cm);
+
+		PKT_CHANGE_ROOM_INFO pkt_cmi;
+		pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+		pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+		pkt_cmi.Room_num = room_num;
+		pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
+		pkt_cmi.map = rooms_[room_num].get_map();
+		send_packet_to_all_player((char*)&pkt_cmi);
+
+		break;
+	}
 	case PKT_ID_GAME_START:
 	{
-		std::cout << "gamestartpacket\n";
+		int room_num = search_client_in_room(clients_[id].socket);
+		PKT_GAME_START pkt_gs;
+		pkt_gs.map = rooms_[room_num].get_map();
+		pkt_gs.PktID = PKT_ID_GAME_START;
+		pkt_gs.PktSize = sizeof(PKT_GAME_START);
+		send_packet_to_room_player(room_num, (char*)&pkt_gs);
 		break;
 	}
 	default:
