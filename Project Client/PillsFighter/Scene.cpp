@@ -1954,11 +1954,14 @@ void CLobbyRoomScene::CheckCollision()
 	if (m_pCursor->CollisionCheck(m_LeaveButton)) m_bHLLeaveButton = true;
 	else m_bHLLeaveButton = false;
 
-	if (m_pCursor->CollisionCheck(m_ColonyButton)) m_bHLColonyButton = true;
-	else m_bHLColonyButton = false;
+	if (m_nMyIndex == 0)
+	{
+		if (m_pCursor->CollisionCheck(m_ColonyButton)) m_bHLColonyButton = true;
+		else m_bHLColonyButton = false;
 
-	if (m_pCursor->CollisionCheck(m_SpaceButton)) m_bHLSpaceButton = true;
-	else m_bHLSpaceButton = false;
+		if (m_pCursor->CollisionCheck(m_SpaceButton)) m_bHLSpaceButton = true;
+		else m_bHLSpaceButton = false;
+	}
 
 	if (m_pCursor->CollisionCheck(m_GMButton)) m_bHLGMButton = true;
 	else m_bHLGMButton = false;

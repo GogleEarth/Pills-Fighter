@@ -417,7 +417,7 @@ public:
 	virtual int GetSelectedMap() { return m_nCurrentMap; }
 
 protected:
-	int									m_nCurrentMap = 0;
+	int									m_nCurrentMap = SCENE_TYPE_COLONY;
 	int									m_nCurrentSlotIndex = 0;
 	CTextObject							*m_ppTextObjects[8] = { NULL }; // ServerIndex
 	std::unordered_map<int, SERVERINFO>	m_umPlayerInfo;			// ServerIndex, Info

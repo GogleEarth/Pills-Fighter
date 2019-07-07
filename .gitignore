@@ -15,3 +15,7 @@
 *.ipch
 *.ilk
 *.user
+*.psd
+*.png
+*.enc
+*.exe
