@@ -97,6 +97,7 @@ void Room::add_player(int id, SOCKET socket)
 	players_[num].set_use(true);
 	players_[num].set_serverid(id);
 	players_[num].set_socket(socket);
+	players_[num].set_robot(ROBOT_TYPE_GM);
 }
 
 void Room::set_player_lobby_info(int id, char selectedrobot, char team)
@@ -171,7 +172,7 @@ void Player::init()
 	socket_ = -1;
 	used_ = false;
 	serverid_ = -1;
-	robot_ = -1;
+	robot_ = ROBOT_TYPE_GM;
 	team_ = -1;
 	load_ = false;
 	send_ = false;
