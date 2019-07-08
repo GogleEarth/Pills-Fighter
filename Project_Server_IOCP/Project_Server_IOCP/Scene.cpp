@@ -98,6 +98,11 @@ void Scene::init(CRepository * pRepository)
 	robot_mesh_ = pRepository->GetModel("./Resource/PlayerCollisionBox.bin", NULL, NULL);
 	bullet_mesh_ = pRepository->GetModel("./Resource/Bullet/Bullet.bin", NULL, NULL);
 
+	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
+	{
+		Objects_[i] = NULL;
+	}
+
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
 		Objects_[i] = new GameObject();
@@ -170,6 +175,21 @@ void Scene::releaseObject(int index)
 	Objects_[index] = NULL;
 }
 
+XMFLOAT4X4 Scene::get_player_worldmatrix(int id)
+{
+	return Objects_[id]->GetWorldTransf();
+}
+
+void Scene::set_player_is_play(int id, bool play)
+{
+	Objects_[id]->SetPlay(play);
+}
+
+void Scene::set_object_id(int id)
+{
+	Objects_[id]->SetId(id);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GroundScene::BuildObjects(CRepository * pRepository)
@@ -204,6 +224,10 @@ void GroundScene::BuildObjects(CRepository * pRepository)
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/FenceSelfData.bin", 8);
 }
 
+void GroundScene::AnimateObjects(float fTimeElapsed)
+{
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SpaceScene::BuildObjects(CRepository * pRepository)
@@ -236,4 +260,8 @@ void SpaceScene::BuildObjects(CRepository * pRepository)
 
 	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/StarShip_Light.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_StarShipSelfData.bin", 8);
+}
+
+void SpaceScene::AnimateObjects(float fTimeElapsed)
+{
 }

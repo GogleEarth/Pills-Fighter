@@ -38,7 +38,7 @@ public:
 class Room
 {
 	Player players_[8];
-	Scene scenes_[2];
+	Scene* scenes_[2];
 	int	using_scene_;
 	bool in_use_;
 	std::queue<PKT_PLAYER_INFO*> player_info_queue;
@@ -57,6 +57,11 @@ public:
 	inline char get_blue_score() { return blue_score_; }
 	inline void set_red_score(char score) { red_score_ = score; }
 	inline char get_red_score() { return red_score_; }
+	inline Player* get_players() { return players_; }
+
+	XMFLOAT4X4 get_player_worldmatrix(int id);
+	void set_player_is_play(int id, bool play);
+	void set_object_id(int id);
 
 	int get_num_player_in_room();
 	void init(CRepository* repository);

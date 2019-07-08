@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Room.h"
 #include "Protocol.h"
+#include "Scene.h"
 
 
 Room::Room()
@@ -10,6 +11,21 @@ Room::Room()
 
 Room::~Room()
 {
+}
+
+XMFLOAT4X4 Room::get_player_worldmatrix(int id)
+{
+	return 	scenes_[using_scene_]->get_player_worldmatrix(id);
+}
+
+void Room::set_player_is_play(int id, bool play)
+{
+	scenes_[using_scene_]->set_player_is_play(id, play);
+}
+
+void Room::set_object_id(int id)
+{
+	scenes_[using_scene_]->set_object_id(id);
 }
 
 int Room::get_num_player_in_room()
@@ -26,12 +42,20 @@ int Room::get_num_player_in_room()
 void Room::init(CRepository* repository)
 {
 	in_use_ = false;
-	using_scene_ = COLONY;
+	using_scene_ = 3;
 	blue_score_ = 0;
 	red_score_ = 0;
 
-	for (int i = 0; i < 2; ++i)
-		scenes_[i].BuildObjects(repository);
+	GroundScene* groundscene = new GroundScene();
+	groundscene->init(repository);
+	groundscene->BuildObjects(repository);
+	SpaceScene* spacescene = new SpaceScene();
+	spacescene->init(repository);
+	spacescene->BuildObjects(repository);
+
+	scenes_[0] = groundscene;
+	scenes_[1] = spacescene;
+
 	for (int i = 0; i < 8; ++i)
 		players_[i].init();
 }

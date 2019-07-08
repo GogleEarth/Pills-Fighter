@@ -312,36 +312,40 @@ void Framawork::process_packet(int id, char* packet)
 			pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
 			send_packet_to_room_player(room_num, (char*)&pktgamestate);
 			std::cout << "전원 로드 완료\n";
+			rooms_[room_num].set_map(COLONY);
 
-			//for (auto d : clients)
-			//{
-			//	if (d.enable)
-			//	{
-			//		PKT_PLAYER_INFO pktdata;
-			//		pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
-			//		pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
-			//		pktdata.ID = d.id;
-			//		pktdata.WorldMatrix = m_pScene->m_pObjects[d.id]->m_xmf4x4World;
-			//		m_pScene->m_pObjects[d.id]->m_bPlay = true;
-			//		m_pScene->m_pObjects[d.id]->m_iId = d.id;
-			//		pktdata.IsShooting = false;
-			//		PKT_CREATE_OBJECT anotherpktdata;
-			//		for (int i = 0; i < playernum; ++i)
-			//		{
-			//			if (i != d.id)
-			//			{
-			//				anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
-			//				anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
-			//				anotherpktdata.Object_Type = m_pScene->m_pObjects[i]->m_Object_Type;
-			//				anotherpktdata.Object_Index = i;
-			//				anotherpktdata.WorldMatrix = m_pScene->m_pObjects[i]->m_xmf4x4World;
-			//				anotherpktdata.Robot_Type = clients[i].selected_robot;
-			//				retval = send(d.socket, (char*)&pktdata, pktdata.PktSize, 0);
-			//				retval = send(d.socket, (char*)&anotherpktdata, anotherpktdata.PktSize, 0);
-			//			}
-			//		}
-			//	}
-			//}
+			Player* players = rooms_[room_num].get_players();
+			for (int i = 0; i < MAX_CLIENT; ++i)
+			{
+				if (players[i].get_use())
+				{
+					PKT_PLAYER_INFO pktdata;
+					pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
+					pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
+					pktdata.ID = i;
+					pktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(i);
+					rooms_[room_num].set_player_is_play(i, true);
+					rooms_[room_num].set_object_id(i);
+					pktdata.IsShooting = false;
+					send_packet_to_player(players[i].get_serverid(), (char*)&pktdata);
+
+					PKT_CREATE_OBJECT anotherpktdata;
+					for (int j = 0; j < MAX_CLIENT; ++j)
+					{
+						if (!players[j].get_use()) continue;
+						if (i == j) continue;
+
+						anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
+						anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+						anotherpktdata.Object_Type = OBJECT_TYPE_PLAYER;
+						anotherpktdata.Object_Index = j;
+						anotherpktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(j);
+						anotherpktdata.Robot_Type = (ROBOT_TYPE)players[j].get_robot();
+						send_packet_to_player(players[i].get_serverid(), (char*)&anotherpktdata);
+
+					}
+				}
+			}
 
 			rooms_[room_num].set_blue_score(MAX_SCORE);
 			rooms_[room_num].set_red_score(MAX_SCORE);
@@ -382,7 +386,7 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_player(id, (char*)&pkt_cid);
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id, clients_[id].socket);
-			rooms_[room_num].set_map(COLONY);
+			rooms_[room_num].set_map(3);
 
 			PKT_ADD_ROOM pkt_ar;
 			pkt_ar.PktId = PKT_ID_ADD_ROOM;
