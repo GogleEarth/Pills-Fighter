@@ -22,6 +22,7 @@
 
 #define WRAP_SAMPLERSTATE				s0
 #define CLAMP_SAMPLERSTATE				s1
+#define SHADOW_SAMPLERSTATE				s2
 
 #define MATERIAL_ALBEDO_MAP				0x01
 #define MATERIAL_SPECULAR_FACTOR_MAP	0x02
@@ -30,6 +31,7 @@
 
 SamplerState gssWrap : register(WRAP_SAMPLERSTATE);
 SamplerState gssClamp : register(CLAMP_SAMPLERSTATE);
+SamplerComparisonState gscsShadow : register(SHADOW_SAMPLERSTATE);
 
 TextureCube gtxtSkyCubeTexture : register(SKYCUBE_TEXTURE);
 Texture2D gtxtTileTexture[5] : register(TILE_TEXTURES); //	t7~t11

@@ -464,7 +464,7 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 		if(m_pPlayer)
 			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
 
-		if ((rotVel > 10.0f) || (moveVel > 2.0f))
+		if ((rotVel > 15.0f) || (moveVel > 3.0f))
 		{
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
 
@@ -773,7 +773,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	//pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
 	//pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
-	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[2];
+	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	pd3dSamplerDescs[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -800,6 +800,20 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dSamplerDescs[1].ShaderRegister = 1;
 	pd3dSamplerDescs[1].RegisterSpace = 0;
 	pd3dSamplerDescs[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	pd3dSamplerDescs[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+	pd3dSamplerDescs[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	pd3dSamplerDescs[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	pd3dSamplerDescs[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	pd3dSamplerDescs[2].MipLODBias = 0;
+	pd3dSamplerDescs[2].MaxAnisotropy = 16;
+	pd3dSamplerDescs[2].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	pd3dSamplerDescs[2].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+	pd3dSamplerDescs[2].MinLOD = 0;
+	pd3dSamplerDescs[2].MaxLOD = D3D12_FLOAT32_MAX;
+	pd3dSamplerDescs[2].ShaderRegister = 2;
+	pd3dSamplerDescs[2].RegisterSpace = 0;
+	pd3dSamplerDescs[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
@@ -2319,11 +2333,21 @@ void CBattleScene::ReleaseObjects()
 
 	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
 	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
+	if (m_pd3dShadowMap) m_pd3dShadowMap->Release();
 
 	for (int i = 0; i < 6; i++)
 	{
-		m_pCubeMapCamera[i]->ReleaseShaderVariables();
-		delete m_pCubeMapCamera[i];
+		if (m_pCubeMapCamera[i])
+		{
+			m_pCubeMapCamera[i]->ReleaseShaderVariables();
+			delete m_pCubeMapCamera[i];
+		}
+	}
+
+	if (m_pLightCamera)
+	{
+		m_pLightCamera->ReleaseShaderVariables();
+		delete m_pLightCamera;
 	}
 }
 
@@ -2340,6 +2364,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CreateEnvironmentMap(pd3dDevice);
 	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
+	CreateShadowMap(pd3dDevice);
+	CreateLightCamera(pd3dDevice, pd3dCommandList);
 
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
@@ -2461,7 +2487,47 @@ void CBattleScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 		m_pCubeMapCamera[i]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	}
+}
 
+void CBattleScene::CreateShadowMap(ID3D12Device *pd3dDevice)
+{
+	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
+	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
+	d3dHeapPropertiesDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
+	d3dHeapPropertiesDesc.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	d3dHeapPropertiesDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	d3dHeapPropertiesDesc.CreationNodeMask = 1;
+	d3dHeapPropertiesDesc.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC d3dResourceDesc;
+	ZeroMemory(&d3dResourceDesc, sizeof(D3D12_RESOURCE_DESC));
+
+	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3dResourceDesc.Alignment = 0;
+	d3dResourceDesc.Width = gnWndClientWidth;
+	d3dResourceDesc.Height = gnWndClientHeight;
+	d3dResourceDesc.DepthOrArraySize = 1;
+	d3dResourceDesc.MipLevels = 1;
+	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dResourceDesc.SampleDesc.Count = 1;
+	d3dResourceDesc.SampleDesc.Quality = 0;
+	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3dResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	D3D12_CLEAR_VALUE d3dClear;
+	d3dClear.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dClear.DepthStencil.Depth = 1.0f;
+	d3dClear.DepthStencil.Stencil = 0;
+
+	pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dShadowMap);
+
+	CreateDsvSrvShadowMap(pd3dDevice);
+}
+
+void CBattleScene::CreateDsvSrvShadowMap(ID3D12Device *pd3dDevice)
+{
+	CScene::CreateDepthStencilView(pd3dDevice, m_pd3dShadowMap, &m_d3dDsvShadowMapCPUHandle);
+	m_d3dSrvShadowMapGPUHandle = CScene::CreateShaderResourceViews(pd3dDevice, m_pd3dShadowMap, RESOURCE_TEXTURE2D, true);
 }
 
 void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject)
@@ -2518,6 +2584,8 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	{
 		RenderCubeMap(pd3dCommandList, m_pPlayer);
 	}
+
+	RenderShaderMap(pd3dCommandList);
 }
 
 void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -3175,6 +3243,26 @@ void CColonyScene::BuildLightsAndMaterials()
 	m_pLights->m_pLights[2].m_xmf3Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
 }
 
+void CColonyScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT3 xmf3Look = XMFLOAT3(1.0f, -1.0f, 0.0f);
+
+	XMFLOAT3 xmf3Right = XMFLOAT3(0.0f, 0.0f, -1.0f);
+
+	XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Look, xmf3Right, true);
+
+	m_pLightCamera = new CCamera();
+
+	m_pLightCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	m_pLightCamera->GenerateOrthogonalMatrix(gnWndClientWidth, gnWndClientHeight, 0.0f, 10000.0f);
+	m_pLightCamera->SetRight(xmf3Right);
+	m_pLightCamera->SetUp(xmf3Up);
+	m_pLightCamera->SetLook(xmf3Look);
+	m_pLightCamera->SetPosition(XMFLOAT3(-1000.0f, 1000.0f, 0.0f));
+
+	m_pLightCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
 void CColonyScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	UINT ncbElementBytes = ((sizeof(LIGHTS) + 255) & ~255);
@@ -3200,6 +3288,34 @@ void CColonyScene::ReleaseShaderVariables()
 		m_pd3dcbLights->Release();
 		m_pd3dcbLights = NULL;
 	}
+}
+
+void CColonyScene::RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	::TransitionResourceState(pd3dCommandList, m_pd3dShadowMap, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
+	pd3dCommandList->ClearDepthStencilView(m_d3dDsvShadowMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+
+	pd3dCommandList->OMSetRenderTargets(0, NULL, FALSE, &m_d3dDsvShadowMapCPUHandle);
+
+	if (m_pLightCamera)
+	{
+		m_pLightCamera->GenerateViewMatrix();
+		m_pLightCamera->UpdateShaderVariables(pd3dCommandList);
+	}
+
+	if (m_pTerrain)
+	{
+		m_pTerrain->RenderShadow(pd3dCommandList, m_pLightCamera, true);
+	}
+
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		if (m_ppShaders[i])
+			m_ppShaders[i]->RenderToShadow(pd3dCommandList, m_pLightCamera);
+	}
+
+	::TransitionResourceState(pd3dCommandList, m_pd3dShadowMap, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
 void CColonyScene::StartScene()

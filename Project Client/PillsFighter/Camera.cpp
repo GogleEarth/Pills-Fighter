@@ -65,6 +65,11 @@ void CCamera::GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlane
 	m_xmf4x4Projection = Matrix4x4::PerspectiveFovLH(XMConvertToRadians(fFOVAngle),	fAspectRatio, fNearPlaneDistance, fFarPlaneDistance);
 }
 
+void CCamera::GenerateOrthogonalMatrix(float fWidth, float fHeight, float fNear, float fFar)
+{
+	m_xmf4x4Projection = Matrix4x4::OrthogonalFovLH(fWidth, fHeight, fNear, fFar);
+}
+
 void CCamera::GenerateViewMatrix()
 {
 	//카메라의 z-축을 기준으로 카메라의 좌표축들이 직교하도록 카메라 변환 행렬을 갱신한다. 

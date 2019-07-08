@@ -532,24 +532,6 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
 }
 
-void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances)
-{
-	if ((*pnIndex) == vd3dcbGameObject.size())
-		return;
-
-	if (m_pCubeMesh)
-	{
-		if (m_nMeshes > 0 && nInstances == 1) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
-
-		m_pCubeMesh->Render(pd3dCommandList, 0, nInstances);
-
-		(*pnIndex)++;
-	}
-
-	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
-	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
-}
-
 void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
 	if (m_pMesh)
@@ -570,6 +552,77 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 
 	if (m_pSibling) m_pSibling->Render(pd3dCommandList, pCamera, nInstances);
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, nInstances);
+}
+
+void CModel::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, bool bSetTexture)
+{
+	if ((*pnIndex) == vd3dcbGameObject.size())
+		return;
+
+	if (m_pMesh)
+	{
+		if(m_nMeshes > 0) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
+
+		if (m_nMaterials > 0)
+		{
+			for (int i = 0; i < m_nMaterials; i++)
+			{
+				if (m_ppMaterials[i])
+				{
+					m_ppMaterials[i]->UpdateShaderVariable(pd3dCommandList, vcbMappedGameObject[*pnIndex]);
+
+					if(bSetTexture) m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
+				}
+
+				m_pMesh->RenderShadow(pd3dCommandList, i);
+			}
+		}
+
+		(*pnIndex)++;
+	}
+
+	if (m_pSibling) m_pSibling->RenderShadow(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
+	if (m_pChild) m_pChild->RenderShadow(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
+}
+
+void CModel::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
+{
+	if (m_pMesh)
+	{
+		if (m_nMaterials > 0)
+		{
+			for (int i = 0; i < m_nMaterials; i++)
+			{
+				if (m_ppMaterials[i])
+				{
+					m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
+				}
+
+				m_pMesh->RenderShadow(pd3dCommandList, i, nInstances);
+			}
+		}
+	}
+
+	if (m_pSibling) m_pSibling->RenderShadow(pd3dCommandList, pCamera, nInstances);
+	if (m_pChild) m_pChild->RenderShadow(pd3dCommandList, pCamera, nInstances);
+}
+
+void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances)
+{
+	if ((*pnIndex) == vd3dcbGameObject.size())
+		return;
+
+	if (m_pCubeMesh)
+	{
+		if (m_nMeshes > 0 && nInstances == 1) UpdateShaderVariables(pd3dCommandList, vd3dcbGameObject[*pnIndex], vcbMappedGameObject[*pnIndex]);
+
+		m_pCubeMesh->Render(pd3dCommandList, 0, nInstances);
+
+		(*pnIndex)++;
+	}
+
+	if (m_pSibling) m_pSibling->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
+	if (m_pChild) m_pChild->RenderWire(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, nInstances);
 }
 
 CModel* CModel::LoadGeometryAndAnimationFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName)

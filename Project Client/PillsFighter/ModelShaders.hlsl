@@ -42,7 +42,7 @@ struct PS_OUTPUT
 	float4 glow : SV_Target1;
 };
 
-VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
+VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input)
 {
 	VS_STANDARD_OUTPUT output;
 	
@@ -57,7 +57,7 @@ VS_STANDARD_OUTPUT VSTextured(VS_STANDARD_INPUT input)
 	return(output);
 }
 
-PS_OUTPUT PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
+PS_OUTPUT PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
 	PS_OUTPUT output;
 
@@ -105,6 +105,41 @@ PS_OUTPUT PSTextured(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
+struct VS_STANDARD_SHADOW_INPUT
+{
+	float3 position : POSITION;
+	float2 uv : TEXCOORD;
+};
+
+struct VS_STANDARD_SHADOW_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
+};
+
+VS_STANDARD_SHADOW_OUTPUT VSStandardShadow(VS_STANDARD_SHADOW_INPUT input)
+{
+	VS_STANDARD_SHADOW_OUTPUT output;
+
+	output.position = mul(float4(input.position, 1.0f), gmtxViewProjection);
+	output.uv = input.uv;
+
+	return(output);
+}
+
+void PSStandardShadow(VS_STANDARD_SHADOW_OUTPUT input)
+{
+	float4 f4AlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (gnTexturesMask & MATERIAL_ALBEDO_MAP)
+		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	clip(f4AlbedoColor.a - 0.1f);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
 struct PS_PLAYER
 {
 	float4 color : SV_Target0;
@@ -261,6 +296,41 @@ float4 PSInsTextured(VS_INSTANCING_OUTPUT input) : SV_TARGET
 	return(cColor * cIllumination);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct VS_INSTANCING_SHADOW_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
+	uint instanceID : SV_InstanceID;
+};
+
+VS_INSTANCING_SHADOW_OUTPUT VSInsShadow(VS_STANDARD_SHADOW_INPUT input, uint nInsID : SV_InstanceID)
+{
+	VS_INSTANCING_SHADOW_OUTPUT output;
+
+	output.position = mul(float4(input.position, 1.0f), gmtxViewProjection);
+	output.uv = input.uv;
+	output.instanceID = nInsID;
+
+	return(output);
+}
+
+void PSInsShadow(VS_INSTANCING_SHADOW_OUTPUT input)
+{
+	float4 f4AlbedoColor = float4(1.0f, 0.0f, 0.0f, 1.0f);
+	uint nTexMask = gGameObjectsInfo[input.instanceID].m_nTexturesMask;
+
+	if (nTexMask & MATERIAL_ALBEDO_MAP)
+		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	clip(f4AlbedoColor.a - 0.1f);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
 VS_WIRE_OUTPUT VSInsWire(VS_WIRE_INPUT input, uint nInsID : SV_InstanceID)
 {
 	VS_WIRE_OUTPUT output;
@@ -322,6 +392,39 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 	output.position = mul(float4(output.positionW, 1.0f), gmtxViewProjection);
 	output.uv = input.uv;
 	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
+
+	return(output);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+struct VS_SKINNED_STANDARD_SHADOW_INPUT
+{
+	float3 position : POSITION;
+	float2 uv : TEXCOORD;
+	uint4 indices : BONEINDEX;
+	float4 weights : BONEWEIGHT;
+};
+
+VS_STANDARD_SHADOW_OUTPUT VSSkinnedAnimationStandardShadow(VS_SKINNED_STANDARD_SHADOW_INPUT input)
+{
+	VS_STANDARD_SHADOW_OUTPUT output;
+
+	float3 positionW = float3(0.0f, 0.0f, 0.0f);
+
+	matrix mtxVertexToBoneWorld;
+
+	for (int i = 0; i < MAX_VERTEX_INFLUENCES; i++)
+	{
+		if (input.weights[i] < 0.00000001)
+			continue;
+
+		mtxVertexToBoneWorld = mul(gpmtxBoneOffsets[input.indices[i]], gpmtxBoneTransforms[input.indices[i]]);
+		positionW += input.weights[i] * mul(float4(input.position, 1.0f), mtxVertexToBoneWorld).xyz;
+	}
+
+	output.position = mul(float4(positionW, 1.0f), gmtxViewProjection);
+	output.uv = input.uv;
 
 	return(output);
 }

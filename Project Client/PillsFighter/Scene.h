@@ -524,11 +524,17 @@ public:
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject);
+	virtual void RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList) {}
 	virtual void RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void CreateEnvironmentMap(ID3D12Device *pd3dDevice);
 	void CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void CreateRtvDsvSrvEnvironmentMap(ID3D12Device *pd3dDevice);
+
+	void CreateShadowMap(ID3D12Device *pd3dDevice);
+	void CreateDsvSrvShadowMap(ID3D12Device *pd3dDevice);
+
+	virtual void CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
 
 protected:
 	ID3D12Resource					*m_pd3dEnvirCube = NULL;
@@ -541,6 +547,12 @@ protected:
 
 	D3D12_VIEWPORT 					m_d3dEMViewport;
 	D3D12_RECT						m_d3dEMScissorRect;
+
+	ID3D12Resource					*m_pd3dShadowMap = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvShadowMapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvShadowMapGPUHandle;
+
+	CCamera							*m_pLightCamera;
 
 protected:
 	int								m_nRedScore = 0;
@@ -585,13 +597,17 @@ public:
 	virtual void BuildTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void BuildLightsAndMaterials();
+	virtual void CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
+	virtual void RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList);
+
 	virtual void StartScene();
 	virtual void EndScene();
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

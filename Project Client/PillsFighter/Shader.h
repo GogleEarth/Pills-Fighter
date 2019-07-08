@@ -14,6 +14,7 @@ public:
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual D3D12_RASTERIZER_DESC CreateShadowRasterizerState();
 	virtual D3D12_BLEND_DESC CreateBlendState();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateTransluDepthStencilState();
@@ -21,6 +22,10 @@ public:
 	virtual D3D12_DEPTH_STENCIL_DESC CreateAlwaysDepthStencilState();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateShadowInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateShadowVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateShadowPixelShader(ID3DBlob **ppd3dShaderBlob);
 	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
@@ -35,12 +40,14 @@ public:
 
 	virtual void ReleaseUploadBuffers() {};
 
-	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipeline = 0);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera) {};
 
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineState = NULL;
+	ID3D12PipelineState				*m_pd3dShadowPipelineState = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +60,9 @@ public:
 
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateShadowInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateShadowVertexShader(ID3DBlob **ppd3dShaderBlob);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +161,8 @@ public:
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateShadowVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateShadowPixelShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
@@ -201,7 +213,6 @@ public:
 		CRepository *pRepository, void *pContext = NULL);
 };
 
-
 ////////////////////////////////////////
 
 class CSpaceObstacleShader : public CInstancingObjectsShader
@@ -239,7 +250,6 @@ public:
 		CRepository *pRepository, void *pContext = NULL);
 };
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CSkinnedObjectsShader : public CObjectsShader
@@ -275,6 +285,39 @@ protected:
 
 	ID3D12RootSignature *m_pd3dSceneRootSignature = NULL;
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CTerrainShader : public CShader
+{
+public:
+	CTerrainShader();
+	virtual ~CTerrainShader();
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateShadowInputLayout();
+	virtual D3D12_SHADER_BYTECODE CreateShadowVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateShadowPixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class CSkyBoxShader : public CShader
+{
+public:
+	CSkyBoxShader();
+	virtual ~CSkyBoxShader();
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CEffectShader : public CShader
@@ -453,34 +496,6 @@ protected:
 	std::queue<CParticle*>			*m_pvpTempParticles = NULL;
 
 	CParticle						*m_pHitParticle = NULL;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class CTerrainShader : public CShader
-{
-public:
-	CTerrainShader();
-	virtual ~CTerrainShader();
-
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class CSkyBoxShader : public CShader
-{
-public:
-	CSkyBoxShader();
-	virtual ~CSkyBoxShader();
-
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
-
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

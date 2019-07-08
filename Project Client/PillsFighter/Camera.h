@@ -44,8 +44,9 @@ public:
 	virtual void ReleaseShaderVariables();
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	void GenerateViewMatrix();
-	void GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle);
+	virtual void GenerateViewMatrix();
+	virtual void GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle);
+	virtual void GenerateOrthogonalMatrix(float fWidth, float fHeight, float fNear, float fFar);
 
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 	CPlayer *GetPlayer() { return(m_pPlayer); }

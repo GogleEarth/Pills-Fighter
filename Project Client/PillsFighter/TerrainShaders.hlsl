@@ -56,3 +56,25 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 
 	return(cColor);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct VS_TERRAIN_SHADOW_INPUT
+{
+	float3 position : POSITION;
+};
+
+struct VS_TERRAIN_SHADOW_OUTPUT
+{
+	float4 position : SV_POSITION;
+};
+
+VS_TERRAIN_SHADOW_OUTPUT VSTerrainShadow(VS_TERRAIN_SHADOW_INPUT input)
+{
+	VS_TERRAIN_SHADOW_OUTPUT output;
+
+	output.position = mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxViewProjection);
+
+	return(output);
+}
