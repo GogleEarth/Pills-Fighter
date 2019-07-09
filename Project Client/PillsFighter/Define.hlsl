@@ -10,6 +10,7 @@
 #define CURSOR_INFO						b10
 #define SCENE_INFO						b11
 #define FONT_INFO						b12
+#define LIGHT_CAMERA_INFO				b13
 
 #define DIFFUSE_TEXTURES				t1 // t1 ~ t3
 #define SPECULAR_TEXTURE				t4
@@ -19,6 +20,7 @@
 #define INSTANCING_GAME_OBJECTS_INFO	t12
 #define ENVIRCUBE_TEXTURE				t13
 #define EMISSIVE_TEXTURE				t14
+#define SHADOW_MAP						t15
 
 #define WRAP_SAMPLERSTATE				s0
 #define CLAMP_SAMPLERSTATE				s1
@@ -41,6 +43,7 @@ Texture2D gtxtSpecularTexture : register(SPECULAR_TEXTURE);
 Texture2D gtxtNormalTexture : register(NORMAL_TEXTURE);
 Texture2D gtxtEmissiveTexture : register(EMISSIVE_TEXTURE);
 TextureCube gtxtEnvirCubeTexture : register(ENVIRCUBE_TEXTURE);
+Texture2D<float> gtxtShadowMap : register(SHADOW_MAP);
 
 struct MATERIAL
 {
@@ -63,3 +66,37 @@ cbuffer cbCameraInfo : register(CAMERA_INFO)
 	matrix		gmtxViewProjection : packoffset(c0);
 	float3		gvCameraPosition : packoffset(c4);
 };
+
+cbuffer cbLightCameraInfo : register(LIGHT_CAMERA_INFO)
+{
+	matrix		gmtxLightViewProjection : packoffset(c0);
+	matrix		gmtxShadowTransform : packoffset(c4);
+};
+
+float CalcShadowFactor(float4 f4ShadowPos)
+{
+	f4ShadowPos.xyz /= f4ShadowPos.w;
+
+	float fDepth = f4ShadowPos.z;
+
+	uint nWidth, nHeight, nMips;
+	gtxtShadowMap.GetDimensions(0, nWidth, nHeight, nMips);
+
+	float dx = 1.0f / (float)nWidth;
+
+	float percentLit = 0.0f;
+
+	const float2 offsets[9] =
+	{
+		float2(-dx, -dx), float2(0.0f, -dx), float2(dx, -dx),
+		float2(-dx, 0.0f), float2(0.0f, 0.0f), float2(dx, 0.0f),
+		float2(-dx, +dx), float2(0.0f, +dx), float2(dx, +dx),
+	};
+
+	[unroll] for (int i = 0; i < 9; i++)
+	{
+		percentLit += gtxtShadowMap.SampleCmpLevelZero(gscsShadow, f4ShadowPos.xy + offsets[i], fDepth).r;
+	}
+
+	return percentLit / 9.0f;
+}

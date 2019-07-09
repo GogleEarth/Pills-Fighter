@@ -554,7 +554,7 @@ void CModel::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	if (m_pChild) m_pChild->Render(pd3dCommandList, pCamera, nInstances);
 }
 
-void CModel::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, bool bSetTexture)
+void CModel::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, bool bSetTexture)
 {
 	if ((*pnIndex) == vd3dcbGameObject.size())
 		return;
@@ -574,18 +574,18 @@ void CModel::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* p
 					if(bSetTexture) m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
 				}
 
-				m_pMesh->RenderShadow(pd3dCommandList, i);
+				m_pMesh->RenderToShadow(pd3dCommandList, i);
 			}
 		}
 
 		(*pnIndex)++;
 	}
 
-	if (m_pSibling) m_pSibling->RenderShadow(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
-	if (m_pChild) m_pChild->RenderShadow(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
+	if (m_pSibling) m_pSibling->RenderToShadow(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
+	if (m_pChild) m_pChild->RenderToShadow(pd3dCommandList, pCamera, vd3dcbGameObject, vcbMappedGameObject, pnIndex, bSetTexture);
 }
 
-void CModel::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
+void CModel::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
 	if (m_pMesh)
 	{
@@ -598,13 +598,13 @@ void CModel::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *p
 					m_ppMaterials[i]->UpdateTextureShaderVariable(pd3dCommandList);
 				}
 
-				m_pMesh->RenderShadow(pd3dCommandList, i, nInstances);
+				m_pMesh->RenderToShadow(pd3dCommandList, i, nInstances);
 			}
 		}
 	}
 
-	if (m_pSibling) m_pSibling->RenderShadow(pd3dCommandList, pCamera, nInstances);
-	if (m_pChild) m_pChild->RenderShadow(pd3dCommandList, pCamera, nInstances);
+	if (m_pSibling) m_pSibling->RenderToShadow(pd3dCommandList, pCamera, nInstances);
+	if (m_pChild) m_pChild->RenderToShadow(pd3dCommandList, pCamera, nInstances);
 }
 
 void CModel::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, std::vector<ID3D12Resource*>& vd3dcbGameObject, std::vector<CB_GAMEOBJECT_INFO*>& vcbMappedGameObject, int *pnIndex, int nInstances)

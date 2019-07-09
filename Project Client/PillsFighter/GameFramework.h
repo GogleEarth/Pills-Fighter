@@ -96,9 +96,6 @@ public:
 
 protected:
 	CRepository						*m_pRepository = NULL;
-
-	D3D12_VIEWPORT 					m_d3dViewport;
-	D3D12_RECT						m_d3dScissorRect;
 	
 protected:
 	CFont							m_Font;

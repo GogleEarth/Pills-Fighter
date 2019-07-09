@@ -49,6 +49,9 @@ void CScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *p
 	m_pPostProcessingShader = new CPostProcessingShader();
 	m_pPostProcessingShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 
+	m_pTestShader = new CTestShader();
+	m_pTestShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+
 	m_pComputeShader = new CComputeShader();
 	m_pComputeShader->CreateShader(pd3dDevice, m_pd3dComputeRootSignature);
 }
@@ -159,6 +162,14 @@ void CScene::ReleaseObjects()
 		m_pPostProcessingShader->ReleaseObjects();
 		delete m_pPostProcessingShader;
 		m_pPostProcessingShader = NULL;
+	}
+
+	if (m_pTestShader)
+	{
+		m_pTestShader->ReleaseShaderVariables();
+		m_pTestShader->ReleaseObjects();
+		delete m_pTestShader;
+		m_pTestShader = NULL;
 	}
 
 	if (m_pComputeShader)
@@ -354,11 +365,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	}
 	else pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvOffScreenCPUHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
 
-	if (pCamera)
-	{
-		pCamera->GenerateViewMatrix();
-		pCamera->UpdateShaderVariables(pd3dCommandList);
-	}
+	if (pCamera) pCamera->OnPrepareRender(pd3dCommandList);
 
 	if (m_pd3dcbLights)
 	{
@@ -412,7 +419,7 @@ void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
 
-	if(m_pFont) m_pFont->Render(pd3dCommandList);
+	if (m_pFont) m_pFont->Render(pd3dCommandList);
 }
 
 void CScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -420,6 +427,13 @@ void CScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
 	if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
 	
 	m_pPostProcessingShader->Render(pd3dCommandList, NULL);
+}
+
+void CScene::RenderTestTexture(ID3D12GraphicsCommandList *pd3dCommandList, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUHandle)
+{
+	pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, d3dSrvGPUHandle);
+
+	m_pTestShader->Render(pd3dCommandList, NULL);
 }
 
 void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -609,7 +623,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3
 
 void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 {
-	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[7];
+	D3D12_DESCRIPTOR_RANGE pd3dDescriptorRanges[8];
 
 	pd3dDescriptorRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	pd3dDescriptorRanges[0].NumDescriptors = 3;
@@ -652,6 +666,12 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dDescriptorRanges[6].BaseShaderRegister = 14; //t14: Emissive
 	pd3dDescriptorRanges[6].RegisterSpace = 0;
 	pd3dDescriptorRanges[6].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	pd3dDescriptorRanges[7].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	pd3dDescriptorRanges[7].NumDescriptors = 1;
+	pd3dDescriptorRanges[7].BaseShaderRegister = 15; //t15: Shadow map
+	pd3dDescriptorRanges[7].RegisterSpace = 0;
+	pd3dDescriptorRanges[7].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_ROOT_PARAMETER pd3dRootParameters[MAX_ROOT_PARAMETER_INDEX - 2];
 
@@ -763,6 +783,16 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Constants.ShaderRegister = 12;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SHADOW_MAP].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SHADOW_MAP].DescriptorTable.NumDescriptorRanges = 1;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SHADOW_MAP].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[7];
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SHADOW_MAP].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].Descriptor.ShaderRegister = 13;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
 	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 12;
 	//pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.RegisterSpace = 0;
@@ -813,7 +843,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dSamplerDescs[2].MaxLOD = D3D12_FLOAT32_MAX;
 	pd3dSamplerDescs[2].ShaderRegister = 2;
 	pd3dSamplerDescs[2].RegisterSpace = 0;
-	pd3dSamplerDescs[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	pd3dSamplerDescs[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
@@ -1186,6 +1216,9 @@ void CLobbyScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	if(!m_pCursor) m_pCursor = new CCursor(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature);
 
 	CScene::m_nPlayerRobotType = SELECT_CHARACTER_GM;
+
+	m_d3dViewport = { 0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT), 0.0f, 1.0f };
+	m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
 }
 
 void CLobbyScene::ReleaseObjects()
@@ -1248,6 +1281,14 @@ void CLobbyScene::ReleaseUploadBuffers()
 	}
 
 	if (m_pCursor) m_pCursor->ReleaseUploadBuffer();
+}
+
+void CLobbyScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
+	pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
+
+	CScene::Render(pd3dCommandList, pCamera);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2470,9 +2511,6 @@ void CBattleScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		XMFLOAT3(0.0f, 1.0f, 0.0f)
 	};
 
-	m_d3dEMViewport = { 0.0f, 0.0f, float(CUBE_MAP_WIDTH), float(CUBE_MAP_HEIGHT), 0.0f, 1.0f };
-	m_d3dEMScissorRect = { 0, 0, CUBE_MAP_WIDTH, CUBE_MAP_HEIGHT };
-
 	for (int i = 0; i < 6; i++)
 	{
 		XMFLOAT3 xmf3Right = Vector3::CrossProduct(xmf3Looks[i], xmf3Ups[i], true);
@@ -2484,6 +2522,8 @@ void CBattleScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pCubeMapCamera[i]->SetRight(xmf3Right);
 		m_pCubeMapCamera[i]->SetUp(xmf3Ups[i]);
 		m_pCubeMapCamera[i]->SetLook(xmf3Looks[i]);
+		m_pCubeMapCamera[i]->SetViewPort(0.0f, 0.0f, float(CUBE_MAP_WIDTH), float(CUBE_MAP_HEIGHT));
+		m_pCubeMapCamera[i]->SetScissorRect(0, 0, CUBE_MAP_WIDTH, CUBE_MAP_HEIGHT);
 
 		m_pCubeMapCamera[i]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	}
@@ -2504,8 +2544,8 @@ void CBattleScene::CreateShadowMap(ID3D12Device *pd3dDevice)
 
 	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	d3dResourceDesc.Alignment = 0;
-	d3dResourceDesc.Width = gnWndClientWidth;
-	d3dResourceDesc.Height = gnWndClientHeight;
+	d3dResourceDesc.Width = gnWndClientWidth * 2;
+	d3dResourceDesc.Height = gnWndClientHeight * 2;
 	d3dResourceDesc.DepthOrArraySize = 1;
 	d3dResourceDesc.MipLevels = 1;
 	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -2537,16 +2577,12 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 	for (int i = 0; i < 6; i++)
 	{
 		m_pCubeMapCamera[i]->SetPosition(pMainObject->GetPosition());
-		m_pCubeMapCamera[i]->GenerateViewMatrix();
-		m_pCubeMapCamera[i]->UpdateShaderVariables(pd3dCommandList);
+		m_pCubeMapCamera[i]->OnPrepareRender(pd3dCommandList);
 
 		pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
 		pd3dCommandList->ClearDepthStencilView(m_d3dDsvEnvirCubeMapCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
 		pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvEnvirCubeMapCPUHandle[i], TRUE, &m_d3dDsvEnvirCubeMapCPUHandle);
-
-		pd3dCommandList->RSSetViewports(1, &m_d3dEMViewport);
-		pd3dCommandList->RSSetScissorRects(1, &m_d3dEMScissorRect);
 		
 		if (m_pd3dcbLights)
 		{
@@ -2591,6 +2627,7 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
+	if (m_pd3dShadowMap) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_SHADOW_MAP, m_d3dSrvShadowMapGPUHandle);
 
 	CScene::Render(pd3dCommandList, pCamera);
 }
@@ -3251,14 +3288,16 @@ void CColonyScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 	XMFLOAT3 xmf3Up = Vector3::CrossProduct(xmf3Look, xmf3Right, true);
 
-	m_pLightCamera = new CCamera();
+	m_pLightCamera = new CLightCamera();
 
 	m_pLightCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	m_pLightCamera->GenerateOrthogonalMatrix(gnWndClientWidth, gnWndClientHeight, 0.0f, 10000.0f);
+	m_pLightCamera->GenerateOrthogonalMatrix(2096, 2096, 0.0f, 5000.0f);
 	m_pLightCamera->SetRight(xmf3Right);
 	m_pLightCamera->SetUp(xmf3Up);
 	m_pLightCamera->SetLook(xmf3Look);
-	m_pLightCamera->SetPosition(XMFLOAT3(-1000.0f, 1000.0f, 0.0f));
+	m_pLightCamera->SetPosition(XMFLOAT3(-1750.0f, 2000.0f, 0.0f));
+	m_pLightCamera->SetViewPort(0.0f, 0.0f, float(FRAME_BUFFER_WIDTH * 2), float(FRAME_BUFFER_HEIGHT * 2));
+	m_pLightCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH * 2, FRAME_BUFFER_HEIGHT * 2);
 
 	m_pLightCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
@@ -3300,14 +3339,11 @@ void CColonyScene::RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_pLightCamera)
 	{
-		m_pLightCamera->GenerateViewMatrix();
-		m_pLightCamera->UpdateShaderVariables(pd3dCommandList);
+		m_pLightCamera->OnPrepareRender(pd3dCommandList);
 	}
 
 	if (m_pTerrain)
-	{
-		m_pTerrain->RenderShadow(pd3dCommandList, m_pLightCamera, true);
-	}
+		m_pTerrain->RenderToShadow(pd3dCommandList, m_pLightCamera, true);
 
 	for (int i = 0; i < m_nShaders; i++)
 	{
@@ -3315,6 +3351,9 @@ void CColonyScene::RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList)
 			m_ppShaders[i]->RenderToShadow(pd3dCommandList, m_pLightCamera);
 	}
 
+	if(m_pPlayer)
+		m_pPlayer->RenderToShadow(pd3dCommandList, m_pLightCamera, true);
+	
 	::TransitionResourceState(pd3dCommandList, m_pd3dShadowMap, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
@@ -3326,6 +3365,13 @@ void CColonyScene::StartScene()
 void CColonyScene::EndScene()
 {
 	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
+}
+
+void CColonyScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	CScene::RenderUI(pd3dCommandList);
+
+	//RenderTestTexture(pd3dCommandList, m_d3dSrvShadowMapGPUHandle);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

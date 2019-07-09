@@ -34,6 +34,7 @@ struct VS_STANDARD_OUTPUT
 	float3 tangentW : TANGENT;
 	float2 uv : TEXCOORD;
 	float3 reflection : REFLECTION;
+	float3 shadowFactor : SHADOWFACTOR;
 };
 
 struct PS_OUTPUT
@@ -53,6 +54,11 @@ VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input)
 	output.position = mul(float4(output.positionW, 1.0f), gmtxViewProjection);
 	output.uv = input.uv;
 	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
+	
+	float4 shadowPosH = mul(float4(output.positionW, 1.0f), gmtxShadowTransform);
+	float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
+	shadowFactor = CalcShadowFactor(shadowPosH);
+	output.shadowFactor = shadowFactor;
 
 	return(output);
 }
@@ -95,7 +101,7 @@ PS_OUTPUT PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 		normalW = normalize(mul(vNormal, TBN));
 	}
 
-	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
+	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor, input.shadowFactor);
 
 	output.color = cColor * cIllumination;
 	output.glow = f4GlowColor;
@@ -122,7 +128,7 @@ VS_STANDARD_SHADOW_OUTPUT VSStandardShadow(VS_STANDARD_SHADOW_INPUT input)
 {
 	VS_STANDARD_SHADOW_OUTPUT output;
 
-	output.position = mul(float4(input.position, 1.0f), gmtxViewProjection);
+	output.position = mul(float4(input.position, 1.0f), gmtxLightViewProjection);
 	output.uv = input.uv;
 
 	return(output);
@@ -134,7 +140,7 @@ void PSStandardShadow(VS_STANDARD_SHADOW_OUTPUT input)
 	if (gnTexturesMask & MATERIAL_ALBEDO_MAP)
 		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	clip(f4AlbedoColor.a - 0.1f);
+	//clip(f4AlbedoColor.a - 0.1f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +191,7 @@ PS_PLAYER PSPlayer(VS_STANDARD_OUTPUT input) : SV_TARGET
 		normalW = normalize(mul(vNormal, TBN));
 	}
 
-	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor);
+	cIllumination = Lighting(input.positionW, normalW, gMaterial, fSpecularFactor, input.shadowFactor);
 
 	output.color = cColor * cIllumination;
 	output.glow = f4GlowColor;
@@ -196,6 +202,7 @@ PS_PLAYER PSPlayer(VS_STANDARD_OUTPUT input) : SV_TARGET
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
 struct VS_WIRE_INPUT
 {
 	float3 position : POSITION;
@@ -222,6 +229,7 @@ float4 PSWire(VS_WIRE_OUTPUT input) : SV_TARGET
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
 struct INSTANCINGOBJECTINFO
 {
 	matrix		m_mtxGameObject;
@@ -241,6 +249,7 @@ struct VS_INSTANCING_OUTPUT
 	float2 uv : TEXCOORD;
 	//float3 reflection : REFLECTION;
 	uint instanceID : SV_InstanceID;
+	float3 shadowFactor : SHADOWFACTOR;
 };
 
 VS_INSTANCING_OUTPUT VSInsTextured(VS_STANDARD_INPUT input, uint nInsID : SV_InstanceID)
@@ -255,6 +264,11 @@ VS_INSTANCING_OUTPUT VSInsTextured(VS_STANDARD_INPUT input, uint nInsID : SV_Ins
 	output.uv = input.uv;
 	//output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 	output.instanceID = nInsID;
+
+	float4 shadowPosH = mul(float4(output.positionW, 1.0f), gmtxShadowTransform);
+	float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
+	shadowFactor = CalcShadowFactor(shadowPosH);
+	output.shadowFactor = shadowFactor;
 
 	return(output);
 }
@@ -291,7 +305,7 @@ float4 PSInsTextured(VS_INSTANCING_OUTPUT input) : SV_TARGET
 		normalW = normalize(mul(vNormal, TBN));
 	}
 
-	cIllumination = Lighting(input.positionW, normalW, gGameObjectsInfo[input.instanceID].m_Material, fSpecularFactor);
+	cIllumination = Lighting(input.positionW, normalW, gGameObjectsInfo[input.instanceID].m_Material, fSpecularFactor, input.shadowFactor);
 
 	return(cColor * cIllumination);
 }
@@ -310,7 +324,7 @@ VS_INSTANCING_SHADOW_OUTPUT VSInsShadow(VS_STANDARD_SHADOW_INPUT input, uint nIn
 {
 	VS_INSTANCING_SHADOW_OUTPUT output;
 
-	output.position = mul(float4(input.position, 1.0f), gmtxViewProjection);
+	output.position = mul(mul(float4(input.position, 1.0f), gGameObjectsInfo[nInsID].m_mtxGameObject), gmtxLightViewProjection);
 	output.uv = input.uv;
 	output.instanceID = nInsID;
 
@@ -325,7 +339,7 @@ void PSInsShadow(VS_INSTANCING_SHADOW_OUTPUT input)
 	if (nTexMask & MATERIAL_ALBEDO_MAP)
 		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	clip(f4AlbedoColor.a - 0.1f);
+	//clip(f4AlbedoColor.a - 0.1f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -342,6 +356,7 @@ VS_WIRE_OUTPUT VSInsWire(VS_WIRE_INPUT input, uint nInsID : SV_InstanceID)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
 #define MAX_VERTEX_INFLUENCES			4
 #define SKINNED_ANIMATION_BONES			128
 
@@ -393,11 +408,17 @@ VS_STANDARD_OUTPUT VSSkinnedAnimationStandard(VS_SKINNED_STANDARD_INPUT input)
 	output.uv = input.uv;
 	output.reflection = reflect(output.positionW - gvCameraPosition, output.normalW);
 
+	float4 shadowPosH = mul(float4(output.positionW, 1.0f), gmtxShadowTransform);
+	float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
+	shadowFactor = CalcShadowFactor(shadowPosH);
+	output.shadowFactor = shadowFactor;
+
 	return(output);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
 struct VS_SKINNED_STANDARD_SHADOW_INPUT
 {
 	float3 position : POSITION;
@@ -423,7 +444,7 @@ VS_STANDARD_SHADOW_OUTPUT VSSkinnedAnimationStandardShadow(VS_SKINNED_STANDARD_S
 		positionW += input.weights[i] * mul(float4(input.position, 1.0f), mtxVertexToBoneWorld).xyz;
 	}
 
-	output.position = mul(float4(positionW, 1.0f), gmtxViewProjection);
+	output.position = mul(float4(positionW, 1.0f), gmtxLightViewProjection);
 	output.uv = input.uv;
 
 	return(output);

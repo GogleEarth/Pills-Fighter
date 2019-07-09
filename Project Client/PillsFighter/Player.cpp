@@ -98,6 +98,8 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	m_pCamera->SetTimeLag(0.0f);
 	m_pCamera->SetOffset(CAMERA_POSITION);
 	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+	m_pCamera->SetViewPort(0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT));
+	m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
 	return(m_pCamera);
 }

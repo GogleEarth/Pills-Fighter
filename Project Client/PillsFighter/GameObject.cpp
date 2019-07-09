@@ -428,13 +428,13 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	}
 }
 
-void CGameObject::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
 {
 	if (nInstances > 1)
 	{
 		if (m_pModel)
 		{
-			m_pModel->RenderShadow(pd3dCommandList, pCamera, nInstances);
+			m_pModel->RenderToShadow(pd3dCommandList, pCamera, nInstances);
 			return;
 		}
 	}
@@ -450,7 +450,7 @@ void CGameObject::RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCame
 
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
-		m_pModel->RenderShadow(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, bSetTexture);
+		m_pModel->RenderToShadow(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, bSetTexture);
 	}
 }
 

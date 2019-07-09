@@ -381,10 +381,7 @@ void CGameFramework::BuildObjects()
 	m_pRepository = new CRepository();
 
 	m_Font.Initialize(m_pd3dDevice, m_pd3dCommandList, "./Resource/Font/Font.fnt");
-	
-	m_d3dViewport = { 0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT), 0.0f, 1.0f };
-	m_d3dScissorRect = { 0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT };
-	
+
 	m_pd3dCommandList->Close();
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
 	m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
@@ -729,9 +726,6 @@ void CGameFramework::FrameAdvance()
 
 		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList);
 		
-		m_pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
-		m_pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
-
 		if (m_pScene)
 		{
 			m_pScene->Render(m_pd3dCommandList, m_pCamera);
@@ -739,7 +733,6 @@ void CGameFramework::FrameAdvance()
 			if (m_bWireRender)
 				m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
 		}
-
 
 		if (m_pScene)
 		{

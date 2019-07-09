@@ -35,6 +35,9 @@ protected:
 	ID3D12Resource					*m_pd3dcbCamera;
 	VS_CB_CAMERA_INFO				*m_pcbMappedCamera;
 
+	D3D12_VIEWPORT					m_d3dViewport;
+	D3D12_RECT						m_d3dScissorRect;
+
 public:
 	CCamera();
 	CCamera(CCamera *pCamera);
@@ -47,6 +50,9 @@ public:
 	virtual void GenerateViewMatrix();
 	virtual void GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle);
 	virtual void GenerateOrthogonalMatrix(float fWidth, float fHeight, float fNear, float fFar);
+	virtual void SetViewPort(float fLeft, float fBottom, float fWidth, float fHeight, float fMinDepth = 0.0f, float fMaxDepth = 1.0f);
+	virtual void SetScissorRect(int nLeft, int nBottom, int nRight, int nTop);
+	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 	CPlayer *GetPlayer() { return(m_pPlayer); }
@@ -84,4 +90,28 @@ public:
 	virtual void UpdateForMinimap(XMFLOAT3& xmf3LookAt);
 
 	virtual void SetLookAt(XMFLOAT3& xmf3LookAt);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct VS_CB_LIGHT_CAMERA_INFO
+{
+	XMFLOAT4X4	m_xmf4x4ViewProjection;
+	XMFLOAT4X4	m_xmf4x4ShadowTransform;
+};
+
+class CLightCamera : public CCamera
+{
+protected:	
+	ID3D12Resource					*m_pd3dcbLightCamera;
+	VS_CB_LIGHT_CAMERA_INFO			*m_pcbMappedLightCamera;
+
+public:
+	CLightCamera();
+	virtual ~CLightCamera();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 };

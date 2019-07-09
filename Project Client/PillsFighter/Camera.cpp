@@ -60,6 +60,16 @@ CCamera::~CCamera()
 {
 }
 
+void CCamera::SetViewPort(float fLeft, float fBottom, float fWidth, float fHeight, float fMinDepth, float fMaxDepth)
+{
+	m_d3dViewport = { fLeft, fBottom, fWidth, fHeight, fMinDepth, fMaxDepth };
+}
+
+void CCamera::SetScissorRect(int nLeft, int nBottom, int nRight, int nTop)
+{
+	m_d3dScissorRect = { nLeft, nBottom, nRight, nTop };
+}
+
 void CCamera::GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle)
 {
 	m_xmf4x4Projection = Matrix4x4::PerspectiveFovLH(XMConvertToRadians(fFOVAngle),	fAspectRatio, fNearPlaneDistance, fFarPlaneDistance);
@@ -106,7 +116,16 @@ void CCamera::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 	::memcpy(&m_pcbMappedCamera->m_xmf3Position, &m_xmf3Position, sizeof(XMFLOAT3));
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbCamera->GetGPUVirtualAddress();
-	pd3dCommandList->SetGraphicsRootConstantBufferView(1, d3dGpuVirtualAddress);
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_CAMERA, d3dGpuVirtualAddress);
+}
+
+void CCamera::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	GenerateViewMatrix();
+	UpdateShaderVariables(pd3dCommandList);
+
+	pd3dCommandList->RSSetViewports(1, &m_d3dViewport);
+	pd3dCommandList->RSSetScissorRects(1, &m_d3dScissorRect);
 }
 
 void CCamera::ReleaseShaderVariables()
@@ -185,5 +204,52 @@ void CCamera::UpdateForMinimap(XMFLOAT3& xmf3LookAt)
 	{
 		m_xmf3Up = Vector3::Normalize(xmf3LookAt);
 		m_xmf3Right = Vector3::CrossProduct(m_xmf3Look, m_xmf3Up, true);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CLightCamera::CLightCamera() : CCamera()
+{
+
+}
+
+CLightCamera::~CLightCamera()
+{
+
+}
+
+void CLightCamera::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(VS_CB_LIGHT_CAMERA_INFO) + 255) & ~255); //256ÀÇ ¹è¼ö
+	m_pd3dcbLightCamera = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_pd3dcbLightCamera->Map(0, NULL, (void **)&m_pcbMappedLightCamera);
+}
+
+void CLightCamera::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT4X4 T(
+		0.5f, 0.0f, 0.0f, 0.0f, 
+		0.0f, -0.5f, 0.0f, 0.0f, 
+		0.0f, 0.0f, 1.0f, 0.0f, 
+		0.5f, 0.5f, 0.0f, 1.0f);
+
+	XMFLOAT4X4 xmf4x4ShadowTransform = Matrix4x4::Multiply(m_xmf4x4ViewProjection, T);
+
+	XMStoreFloat4x4(&m_pcbMappedLightCamera->m_xmf4x4ViewProjection, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4ViewProjection)));
+	XMStoreFloat4x4(&m_pcbMappedLightCamera->m_xmf4x4ShadowTransform, XMMatrixTranspose(XMLoadFloat4x4(&xmf4x4ShadowTransform)));
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbLightCamera->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO, d3dGpuVirtualAddress);
+}
+
+void CLightCamera::ReleaseShaderVariables()
+{
+	if (m_pd3dcbLightCamera)
+	{
+		m_pd3dcbLightCamera->Unmap(0, NULL);
+		m_pd3dcbLightCamera->Release();
 	}
 }

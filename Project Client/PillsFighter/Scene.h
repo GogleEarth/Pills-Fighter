@@ -70,6 +70,7 @@ public:
 	virtual void RenderEffects(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void RenderTestTexture(ID3D12GraphicsCommandList *pd3dCommandList, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUHandle);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
@@ -222,6 +223,7 @@ protected:
 
 	CComputeShader					*m_pComputeShader = NULL;
 	CPostProcessingShader			*m_pPostProcessingShader = NULL;
+	CTestShader						*m_pTestShader = NULL;
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo) {}
@@ -251,6 +253,8 @@ public:
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
 	virtual void MoveCursor(float x, float y);
 	virtual void SetCursorPosition(XMFLOAT2 xmf2Position) { m_pCursor->SetCursorPos(xmf2Position); }
 	virtual int MouseClick() { return 0; };
@@ -266,6 +270,9 @@ protected:
 	CTexture						**m_ppTextures = NULL;
 
 	CCursor							*m_pCursor = NULL;
+
+	D3D12_VIEWPORT					m_d3dViewport;
+	D3D12_RECT						m_d3dScissorRect;
 };
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -545,14 +552,11 @@ protected:
 
 	CCamera							*m_pCubeMapCamera[6];
 
-	D3D12_VIEWPORT 					m_d3dEMViewport;
-	D3D12_RECT						m_d3dEMScissorRect;
-
 	ID3D12Resource					*m_pd3dShadowMap = NULL;
 	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvShadowMapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvShadowMapGPUHandle;
 
-	CCamera							*m_pLightCamera;
+	CLightCamera					*m_pLightCamera;
 
 protected:
 	int								m_nRedScore = 0;
@@ -608,6 +612,7 @@ public:
 	virtual void StartScene();
 	virtual void EndScene();
 
+	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -44,7 +44,7 @@ D3D12_RASTERIZER_DESC CShader::CreateShadowRasterizerState()
 	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
-	d3dRasterizerDesc.DepthBias = 100000;
+	d3dRasterizerDesc.DepthBias = 10000;
 	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
 	d3dRasterizerDesc.SlopeScaledDepthBias = 1.0f;
 	d3dRasterizerDesc.DepthClipEnable = TRUE;
@@ -523,6 +523,26 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 }
 
+void CObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::RenderToShadow(pd3dCommandList, pCamera);
+
+	for (int i = 0; i < m_nObjectGroup; i++)
+	{
+		int nIndex = 0;
+
+		for (auto& Object : m_pvpObjects[i])
+		{
+			if(nIndex == 0)
+				Object->RenderToShadow(pd3dCommandList, pCamera, true);
+			else
+				Object->RenderToShadow(pd3dCommandList, pCamera, false);
+
+			nIndex++;
+		}
+	}
+}
+
 void CObjectsShader::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	for (int i = 0; i < m_nObjectGroup; i++)
@@ -649,6 +669,18 @@ void CInstancingObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList
 		UpdateShaderVariables(pd3dCommandList, i);
 
 		m_pvpObjects[i][0]->Render(pd3dCommandList, pCamera, true, static_cast<int>(m_pvpObjects[i].size()));
+	}
+}
+
+void CInstancingObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::RenderToShadow(pd3dCommandList, pCamera);
+
+	for (int i = 0; i < m_nObjectGroup; i++)
+	{
+		UpdateShaderVariables(pd3dCommandList, i);
+
+		m_pvpObjects[i][0]->RenderToShadow(pd3dCommandList, pCamera, true, static_cast<int>(m_pvpObjects[i].size()));
 	}
 }
 
@@ -970,6 +1002,28 @@ D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateVertexShader(ID3DBlob **ppd3d
 	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "VSSkinnedAnimationStandard", "vs_5_1", ppd3dShaderBlob));
 }
 
+D3D12_INPUT_LAYOUT_DESC CSkinnedObjectsShader::CreateShadowInputLayout()
+{
+	UINT nInputElementDescs = 4;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0,		DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "TEXCOORD", 0,		DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "BONEINDEX", 0,	DXGI_FORMAT_R32G32B32A32_UINT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "BONEWEIGHT", 0,	DXGI_FORMAT_R32G32B32A32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateShadowVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CompileShaderFromFile(L"ModelShaders.hlsl", "VSSkinnedAnimationStandardShadow", "vs_5_1", ppd3dShaderBlob));
+}
+
 void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	for (int i = 0; i < m_nObjectGroup; i++)
@@ -979,6 +1033,19 @@ void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, C
 			CShader::Render(pd3dCommandList, pCamera);
 
 			Object->Render(pd3dCommandList, pCamera, true);
+		}
+	}
+}
+
+void CSkinnedObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	for (int i = 0; i < m_nObjectGroup; i++)
+	{
+		for (auto& Object : m_pvpObjects[i])
+		{
+			CShader::RenderToShadow(pd3dCommandList, pCamera);
+
+			Object->RenderToShadow(pd3dCommandList, pCamera, true);
 		}
 	}
 }
@@ -1912,13 +1979,14 @@ CTerrainShader::~CTerrainShader()
 
 D3D12_INPUT_LAYOUT_DESC CTerrainShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 4;
+	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[1] = { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[3] = { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -2823,4 +2891,24 @@ void CPostProcessingShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, C
 
 	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	pd3dCommandList->DrawInstanced(6, 1, 0, 0);
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CTestShader::CTestShader()
+{
+}
+
+CTestShader::~CTestShader()
+{
+}
+
+D3D12_SHADER_BYTECODE CTestShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "VSTest", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CTestShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSTest", "ps_5_1", ppd3dShaderBlob));
 }

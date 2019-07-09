@@ -74,8 +74,8 @@ public:
 	virtual void ReleaseUploadBuffers();
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet, int nInstances = 1);
-	virtual void OnPreRenderShadow(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void RenderShadow(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet, int nInstances = 1);
+	virtual void OnPreRenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, int nSubSet, int nInstances = 1);
 
 	BoundingBox m_xmAABB;
 	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
@@ -104,7 +104,7 @@ public:
 	virtual ~CStandardMesh();
 
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void OnPreRenderShadow(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList);
 	void LoadMeshFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile);
 };
 
@@ -120,7 +120,7 @@ public:
 	virtual ~CSkinnedMesh();
 
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void OnPreRenderShadow(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList);
 	void LoadSkinInfoFromFile(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, FILE *pfile);
 
 protected:
@@ -212,7 +212,7 @@ public:
 
 	virtual void ReleaseUploadBuffers();
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void OnPreRenderShadow(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void OnPreRenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
