@@ -13,9 +13,9 @@ int main()
 	for (int i = 0; i < 4; ++i)
 		worker_threads.emplace_back(std::thread{ [&]() { framework.thread_process(); } });
 	std::thread accept_thread{ [&]() { framework.accept_process(); } };
-	//std::thread timer_thread{ framework.do_timer };
+	std::thread timer_thread{ [&]() { framework.timer_process(); } };
 
-	//timer_thread.join();
+	timer_thread.join();
 	accept_thread.join();
 	for (auto &th : worker_threads) th.join();
 

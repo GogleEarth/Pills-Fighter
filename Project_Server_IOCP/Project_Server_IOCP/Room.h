@@ -41,6 +41,7 @@ class Room
 	Scene* scenes_[2];
 	int	using_scene_;
 	bool in_use_;
+	bool is_playing_;
 	std::queue<PKT_PLAYER_INFO*> player_info_queue;
 
 	char blue_score_;
@@ -58,8 +59,10 @@ public:
 	inline void set_red_score(char score) { red_score_ = score; }
 	inline char get_red_score() { return red_score_; }
 	inline Player* get_players() { return players_; }
+	inline bool get_playing() { return is_playing_; }
 
 	XMFLOAT4X4 get_player_worldmatrix(int id);
+	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);
 	void set_player_is_play(int id, bool play);
 	void set_object_id(int id);
 
@@ -78,7 +81,11 @@ public:
 	Player* get_player(int id);
 	int find_player_by_socket(SOCKET client);
 	int get_players_in_room();
+	void start_game();
+	void room_update(float elapsed_time);
 
 	void player_info_inqueue(char* packet);
+	PKT_PLAYER_INFO* player_info_dequeue();
+
 };
 

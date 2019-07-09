@@ -18,6 +18,11 @@ XMFLOAT4X4 Room::get_player_worldmatrix(int id)
 	return 	scenes_[using_scene_]->get_player_worldmatrix(id);
 }
 
+void Room::set_player_worldmatrix(int id, XMFLOAT4X4 matrix)
+{
+	scenes_[using_scene_]->set_player_worldmatrix(id, matrix);
+}
+
 void Room::set_player_is_play(int id, bool play)
 {
 	scenes_[using_scene_]->set_player_is_play(id, play);
@@ -42,6 +47,7 @@ int Room::get_num_player_in_room()
 void Room::init(CRepository* repository)
 {
 	in_use_ = false;
+	is_playing_ = false;
 	using_scene_ = 3;
 	blue_score_ = 0;
 	red_score_ = 0;
@@ -162,9 +168,30 @@ int Room::get_players_in_room()
 	return ret;
 }
 
+void Room::start_game()
+{
+	is_playing_ = true;
+	blue_score_ = MAX_SCORE;
+	red_score_ = MAX_SCORE;
+	using_scene_ -= 2;
+}
+
+void Room::room_update(float elapsed_time)
+{
+	scenes_[using_scene_]->AnimateObjects(elapsed_time);
+}
+
 void Room::player_info_inqueue(char* packet)
 {
 	player_info_queue.push(reinterpret_cast<PKT_PLAYER_INFO*>(packet));
+}
+
+PKT_PLAYER_INFO* Room::player_info_dequeue()
+{
+	if (player_info_queue.empty()) return nullptr;
+	auto a = player_info_queue.front();
+	player_info_queue.pop();
+	return a;
 }
 
 void Player::init()

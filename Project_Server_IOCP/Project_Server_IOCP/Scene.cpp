@@ -180,6 +180,11 @@ XMFLOAT4X4 Scene::get_player_worldmatrix(int id)
 	return Objects_[id]->GetWorldTransf();
 }
 
+void Scene::set_player_worldmatrix(int id, XMFLOAT4X4 matrix)
+{
+	Objects_[id]->SetWorldTransf(matrix);
+}
+
 void Scene::set_player_is_play(int id, bool play)
 {
 	Objects_[id]->SetPlay(play);

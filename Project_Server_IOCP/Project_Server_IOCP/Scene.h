@@ -51,7 +51,8 @@ public:
 	int GetIndex();
 	void AddObject(GameObject* object);
 	void releaseObject(int index);
-	XMFLOAT4X4 get_player_worldmatrix(int id);
+	XMFLOAT4X4 get_player_worldmatrix(int id); 
+	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);
 	void set_player_is_play(int id, bool play);
 	void set_object_id(int id);
 

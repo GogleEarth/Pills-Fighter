@@ -51,7 +51,7 @@ int Framawork::thread_process()
 		}
 
 		if (EVENT_TYPE_RECV == over_ex->event_t) {
-			std::wcout << "Packet from Client:" << key << std::endl;
+			//std::wcout << "Packet from Client:" << key << std::endl;
 			int rest = io_byte;
 			char *ptr = over_ex->messageBuffer;
 			char packet_size = 0;
@@ -78,8 +78,38 @@ int Framawork::thread_process()
 			}
 			do_recv(key);
 		}
-		else if (EVENT_TYPE_SEND == over_ex->event_t) {
+		else if (EVENT_TYPE_SEND == over_ex->event_t) 
+		{
 			delete over_ex;
+		}
+		else if (EVENT_TYPE_ROOM_UPDATE == over_ex->event_t)
+		{
+			using namespace std;
+			using namespace chrono;
+			auto elapsed_time = 16ms;
+
+			PKT_TIME_INFO pkt_ti;
+			pkt_ti.PktId = PKT_ID_TIME_INFO;
+			pkt_ti.PktSize = sizeof(PKT_TIME_INFO);
+			pkt_ti.elapsedtime = float(elapsed_time.count()) / 1000.0f;
+			send_packet_to_room_player(key, (char*)&pkt_ti);
+
+			while (true)
+			{
+				auto data = rooms_[key].player_info_dequeue();
+				if (data == nullptr) break;
+				rooms_[key].set_player_worldmatrix(data->ID, data->WorldMatrix);
+				send_packet_to_room_player(key, (char*)data);
+			}
+			rooms_[key].room_update(float(elapsed_time.count()) / 1000.0f);
+
+			PKT_SEND_COMPLETE pkt_sc;
+			pkt_sc.PktID = PKT_ID_SEND_COMPLETE;
+			pkt_sc.PktSize = sizeof(PKT_SEND_COMPLETE);
+			pkt_sc.map = 0;
+			
+			send_packet_to_room_player(key, (char*)&pkt_sc);
+			add_timer(key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 		}
 		else
 		{
@@ -297,7 +327,8 @@ void Framawork::process_packet(int id, char* packet)
 	{
 	case PKT_ID_PLAYER_INFO:
 	{
-		//rooms_[reinterpret_cast<PKT_PLAYER_INFO*>(packet)->RoomNum].player_info_inqueue(packet);
+		int room_num = search_client_in_room(clients_[id].socket);
+		rooms_[room_num].player_info_inqueue(packet);
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE:
@@ -359,13 +390,6 @@ void Framawork::process_packet(int id, char* packet)
 		}
 		break;
 	}
-	case PKT_ID_SEND_COMPLETE:
-	{
-		//rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].player_send_complete(id);
-		//if (rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].all_send_complete())
-		//	add_timer(reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum, EVENT_TYPE_ROOM_UPDATE, std::chrono::high_resolution_clock::now());
-		break;
-	}
 	case PKT_ID_CREATE_ROOM:
 	{
 		int room_num = find_empty_room();
@@ -409,7 +433,7 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_ROOM_IN:
 	{
 		int room_num = reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num;
-		if (rooms_[room_num].get_num_player_in_room() < MAX_CLIENT)
+		if (rooms_[room_num].get_num_player_in_room() < MAX_CLIENT && !rooms_[room_num].get_playing())
 		{
 			PKT_ROOM_IN_OK pkt_rio;
 			pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
@@ -454,7 +478,7 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_all_player((char*)&pkt_cmi);
 		}
 		else
-			std::cout << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 더이상 참가 불가\n";
+			std::cout << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 참가 실패\n";
 		break;
 	}
 	case PKT_ID_SHOOT:
@@ -500,6 +524,12 @@ void Framawork::process_packet(int id, char* packet)
 		pkt_gs.PktID = PKT_ID_GAME_START;
 		pkt_gs.PktSize = sizeof(PKT_GAME_START);
 		send_packet_to_room_player(room_num, (char*)&pkt_gs);
+
+		rooms_[room_num].start_game();
+
+		using namespace std;
+		using namespace chrono;
+		add_timer(room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 		break;
 	}
 	default:
