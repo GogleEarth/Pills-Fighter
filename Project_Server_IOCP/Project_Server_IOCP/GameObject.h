@@ -107,3 +107,19 @@ public:
 	inline OBJECT_TYPE GetObjectType() { return Object_Type_; }
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class Bullet : public GameObject
+{
+	float MovingSpeed_;
+	float DurationTime_;
+	float ElapsedTime_;
+public:
+	Bullet();
+	~Bullet();
+	virtual void Animate(float fTimeElapsed);
+
+	inline void set_speed(float speed) { MovingSpeed_ = speed; }
+	inline float get_speed() { return MovingSpeed_; }
+	inline void set_life(float life) { DurationTime_ = life; }
+};

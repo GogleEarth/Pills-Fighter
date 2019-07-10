@@ -12,6 +12,25 @@ Scene::~Scene()
 {
 }
 
+void Scene::AnimateObjects(float fTimeElapsed)
+{
+	for (int i = 0; i < MAX_NUM_OBJECT; i++)
+	{
+		if (Objects_[i] != NULL)
+		{
+			if (!Objects_[i]->IsDelete())
+				Objects_[i]->Animate(fTimeElapsed);
+			else if (Objects_[i]->IsDelete())
+				releaseObject(i);
+		}
+	}
+
+	for (auto obstacle : Obstacles_)
+	{
+		obstacle->Animate(fTimeElapsed);
+	}
+}
+
 void Scene::InsertObjectFromLoadInfFromBin(char * pstrFileName, int nGroup)
 {
 	GameObject *pObject = new GameObject();
@@ -147,7 +166,7 @@ int Scene::GetIndex()
 	return -1;
 }
 
-void Scene::AddObject(GameObject* object)
+int Scene::AddObject(GameObject* object)
 {
 	int index = GetIndex();
 	OBJECT_TYPE type = object->GetObjectType();
@@ -167,6 +186,7 @@ void Scene::AddObject(GameObject* object)
 			Objects_[index]->SetModel(bullet_mesh_);
 		}
 	}
+	return index;
 }
 
 void Scene::releaseObject(int index)
@@ -231,6 +251,7 @@ void GroundScene::BuildObjects(CRepository * pRepository)
 
 void GroundScene::AnimateObjects(float fTimeElapsed)
 {
+	Scene::AnimateObjects(fTimeElapsed);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

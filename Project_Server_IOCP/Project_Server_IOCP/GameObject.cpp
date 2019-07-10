@@ -42,6 +42,13 @@ void GameObject::SetMesh(CMesh * pMesh, CCubeMesh * pCubeMesh)
 
 void GameObject::Animate(float fTimeElapsed)
 {
+	if (model_)
+	{
+		OnPrepareRender();
+		UpdateWorldTransform();
+		int i = 0;
+		model_->UpdateCollisionBox(aabb_, &i);
+	}
 }
 
 void GameObject::OnPrepareRender()
@@ -163,4 +170,36 @@ void GameObject::Rotate(float fPitch, float fYaw, float fRoll)
 void GameObject::UpdateWorldTransform()
 {
 	if (model_) model_->UpdateWorldTransform(&m_xmf4x4World);
+}
+
+Bullet::Bullet()
+{
+	ElapsedTime_ = 0.0f;
+}
+
+Bullet::~Bullet()
+{
+}
+
+void Bullet::Animate(float fTimeElapsed)
+{
+	if (Object_Type_ == OBJECT_TYPE_MACHINE_BULLET
+		|| Object_Type_ == OBJECT_TYPE_BZK_BULLET
+		|| Object_Type_ == OBJECT_TYPE_BEAM_BULLET)
+	{
+		if (m_xmf3Position.y <= 0.0f)
+		{
+			Delete();
+		}
+		else if (ElapsedTime_ >= DurationTime_)
+		{
+			Delete();
+		}
+		else
+		{
+			MoveForward(MovingSpeed_ * fTimeElapsed);
+			ElapsedTime_ += fTimeElapsed;
+		}
+	}
+	GameObject::Animate(fTimeElapsed);
 }

@@ -42,7 +42,11 @@ class Room
 	int	using_scene_;
 	bool in_use_;
 	bool is_playing_;
-	std::queue<PKT_PLAYER_INFO*> player_info_queue;
+	std::queue<PKT_PLAYER_INFO*> player_info_queue_;
+	std::queue<PKT_CREATE_OBJECT*> create_object_queue_;
+	std::queue<PKT_UPDATE_OBJECT*> update_object_queue_;
+	std::queue<PKT_DELETE_OBJECT*> delete_object_queue_;
+	std::queue<PKT_CREATE_EFFECT*> create_effect_queue_;
 
 	char blue_score_;
 	char red_score_;
@@ -73,7 +77,7 @@ public:
 	int findindex();
 	void add_player(int id, SOCKET socket);
 	void set_player_lobby_info(int id, char selectedrobot, char team);
-	void shoot(int id);
+	void shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
 	void player_load_complete(int id);
 	void player_send_complete(int id);
 	bool all_send_complete();
@@ -86,6 +90,9 @@ public:
 
 	void player_info_inqueue(char* packet);
 	PKT_PLAYER_INFO* player_info_dequeue();
-
+	PKT_CREATE_OBJECT* create_object_dequeue();
+	PKT_UPDATE_OBJECT* update_object_dequeue();
+	PKT_DELETE_OBJECT* delete_object_dequeue();
+	PKT_CREATE_EFFECT* create_effect_dequeue();
 };
 

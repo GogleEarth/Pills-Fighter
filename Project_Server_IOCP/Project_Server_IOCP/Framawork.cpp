@@ -101,7 +101,36 @@ int Framawork::thread_process()
 				rooms_[key].set_player_worldmatrix(data->ID, data->WorldMatrix);
 				send_packet_to_room_player(key, (char*)data);
 			}
+			
+			while (true)
+			{
+				auto data = rooms_[key].create_object_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+			}
+
 			rooms_[key].room_update(float(elapsed_time.count()) / 1000.0f);
+
+			while (true)
+			{
+				auto data = rooms_[key].update_object_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+			}
+
+			while (true)
+			{
+				auto data = rooms_[key].delete_object_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+			}
+
+			while (true)
+			{
+				auto data = rooms_[key].create_effect_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+			}
 
 			PKT_SEND_COMPLETE pkt_sc;
 			pkt_sc.PktID = PKT_ID_SEND_COMPLETE;
@@ -483,7 +512,12 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_SHOOT:
 	{
-		//rooms_[reinterpret_cast<PKT_SEND_COMPLETE*>(packet)->RoomNum].shoot(id);
+		int room_num = search_client_in_room(clients_[id].socket);
+
+		rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+			reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
+		
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:

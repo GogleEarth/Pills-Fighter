@@ -17,9 +17,9 @@ public:
 	Scene();
 	~Scene();
 
-	virtual void BuildObjects(CRepository* pRepository) {}
-	virtual void AnimateObjects(float fTimeElapsed) {}
-	virtual void SceneEvent() {}
+	virtual void BuildObjects(CRepository* pRepository) = 0;
+	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void SceneEvent() = 0;
 
 	void InsertObjectFromLoadInfFromBin(char *pstrFileName, int nGroup);
 
@@ -49,13 +49,13 @@ public:
 	void init(CRepository* pRepository);
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
-	void AddObject(GameObject* object);
+	int AddObject(GameObject* object);
 	void releaseObject(int index);
 	XMFLOAT4X4 get_player_worldmatrix(int id); 
 	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);
 	void set_player_is_play(int id, bool play);
 	void set_object_id(int id);
-
+	inline GameObject* get_object(int id) { return Objects_[id]; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
