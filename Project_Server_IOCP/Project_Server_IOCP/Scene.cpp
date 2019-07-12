@@ -16,11 +16,11 @@ void Scene::AnimateObjects(float fTimeElapsed)
 {
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
-		if (Objects_[i] != NULL)
+		if (Objects_[i].GetUse() != false)
 		{
-			if (!Objects_[i]->IsDelete())
-				Objects_[i]->Animate(fTimeElapsed);
-			else if (Objects_[i]->IsDelete())
+			if (!Objects_[i].IsDelete())
+				Objects_[i].Animate(fTimeElapsed);
+			else if (Objects_[i].IsDelete())
 				releaseObject(i);
 		}
 	}
@@ -119,27 +119,26 @@ void Scene::init(CRepository * pRepository)
 
 	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
 	{
-		Objects_[i] = NULL;
+		Objects_[i].SetUse(false);
 	}
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		Objects_[i] = new GameObject();
-		Objects_[i]->SetObjectType(OBJECT_TYPE_PLAYER);
-		Objects_[i]->SetId(i);
-		Objects_[i]->SetModel(robot_mesh_);
-		Objects_[i]->SetHitPoint(PLAYER_HP);
-		Objects_[i]->SetPlay(false);
+		Objects_[i].SetObjectType(OBJECT_TYPE_PLAYER);
+		Objects_[i].SetId(i);
+		Objects_[i].SetModel(robot_mesh_);
+		Objects_[i].SetHitPoint(PLAYER_HP);
+		Objects_[i].SetPlay(false);
 	}
 
-	Objects_[0]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[1]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
-	Objects_[2]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[3]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
-	Objects_[4]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
-	Objects_[5]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
-	Objects_[6]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[7]->SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[0].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[1].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[2].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[3].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[4].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
+	Objects_[5].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
+	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
 
 	for (int i = 0; i < 24; ++i)
 	{
@@ -161,58 +160,62 @@ void Scene::InsertObject(GameObject * pObject, int nGroup, bool bPrepareRotate, 
 int Scene::GetIndex()
 {
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
-		if (Objects_[i] == NULL)
+		if (Objects_[i].GetUse() == false)
 			return i;
 	return -1;
 }
 
-int Scene::AddObject(GameObject* object)
+int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix)
 {
 	int index = GetIndex();
-	OBJECT_TYPE type = object->GetObjectType();
+	Objects_[index].SetObjectType(type);
+	Objects_[index].SetHitPoint(hp);
 	if (index != -1)
 	{
-		Objects_[index] = object;
-		Objects_[index]->SetIndex(index);
+		Objects_[index].SetIndex(index);
 		if (type == OBJECT_TYPE_MACHINE_BULLET
 			|| type == OBJECT_TYPE_BZK_BULLET
 			|| type == OBJECT_TYPE_BEAM_BULLET)
 		{
-			Objects_[index]->SetModel(bullet_mesh_);
+			Objects_[index].SetModel(bullet_mesh_);
+			Objects_[index].set_life(life_time);
+			Objects_[index].set_speed(speed);
 		}
 		else if (type == OBJECT_TYPE_ITEM_HEALING
 			|| type == OBJECT_TYPE_ITEM_AMMO)
 		{
-			Objects_[index]->SetModel(bullet_mesh_);
+			Objects_[index].SetModel(bullet_mesh_);
 		}
 	}
+	Objects_[index].SetWorldTransf(matrix);
+	Objects_[index].SetUse(true);
 	return index;
 }
 
 void Scene::releaseObject(int index)
 {
-	delete Objects_[index];
-	Objects_[index] = NULL;
+	//delete Objects_[index];
+	Objects_[index].SetUse(false);
 }
 
 XMFLOAT4X4 Scene::get_player_worldmatrix(int id)
 {
-	return Objects_[id]->GetWorldTransf();
+	return Objects_[id].GetWorldTransf();
 }
 
 void Scene::set_player_worldmatrix(int id, XMFLOAT4X4 matrix)
 {
-	Objects_[id]->SetWorldTransf(matrix);
+	Objects_[id].SetWorldTransf(matrix);
 }
 
 void Scene::set_player_is_play(int id, bool play)
 {
-	Objects_[id]->SetPlay(play);
+	Objects_[id].SetPlay(play);
 }
 
 void Scene::set_object_id(int id)
 {
-	Objects_[id]->SetId(id);
+	Objects_[id].SetId(id);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -50,6 +50,8 @@ class Room
 
 	char blue_score_;
 	char red_score_;
+	float item_cooltime_[3];
+	bool item_spawn_[3];
 public:
 	Room();
 	~Room();
@@ -87,6 +89,8 @@ public:
 	int get_players_in_room();
 	void start_game();
 	void room_update(float elapsed_time);
+	void spawn_healing_item();
+	void spawn_ammo_item();
 
 	void player_info_inqueue(char* packet);
 	PKT_PLAYER_INFO* player_info_dequeue();

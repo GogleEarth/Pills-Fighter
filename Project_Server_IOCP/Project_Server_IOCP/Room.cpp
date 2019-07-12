@@ -53,10 +53,8 @@ void Room::init(CRepository* repository)
 	red_score_ = 0;
 
 	GroundScene* groundscene = new GroundScene();
-	groundscene->init(repository);
 	groundscene->BuildObjects(repository);
 	SpaceScene* spacescene = new SpaceScene();
-	spacescene->init(repository);
 	spacescene->BuildObjects(repository);
 
 	scenes_[0] = groundscene;
@@ -114,28 +112,29 @@ void Room::set_player_lobby_info(int id, char selectedrobot, char team)
 
 void Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 {
-	Bullet* object = new Bullet();
-	object->SetWorldTransf(matrix);
+	int hp;
+	float life_time;
+	float speed;
 	OBJECT_TYPE type;
 	if (weapon == WEAPON_TYPE_MACHINE_GUN)
 	{
-		object->SetHitPoint(3);
-		object->set_life(1.5f);
-		object->set_speed(500.0f);
+		hp = 3;
+		life_time = 1.5f;
+		speed = 500.0f;
 		type = OBJECT_TYPE_MACHINE_BULLET;
 	}
 	else if (weapon == WEAPON_TYPE_BAZOOKA)
 	{
-		object->SetHitPoint(15);
-		object->set_life(2.5f);
-		object->set_speed(400.0f);
+		hp = 15;
+		life_time = 2.5f;
+		speed = 400.0f;
 		type = OBJECT_TYPE_BZK_BULLET;
 	}
 	else if (weapon == WEAPON_TYPE_BEAM_RIFLE)
 	{
-		object->SetHitPoint(5);
-		object->set_life(0.75f);
-		object->set_speed(600.0f);
+		hp = 5;
+		life_time = 0.75f;
+		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
 	}
 
@@ -145,8 +144,7 @@ void Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	pkt_co->Robot_Type = ROBOT_TYPE_GM;
 	pkt_co->WorldMatrix = matrix;
 	pkt_co->Object_Type = type;
-	object->SetObjectType(type);
-	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(object);
+	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix);
 
 	create_object_queue_.push(pkt_co);
 }
@@ -213,48 +211,117 @@ void Room::start_game()
 	blue_score_ = MAX_SCORE;
 	red_score_ = MAX_SCORE;
 	using_scene_ -= 2;
+	for (int i = 0; i < 3; ++i)
+	{
+		item_cooltime_[i] = 0.0f;
+		item_spawn_[i] = false;
+	}
 }
 
 void Room::room_update(float elapsed_time)
 {
+	for (int i = 0; i < 3; ++i)
+		if(!item_spawn_[i])
+			item_cooltime_[i] += elapsed_time;
+	
+	spawn_healing_item();
+	spawn_ammo_item();
+
 	scenes_[using_scene_]->AnimateObjects(elapsed_time);
+
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 	{
 		GameObject* object = scenes_[using_scene_]->get_object(i);
-		if (object != NULL)
-		{
-			PKT_UPDATE_OBJECT* updateobj = new PKT_UPDATE_OBJECT();
-			updateobj->PktId = (char)PKT_ID_UPDATE_OBJECT;
-			updateobj->PktSize = (char)sizeof(PKT_UPDATE_OBJECT);
-			updateobj->Object_Index = i;
-			updateobj->Object_Position = object->GetPosition();
-			update_object_queue_.push(updateobj);
-			if (object->IsDelete())
-			{
-				PKT_DELETE_OBJECT* pkt_d = new PKT_DELETE_OBJECT();
-				pkt_d->PktId = (char)PKT_ID_DELETE_OBJECT;
-				pkt_d->PktSize = (char)sizeof(PKT_DELETE_OBJECT);
-				pkt_d->Object_Index = i;
-				delete_object_queue_.push(pkt_d);
+		if (object->GetUse() == false) continue;
 
-				OBJECT_TYPE type = object->GetObjectType();
-				if (type == OBJECT_TYPE_MACHINE_BULLET
-					|| type == OBJECT_TYPE_BZK_BULLET
-					|| type == OBJECT_TYPE_BEAM_BULLET)
-				{
-					PKT_CREATE_EFFECT* pktCE = new PKT_CREATE_EFFECT();
-					pktCE->PktId = PKT_ID_CREATE_EFFECT;
-					pktCE->PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-					if (type == OBJECT_TYPE_BZK_BULLET)
-						pktCE->efType = EFFECT_TYPE_EXPLOSION;
-					else
-						pktCE->efType = EFFECT_TYPE_HIT;
-					pktCE->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-					pktCE->xmf3Position = object->GetPosition();
-					create_effect_queue_.push(pktCE);
-				}
+		PKT_UPDATE_OBJECT* updateobj = new PKT_UPDATE_OBJECT();
+		updateobj->PktId = (char)PKT_ID_UPDATE_OBJECT;
+		updateobj->PktSize = (char)sizeof(PKT_UPDATE_OBJECT);
+		updateobj->Object_Index = i;
+		updateobj->Object_Position = object->GetPosition();
+		update_object_queue_.push(updateobj);
+		if (object->IsDelete())
+		{
+			PKT_DELETE_OBJECT* pkt_d = new PKT_DELETE_OBJECT();
+			pkt_d->PktId = (char)PKT_ID_DELETE_OBJECT;
+			pkt_d->PktSize = (char)sizeof(PKT_DELETE_OBJECT);
+			pkt_d->Object_Index = i;
+			delete_object_queue_.push(pkt_d);
+
+			OBJECT_TYPE type = object->GetObjectType();
+			if (type == OBJECT_TYPE_MACHINE_BULLET
+				|| type == OBJECT_TYPE_BZK_BULLET
+				|| type == OBJECT_TYPE_BEAM_BULLET)
+			{
+				PKT_CREATE_EFFECT* pktCE = new PKT_CREATE_EFFECT();
+				pktCE->PktId = PKT_ID_CREATE_EFFECT;
+				pktCE->PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+				if (type == OBJECT_TYPE_BZK_BULLET)
+					pktCE->efType = EFFECT_TYPE_EXPLOSION;
+				else
+					pktCE->efType = EFFECT_TYPE_HIT;
+				pktCE->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+				pktCE->xmf3Position = object->GetPosition();
+				create_effect_queue_.push(pktCE);
 			}
 		}
+	}
+}
+
+void Room::spawn_healing_item()
+{
+	if (item_cooltime_[0] >= 60.0f && !item_spawn_[0])
+	{
+		item_spawn_[0] = true;
+		int hp = 50;
+		OBJECT_TYPE type = OBJECT_TYPE_ITEM_HEALING;
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 5.0f, 0.0f, 1.0f };
+		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
+		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
+		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
+		pkt_co->Robot_Type = ROBOT_TYPE_GM;
+		pkt_co->WorldMatrix = matrix;
+		pkt_co->Object_Type = type;
+		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
+
+		create_object_queue_.push(pkt_co);
+	}
+}
+
+void Room::spawn_ammo_item()
+{
+	if (item_cooltime_[1] >= 20.0f && !item_spawn_[1])
+	{
+		item_spawn_[1] = true;
+		int hp = 100;
+		OBJECT_TYPE type = OBJECT_TYPE_ITEM_AMMO;
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f };
+		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
+		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
+		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
+		pkt_co->Robot_Type = ROBOT_TYPE_GM;
+		pkt_co->WorldMatrix = matrix;
+		pkt_co->Object_Type = type;
+		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
+
+		create_object_queue_.push(pkt_co);
+	}
+
+	if (item_cooltime_[2] >= 20.0f && !item_spawn_[2])
+	{
+		item_spawn_[2] = true;
+		int hp = 100;
+		OBJECT_TYPE type = OBJECT_TYPE_ITEM_AMMO;
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 5.0f, 0.0f, 1.0f };
+		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
+		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
+		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
+		pkt_co->Robot_Type = ROBOT_TYPE_GM;
+		pkt_co->WorldMatrix = matrix;
+		pkt_co->Object_Type = type;
+		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
+
+		create_object_queue_.push(pkt_co);
 	}
 }
 

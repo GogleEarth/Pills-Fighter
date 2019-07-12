@@ -37,11 +37,15 @@ protected:
 	CModel *model_ = NULL;
 	std::vector<BoundingBox> aabb_;
 
-	bool delete_ = FALSE;
+	bool delete_ = false;
 	int	num_meshes_ = 0;
 
 	int	hp_;
 	int	max_hp_;
+
+	float MovingSpeed_;
+	float DurationTime_;
+	float ElapsedTime_;
 
 public:
 	GameObject();
@@ -50,7 +54,7 @@ public:
 	void SetModel(CModel *pModel);
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 
-	virtual void Animate(float fTimeElapsed);
+	void Animate(float fTimeElapsed);
 	void OnPrepareRender();
 
 	//게임 객체의 월드 변환 행렬에서 위치 벡터와 방향(x-축, y-축, z-축) 벡터를 반환한다. 
@@ -62,13 +66,11 @@ public:
 	XMFLOAT3 GetLook() { return m_xmf3Look; }
 	XMFLOAT3 GetUp() { return m_xmf3Up; }
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
-	float GetMovingSpeed() { return(moving_speed_); }
 	XMFLOAT4X4 GetWorldTransf();
 
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3& xmf3Position);
-	void SetMovingSpeed(float MovingSpeed) { moving_speed_ = MovingSpeed; }
 
 	void SetPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch = Pitch; m_fPrepareYaw = Yaw; m_fPrepareRoll = Roll; }
 	void AddPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch += Pitch; m_fPrepareYaw += Yaw; m_fPrepareRoll += Roll; }
@@ -86,7 +88,7 @@ public:
 
 	inline std::vector<BoundingBox>& GetAABB() { return aabb_; }
 	inline int GetNumAABB() { return num_meshes_; }
-	inline void Delete() { delete_ = TRUE; }
+	inline void Delete() { delete_ = true; }
 	inline bool IsDelete() { return delete_; }
 	inline void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
 
@@ -99,27 +101,16 @@ public:
 	inline int GetId() { return id_; }
 	inline void SetIndex(int index) { index_ = index; }
 	inline int GetIndex() { return index_; }
-	inline void SetUse(bool use) { in_used_ = use; }
+	void SetUse(bool use);
 	inline bool GetUse() { return in_used_; }
 	inline void SetPlay(bool play) { play_ = play; }
 	inline bool GetPlay() { return play_; }
 	inline void SetObjectType(OBJECT_TYPE type) { Object_Type_ = type; }
 	inline OBJECT_TYPE GetObjectType() { return Object_Type_; }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class Bullet : public GameObject
-{
-	float MovingSpeed_;
-	float DurationTime_;
-	float ElapsedTime_;
-public:
-	Bullet();
-	~Bullet();
-	virtual void Animate(float fTimeElapsed);
 
 	inline void set_speed(float speed) { MovingSpeed_ = speed; }
 	inline float get_speed() { return MovingSpeed_; }
 	inline void set_life(float life) { DurationTime_ = life; }
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////

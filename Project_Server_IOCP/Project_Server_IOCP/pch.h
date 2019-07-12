@@ -59,7 +59,6 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "libfbxsdk-md.lib")
 
 #define FIXED_FRAME 1.0f / 60.0f
 #define ITEM_HEALING_COOLTIME 60.f
