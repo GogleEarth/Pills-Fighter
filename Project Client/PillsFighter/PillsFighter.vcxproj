@@ -159,7 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Project Server\Server\Protocol.h" />
+    <ClInclude Include="..\..\Project_Server_IOCP\Project_Server_IOCP\Protocol.h" />
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
