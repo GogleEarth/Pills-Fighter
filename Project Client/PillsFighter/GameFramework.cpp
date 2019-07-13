@@ -1061,6 +1061,7 @@ void CGameFramework::ProcessPacket()
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetPlayerIndex(0);
+		m_nClinetIndex = 0;
 		break;
 	}
 	case PKT_ID_ROOM_IN_OK:
@@ -1076,6 +1077,7 @@ void CGameFramework::ProcessPacket()
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetPlayerIndex(pPacket->index);
+		m_nClinetIndex = pPacket->index;
 
 		break;
 	}
