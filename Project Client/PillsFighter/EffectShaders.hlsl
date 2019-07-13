@@ -68,10 +68,9 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
 	float3 vRight = normalize(cross(vUp, vLook));
-	float fDistance = distance(gvCameraPosition.xyz, input[0].position);
 
-	float fHalfW = input[0].size.x + fDistance * input[0].size.x;
-	float fHalfH = input[0].size.y + fDistance * input[0].size.y;
+	float fHalfW = input[0].size.x * input[0].size.x;
+	float fHalfH = input[0].size.y * input[0].size.y;
 
 	float4 fVertices[4];
 	fVertices[0] = float4(input[0].position + fHalfW * vRight - fHalfH * vUp, 1.0f);
@@ -117,6 +116,44 @@ void GSEffectStreamOut(point VS_EFFECT_INPUT input[1], inout PointStream<VS_EFFE
 
 	if (input[0].age <= gEffect.m_fDuration)
 		outStream.Append(input[0]);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+[maxvertexcount(4)]
+void GSTextEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFECT_OUTPUT> outStream)
+{
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
+	float3 vRight = normalize(cross(vUp, vLook));
+	float fDistance = distance(gvCameraPosition.xyz, input[0].position);
+
+	float fHalfW = input[0].size.x + fDistance * input[0].size.x;
+	float fHalfH = input[0].size.y + fDistance * input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].position + fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(input[0].position + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(input[0].position - fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[3] = float4(input[0].position - fHalfW * vRight + fHalfH * vUp, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_EFFECT_OUTPUT output;
+	output.texindex = input[0].texindex;
+	output.color = input[0].color;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.position = mul(fVertices[i], gmtxViewProjection);
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

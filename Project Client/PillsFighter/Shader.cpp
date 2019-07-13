@@ -44,7 +44,7 @@ D3D12_RASTERIZER_DESC CShader::CreateShadowRasterizerState()
 	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
-	d3dRasterizerDesc.DepthBias = 10000;
+	d3dRasterizerDesc.DepthBias = 1000;
 	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
 	d3dRasterizerDesc.SlopeScaledDepthBias = 1.0f;
 	d3dRasterizerDesc.DepthClipEnable = TRUE;
@@ -297,8 +297,8 @@ void CShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 	OnPrepareRender(pd3dCommandList, 1);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 CSkinnedAnimationShader::CSkinnedAnimationShader()
 {
 }
@@ -354,8 +354,7 @@ D3D12_SHADER_BYTECODE CSkinnedAnimationShader::CreateShadowVertexShader(ID3DBlob
 	return(CompileShaderFromFile(L"ModelShaders.hlsl", "VSSkinnedAnimationStandardShadow", "vs_5_1", ppd3dShaderBlob));
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CPlayerShader::CPlayerShader()
 {
@@ -372,8 +371,7 @@ D3D12_SHADER_BYTECODE CPlayerShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlo
 	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "PSPlayer", "ps_5_1", ppd3dShaderBlob));
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CPlayerWeaponShader::CPlayerWeaponShader()
 {
@@ -390,8 +388,7 @@ D3D12_SHADER_BYTECODE CPlayerWeaponShader::CreatePixelShader(ID3DBlob **ppd3dSha
 	return(CShader::CompileShaderFromFile(L"ModelShaders.hlsl", "PSPlayer", "ps_5_1", ppd3dShaderBlob));
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 D3D12_RASTERIZER_DESC CWireShader::CreateRasterizerState() 
 { 
@@ -436,8 +433,7 @@ D3D12_SHADER_BYTECODE CWireShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 	return(CompileShaderFromFile(L"ModelShaders.hlsl", "PSWire", "ps_5_1", ppd3dShaderBlob));
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CObjectsShader::CObjectsShader()
 {
@@ -514,9 +510,9 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		for (auto& Object : m_pvpObjects[i])
 		{
 			if(nIndex == 0)
-				Object->Render(pd3dCommandList, pCamera, true);
+				Object->Render(pd3dCommandList, pCamera, true, false, 1);
 			else
-				Object->Render(pd3dCommandList, pCamera, false);
+				Object->Render(pd3dCommandList, pCamera, false, false, 1);
 
 			nIndex++;
 		}
@@ -534,9 +530,9 @@ void CObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, 
 		for (auto& Object : m_pvpObjects[i])
 		{
 			if(nIndex == 0)
-				Object->RenderToShadow(pd3dCommandList, pCamera, true);
+				Object->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
 			else
-				Object->RenderToShadow(pd3dCommandList, pCamera, false);
+				Object->RenderToShadow(pd3dCommandList, pCamera, false, false, 1);
 
 			nIndex++;
 		}
@@ -575,16 +571,16 @@ void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/BZK_Bullet.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", NULL, NULL));
 
+#ifndef ON_NETWORKING
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
 	InsertObject(pd3dDevice, pd3dCommandList, pObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, pContext);
-
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", NULL, NULL));
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 CInstancingObjectsShader::CInstancingObjectsShader()
 {
@@ -668,7 +664,7 @@ void CInstancingObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList
 	{
 		UpdateShaderVariables(pd3dCommandList, i);
 
-		m_pvpObjects[i][0]->Render(pd3dCommandList, pCamera, true, static_cast<int>(m_pvpObjects[i].size()));
+		m_pvpObjects[i][0]->Render(pd3dCommandList, pCamera, true, false, static_cast<int>(m_pvpObjects[i].size()));
 	}
 }
 
@@ -680,7 +676,7 @@ void CInstancingObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCom
 	{
 		UpdateShaderVariables(pd3dCommandList, i);
 
-		m_pvpObjects[i][0]->RenderToShadow(pd3dCommandList, pCamera, true, static_cast<int>(m_pvpObjects[i].size()));
+		m_pvpObjects[i][0]->RenderToShadow(pd3dCommandList, pCamera, true, false, static_cast<int>(m_pvpObjects[i].size()));
 	}
 }
 
@@ -966,7 +962,6 @@ void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 CSkinnedObjectsShader::CSkinnedObjectsShader()
 {
@@ -1026,26 +1021,33 @@ D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateShadowVertexShader(ID3DBlob *
 
 void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	CShader::Render(pd3dCommandList, pCamera);
+
 	for (int i = 0; i < m_nObjectGroup; i++)
 	{
 		for (auto& Object : m_pvpObjects[i])
 		{
-			CShader::Render(pd3dCommandList, pCamera);
-
-			Object->Render(pd3dCommandList, pCamera, true);
+			Object->Render(pd3dCommandList, pCamera, true, false, 1);
 		}
 	}
 }
 
 void CSkinnedObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	CShader::RenderToShadow(pd3dCommandList, pCamera);
+
 	for (int i = 0; i < m_nObjectGroup; i++)
 	{
+		int nIndex = 0;
+
 		for (auto& Object : m_pvpObjects[i])
 		{
-			CShader::RenderToShadow(pd3dCommandList, pCamera);
+			if (nIndex == 0)
+				Object->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
+			else
+				Object->RenderToShadow(pd3dCommandList, pCamera, false, false, 1);
 
-			Object->RenderToShadow(pd3dCommandList, pCamera, true);
+			nIndex++;
 		}
 	}
 }
@@ -1077,7 +1079,7 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 
 #ifndef ON_NETWORKING
 	CRobotObject *pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
 
 	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
 
@@ -1419,6 +1421,11 @@ CTextEffectShader::~CTextEffectShader()
 	if (m_pd3dTextPipelineState) m_pd3dTextPipelineState->Release();
 }
 
+D3D12_SHADER_BYTECODE CTextEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSTextEffectDraw", "gs_5_1", ppd3dShaderBlob));
+}
+
 void CTextEffectShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
 	CTimedEffectShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
@@ -1591,7 +1598,6 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 CParticleShader::CParticleShader()
 {
@@ -2702,9 +2708,8 @@ void CCursorShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *
 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CComputeShader::CComputeShader()
 {
@@ -2827,7 +2832,6 @@ void CComputeShader::SetMotionBlurPipelineState(ID3D12GraphicsCommandList *pd3dC
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 CPostProcessingShader::CPostProcessingShader()
 {
@@ -2892,8 +2896,8 @@ void CPostProcessingShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, C
 	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	pd3dCommandList->DrawInstanced(6, 1, 0, 0);
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 CTestShader::CTestShader()
 {

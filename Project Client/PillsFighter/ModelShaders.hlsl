@@ -127,7 +127,7 @@ VS_STANDARD_SHADOW_OUTPUT VSStandardShadow(VS_STANDARD_SHADOW_INPUT input)
 {
 	VS_STANDARD_SHADOW_OUTPUT output;
 
-	output.position = mul(float4(input.position, 1.0f), gmtxLightViewProjection);
+	output.position = mul(mul(float4(input.position, 1.0f), gmtxGameObject), gmtxLightViewProjection);
 	output.uv = input.uv;
 
 	return(output);
@@ -139,7 +139,7 @@ void PSStandardShadow(VS_STANDARD_SHADOW_OUTPUT input)
 	if (gnTexturesMask & MATERIAL_ALBEDO_MAP)
 		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	//clip(f4AlbedoColor.a - 0.1f);
+	clip(f4AlbedoColor.a - 0.1f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -340,7 +340,7 @@ void PSInsShadow(VS_INSTANCING_SHADOW_OUTPUT input)
 	if (nTexMask & MATERIAL_ALBEDO_MAP)
 		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	//clip(f4AlbedoColor.a - 0.1f);
+	clip(f4AlbedoColor.a - 0.1f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

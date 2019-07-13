@@ -402,7 +402,7 @@ void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
 	}
 }
 
-void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
 	if(nInstances > 1)
 	{ 
@@ -418,9 +418,12 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	UpdateShaderVariables(pd3dCommandList);
 
 	int i = 0;
-	if(m_pModel)
+	if (m_pModel)
 	{
-		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
+		if (m_pShader)
+		{
+			if(bSetShader) m_pShader->Render(pd3dCommandList, pCamera);
+		}
 
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
@@ -428,7 +431,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	}
 }
 
-void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
 	if (nInstances > 1)
 	{
@@ -446,7 +449,10 @@ void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCa
 	int i = 0;
 	if (m_pModel)
 	{
-		if (m_pShader) m_pShader->RenderToShadow(pd3dCommandList, pCamera);
+		if (m_pShader)
+		{
+			if (bSetShader) m_pShader->RenderToShadow(pd3dCommandList, pCamera);
+		}
 
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
@@ -751,12 +757,12 @@ CSkyBox::~CSkyBox()
 {
 }
 
-void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CSkyBox::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
 	XMFLOAT3 xmf3CameraPos = pCamera->GetPosition();
 	SetPosition(xmf3CameraPos.x, xmf3CameraPos.y, xmf3CameraPos.z);
 
-	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, nInstances);
+	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -935,14 +941,14 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
 }
 
-void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
-	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
+	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 
 	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
-	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
-	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
+	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera);
+	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera);
 }
 
 void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)

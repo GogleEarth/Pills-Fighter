@@ -122,7 +122,7 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 
 	prevPos /= prevPos.w;
 
-	float2 velocity = (currPos - prevPos).xy * 0.5f;
+	float2 velocity = (currPos - prevPos).xy;
 	//velocity *= 1.0f - gDeltaTime;
 
 	float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);

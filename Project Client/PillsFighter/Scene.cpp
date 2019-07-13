@@ -373,11 +373,11 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 	}
 
-	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera, true);
+	if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, pCamera);
 
 	if (m_pTerrain)
 	{
-		m_pTerrain->Render(pd3dCommandList, pCamera, true);
+		m_pTerrain->Render(pd3dCommandList, pCamera);
 	}
 
 	for (int i = 0; i < m_nShaders; i++)
@@ -478,7 +478,7 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 		if(m_pPlayer)
 			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
 
-		if ((rotVel > 15.0f) || (moveVel > 3.0f))
+		if ((rotVel > 25.0f) || (moveVel > 2.5f))
 		{
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
 
@@ -1873,14 +1873,14 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	CLobbyScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
 
 #ifndef ON_NETWORKING
-	JoinPlayer(0, L"1 : First Player");
-	JoinPlayer(1, L"2 : Second Player");
-	JoinPlayer(2, L"3 : Third Player");
-	JoinPlayer(3, L"4 : Fourth Player");
-	JoinPlayer(4, L"5 : Fifth Player");
-	JoinPlayer(5, L"6 : Sixth Player");
-	JoinPlayer(6, L"7 : Seventh Player");
-	JoinPlayer(7, L"8 : Ehighth Player");
+	JoinPlayer(0, L"1 : First Player", SELECT_CHARACTER_GM);
+	JoinPlayer(1, L"2 : Second Player", SELECT_CHARACTER_GM);
+	JoinPlayer(2, L"3 : Third Player", SELECT_CHARACTER_GM);
+	JoinPlayer(3, L"4 : Fourth Player", SELECT_CHARACTER_GM);
+	JoinPlayer(4, L"5 : Fifth Player", SELECT_CHARACTER_GM);
+	JoinPlayer(5, L"6 : Sixth Player", SELECT_CHARACTER_GM);
+	JoinPlayer(6, L"7 : Seventh Player", SELECT_CHARACTER_GM);
+	JoinPlayer(7, L"8 : Ehighth Player", SELECT_CHARACTER_GM);
 #endif
 
 	float width = 185.0f / FRAME_BUFFER_WIDTH;
@@ -2405,8 +2405,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CreateEnvironmentMap(pd3dDevice);
 	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
-	CreateShadowMap(pd3dDevice);
-	CreateLightCamera(pd3dDevice, pd3dCommandList);
+	CreateShadowMap(pd3dDevice, pd3dCommandList, 4096 * 2, 4096 * 2);
 
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
@@ -2529,7 +2528,7 @@ void CBattleScene::CreateCubeMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	}
 }
 
-void CBattleScene::CreateShadowMap(ID3D12Device *pd3dDevice)
+void CBattleScene::CreateShadowMap(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
 {
 	D3D12_HEAP_PROPERTIES d3dHeapPropertiesDesc;
 	::ZeroMemory(&d3dHeapPropertiesDesc, sizeof(D3D12_HEAP_PROPERTIES));
@@ -2544,8 +2543,8 @@ void CBattleScene::CreateShadowMap(ID3D12Device *pd3dDevice)
 
 	d3dResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	d3dResourceDesc.Alignment = 0;
-	d3dResourceDesc.Width = gnWndClientWidth * 2;
-	d3dResourceDesc.Height = gnWndClientHeight * 2;
+	d3dResourceDesc.Width = nWidth;
+	d3dResourceDesc.Height = nHeight;
 	d3dResourceDesc.DepthOrArraySize = 1;
 	d3dResourceDesc.MipLevels = 1;
 	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -2562,6 +2561,7 @@ void CBattleScene::CreateShadowMap(ID3D12Device *pd3dDevice)
 	pd3dDevice->CreateCommittedResource(&d3dHeapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &d3dResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, &d3dClear, __uuidof(ID3D12Resource), (void **)&m_pd3dShadowMap);
 
 	CreateDsvSrvShadowMap(pd3dDevice);
+	CreateLightCamera(pd3dDevice, pd3dCommandList, nWidth, nHeight);
 }
 
 void CBattleScene::CreateDsvSrvShadowMap(ID3D12Device *pd3dDevice)
@@ -2590,8 +2590,8 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 			pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 		}
 
-		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i], true);
-		if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i], true);
+		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 
 		for (int i = 0; i < m_nShaders; i++)
 		{
@@ -3195,9 +3195,9 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		PKT_SCORE *pktScore = (PKT_SCORE*)pktData;
 		wchar_t pstrText[16];
 		wsprintfW(pstrText, L"%d", pktScore->RedScore);
-		ChangeText(m_pRedScoreText, pstrText, XMFLOAT2(-0.055f, 0.79f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
+		ChangeText(m_pRedScoreText, pstrText, XMFLOAT2(-0.05f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 		wsprintfW(pstrText, L"%d", pktScore->BlueScore);
-		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.79f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 0.9f), LEFT_ALIGN);
+		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
 		break;
 	}
 	}
@@ -3280,7 +3280,7 @@ void CColonyScene::BuildLightsAndMaterials()
 	m_pLights->m_pLights[2].m_xmf3Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
 }
 
-void CColonyScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+void CColonyScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
 {
 	XMFLOAT3 xmf3Look = XMFLOAT3(1.0f, -1.0f, 0.0f);
 
@@ -3291,13 +3291,13 @@ void CColonyScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	m_pLightCamera = new CLightCamera();
 
 	m_pLightCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	m_pLightCamera->GenerateOrthogonalMatrix(2096, 2096, 0.0f, 5000.0f);
+	m_pLightCamera->GenerateOrthogonalMatrix(nWidth / 4, nHeight / 4, 0.0f, 5000.0f);
 	m_pLightCamera->SetRight(xmf3Right);
 	m_pLightCamera->SetUp(xmf3Up);
 	m_pLightCamera->SetLook(xmf3Look);
-	m_pLightCamera->SetPosition(XMFLOAT3(-1750.0f, 2000.0f, 0.0f));
-	m_pLightCamera->SetViewPort(0.0f, 0.0f, float(FRAME_BUFFER_WIDTH * 2), float(FRAME_BUFFER_HEIGHT * 2));
-	m_pLightCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH * 2, FRAME_BUFFER_HEIGHT * 2);
+	m_pLightCamera->SetPosition(XMFLOAT3(-1000.0f, 1300.0f, 0.0f));
+	m_pLightCamera->SetViewPort(0.0f, 0.0f, float(nWidth), float(nHeight));
+	m_pLightCamera->SetScissorRect(0, 0, nWidth, nHeight);
 
 	m_pLightCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
@@ -3343,7 +3343,7 @@ void CColonyScene::RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pTerrain)
-		m_pTerrain->RenderToShadow(pd3dCommandList, m_pLightCamera, true);
+		m_pTerrain->RenderToShadow(pd3dCommandList, m_pLightCamera);
 
 	for (int i = 0; i < m_nShaders; i++)
 	{
@@ -3352,7 +3352,7 @@ void CColonyScene::RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if(m_pPlayer)
-		m_pPlayer->RenderToShadow(pd3dCommandList, m_pLightCamera, true);
+		m_pPlayer->RenderToShadow(pd3dCommandList, m_pLightCamera);
 	
 	::TransitionResourceState(pd3dCommandList, m_pd3dShadowMap, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
