@@ -74,10 +74,10 @@ public:
 
 protected:
 	XMFLOAT4						m_xmf4DiffuseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	XMFLOAT4						m_xmf4EmissiveColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	XMFLOAT4						m_xmf4ReflectionColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4						m_xmf4EmissiveColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4						m_xmf4ReflectionColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	UINT							m_nType = 0x00;
 

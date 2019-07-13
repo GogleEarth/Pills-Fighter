@@ -25,7 +25,7 @@ struct VS_TERRAIN_OUTPUT
 	float4 color : COLOR;
 	float2 uv0 : TEXCOORD0;
 	float2 uv1 : TEXCOORD1;
-	float3 shadowFactor : SHADOWFACTOR;
+	float4 shadowPosH : SHADOWPOS;
 };
 
 VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
@@ -38,11 +38,7 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
 	output.color = input.color;
 	output.uv0 = input.uv0;
 	output.uv1 = input.uv1;
-
-	float4 shadowPosH = mul(float4(output.positionW, 1.0f), gmtxShadowTransform);
-	float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
-	shadowFactor = CalcShadowFactor(shadowPosH);
-	output.shadowFactor = shadowFactor;
+	output.shadowPosH = mul(float4(output.positionW, 1.0f), gmtxShadowTransform);
 
 	return(output);
 }
@@ -81,7 +77,10 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET
 	float3 normalW = normalize(input.normalW);
 	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	cIllumination = Lighting(input.positionW, normalW, gMaterial, 0.2f, input.shadowFactor);
+	float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
+	shadowFactor = CalcShadowFactor(input.shadowPosH);
+
+	cIllumination = Lighting(input.positionW, normalW, gMaterial, 0.2f, shadowFactor);
 
 	return(cColor * cIllumination);
 }
