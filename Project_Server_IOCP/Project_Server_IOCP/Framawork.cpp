@@ -325,12 +325,12 @@ void Framawork::disconnect_client(int id)
 
 	if (room_num != -1)
 	{
-		rooms_[room_num].disconnect_client(clients_[id].socket);
 		PKT_PLAYER_OUT packet;
 		packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket);
 		packet.PktId = PKT_ID_PLAYER_OUT;
 		packet.PktSize = sizeof(PKT_PLAYER_OUT);
 		send_packet_to_room_player(room_num, (char*)&packet);
+		rooms_[room_num].disconnect_client(clients_[id].socket);
 	}
 
 	closesocket(clients_[id].socket);
@@ -566,6 +566,60 @@ void Framawork::process_packet(int id, char* packet)
 		add_timer(room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 		break;
 	}
+	case PKT_ID_LEAVE_ROOM:
+	{
+		int room_num = search_client_in_room(clients_[id].socket);
+
+		PKT_PLAYER_OUT packet;
+		packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+		packet.PktId = PKT_ID_PLAYER_OUT;
+		packet.PktSize = sizeof(PKT_PLAYER_OUT);
+		send_packet_to_room_player(room_num, (char*)&packet);
+
+		rooms_[room_num].disconnect_client(clients_[id].socket);
+
+		if (rooms_[room_num].get_num_player_in_room() > 0)
+		{
+			PKT_CHANGE_ROOM_INFO pkt_cmi;
+			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+			pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+			pkt_cmi.Room_num = room_num;
+			pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
+			pkt_cmi.map = rooms_[room_num].get_map();
+			send_packet_to_all_player((char*)&pkt_cmi);
+		}
+		else
+		{
+			rooms_[room_num].set_is_use(false);
+			PKT_ROOM_DELETE pkt_rd;
+			pkt_rd.PktId = PKT_ID_DELETE_ROOM;
+			pkt_rd.PktSize = sizeof(PKT_ROOM_DELETE);
+			pkt_rd.Room_num = room_num;
+			send_packet_to_all_player((char*)&pkt_rd);
+		}
+
+		for (int i = 0; i < 10; ++i)
+		{
+			if (rooms_[i].get_is_use())
+			{
+				PKT_ADD_ROOM pkt_ar;
+				pkt_ar.PktId = PKT_ID_ADD_ROOM;
+				pkt_ar.PktSize = sizeof(pkt_ar);
+				pkt_ar.Room_num = i;
+				send_packet_to_player(id, (char*)&pkt_ar);
+
+				PKT_CHANGE_ROOM_INFO pkt_cmi;
+				pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+				pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+				pkt_cmi.Room_num = i;
+				pkt_cmi.numpeople = rooms_[i].get_num_player_in_room();
+				pkt_cmi.map = rooms_[i].get_map();
+				send_packet_to_player(id, (char*)&pkt_cmi);
+			}
+		}
+			
+		break;
+	}
 	default:
 		std::wcout << L"정의되지 않은 패킷 도착 오류!!\n";
 		while (true);
@@ -589,7 +643,7 @@ void Framawork::send_packet_to_player(int id, char* packet)
 		{
 			std::cout << "Error - IO pending Failure\n";
 			error_display("WSASend in send_packet()  ", err_no);
-			while (true);
+			//while (true);
 		}
 	}
 }

@@ -465,7 +465,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 	{
 #ifdef ON_NETWORKING
 		SendToServer(PKT_ID_LEAVE_ROOM);
-#else
+#endif
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		m_pScene->ReleaseObjects();
 		delete m_pScene;
@@ -474,7 +474,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->SetCursorPosition(xmf2Pos);
-#endif
+
 		break;
 	}
 	case LOBBY_MOUSE_CLICK_SELECT_ROBOT:

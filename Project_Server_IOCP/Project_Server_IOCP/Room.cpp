@@ -189,7 +189,8 @@ int Room::find_player_by_socket(SOCKET client)
 	int ret = -1;
 
 	for (int i = 0; i < 8; ++i)
-		if (players_[i].get_socket() == client) ret = i;
+		if(players_[i].get_use())
+			if (players_[i].get_socket() == client) ret = i;
 
 	return ret;
 }
@@ -210,7 +211,7 @@ void Room::start_game()
 	is_playing_ = true;
 	blue_score_ = MAX_SCORE;
 	red_score_ = MAX_SCORE;
-	using_scene_ -= 2;
+	using_scene_ -= 3;
 	for (int i = 0; i < 3; ++i)
 	{
 		item_cooltime_[i] = 0.0f;
