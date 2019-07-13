@@ -139,6 +139,7 @@ int Framawork::thread_process()
 			
 			send_packet_to_room_player(key, (char*)&pkt_sc);
 			add_timer(key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+			delete over_ex;
 		}
 		else
 		{
