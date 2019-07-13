@@ -948,15 +948,6 @@ void CGameFramework::ProcessPacket()
 		m_pScene->LeavePlayer(pPacket->id);
 		break;
 	}
-	case PKT_ID_PLAYER_ID:
-	{
-		PKT_CLIENTID *pPacket = (PKT_CLIENTID*)m_pPacketBuffer;
-
-		m_nClinetIndex = pPacket->id;
-		m_pScene->SetPlayerIndex(m_nClinetIndex);
-
-		break;
-	}
 	case PKT_ID_GAME_START:
 	{
 		PKT_GAME_START *pPacket = (PKT_GAME_START*)m_pPacketBuffer;
@@ -1073,6 +1064,8 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_ROOM_IN_OK:
 	{
+		PKT_ROOM_IN_OK *pPacket = (PKT_ROOM_IN_OK*)m_pPacketBuffer;
+
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		m_pScene->ReleaseObjects();
 		delete m_pScene;
@@ -1081,6 +1074,7 @@ void CGameFramework::ProcessPacket()
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
+		m_pScene->SetPlayerIndex(pPacket->index);
 
 		break;
 	}
