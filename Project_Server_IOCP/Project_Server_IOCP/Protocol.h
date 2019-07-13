@@ -219,6 +219,7 @@ typedef struct PKT_PLAYER_IN
 	BYTE		PktId;
 	int			id;
 	BYTE		Team;
+	int			robot;
 }PKT_PLAYER_IN, PKT_PLAYER_OUT, PKT_CLIENTID;
 
 struct PKT_LOBBY_PLAYER_INFO

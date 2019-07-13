@@ -74,7 +74,7 @@ public:
 	//렌더링할 메쉬와 게임 객체를 생성하고 소멸하는 함수이다. 
 	void BuildObjects();
 	void BuildScene(int nSceneType = 0);
-	void BuildColonyScene();
+	void BuildBattleScene(int nType);
 	void BuildLobbyMainScene();
 	void BuildLobbyRoomScene();
 	void ReleaseObjects();

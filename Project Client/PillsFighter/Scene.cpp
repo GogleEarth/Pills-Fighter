@@ -1933,7 +1933,7 @@ void CLobbyRoomScene::SetPlayerIndex(int nServerIndex)
 	wsprintfW(id, L"%d", nServerIndex);
 
 	m_nMyIndex = nServerIndex;
-	JoinPlayer(nServerIndex, id);
+	JoinPlayer(nServerIndex, id, SELECT_CHARACTER_GM);
 }
 
 void CLobbyRoomScene::ChangeSelectRobot(int nServerIndex, int nRobotType)
@@ -2067,10 +2067,10 @@ XMFLOAT2 CLobbyRoomScene::GetPlayerTextPosition(int nServerIndex)
 	return xmf2Pos;
 }
 
-void CLobbyRoomScene::JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName)
+void CLobbyRoomScene::JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType)
 {
 	m_umPlayerInfo[nServerIndex].nSlotIndex = m_nCurrentSlotIndex;
-	m_umPlayerInfo[nServerIndex].nRobotType = SKINNED_OBJECT_INDEX_GM;
+	m_umPlayerInfo[nServerIndex].nRobotType = nRobotType;
 
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(m_nCurrentSlotIndex);
 

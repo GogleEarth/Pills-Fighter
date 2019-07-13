@@ -318,7 +318,8 @@ void CGameFramework::BuildScene(int nSceneType)
 		BuildLobbyRoomScene();
 		break;
 	case SCENE_TYPE_COLONY:
-		BuildColonyScene();
+	case SCENE_TYPE_SPACE:
+		BuildBattleScene(nSceneType);
 		break;
 	}
 	
@@ -338,10 +339,12 @@ void CGameFramework::BuildScene(int nSceneType)
 	if (m_pRepository) m_pRepository->ReleaseUploadBuffers();
 }
 
-void CGameFramework::BuildColonyScene()
+void CGameFramework::BuildBattleScene(int nType)
 {
-	m_pScene = new CColonyScene();
-	//m_pScene = new CSpaceScene();
+	if(nType == SCENE_TYPE_COLONY)
+		m_pScene = new CColonyScene();
+	if(nType == SCENE_TYPE_SPACE)
+		m_pScene = new CSpaceScene();
 
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
@@ -935,7 +938,7 @@ void CGameFramework::ProcessPacket()
 		wchar_t pstrid[32];
 		wsprintfW(pstrid, L"%d", pPacket->id);
 
-		m_pScene->JoinPlayer(pPacket->id, pstrid);
+		m_pScene->JoinPlayer(pPacket->id, pstrid, pPacket->robot);
 		break;
 	}
 	case PKT_ID_PLAYER_OUT:

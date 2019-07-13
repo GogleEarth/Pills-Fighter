@@ -230,7 +230,7 @@ public: // Network
 	virtual void DeleteObject(int nIndex) {}
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
-	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName) {};
+	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType) {};
 	virtual void LeavePlayer(int nServerIndex) {};
 	virtual void SetPlayerIndex(int nServerIndex) {}
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
@@ -413,7 +413,7 @@ public:
 	virtual void CheckCollision();
 	virtual void StartScene();
 
-	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName);
+	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType);
 	virtual void LeavePlayer(int nServerIndex);
 	virtual void SetPlayerIndex(int nServerIndex);
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);
