@@ -425,19 +425,11 @@ void Framawork::process_packet(int id, char* packet)
 		int room_num = find_empty_room();
 		if (room_num != -1)
 		{
-			PKT_CLIENTID pkt_cid;
-			pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
-			pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
-			int player_id = rooms_[room_num].findindex();
-			pkt_cid.id = player_id;
-			pkt_cid.Team = player_id % 2;
-			
 			PKT_CREATE_ROOM_OK pkt_cro;
 			pkt_cro.PktId = PKT_ID_CREATE_ROOM_OK;
 			pkt_cro.PktSize = sizeof(PKT_CREATE_ROOM_OK);
 
 			send_packet_to_player(id, (char*)&pkt_cro);
-			send_packet_to_player(id, (char*)&pkt_cid);
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id, clients_[id].socket);
 			rooms_[room_num].set_map(3);
@@ -468,36 +460,38 @@ void Framawork::process_packet(int id, char* packet)
 			PKT_ROOM_IN_OK pkt_rio;
 			pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
 			pkt_rio.PktSize = sizeof(PKT_ROOM_IN_OK);
-
-			PKT_CLIENTID pkt_cid;
-			pkt_cid.PktId = (char)PKT_ID_PLAYER_ID;
-			pkt_cid.PktSize = (char)sizeof(PKT_CLIENTID);
 			int player_id = rooms_[room_num].findindex();
-			pkt_cid.id = player_id;
-			pkt_cid.Team = player_id % 2;
+			pkt_rio.index = player_id;
 
 			send_packet_to_player(id, (char*)&pkt_rio);
+			rooms_[room_num].add_player(id, clients_[id].socket);
 
 			PKT_PLAYER_IN pkt_pin;
 			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
 			pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 			for (int i = 0; i < MAX_CLIENT; ++i)
 			{
+				if (i == player_id) continue;
 				auto player = rooms_[room_num].get_player(i);
 				if (player->get_use())
 				{
 					pkt_pin.id = i;
 					pkt_pin.Team = player->get_team();
+					pkt_pin.robot = player->get_robot();
 					send_packet_to_player(id, (char*)&pkt_pin);
 				}
 			}
-
 			pkt_pin.id = player_id;
 			pkt_pin.Team = player_id % 2;
-			send_packet_to_room_player(room_num, (char*)&pkt_pin);
+			for (int i = 0; i < MAX_CLIENT; ++i)
+			{
+				if (i == player_id) continue;
+				auto player = rooms_[room_num].get_player(i);
+				if (player->get_use())
+					send_packet_to_player(player->get_serverid(), (char*)&pkt_pin);
+				
+			}
 
-			send_packet_to_player(id, (char*)&pkt_cid);
-			rooms_[room_num].add_player(id, clients_[id].socket);
 
 			PKT_CHANGE_ROOM_INFO pkt_cmi;
 			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
