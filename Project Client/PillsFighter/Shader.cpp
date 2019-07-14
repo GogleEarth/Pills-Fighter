@@ -2118,6 +2118,7 @@ CUserInterface::~CUserInterface()
 
 	if (m_pd3dPipelineStateBar) m_pd3dPipelineStateBar->Release();
 	if (m_pd3dPipelineStateBullet) m_pd3dPipelineStateBullet->Release();
+	if (m_pd3dPipelineStateMinimap) m_pd3dPipelineStateMinimap->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -2143,6 +2144,11 @@ D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBl
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUiBullet", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderMinimap(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUiMinimap", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
@@ -2211,6 +2217,10 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.PS = CreatePixelShaderBullet(&pd3dPixelShaderBlob);
 
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBullet);
+
+	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderMinimap(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateMinimap);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
@@ -2282,6 +2292,20 @@ void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dComman
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = pd3dcb->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
 }
+
+void CUserInterface::UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT3 playerPos = m_pPlayer->GetPosition();
+	XMFLOAT3 playerLook = m_pPlayer->GetLook();
+	XMFLOAT3 playerRight = m_pPlayer->GetRight();
+
+	m_cbMinimapPlayerInfo->playerPosition = XMFLOAT2(playerPos.x, playerPos.z);
+	m_cbMinimapPlayerInfo->playerLook = XMFLOAT2(playerLook.x, playerLook.z);
+	m_cbMinimapPlayerInfo->playerRight = XMFLOAT2(playerRight.x, playerRight.z);
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PLAYER_INFO, m_MinimapPlayerRsc->GetGPUVirtualAddress());
+}
+
 void CUserInterface::ReleaseUploadBuffers()
 {
 	if (m_ppUIRects)
@@ -2298,6 +2322,11 @@ void CUserInterface::ReleaseUploadBuffers()
 		{
 			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
 		}
+	}
+
+	if (m_pMinimap)
+	{
+		m_pMinimap->ReleaseUploadBuffers();
 	}
 
 	CShader::ReleaseUploadBuffers();
@@ -2330,7 +2359,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScoreBoard.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[4], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_nUIRect = 5;
+	m_nUIRect = 6;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Base UI
@@ -2353,6 +2382,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(-0.2f, 0.2f, 0.9f, 0.75f);
 	xmf2Size = ::CalculateSize(-0.2f, 0.2f, 0.9f, 0.75f);
 	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	xmf2Center = ::CalculateCenter(0.63f, 0.93f, 0.93f, 0.4f);
+	xmf2Size = ::CalculateSize(0.63f, 0.93f, 0.93f, 0.4f);
+	m_ppUIRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_pMinimap = (CTexture*)pContext;
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -2392,6 +2426,16 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 			m_ppUIRects[3]->Render(pd3dCommandList, 0);
 		}
 	}
+
+	//UpdateShaderVariablesMinimapPlayer(pd3dCommandList);
+
+	//// Draw Minimap
+	//if (m_pd3dPipelineStateMinimap) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimap);
+	//if (m_pMinimap)
+	//{
+	//	m_pMinimap->UpdateShaderVariables(pd3dCommandList);
+	//	m_ppUIRects[5]->Render(pd3dCommandList, 0);
+	//}
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
@@ -2916,3 +2960,328 @@ D3D12_SHADER_BYTECODE CTestShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSTest", "ps_5_1", ppd3dShaderBlob));
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CMinimapShader::CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+}
+
+CMinimapShader::~CMinimapShader()
+{
+	for (int i = 0; i < m_nUIRect; i++)
+	{
+		if (m_ppUIRects[i])
+			delete m_ppUIRects[i];
+	}
+
+	for (int i = 0; i < m_nTextures; i++)
+	{
+		if (m_ppTextures[i])
+			delete m_ppTextures[i];
+	}
+
+	for (int i = 0; i < m_nMinimapRobotRect; i++)
+	{
+		if (m_ppMinimapRobotRects[i])
+			delete m_ppMinimapRobotRects[i];
+	}
+
+	if (m_pd3dPipelineStateMinimapRobot) m_pd3dPipelineStateMinimapRobot->Release();
+	if (m_pd3dPipelineStateMinimapBG) m_pd3dPipelineStateMinimapBG->Release();
+	if (m_pd3dPipelineStateMinimapSight) m_pd3dPipelineStateMinimapSight->Release();
+
+}
+
+D3D12_SHADER_BYTECODE CMinimapShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreateVertexShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSMinimapEnemy", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUi", "gs_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSMinimapEnemy", "gs_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShaderMinimapSight(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSMinimapSight", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSMinimapEnemy", "ps_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShaderMinimapBG(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSMinimapTerrain", "ps_5_1", ppd3dShaderBlob));
+}
+D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShaderMinimapSight(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSMinimapSight", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_INPUT_LAYOUT_DESC CMinimapShader::CreateInputLayoutMinimapRect()
+{
+	UINT nInputElementDescs = 3;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "INDEX",		0, DXGI_FORMAT_R32_UINT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_INPUT_LAYOUT_DESC CMinimapShader::CreateInputLayout()
+{
+	UINT nInputElementDescs = 2;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_RASTERIZER_DESC CMinimapShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
+	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
+	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
+	d3dRasterizerDesc.DepthBias = 0;
+	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
+	d3dRasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	d3dRasterizerDesc.DepthClipEnable = TRUE;
+	d3dRasterizerDesc.MultisampleEnable = FALSE;
+	d3dRasterizerDesc.AntialiasedLineEnable = FALSE;
+	d3dRasterizerDesc.ForcedSampleCount = 0;
+	d3dRasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	return(d3dRasterizerDesc);
+}
+
+void CMinimapShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
+{
+	ID3DBlob *pd3dVertexShaderBlob = NULL, *pd3dGeometryShaderBlob = NULL, *pd3dPixelShaderBlob = NULL;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineStateDesc;
+	::ZeroMemory(&d3dPipelineStateDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	d3dPipelineStateDesc.pRootSignature = pd3dGraphicsRootSignature;
+	d3dPipelineStateDesc.VS = CreateVertexShader(&pd3dVertexShaderBlob);
+	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
+	d3dPipelineStateDesc.RasterizerState = CreateRasterizerState();
+	d3dPipelineStateDesc.BlendState = CreateBlendState();
+	d3dPipelineStateDesc.DepthStencilState = CreateAlwaysDepthStencilState();
+	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
+	d3dPipelineStateDesc.SampleMask = UINT_MAX;
+	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	d3dPipelineStateDesc.NumRenderTargets = 1;
+	d3dPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dPipelineStateDesc.SampleDesc.Count = 1;
+	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
+
+	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
+	d3dPipelineStateDesc.PS = CreatePixelShaderMinimapBG(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateMinimapBG);
+
+	d3dPipelineStateDesc.GS = CreateGeometryShaderMinimapSight(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderMinimapSight(&pd3dPixelShaderBlob);
+	d3dPipelineStateDesc.DepthStencilState = CreateAlwaysDepthStencilState();
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateMinimapSight);
+
+	d3dPipelineStateDesc.VS = CreateVertexShaderMinimapRobot(&pd3dVertexShaderBlob);
+	d3dPipelineStateDesc.GS = CreateGeometryShaderMinimapRobot(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderMinimapRobot(&pd3dPixelShaderBlob);
+	d3dPipelineStateDesc.InputLayout = CreateInputLayoutMinimapRect();
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateMinimapRobot);
+
+	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
+	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
+	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
+
+	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
+}
+
+void CMinimapShader::InsertMinimapRobot(CGameObject *object, int index)
+{
+	InsertMinimapRobotInfo(object->GetWorldTransf(), index);
+}
+
+void CMinimapShader::InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index)
+{
+	if (index % 2 == 1) {
+		m_cbMinimapRobotInfo[index].enemyOrTeam = true; // 1: enemy
+	}
+	else {
+		m_cbMinimapRobotInfo[index].enemyOrTeam = false; // 0: team
+	}
+	m_cbMinimapRobotInfo[index].robotPosition = XMFLOAT2(objectWorld._41, objectWorld._43);
+}
+
+void CMinimapShader::ReleaseUploadBuffers()
+{
+	if (m_ppUIRects)
+	{
+		for (int i = 0; i < m_nUIRect; i++)
+		{
+			if (m_ppUIRects[i]) m_ppUIRects[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < m_nTextures; i++)
+		{
+			if (m_ppTextures[i]) m_ppTextures[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	if (m_ppMinimapRobotRects)
+	{
+		for (int i = 0; i < m_nMinimapRobotRect; i++)
+		{
+			if (m_ppMinimapRobotRects[i]) m_ppMinimapRobotRects[i]->ReleaseUploadBuffers();
+		}
+	}
+
+	CShader::ReleaseUploadBuffers();
+}
+
+void CMinimapShader::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = (((sizeof(CB_MINIMAP_ROBOT_POSITION) * ROBOTCOUNT) + 255) & ~255); //256의 배수
+
+	m_MinimapRobotRsc = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+
+	m_MinimapRobotRsc->Map(0, NULL, (void **)&m_cbMinimapRobotInfo);
+}
+
+void CMinimapShader::UpdateMinimapRobotInfo(CGameObject *object, BYTE id)
+{
+	// 인덱스 받아서 해당 인덱스의 미니맵인포를 바꾼다
+	XMFLOAT4X4 world = object->GetWorldTransf();
+	XMFLOAT2 position = XMFLOAT2(world._41, world._43);
+	//m_cbMinimapRobotInfo[(int)id].robotPosition = position;
+	m_cbMinimapRobotInfo[0].robotPosition = position;
+}
+
+void CMinimapShader::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	D3D12_GPU_VIRTUAL_ADDRESS d3dcbGpuVirtualAddress = m_MinimapRobotRsc->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO, d3dcbGpuVirtualAddress);
+}
+
+void CMinimapShader::ReleaseShaderVariables()
+{
+	if (m_MinimapRobotRsc)
+	{
+		m_MinimapRobotRsc->Unmap(0, NULL);
+		m_MinimapRobotRsc->Release();
+	}
+
+	CShader::ReleaseShaderVariables();
+}
+
+void CMinimapShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	m_nTextures = 3;
+	m_ppTextures = new CTexture*[m_nTextures];
+
+	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Radar_BG.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[1] = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Enemy_Icon.dds", 0);
+	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Team_Icon.dds", 1);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Minimap/Radar_Sight.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_nUIRect = 2;
+	m_ppUIRects = new CRect*[m_nUIRect];
+
+	// Minimap Terrain
+	XMFLOAT2 xmf2Center = ::CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
+	XMFLOAT2 xmf2Size = ::CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
+	// BG
+	m_ppUIRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	// Sight
+	xmf2Center = ::CalculateCenter(0.0f, 0.0f, 0.0f, 0.0f);
+	xmf2Size = ::CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
+	m_ppUIRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	m_nMinimapRobotRect = ROBOTCOUNT;
+	m_ppMinimapRobotRects = new CMinimapRobotRect*[m_nMinimapRobotRect];
+
+	xmf2Center = ::CalculateCenter(-0.1f, 0.1f, 0.1f, -0.1f);
+	xmf2Size = ::CalculateSize(-0.1f, 0.1f, 0.1f, -0.1f);
+	for (int i = 0; i < ROBOTCOUNT; i++) {
+		m_ppMinimapRobotRects[i] = new CMinimapRobotRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	}
+}
+
+void CMinimapShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	// Draw Minimap Terrain
+	if (m_pd3dPipelineStateMinimapBG) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimapBG);
+	if (m_ppTextures[0])
+	{
+		m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[0]->Render(pd3dCommandList, 0);
+	}
+
+	// Draw Minimap Sight
+	if (m_pd3dPipelineStateMinimapSight) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimapSight);
+	if (m_ppTextures[2])
+	{
+		m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[1]->Render(pd3dCommandList, 0);
+	}
+
+	// Draw Minimap Robots
+	UpdateShaderVariables(pd3dCommandList);
+	if (m_pd3dPipelineStateMinimapRobot) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimapRobot);
+	m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
+	for (int i = 0; i < ROBOTCOUNT; i++) {
+		if (m_ppTextures[i]) {
+			m_ppMinimapRobotRects[i]->Render(pd3dCommandList, 0);
+		}
+	}
+
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////

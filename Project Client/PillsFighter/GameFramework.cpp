@@ -727,8 +727,8 @@ void CGameFramework::FrameAdvance()
 	{
 		CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
 
-		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList);
-		
+		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList, m_pCamera);
+
 		if (m_pScene)
 		{
 			m_pScene->Render(m_pd3dCommandList, m_pCamera);

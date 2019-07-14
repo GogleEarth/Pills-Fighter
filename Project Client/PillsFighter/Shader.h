@@ -532,12 +532,14 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimap(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
+	virtual void UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -562,6 +564,8 @@ protected:
 
 	ID3D12Resource					*m_MinimapPlayerRsc = NULL;
 	CB_MINIMAP_PLAYER_POSITION		*m_cbMinimapPlayerInfo;
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimap = NULL;
+	CTexture						*m_pMinimap = NULL;
 
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
@@ -689,4 +693,68 @@ public:
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define ROBOTCOUNT 1
+
+struct CB_MINIMAP_ROBOT_POSITION
+{
+	XMFLOAT2 robotPosition;
+	BOOL enemyOrTeam;
+};
+
+class CMinimapShader : public CShader
+{
+public:
+	CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual ~CMinimapShader();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateVertexShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapSight(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapBG(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapSight(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayoutMinimapRect();
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+
+	void UpdateMinimapRobotInfo(CGameObject *object, BYTE id);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void ReleaseUploadBuffers();
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+	void InsertMinimapRobot(CGameObject *object, int index);
+	void InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index);
+
+protected:
+
+	int								m_nUIRect = 0;
+	CRect							**m_ppUIRects = NULL;
+
+	int								m_nTextures;
+	CTexture						**m_ppTextures = NULL;
+
+	int								m_nMinimapRobotRect = 0;
+	CMinimapRobotRect				**m_ppMinimapRobotRects = NULL;
+
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapRobot = NULL;
+
+	ID3D12Resource					*m_MinimapRobotRsc = NULL;
+	CB_MINIMAP_ROBOT_POSITION		*m_cbMinimapRobotInfo = NULL;
+
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapBG = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapSight = NULL;
 };

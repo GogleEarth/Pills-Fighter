@@ -71,7 +71,7 @@ public:
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void RenderTestTexture(ID3D12GraphicsCommandList *pd3dCommandList, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGPUHandle);
-	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	virtual void BuildLightsAndMaterials() {}
@@ -528,7 +528,7 @@ public:
 	virtual void StartScene() {}
 	virtual void EndScene() {}
 
-	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGameObject *pMainObject);
 	virtual void RenderShaderMap(ID3D12GraphicsCommandList *pd3dCommandList) {}
@@ -587,6 +587,25 @@ protected:
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
 	CModel		*m_pSaber = NULL;
+
+public:
+	void CreateMinimapMap(ID3D12Device *pd3dDevice);
+	void CreateMiniMapCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void CreateRtvDsvSrvMiniMap(ID3D12Device *pd3dDevice);
+	void MinimapRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+
+protected:
+	ID3D12Resource					*m_pd3dMinimapRsc = NULL;
+	ID3D12Resource					*m_pd3dMinimapDepthStencilBuffer = NULL;
+	CTexture						*screenCaptureTexture = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvMinimapCPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvMinimapCPUHandle;
+
+	D3D12_VIEWPORT 					m_d3dMMViewport;
+	D3D12_RECT						m_d3dMMScissorRect;
+
+	CMinimapShader					*m_pMinimapShader = NULL;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
