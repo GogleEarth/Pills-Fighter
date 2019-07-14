@@ -181,10 +181,9 @@ public:
 	virtual void AfterAdvanceAnimationController();
 	virtual void SetCallBackKeys(CModel *pModel) {};
 
-
 private:
 	float collisionRadius;
-	
+
 public:
 	void SetCollisionRadius(float radius) { collisionRadius = radius; }
 	float GetCollisionRadius() { return collisionRadius; }
@@ -321,6 +320,7 @@ public:
 
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, bool bSetShader = true, int nInstances = 1);
+	virtual void RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, bool bSetShader = true, int nInstances = 1);
 	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances = 1);
 
 	virtual void ChangeWeapon(int nIndex);
@@ -646,7 +646,6 @@ protected:
 };
 
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Meteor : public CGameObject
@@ -664,4 +663,6 @@ private:
 	float		m_fLifeTime;		// 수명
 	float		m_fElapsedTime;			// 경과 수명
 };
+
+
 

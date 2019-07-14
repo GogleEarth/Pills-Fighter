@@ -113,169 +113,6 @@ float4 PSUiBullet(GS_UI_OUT input) : SV_TARGET
 	return(cColor);
 }
 
-float4 PSUiMinimap(GS_UI_OUT input) : SV_TARGET
-{
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
-
-	float2 centerpos = float2(0.5f, 0.5f);
-	cColor = (distance(input.uv, centerpos) < 0.015) ? float4(1, 0, 0, 1) : cColor;
-	cColor = (distance(input.uv, centerpos) < 0.49) ? cColor : 0;
-	cColor = (distance(input.uv, centerpos) >= 0.49) ? float4(0.5, 0.2, 0.05, 1) : cColor;
-	cColor = (distance(input.uv, centerpos) < 0.5) ? cColor : 0;
-
-	return(cColor);
-}
-
-////////////////////////////////////////////////////////////////
-
-struct VS_UI_MINIMAPROBOT_INPUT
-{
-	float2 center : POSITION;
-	float2 size : SIZE;
-	uint index : INDEX;
-};
-
-struct VS_UI_MINIMAPROBOT_OUTPUT
-{
-	float2 center : POSITION;
-	float2 size : SIZE;
-	uint index : INDEX;
-};
-
-VS_UI_MINIMAPROBOT_OUTPUT VSMinimapEnemy(VS_UI_MINIMAPROBOT_INPUT input)
-{
-	return(input);
-}
-
-#define MINIMAP_ROBOT_MAX			1
-
-cbuffer cbMinimapRobotPos : register(b14)
-{
-	float2 gvMinimapRobotPos[MINIMAP_ROBOT_MAX];
-	bool enemyOrTeam[MINIMAP_ROBOT_MAX];
-}
-
-cbuffer cbMinimapPlayerPos : register(b15)
-{
-	float2 gvMinimapPlayerPos;
-	float2 gvMinimapPlayerLook;
-	float2 gvMinimapPlayerRight;
-}
-
-struct GS_UI_MINIMAPROBOT_OUT
-{
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD;
-	bool eort : ENEMYORTEAM;
-};
-
-[maxvertexcount(4)]
-void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStream<GS_UI_MINIMAPROBOT_OUT> outStream)
-{
-	float2 vUp = float2(0.0f, 1.0f);
-	float2 vRight = float2(1.0f, 0.0f);
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
-
-	float2 enemyPos = float2(0.0f, 0.0f);
-	enemyPos.x = (gvMinimapRobotPos[input[0].index].x - gvMinimapPlayerPos.x) / 500; // X 변환
-	enemyPos.y = (gvMinimapRobotPos[input[0].index].y - gvMinimapPlayerPos.y) / 500; // Z 변환
-
-	bool eOrT = enemyOrTeam[input[0].index];
-
-	float4 fVertices[4];
-	fVertices[0] = float4(enemyPos + input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[1] = float4(enemyPos + input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[2] = float4(enemyPos + input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[3] = float4(enemyPos + input[0].center + fHalfW * vRight, 0.0f, 1.0f);
-
-	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, 1.0f);
-	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, 1.0f);
-	fUVs[3] = float2(1.0f, 0.0f);
-
-
-	GS_UI_MINIMAPROBOT_OUT output;
-
-	for (int i = 0; i < 4; i++)
-	{
-		output.pos = fVertices[i];
-		output.uv = fUVs[i];
-		output.eort = eOrT;
-
-		outStream.Append(output);
-	}
-}
-
-
-float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
-{
-	float4 cColor;
-	if (input.eort == false) {
-		// 0: 적 , 1: 팀
-		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
-	}
-	else { cColor = gtxtTexture[1].Sample(gssWrap, input.uv); }
-
-	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
-
-	return(cColor);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-[maxvertexcount(4)]
-void GSMinimapSight(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
-{
-	float2 vUp = -(gvMinimapPlayerLook);
-	float2 vRight = gvMinimapPlayerRight;
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
-
-	float4 fVertices[4];
-	fVertices[0] = float4(input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[1] = float4(input[0].center - fHalfW * vRight, 0.0f, 1.0f);
-	fVertices[2] = float4(input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
-	fVertices[3] = float4(input[0].center + fHalfW * vRight, 0.0f, 1.0f);
-
-	float2 fUVs[4];
-	fUVs[0] = float2(0.0f, 1.0f);
-	fUVs[1] = float2(0.0f, 0.0f);
-	fUVs[2] = float2(1.0f, 1.0f);
-	fUVs[3] = float2(1.0f, 0.0f);
-
-	GS_UI_OUT output;
-
-	for (int i = 0; i < 4; i++)
-	{
-		output.pos = fVertices[i];
-		output.uv = fUVs[i];
-
-		outStream.Append(output);
-	}
-}
-
-float4 PSMinimapSight(GS_UI_OUT input) : SV_TARGET
-{
-	float4 cColor;
-	cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
-
-	if (cColor.r > 0.5 && cColor.g < 0.3 && cColor.b < 0.3) { cColor.a = 0.8; }
-	else { discard; }
-
-	return(cColor);
-}
-
-float4 PSMinimapTerrain(GS_UI_OUT input) : SV_TARGET
-{
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
-	cColor.a = 0.9;
-
-	return(cColor);
-}
-
-
 ////////////////////////////////////////////
 
 cbuffer cbFontInfo : register(FONT_INFO)
@@ -383,4 +220,172 @@ void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStr
 
 		outStream.Append(output);
 	}
+}
+
+
+
+
+////////////////////////////////////////////////////////////////
+
+struct VS_UI_MINIMAPROBOT_INPUT
+{
+	float2 center : POSITION;
+	float2 size : SIZE;
+	uint index : INDEX;
+};
+
+struct VS_UI_MINIMAPROBOT_OUTPUT
+{
+	float2 center : POSITION;
+	float2 size : SIZE;
+	uint index : INDEX;
+};
+
+VS_UI_MINIMAPROBOT_OUTPUT VSMinimapEnemy(VS_UI_MINIMAPROBOT_INPUT input)
+{
+	return(input);
+}
+
+#define MINIMAP_ROBOT_MAX			1
+
+cbuffer cbMinimapRobotPos : register(b14)
+{
+	float2 gvMinimapRobotPos[MINIMAP_ROBOT_MAX];
+	bool enemyOrTeam[MINIMAP_ROBOT_MAX];
+}
+
+cbuffer cbMinimapPlayerPos : register(b15)
+{
+	matrix gmtxPlayerView;
+	float2 gvMinimapPlayerLook;
+	float2 gvMinimapPlayerRight;
+}
+
+struct GS_UI_MINIMAPROBOT_OUT
+{
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD;
+	bool eort : ENEMYORTEAM;
+};
+
+[maxvertexcount(4)]
+void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStream<GS_UI_MINIMAPROBOT_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	bool eOrT = enemyOrTeam[input[0].index];
+
+	float2 fVertices[4];
+	fVertices[0] = float2(input[0].center - fHalfW * vRight - fHalfH * vUp);
+	fVertices[1] = float2(input[0].center - fHalfW * vRight + fHalfH * vUp);
+	fVertices[2] = float2(input[0].center + fHalfW * vRight - fHalfH * vUp);
+	fVertices[3] = float2(input[0].center + fHalfW * vRight + fHalfH * vUp);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_MINIMAPROBOT_OUT output;
+
+	float2 world = mul(float4(gvMinimapRobotPos[input[0].index].x, 0.0f, gvMinimapRobotPos[input[0].index].y, 1.0f), gmtxPlayerView).xz;
+	world.x *= 0.001f;
+	world.y *= 0.001f;
+	// 카메라 뷰 행렬쓰는 원리랑 똑같이 플레이어 좌표계로 이동
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = float4(fVertices[i] + world, 0.0f, 1.0f);
+		output.uv = fUVs[i];
+		output.eort = eOrT;
+
+		outStream.Append(output);
+	}
+}
+
+
+float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
+{
+	float4 cColor;
+	if (input.eort == false) {
+		// 0: 적 , 1: 팀
+		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	}
+	else { cColor = gtxtTexture[1].Sample(gssWrap, input.uv); }
+
+	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
+
+	return(cColor);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+[maxvertexcount(4)]
+void GSMinimapSight(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float2 fVertices[4];
+	fVertices[0] = float2(-fHalfW * vRight - fHalfH * vUp);
+	fVertices[1] = float2(-fHalfW * vRight + fHalfH * vUp);
+	fVertices[2] = float2(+fHalfW * vRight - fHalfH * vUp);
+	fVertices[3] = float2(+fHalfW * vRight + fHalfH * vUp);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = float4(fVertices[i] + input[0].center, 0.0f, 1.0f);
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+float4 PSMinimapSight(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = 0.0f;
+
+	float fDistance = distance(input.uv, 0.5f);
+
+	if (fDistance >= 0.49f) // 원 밖 컷
+		discard;
+	else
+		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	return(cColor);
+}
+
+float4 PSMinimapTerrain(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = 0.0f;
+
+	float fDistance = distance(input.uv, 0.5f);
+
+	if (fDistance < 0.015f) // 플레이어 점
+		cColor = float4(1, 0, 0, 1);
+	else if (fDistance >= 0.49f && fDistance < 0.5f) // 바깥선
+		cColor = float4(0.5, 0.2, 0.05, 1);
+	else if (fDistance >= 0.49f) // 원 밖 컷
+		discard;
+	else
+	{
+		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+		cColor.a = 0.9;
+	}
+
+	return(cColor);
 }

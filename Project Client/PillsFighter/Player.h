@@ -57,7 +57,7 @@ public:
 protected:
 #define BOOSTER_POWER 3.0f
 #define MAX_UP_POWER 8.0f
-#define MAX_DOWN_POWER 8.0f
+#define MAX_DOWN_POWER -8.0f
 #define INTERVAL_BOOSTER_GAUGE_CHARGE 2.0f
 #define INTERVAL_BOOSTER_GAUGE_CONSUME 1.0f
 
@@ -193,4 +193,11 @@ public:
 	void Shoot() { m_bShooted = true; }
 
 	void ProcessMouseUpTime(float fElapsedTime);
+
+public:
+	void GenerateViewMatrix();
+	XMFLOAT4X4 GetViewMatrix() { return(m_xmf4x4View); }
+
+protected:
+	XMFLOAT4X4 	m_xmf4x4View;
 };

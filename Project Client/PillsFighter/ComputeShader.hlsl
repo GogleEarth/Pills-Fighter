@@ -63,19 +63,19 @@ void VertBlurCS(int3 vGroupThreadID : SV_GroupThreadID, int3 vDispatchThreadID :
 	gtxtRWOutput[vDispatchThreadID.xy] = cBlurredColor;
 }
 
-[numthreads(4, 4, 1)]
+[numthreads(8, 8, 1)]
 void Add2CS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy] + gtxtInputB[vDispatchThreadID.xy];
 }
 
-[numthreads(4, 4, 1)]
+[numthreads(8, 8, 1)]
 void Add3CS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy] + gtxtInputB[vDispatchThreadID.xy] + gtxtInputC[vDispatchThreadID.xy];
 }
 
-[numthreads(4, 4, 1)]
+[numthreads(8, 8, 1)]
 void BrightFilterCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	float brightness = dot(gtxtInputA[vDispatchThreadID.xy].rgb, float3(0.2126f, 0.7152f, 0.0722));
@@ -95,7 +95,7 @@ cbuffer cbMotionBlurInfo : register(b0)
 #define SAMPLES 32
 #define MAXVELOCITY 0.1f
 
-[numthreads(4, 4, 1)]
+[numthreads(8, 8, 1)]
 void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	float zOverW = gtxtDepth[vDispatchThreadID.xy];
@@ -134,10 +134,10 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 	int nSamples = 0;
 	for (int i = 1; i < SAMPLES; ++i, texcoord -= du)
 	{
-		if (texcoord.x >= 1.0f) break;
-		if (texcoord.y >= 1.0f) break;
-		if (texcoord.x <= 0.0f) break;
-		if (texcoord.y <= 0.0f) break;
+		if (texcoord.x >= 0.9999f) break;
+		if (texcoord.y >= 0.9999f) break;
+		if (texcoord.x <= 0.0001f) break;
+		if (texcoord.y <= 0.0001f) break;
 		if (abs(texcoord.x - oriTex.x) > 0.1f) break;
 		if (abs(texcoord.y - oriTex.y) > 0.1f) break;
 

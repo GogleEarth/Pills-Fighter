@@ -314,8 +314,7 @@ void CPlayer::Update(float fTimeElapsed)
 {
 	CRobotObject::Animate(fTimeElapsed);
 
-	if (m_fVelocityY > MAX_UP_POWER) m_fVelocityY = MAX_UP_POWER;
-	Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+	if (!IsZero(m_fVelocityY)) Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);
@@ -528,9 +527,11 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 	{
 		float fUpPower = 0.0f;
 
-		fUpPower = BOOSTER_POWER * fTimeElapsed;
+		fUpPower = m_fTimeForBoostUp * BOOSTER_POWER;
 
 		m_fVelocityY += fUpPower;
+
+		if (m_fVelocityY > MAX_UP_POWER) m_fVelocityY = MAX_UP_POWER;
 	}
 	if (m_fTimeForBoostDown > 0.0f)
 	{
@@ -538,10 +539,9 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 
 		fDownPower = m_fTimeForBoostDown * BOOSTER_POWER;
 
-		if (fDownPower > MAX_DOWN_POWER)
-			fDownPower = MAX_DOWN_POWER;
+		m_fVelocityY -= fDownPower;
 
-		Move(XMFLOAT3(0.0f, -fDownPower, 0.0f));
+		if (m_fVelocityY < MAX_DOWN_POWER) m_fVelocityY = MAX_DOWN_POWER;
 	}
 
 	if (m_bSpaceDown)
@@ -549,7 +549,10 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 	else
 	{
 		if (m_fTimeForBoostUp > 0.0f)
-			m_fTimeForBoostUp = m_fTimeForBoostUp - pow(fTimeElapsed, 2) < 0.0f ? 0.0f : m_fTimeForBoostUp - fTimeElapsed;
+		{
+			m_fTimeForBoostUp *= 0.5f;
+			m_fTimeForBoostUp = m_fTimeForBoostUp - fTimeElapsed < 0.0f ? 0.0f : m_fTimeForBoostUp - fTimeElapsed;
+		}
 	}
 
 	if (m_bVDown)
@@ -557,7 +560,10 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 	else
 	{
 		if (m_fTimeForBoostDown > 0.0f)
+		{
+			m_fTimeForBoostDown *= 0.5f;
 			m_fTimeForBoostDown = m_fTimeForBoostDown - fTimeElapsed < 0.0f ? 0.0f : m_fTimeForBoostDown - fTimeElapsed;
+		}
 	}
 
 	if(IsBoostering())
@@ -614,7 +620,13 @@ void CPlayer::ApplyGravity(float fGravity, float fTimeElapsed)
 {
 	float fGravAcc = fGravity * m_fMass * fTimeElapsed;
 
-	if(!IsBoostering() || IsDash()) m_fVelocityY += fGravAcc;
+	if (!IsBoostering() || IsDash())
+	{
+		if (IsZero(fGravity))
+			m_fVelocityY *= 0.5f;
+		else
+			m_fVelocityY += fGravAcc;
+	}
 }
 
 void CPlayer::ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB)
@@ -1098,4 +1110,20 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
 
 	m_vpWeapon.emplace_back(pWeapon);
+}
+
+void CPlayer::GenerateViewMatrix()
+{
+	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
+
+	m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3Look, true);
+
+	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
+
+	m_xmf4x4View._11 = m_xmf3Right.x; m_xmf4x4View._12 = m_xmf3Up.x; m_xmf4x4View._13 = m_xmf3Look.x;
+	m_xmf4x4View._21 = m_xmf3Right.y; m_xmf4x4View._22 = m_xmf3Up.y; m_xmf4x4View._23 = m_xmf3Look.y;
+	m_xmf4x4View._31 = m_xmf3Right.z; m_xmf4x4View._32 = m_xmf3Up.z; m_xmf4x4View._33 = m_xmf3Look.z;
+	m_xmf4x4View._41 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Right);
+	m_xmf4x4View._42 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Up);
+	m_xmf4x4View._43 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Look);
 }

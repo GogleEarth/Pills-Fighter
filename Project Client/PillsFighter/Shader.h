@@ -222,7 +222,7 @@ class CSpaceObstacleShader : public CInstancingObjectsShader
 public:
 	CSpaceObstacleShader();
 	virtual ~CSpaceObstacleShader();
-
+	
 	void InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup, float distance);
 
 	float ReadFloatFromFile(FILE *pInFile) {
@@ -516,7 +516,7 @@ struct CB_PLAYER_VALUE
 
 struct CB_MINIMAP_PLAYER_POSITION
 {
-	XMFLOAT2 playerPosition;
+	XMFLOAT4X4 playerView;
 	XMFLOAT2 playerLook;
 	XMFLOAT2 playerRight;
 };
@@ -532,14 +532,12 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimap(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
-	virtual void UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -561,11 +559,6 @@ protected:
 
 	ID3D12Resource					*m_pd3dcbPlayerAmmo = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
-
-	ID3D12Resource					*m_MinimapPlayerRsc = NULL;
-	CB_MINIMAP_PLAYER_POSITION		*m_cbMinimapPlayerInfo;
-	ID3D12PipelineState				*m_pd3dPipelineStateMinimap = NULL;
-	CTexture						*m_pMinimap = NULL;
 
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
@@ -729,15 +722,17 @@ public:
 
 	void UpdateMinimapRobotInfo(CGameObject *object, BYTE id);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fCenterX, float fCenterY, float fSizeX, float fSizeY);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
 	void InsertMinimapRobot(CGameObject *object, int index);
 	void InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index);
+	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
 
 protected:
 
@@ -750,11 +745,15 @@ protected:
 	int								m_nMinimapRobotRect = 0;
 	CMinimapRobotRect				**m_ppMinimapRobotRects = NULL;
 
-	ID3D12PipelineState				*m_pd3dPipelineStateMinimapRobot = NULL;
+	CPlayer							*m_pPlayer = NULL;
 
 	ID3D12Resource					*m_MinimapRobotRsc = NULL;
 	CB_MINIMAP_ROBOT_POSITION		*m_cbMinimapRobotInfo = NULL;
 
+	ID3D12Resource					*m_MinimapPlayerRsc = NULL;
+	CB_MINIMAP_PLAYER_POSITION		*m_cbMinimapPlayerInfo;
+
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapRobot = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateMinimapBG = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateMinimapSight = NULL;
 };

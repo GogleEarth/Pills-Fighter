@@ -365,8 +365,8 @@ void CGameObject::MoveToCollisionByRadius(CGameObject *pObject)
 
 	float distance = sqrtf(
 		(valX) * (valX)
-		+ (valY) * (valY)
-		+ (valZ) * (valZ));
+		+(valY) * (valY)
+		+(valZ) * (valZ));
 
 	if (radius > distance) {
 		XMFLOAT3 direction;
@@ -374,9 +374,9 @@ void CGameObject::MoveToCollisionByRadius(CGameObject *pObject)
 		direction.y = valY / distance;
 		direction.z = valZ / distance;
 
-		if(m_nState & OBJECT_STATE_BOOSTER)
+		if (m_nState & OBJECT_STATE_BOOSTER)
 			Move(direction, 4.0f);
-		else 
+		else
 			Move(direction, 2.0f);
 
 		//std::cout << "Player Collision by Planet" << std::endl;
@@ -977,8 +977,18 @@ void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *p
 
 	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
-	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera);
-	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera);
+	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+}
+
+void CRobotObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
+{
+	CGameObject::RenderToShadow(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
+
+	if (m_pWeaponShader) m_pWeaponShader->RenderToShadow(pd3dCommandList, pCamera);
+
+	if (m_pRHWeapon) m_pRHWeapon->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
+	if (m_pLHWeapon) m_pLHWeapon->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
 }
 
 void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
@@ -1656,7 +1666,6 @@ void CCursor::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 	if (m_pMesh) m_pMesh->Render(pd3dCommandList, 0);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////
 
 Meteor::Meteor() : CGameObject()
@@ -1689,4 +1698,7 @@ void Meteor::Animate(float ElapsedTime, CCamera *pCamera)
 
 	CGameObject::Animate(ElapsedTime);
 }
+
+
+
 

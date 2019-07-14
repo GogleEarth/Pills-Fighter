@@ -455,12 +455,14 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 #ifdef ON_NETWORKING
 		SendToServer(PKT_ID_GAME_START);
 #else
+		int map = m_pScene->GetSelectedMap();
+
 		m_pScene->ReleaseObjects();
 		delete m_pScene;
 
 		m_pScene = NULL;
 
-		BuildScene(SCENE_TYPE_COLONY);
+		BuildScene(map);
 #endif
 		break;
 	}
@@ -727,8 +729,8 @@ void CGameFramework::FrameAdvance()
 	{
 		CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
 
-		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList, m_pCamera);
-
+		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList);
+		
 		if (m_pScene)
 		{
 			m_pScene->Render(m_pd3dCommandList, m_pCamera);

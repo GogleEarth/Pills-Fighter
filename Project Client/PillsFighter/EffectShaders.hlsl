@@ -69,8 +69,8 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
 	float3 vRight = normalize(cross(vUp, vLook));
 
-	float fHalfW = input[0].size.x * input[0].size.x;
-	float fHalfH = input[0].size.y * input[0].size.y;
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
 
 	float4 fVertices[4];
 	fVertices[0] = float4(input[0].position + fHalfW * vRight - fHalfH * vUp, 1.0f);

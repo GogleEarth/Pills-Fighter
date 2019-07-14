@@ -34,11 +34,18 @@ void CWeapon::Animate(float fTimeElapsed, CCamera *pCamera)
 	CGameObject::Animate(fTimeElapsed, pCamera);
 }
 
-void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
 	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
 
-	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
+	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
+}
+
+void CWeapon::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
+{
+	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
+
+	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 }
 
 void CWeapon::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
@@ -115,7 +122,8 @@ void CGun::Shot()
 	pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
 
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
-	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43), XMFLOAT2(0.05f, 0.05f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
+
+	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43), XMFLOAT2(2.5f, 2.5f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
 #else
 	pPlayer->Shoot();
 #endif
