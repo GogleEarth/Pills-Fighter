@@ -2453,11 +2453,11 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pUserInterface = pUserInterface;
 
-	//CMinimapShader *pMinimapShader = new CMinimapShader(pd3dDevice, pd3dCommandList);
-	//pMinimapShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	//pMinimapShader->Initialize(pd3dDevice, pd3dCommandList);
+	CMinimapShader *pMinimapShader = new CMinimapShader(pd3dDevice, pd3dCommandList);
+	pMinimapShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pMinimapShader->Initialize(pd3dDevice, pd3dCommandList);
 
-	//m_pMinimapShader = pMinimapShader;
+	m_pMinimapShader = pMinimapShader;
 
 	m_pRedScoreText = AddText(L"0", XMFLOAT2(-0.05f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 	m_pBlueScoreText = AddText(L"0", XMFLOAT2(0.02f, 0.83f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
@@ -3143,8 +3143,8 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
 
-		//if (m_pMinimapShader)
-		//	m_pMinimapShader->InsertMinimapRobot(pGameObject, pCreateObjectInfo->Object_Index);
+		if (m_pMinimapShader)
+			m_pMinimapShader->InsertMinimapRobot(pGameObject, pCreateObjectInfo->Object_Index);
 
 		break;
 	case OBJECT_TYPE_OBSTACLE:
@@ -3258,8 +3258,9 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
 		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
 
-		//if (m_pMinimapShader)
-		//	m_pMinimapShader->UpdateMinimapRobotInfo(m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID], ((PKT_PLAYER_INFO*)pktData)->ID);
+		if (m_pMinimapShader) {
+			m_pMinimapShader->UpdateMinimapRobotInfo(m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID], ((PKT_PLAYER_INFO*)pktData)->ID);
+		}
 
 		if (((PKT_PLAYER_INFO*)pktData)->isUpChangeAnimation)
 		{

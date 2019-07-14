@@ -147,7 +147,7 @@ VS_UI_MINIMAPROBOT_OUTPUT VSMinimapEnemy(VS_UI_MINIMAPROBOT_INPUT input)
 	return(input);
 }
 
-#define MINIMAP_ROBOT_MAX			8
+#define MINIMAP_ROBOT_MAX			1
 
 cbuffer cbMinimapRobotPos : register(b14)
 {

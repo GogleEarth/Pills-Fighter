@@ -2428,15 +2428,15 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		}
 	}
 
-	//UpdateShaderVariablesMinimapPlayer(pd3dCommandList);
+	UpdateShaderVariablesMinimapPlayer(pd3dCommandList);
 
-	//// Draw Minimap
-	//if (m_pd3dPipelineStateMinimap) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimap);
-	//if (m_pMinimap)
-	//{
-	//	m_pMinimap->UpdateShaderVariables(pd3dCommandList);
-	//	m_ppUIRects[5]->Render(pd3dCommandList, 0);
-	//}
+	// Draw Minimap
+	if (m_pd3dPipelineStateMinimap) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateMinimap);
+	if (m_pMinimap)
+	{
+		m_pMinimap->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[5]->Render(pd3dCommandList, 0);
+	}
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
