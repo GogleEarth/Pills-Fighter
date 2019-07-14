@@ -572,6 +572,7 @@ void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Bullet/Bullet.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/Item_Repair.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/EventObject/Meteor.bin", NULL, NULL));
 
 #ifndef ON_NETWORKING
 	RotateObject *pObject = new RotateObject();

@@ -1627,4 +1627,36 @@ void CCursor::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////
+
+Meteor::Meteor() : CGameObject()
+{
+	m_fSpeed = 500.0f;
+	m_xmf3Direction = XMFLOAT3(0, 0, 0);
+	m_fLifeTime = 3.0f;
+	m_fElapsedTime = 0.0f;
+}
+
+Meteor::~Meteor()
+{
+}
+
+void Meteor::Animate(float ElapsedTime, CCamera *pCamera)
+{
+	if (m_fElapsedTime >= m_fLifeTime)
+	{
+#ifndef ON_NETWORKING
+		Delete();
+#endif
+	}
+	else
+	{
+#ifndef ON_NETWORKING
+		MoveForward(m_MovingSpeed * ElapsedTime);
+#endif
+		m_fElapsedTime += ElapsedTime;
+	}
+
+	CGameObject::Animate(ElapsedTime);
+}
 

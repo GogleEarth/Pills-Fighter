@@ -3198,6 +3198,13 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_AMMO_ITEM, true, NULL);
 		break;
+	case OBJECT_TYPE_METEOR:
+		pGameObject = new Meteor();
+		pGameObject->SetWorldTransf(pCreateObjectInfo->WorldMatrix);
+		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS];
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_METEOR, true, NULL);
+		break;
+
 	}
 
 	m_pObjects[pCreateObjectInfo->Object_Index] = pGameObject;
