@@ -223,7 +223,7 @@ public:
 	CSpaceObstacleShader();
 	virtual ~CSpaceObstacleShader();
 
-	void InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup);
+	void InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup, float distance);
 
 	float ReadFloatFromFile(FILE *pInFile) {
 		float fValue = 0;

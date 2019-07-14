@@ -653,6 +653,8 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
+	virtual void CheckCollision();
+
 	virtual void StartScene();
 	virtual void EndScene();
 };

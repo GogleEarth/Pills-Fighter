@@ -3490,7 +3490,7 @@ void CColonyScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
+// 여기
 CSpaceScene::CSpaceScene() : CBattleScene()
 {
 	m_fGravAcc = 0.0f;
@@ -3614,4 +3614,213 @@ void CSpaceScene::ReleaseShaderVariables()
 void CSpaceScene::EndScene()
 {
 	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
+}
+
+
+void CSpaceScene::CheckCollision()
+{
+	std::vector<CGameObject*> vEnemys;
+
+	for (int i = 0; i < SKINNED_OBJECT_GROUP; i++)
+	{
+		vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(i);
+
+		for (const auto& Enemy : vEnemys)
+		{
+			CRobotObject *enemy = (CRobotObject*)Enemy;
+
+			if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
+			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(3);
+
+			for (const auto& anotherE : vEnemys)
+			{
+				if (Enemy == anotherE) continue;
+				if (!pWeapon->CollisionCheck(anotherE)) continue;
+
+
+				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+				XMFLOAT3 xmf3EPos = Enemy->GetPosition();
+				xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+				xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+				AddParticle(0, xmf3Pos, rand() % 10 + 10);
+
+				if (enemy->PlayedSaberHitSound()) continue;
+				enemy->PlaySaberHitSound();
+
+				switch (rand() % 2)
+				{
+				case 0:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+					break;
+				case 1:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+					break;
+				}
+			}
+
+			if (m_pPlayer)
+			{
+				if (!pWeapon->CollisionCheck(m_pPlayer)) continue;
+
+				XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+				XMFLOAT3 xmf3EPos = m_pPlayer->GetPosition();
+				xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+				xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+				xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+				AddParticle(0, xmf3Pos, rand() % 10 + 10);
+
+				if (enemy->PlayedSaberHitSound()) continue;
+				enemy->PlaySaberHitSound();
+
+				switch (rand() % 2)
+				{
+				case 0:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+					break;
+				case 1:
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+					break;
+				}
+			}
+		}
+
+		if (m_pPlayer)
+		{
+			if (m_pPlayer->GetState() & OBJECT_STATE_SWORDING)
+			{
+				for (const auto& Enemy : vEnemys)
+				{
+					CWeapon *pWeapon = m_pPlayer->GetWeapon(3);
+					if (!pWeapon->CollisionCheck(Enemy)) continue;
+
+					XMFLOAT3 xmf3Pos = pWeapon->GetPosition();
+					XMFLOAT3 xmf3EPos = Enemy->GetPosition();
+					xmf3Pos.x = (xmf3Pos.x + xmf3EPos.x) * 0.5f;
+					xmf3Pos.y = (xmf3Pos.y + xmf3EPos.y) * 0.5f;
+					xmf3Pos.z = (xmf3Pos.z + xmf3EPos.z) * 0.5f;
+
+					AddParticle(0, xmf3Pos, rand() % 10 + 10);
+
+					if (m_pPlayer->PlayedSaberHitSound()) continue;
+					m_pPlayer->PlaySaberHitSound();
+
+					switch (rand() % 2)
+					{
+					case 0:
+						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
+						break;
+					case 1:
+						gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit2);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+#ifndef ON_NETWORKING
+	//std::vector<CGameObject*> vEnemys;
+	std::vector<CGameObject*> vBullets;
+	std::vector<CGameObject*> vBZKBullets;
+	std::vector<CGameObject*> vMGBullets;
+
+	//vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
+	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
+	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
+	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
+
+	for (const auto& Enemy : vEnemys)
+	{
+		if (m_pPlayer->CollisionCheck(Enemy))
+		{
+			std::cout << "Collision Player By Enemy\n" << std::endl;
+		}
+
+		for (const auto& pBullet : vBullets)
+		{
+			if (!pBullet->IsDelete())
+			{
+				if (Enemy->CollisionCheck(pBullet))
+				{
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
+
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
+
+					pBullet->Delete();
+					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+
+					//AddParticle(0, pBullet->GetPosition());
+				}
+			}
+		}
+
+		for (const auto& pBZKBullet : vBZKBullets)
+		{
+			if (!pBZKBullet->IsDelete())
+			{
+				if (Enemy->CollisionCheck(pBZKBullet))
+				{
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
+
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), XMFLOAT2(fSize * 2, fSize * 2), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
+
+					pBZKBullet->Delete();
+
+					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+				}
+			}
+		}
+
+		for (const auto& pMGBullet : vMGBullets)
+		{
+			if (!pMGBullet->IsDelete())
+			{
+				if (Enemy->CollisionCheck(pMGBullet))
+				{
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
+
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pMGBullet->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
+
+					pMGBullet->Delete();
+
+					std::cout << "Collision Enemy By Bullet\n" << std::endl;
+
+					//AddParticle(0, pMGBullet->GetPosition());
+				}
+			}
+		}
+	}
+#endif
+
+	std::vector<CGameObject*> vObstacles;
+	CObjectsShader* pObjectsShader = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_INSTANCING_OBJECTS]);
+
+	int nGroups = pObjectsShader->GetGroups();
+	for (int i = 0; i < nGroups; i++)
+	{
+		vObstacles = pObjectsShader->GetObjects(i);
+
+		for (const auto& Obstacle : vObstacles)
+		{
+			// 카메라 이동 O
+			if (m_pPlayer->CollisionCheck(Obstacle))
+			{
+				m_pPlayer->MoveToCollisionByRadius(Obstacle);
+			}
+		}
+	}
+
+	FindAimToTargetDistance();
 }

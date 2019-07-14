@@ -145,6 +145,7 @@ public:
 	bool CollisionCheck(CGameObject *pObject);
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
 	void MoveToCollision(CGameObject *pObject);
+	void MoveToCollisionByRadius(CGameObject *pObject);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 	virtual void SetAnimationController(CAnimationController *pControllers, int nIndex) { m_ppAnimationControllers[nIndex] = pControllers; }
 	virtual void SetAnimationTrackPosition(int nIndex, float fPosition) { m_ppAnimationControllers[nIndex]->SetTrackPosition(0, fPosition); }
@@ -180,6 +181,13 @@ public:
 	virtual void AfterAdvanceAnimationController();
 	virtual void SetCallBackKeys(CModel *pModel) {};
 
+
+private:
+	float collisionRadius;
+	
+public:
+	void SetCollisionRadius(float radius) { collisionRadius = radius; }
+	float GetCollisionRadius() { return collisionRadius; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
