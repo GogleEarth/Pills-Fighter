@@ -55,7 +55,7 @@ public:
 	virtual CCamera *SetCamera(float fTimeElapsed);
 
 protected:
-#define BOOSTER_POWER 3.0f
+#define BOOSTER_POWER 0.1f
 #define MAX_UP_POWER 8.0f
 #define MAX_DOWN_POWER -8.0f
 #define INTERVAL_BOOSTER_GAUGE_CHARGE 2.0f
@@ -135,7 +135,6 @@ public:
 	void ShiftUp() { m_bShiftDown = false; }
 
 	void SpaceUp() { m_bSpaceDown = false; }
-	void SpaceDown() { m_bSpaceDown = true; }
 
 	void VUp() { m_bVDown = false; }
 	void VDown() { m_bVDown = true; }

@@ -2935,7 +2935,6 @@ CMinimapShader::~CMinimapShader()
 			delete m_ppMinimapRobotRects[i];
 	}
 
-	if (m_pd3dPipelineState) m_pd3dPipelineState->Release();
 	if (m_pd3dPipelineStateMinimapRobot) m_pd3dPipelineStateMinimapRobot->Release();
 	if (m_pd3dPipelineStateMinimapBG) m_pd3dPipelineStateMinimapBG->Release();
 	if (m_pd3dPipelineStateMinimapSight) m_pd3dPipelineStateMinimapSight->Release();

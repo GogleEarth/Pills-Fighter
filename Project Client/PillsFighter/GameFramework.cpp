@@ -700,9 +700,11 @@ void CGameFramework::WaitForGpuComplete()
 void CGameFramework::FrameAdvance()
 {
 #ifdef ON_NETWORKING
-	//if(m_fElapsedTime > 0.0f)
-	//	if (m_fElapsedTime < (1.0f / 60.0f)) return;
-	SendToServer();
+	if (m_pPlayer && m_bDrawScene && m_bSend_Complete)
+	{
+		if (IsZero(m_fElapsedTime)) return;
+		SendToServer();
+	}
 #else
 	m_GameTimer.Tick(60.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
@@ -1155,8 +1157,6 @@ void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
 
 void CGameFramework::SendToServer()
 {
-	if (m_pPlayer && m_bDrawScene && m_bSend_Complete)
-	{
 		int retval;
 		PKT_PLAYER_INFO pktPlayerInfo;
 		PKT_ID id = PKT_ID_PLAYER_INFO;
@@ -1216,7 +1216,6 @@ void CGameFramework::SendToServer()
 			printf("Send Player Info Error\n");
 
 		m_bSend_Complete = false;
-	}
 }
 
 void CGameFramework::SendToServer(PKT_ID pktID)
