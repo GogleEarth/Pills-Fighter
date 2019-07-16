@@ -578,6 +578,11 @@ void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
 	InsertObject(pd3dDevice, pd3dCommandList, pObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, pContext);
+
+	Meteor *pMeteorObject = new Meteor();
+	pMeteorObject->SetPosition(XMFLOAT3(0.0f, 50.0f, 0.0f));
+	InsertObject(pd3dDevice, pd3dCommandList, pMeteorObject, STANDARD_OBJECT_INDEX_METEOR, true, pContext);
+
 #endif
 }
 
