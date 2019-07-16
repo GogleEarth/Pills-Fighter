@@ -273,8 +273,8 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 {
 	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
-	float fHalfW = input[0].size.x;
-	float fHalfH = input[0].size.y;
+	float fHalfW = input[0].size.x *0.9;
+	float fHalfH = input[0].size.y *1.6;
 
 	bool eOrT = enemyOrTeam[input[0].index];
 
@@ -293,8 +293,8 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	GS_UI_MINIMAPROBOT_OUT output;
 
 	float2 world = mul(float4(gvMinimapRobotPos[input[0].index].x, 0.0f, gvMinimapRobotPos[input[0].index].y, 1.0f), gmtxPlayerView).xz;
-	world.x *= 0.001f;
-	world.y *= 0.001f;
+	world.x *= 0.0009f;
+	world.y *= 0.0016f;
 	// 카메라 뷰 행렬쓰는 원리랑 똑같이 플레이어 좌표계로 이동
 
 	for (int i = 0; i < 4; i++)
@@ -318,6 +318,10 @@ float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 	else { cColor = gtxtTexture[1].Sample(gssWrap, input.uv); }
 
 	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
+
+	// 컷
+	if(input.pos.x)
+
 
 	return(cColor);
 }
