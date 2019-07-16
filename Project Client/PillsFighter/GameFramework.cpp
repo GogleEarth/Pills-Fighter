@@ -1081,6 +1081,7 @@ void CGameFramework::ProcessPacket()
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetPlayerIndex(pPacket->index);
+		m_pScene->SetMap(pPacket->map);
 		m_nClinetIndex = pPacket->index;
 
 		break;

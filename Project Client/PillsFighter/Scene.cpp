@@ -1929,6 +1929,11 @@ void CLobbyRoomScene::SetPlayerIndex(int nServerIndex)
 	JoinPlayer(nServerIndex, id, SELECT_CHARACTER_GM);
 }
 
+void CLobbyRoomScene::SetMap(int nMap)
+{
+	m_nCurrentMap = nMap;
+}
+
 void CLobbyRoomScene::ChangeSelectRobot(int nServerIndex, int nRobotType)
 {
 	m_umPlayerInfo[nServerIndex].nRobotType = nRobotType;

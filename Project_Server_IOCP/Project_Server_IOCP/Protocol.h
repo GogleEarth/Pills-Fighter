@@ -1,6 +1,6 @@
 #pragma once
 
-#define ON_NETWORKING
+//#define ON_NETWORKING
 
 typedef enum PKT_ID
 {
@@ -292,7 +292,8 @@ struct PKT_ROOM_IN_OK
 {
 	BYTE PktSize;
 	BYTE PktId;
-	int index;
+	BYTE index;
+	BYTE map;
 };
 
 struct PKT_ROOM_DELETE

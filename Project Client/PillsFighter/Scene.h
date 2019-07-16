@@ -233,6 +233,7 @@ public: // Network
 	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType) {};
 	virtual void LeavePlayer(int nServerIndex) {};
 	virtual void SetPlayerIndex(int nServerIndex) {}
+	virtual void SetMap(int nMap) {}
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
 
 protected:
@@ -416,6 +417,7 @@ public:
 	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType);
 	virtual void LeavePlayer(int nServerIndex);
 	virtual void SetPlayerIndex(int nServerIndex);
+	virtual void SetMap(int nMap);
 	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);
 	virtual void ChangeMap(int nMap) { m_nCurrentMap = nMap; }
 	virtual int MouseClick();
