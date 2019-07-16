@@ -319,10 +319,6 @@ float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 
 	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
 
-	// ÄÆ
-	if(input.pos.x)
-
-
 	return(cColor);
 }
 

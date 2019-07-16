@@ -800,6 +800,12 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.Num32BitValues = 4;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.ShaderRegister = 14;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -2241,6 +2247,7 @@ CBattleScene::CBattleScene() : CScene()
 		m_pObjects[i] = NULL;
 
 	m_xmf4x4PrevViewProjection = Matrix4x4::Identity();
+	m_xmf4ScreenColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 CBattleScene::~CBattleScene()
@@ -2309,6 +2316,9 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 			break;
 		case 'R': 
 			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
+			break;
+		case 'A':
+			Alert();
 			break;
 		case VK_SPACE:
 			m_pPlayer->ActivationBooster();
@@ -2424,9 +2434,48 @@ void CBattleScene::ReleaseObjects()
 	}
 }
 
+void CBattleScene::Alert()
+{
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundAlert);
+	m_bAlert = true;
+}
+
+void CBattleScene::ProcessAlert(float fElapsedTime)
+{
+	m_fAlertColor += (m_fMulCalcAlertColor * ALERT_SPEED * fElapsedTime);
+
+	if (m_fAlertColor < 0.0f)
+	{
+		m_fAlertColor = 0.0f;
+		m_fMulCalcAlertColor = 1.0f;
+	}
+	else if (m_fAlertColor > 1.0f)
+	{
+		m_fAlertColor = 1.0f;
+		m_fMulCalcAlertColor = -1.0f;
+
+		m_fAlertCount++;
+
+		if(m_fAlertCount != ALERT_COUNT)
+			gFmodSound.PlayFMODSound(gFmodSound.m_pSoundAlert);
+	}
+
+	m_xmf4ScreenColor.y = m_xmf4ScreenColor.z = m_fAlertColor;
+
+	if (m_fAlertCount == ALERT_COUNT)
+	{
+		m_bAlert = false;
+		m_fAlertCount = 0;
+		m_fMulCalcAlertColor = -1.0f;
+		m_xmf4ScreenColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_fAlertColor = 1.0f;
+	}
+}
+
 void CBattleScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_pPlayer) m_pPlayer->ApplyGravity(m_fGravAcc, fTimeElapsed);
+	if (m_bAlert) ProcessAlert(fTimeElapsed);
 
 	CScene::AnimateObjects(fTimeElapsed, pCamera);
 }
@@ -2685,6 +2734,7 @@ void CBattleScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 void CBattleScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCREEN_EFFECT, 4, &m_xmf4ScreenColor, 0);
 	
 	m_pPostProcessingShader->Render(pd3dCommandList, NULL);
 }

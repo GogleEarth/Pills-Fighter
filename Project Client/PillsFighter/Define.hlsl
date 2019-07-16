@@ -11,6 +11,7 @@
 #define SCENE_INFO						b11
 #define FONT_INFO						b12
 #define LIGHT_CAMERA_INFO				b13
+#define SCREEN_EFFECT					b14
 
 #define DIFFUSE_TEXTURES				t1 // t1 ~ t3
 #define SPECULAR_TEXTURE				t4

@@ -3,6 +3,11 @@
 #include "Define.hlsl"
 #endif
 
+cbuffer cbScreenEffect : register(SCREEN_EFFECT)
+{
+	float4 gScreenColor;
+};
+
 struct VS
 {
 	float4 position : SV_POSITION;
@@ -54,7 +59,7 @@ float4 PSPostProcessing(VS input) : SV_Target
 {
 	float4 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
 
-	return cColor;
+	return cColor * gScreenColor;
 }
 
 VS VSTest(uint nVertexID : SV_VertexID)
