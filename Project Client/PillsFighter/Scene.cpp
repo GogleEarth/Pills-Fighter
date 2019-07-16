@@ -1753,6 +1753,14 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/GundamSelect.dds", 0);
 		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/MapColony.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/MapSpace.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 	}
 
 	{
@@ -1800,6 +1808,13 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
 		m_ppUIRects[LOBBY_ROOM_UI_RECT_SPACE] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+		width = 302.0f / FRAME_BUFFER_WIDTH;
+		height = 274.0f / FRAME_BUFFER_HEIGHT;
+		centerx = 0.792187f;
+		centery = 0.541667f;
+		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
+		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
+		m_MapRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		width = 58.0f / FRAME_BUFFER_WIDTH;
 		height = 76.0f / FRAME_BUFFER_HEIGHT;
@@ -1948,6 +1963,12 @@ void CLobbyRoomScene::ReleaseObjects()
 		if (m_ppPlayerRobotRects[i])
 			delete m_ppPlayerRobotRects[i];
 	}
+
+	if (m_MapRect)
+	{
+		delete m_MapRect;
+		m_MapRect = NULL;
+	}
 }
 
 void CLobbyRoomScene::ReleaseUploadBuffers()
@@ -1959,6 +1980,8 @@ void CLobbyRoomScene::ReleaseUploadBuffers()
 		if (m_ppPlayerRobotRects[i])
 			m_ppPlayerRobotRects[i]->ReleaseUploadBuffers();
 	}
+
+	if (m_MapRect) m_MapRect->ReleaseUploadBuffers();
 }
 
 int CLobbyRoomScene::MouseClick()
@@ -2118,6 +2141,12 @@ void CLobbyRoomScene::LeavePlayer(int nServerIndex)
 void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, NULL);
+
+	if (m_nCurrentMap == SCENE_TYPE_COLONY)
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY]->UpdateShaderVariables(pd3dCommandList);
+	else if(m_nCurrentMap == SCENE_TYPE_SPACE)
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE]->UpdateShaderVariables(pd3dCommandList);
+	m_MapRect->Render(pd3dCommandList, 0);
 
 	if (m_nMyIndex == 0)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER]->UpdateShaderVariables(pd3dCommandList);

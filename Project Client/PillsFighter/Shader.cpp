@@ -1085,10 +1085,10 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
 
 #ifndef ON_NETWORKING
-	CRobotObject *pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+	//CRobotObject *pObject = new CRobotObject();
+	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
+	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
 
 	//pObject = new CRobotObject();
 	//pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));

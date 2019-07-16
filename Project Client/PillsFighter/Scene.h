@@ -365,7 +365,7 @@ struct SERVERINFO
 };
 
 // UI Texture Index
-#define LOBBY_ROOM_UI_TEXTURE_COUNT 20
+#define LOBBY_ROOM_UI_TEXTURE_COUNT 22
 
 #define LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER 0
 #define LOBBY_ROOM_UI_TEXTURE_BASE_MEMBER 1
@@ -387,6 +387,8 @@ struct SERVERINFO
 #define LOBBY_ROOM_UI_TEXTURE_GUNDAM 17
 #define LOBBY_ROOM_UI_TEXTURE_GUNDAM_HL 18
 #define LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT 19
+#define LOBBY_ROOM_UI_TEXTURE_MAP_COLONY 20
+#define LOBBY_ROOM_UI_TEXTURE_MAP_SPACE 21
 
 // UI Rect Index
 #define LOBBY_ROOM_UI_RECT_COUNT 8
@@ -456,6 +458,8 @@ protected:
 
 	BoundingBox		m_GundamButton;
 	bool			m_bHLGundamButton = false;
+
+	CRect			*m_MapRect = NULL;
 
 	std::vector<char*> m_vstrPlayerNames;
 };
