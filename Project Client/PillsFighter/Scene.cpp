@@ -2278,7 +2278,6 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 			break;
 		case VK_SPACE:
 			m_pPlayer->ActivationBooster();
-			m_pPlayer->SpaceDown();
 			break;
 		case VK_SHIFT:
 			m_pPlayer->ActivationDash();

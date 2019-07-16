@@ -313,6 +313,11 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 void CPlayer::Update(float fTimeElapsed)
 {
 	CRobotObject::Animate(fTimeElapsed);
+	
+	ProcessBooster(fTimeElapsed);
+	ProcessHitPoint();
+	ProcessTime(m_pRHWeapon, fTimeElapsed);
+	ProcessAnimation();
 
 	if (!IsZero(m_fVelocityY)) Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 
@@ -321,11 +326,6 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	m_pCamera->SetLookAt(xmf3LookAt);
-
-	ProcessBooster(fTimeElapsed);
-	ProcessHitPoint();
-	ProcessTime(m_pRHWeapon, fTimeElapsed);
-	ProcessAnimation();
 }
 
 void CPlayer::Rotate(float x, float y, float z)
@@ -451,6 +451,7 @@ void CPlayer::ActivationBooster()
 		m_nState |= OBJECT_STATE_BOOSTER;
 
 		m_fTimeForChargeBoosterGauge = 0.0f;
+		m_bSpaceDown = true;
 	}
 }
 
@@ -544,7 +545,7 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 		if (m_fVelocityY < MAX_DOWN_POWER) m_fVelocityY = MAX_DOWN_POWER;
 	}
 
-	if (m_bSpaceDown)
+	if (m_bSpaceDown && IsBoostering())
 		m_fTimeForBoostUp += fTimeElapsed;
 	else
 	{
@@ -555,7 +556,7 @@ void CPlayer::ProcessBooster(float fTimeElapsed)
 		}
 	}
 
-	if (m_bVDown)
+	if (m_bVDown && IsBoostering())
 		m_fTimeForBoostDown += fTimeElapsed;
 	else
 	{
