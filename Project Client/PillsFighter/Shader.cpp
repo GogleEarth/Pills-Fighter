@@ -2305,12 +2305,10 @@ void CUserInterface::UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dC
 {
 	float f = (fReloadTime - fReloadElapsedTime) / fReloadTime; // min 0 -> max 1
 	float t = fmod(f, 0.5f); // 0 ~ 0.5
-	float v = t / 0.25; // 0 ~ 1[-], 1 ~ 2[+]
+	float v = t / 0.25f; // 0 ~ 1[-], 1 ~ 2[+]
 	float color = 1.0f;
-	if (v >= 1.0f)
-		color = fmod(v, 1.0f);
-	else
-		color = color - v;
+	if (v >= 1.0f) color = fmod(v, 1.0f);
+	else color = color - v;
 
 	m_pcbMappedReloadInfo->fReloadTime = 1.0f - f;
 	m_pcbMappedReloadInfo->fTextColor = color;
@@ -2344,56 +2342,60 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 6;
+	m_nTextures = UI_TEXTURE_COUNT;
 	m_ppTextures = new CTexture*[m_nTextures];
 
-	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[0]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[0], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_BASE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BASE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_HP.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_HP] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_HP]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_HP.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_HP], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Booster.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_BOOSTER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BOOSTER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Booster.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BOOSTER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[3] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_BULLET] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BULLET]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BULLET], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[4] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScoreBoard.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[4], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_RELOAD] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_RELOAD]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Reload.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_RELOAD], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[5] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[5]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Reload.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[5], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_GM_GUN] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_GM_GUN]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_GMGun.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_GM_GUN], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_nUIRect = 5;
+	m_ppTextures[UI_TEXTURE_MACHINEGUN] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_MACHINEGUN]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_MachineGun.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_MACHINEGUN], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_BAZOOKA] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BAZOOKA]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bazooka.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BAZOOKA], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
 	// Base UI
 	XMFLOAT2 xmf2Center = ::CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
 	XMFLOAT2 xmf2Size = ::CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
-	m_ppUIRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_BASE] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = ::CalculateCenter(-0.375000f, -0.332812f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(-0.375000f, -0.332812f, 0.257778f, -0.257778f);
-	m_ppUIRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_HP] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = ::CalculateCenter(0.375000f, 0.417287f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(0.375000f, 0.417287f, 0.257778f, -0.257778f);
-	m_ppUIRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_BOOSTER] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = ::CalculateCenter(0.417187f, 0.456250f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(0.417187f, 0.456250f, 0.257778f, -0.257778f);
-	m_ppUIRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
-
-	xmf2Center = ::CalculateCenter(-0.2f, 0.2f, 0.9f, 0.75f);
-	xmf2Size = ::CalculateSize(-0.2f, 0.2f, 0.9f, 0.75f);
-	m_ppUIRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_BULLET_N_RELOAD] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -2401,18 +2403,18 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	// Draw HP BAR
 	if (m_pd3dPipelineStateBar) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBar);
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerHP, m_pcbMappedPlayerHP, m_pPlayer->GetMaxHitPoint(), m_pPlayer->GetHitPoint());
-	if (m_ppTextures[1])
+	if (m_ppTextures[UI_TEXTURE_HP])
 	{
-		m_ppTextures[1]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[1]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_HP]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_HP]->Render(pd3dCommandList, 0);
 	}
 
 	// Draw Booster Gauge BAR
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerBooster, m_pcbMappedPlayerBooster, 100, m_pPlayer->GetBoosterGauge());
-	if (m_ppTextures[2])
+	if (m_ppTextures[UI_TEXTURE_BOOSTER])
 	{
-		m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[2]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_BOOSTER]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_BOOSTER]->Render(pd3dCommandList, 0);
 	}
 
 	CWeapon *pWeapon = m_pPlayer->GetRHWeapon();
@@ -2425,10 +2427,10 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 		UpdateReloadShaderVariable(pd3dCommandList, pRHGun->GetReloadTime(), m_pPlayer->GetReloadElapsedTime());
 
-		if (m_ppTextures[5])
+		if (m_ppTextures[UI_TEXTURE_RELOAD])
 		{
-			m_ppTextures[5]->UpdateShaderVariables(pd3dCommandList);
-			m_ppUIRects[3]->Render(pd3dCommandList, 0);
+			m_ppTextures[UI_TEXTURE_RELOAD]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
 		}
 	}
 	else
@@ -2443,28 +2445,21 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 			UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
 
-			if (m_ppTextures[3])
+			if (m_ppTextures[UI_TEXTURE_BULLET])
 			{
-				m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
-				m_ppUIRects[3]->Render(pd3dCommandList, 0);
+				m_ppTextures[UI_TEXTURE_BULLET]->UpdateShaderVariables(pd3dCommandList);
+				m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
 			}
 		}
 	}
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
-	// Draw Score Board
-	if (m_ppTextures[4])
-	{
-		m_ppTextures[4]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[4]->Render(pd3dCommandList, 0);
-	}
-
 	// Draw Base UI
-	if (m_ppTextures[0])
+	if (m_ppTextures[UI_TEXTURE_BASE])
 	{
-		m_ppTextures[0]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[0]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
 	}
 }
 

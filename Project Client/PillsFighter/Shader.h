@@ -508,6 +508,24 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
+#define UI_TEXTURE_COUNT 8
+
+#define UI_TEXTURE_BASE 0
+#define UI_TEXTURE_HP 1
+#define UI_TEXTURE_BOOSTER 2
+#define UI_TEXTURE_BULLET 3
+#define UI_TEXTURE_RELOAD 4
+#define UI_TEXTURE_GM_GUN 5
+#define UI_TEXTURE_MACHINEGUN 6
+#define UI_TEXTURE_BAZOOKA 7
+
+#define UI_RECT_COUNT 4
+
+#define UI_RECT_BASE 0
+#define UI_RECT_HP 1
+#define UI_RECT_BOOSTER 2
+#define UI_RECT_BULLET_N_RELOAD 3
+
 struct CB_PLAYER_VALUE
 {
 	int nMaxValue;
