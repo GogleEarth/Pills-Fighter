@@ -656,10 +656,7 @@ public:
 
 	virtual void Animate(float ElapsedTime, CCamera *pCamera = NULL);
 
-
 private:
-	float		m_fSpeed;				// 속도
-	XMFLOAT3	m_xmf3Direction;		// 방향
 	float		m_fLifeTime;		// 수명
 	float		m_fElapsedTime;			// 경과 수명
 };

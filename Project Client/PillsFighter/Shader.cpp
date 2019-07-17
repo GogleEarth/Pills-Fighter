@@ -581,6 +581,7 @@ void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 
 	Meteor *pMeteorObject = new Meteor();
 	pMeteorObject->SetPosition(XMFLOAT3(0.0f, 50.0f, 0.0f));
+	pMeteorObject->SetLook(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	InsertObject(pd3dDevice, pd3dCommandList, pMeteorObject, STANDARD_OBJECT_INDEX_METEOR, true, pContext);
 
 #endif

@@ -2864,11 +2864,13 @@ void CBattleScene::CheckCollision()
 	std::vector<CGameObject*> vBullets;
 	std::vector<CGameObject*> vBZKBullets;
 	std::vector<CGameObject*> vMGBullets;
+	std::vector<CGameObject*> vMeteors;
 
 	//vEnemys = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
 	vBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_GG_BULLET);
 	vBZKBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_BZK_BULLET);
 	vMGBullets = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_MG_BULLET);
+	vMeteors = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS])->GetObjects(STANDARD_OBJECT_INDEX_METEOR);
 
 	for (const auto& Enemy : vEnemys)
 	{
@@ -2936,6 +2938,25 @@ void CBattleScene::CheckCollision()
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
 
 					//AddParticle(0, pMGBullet->GetPosition());
+				}
+			}
+		}
+
+		for (const auto& pMeteor : vMeteors)
+		{
+			if (!pMeteor->IsDelete())
+			{
+				if (Enemy->CollisionCheck(pMeteor))
+				{
+					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
+
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMeteor->GetPosition(), XMFLOAT2(0.04f, 0.02f), 0);
+					float fSize = (float)(rand() % 200) / 100.0f + 10.0f;
+					m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_HIT, pMeteor->GetPosition(), XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, SPRITE_EFFECT_INDEX_HIT_TEXTURES);
+
+					pMeteor->Delete();
+
+					std::cout << "Collision Enemy By Meteor \n" << std::endl;
 				}
 			}
 		}

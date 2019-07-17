@@ -1670,9 +1670,8 @@ void CCursor::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 Meteor::Meteor() : CGameObject()
 {
-	m_fSpeed = 500.0f;
-	m_xmf3Direction = XMFLOAT3(0, 0, 0);
-	m_fLifeTime = 3.0f;
+	m_MovingSpeed = 1.0f;
+	m_fLifeTime = 10.0f;
 	m_fElapsedTime = 0.0f;
 }
 
@@ -1691,8 +1690,9 @@ void Meteor::Animate(float ElapsedTime, CCamera *pCamera)
 	else
 	{
 #ifndef ON_NETWORKING
-		MoveForward(m_MovingSpeed * ElapsedTime);
+		//MoveForward(m_MovingSpeed * ElapsedTime);
 #endif
+		MoveForward(m_MovingSpeed * ElapsedTime);
 		m_fElapsedTime += ElapsedTime;
 	}
 
