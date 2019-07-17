@@ -285,6 +285,7 @@ struct GS_UI_MINIMAPROBOT_OUT
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD;
 	bool eort : ENEMYORTEAM;
+	bool outOfRange : OUTOFRANGE;
 };
 
 [maxvertexcount(4)]
@@ -314,13 +315,14 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	float2 world = mul(float4(gvMinimapRobotPos[input[0].index].x, 0.0f, gvMinimapRobotPos[input[0].index].y, 1.0f), gmtxPlayerView).xz;
 	world.x *= 0.0009f;
 	world.y *= 0.0016f;
-	// 카메라 뷰 행렬쓰는 원리랑 똑같이 플레이어 좌표계로 이동
+
 
 	for (int i = 0; i < 4; i++)
 	{
 		output.pos = float4(fVertices[i] + world, 0.0f, 1.0f);
 		output.uv = fUVs[i];
 		output.eort = eOrT;
+		if (world.x > 0.145f || world.x < -0.145f || world.y > 0.26f || world.y < -0.26f) output.outOfRange = true;
 
 		outStream.Append(output);
 	}
@@ -329,6 +331,8 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 
 float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 {
+	if (input.outOfRange == true) discard;
+
 	float4 cColor;
 	if (input.eort == false) {
 		// 0: 적 , 1: 팀
