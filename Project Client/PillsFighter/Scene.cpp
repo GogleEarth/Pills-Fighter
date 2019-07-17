@@ -790,21 +790,27 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.ShaderRegister = 14;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.Num32BitValues = 4;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].Descriptor.ShaderRegister = 15;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 14;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 16;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.ShaderRegister = 15;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.ShaderRegister = 17;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.Num32BitValues = 4;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.ShaderRegister = 14;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 

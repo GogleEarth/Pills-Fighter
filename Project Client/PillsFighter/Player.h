@@ -115,6 +115,8 @@ public:
 	void Attack(CWeapon *pWeapon);
 	void PrepareAttack(CWeapon *pWeapon);
 	void Reload(CWeapon *pWeapon);
+	bool IsReload() { return m_bReloading; }
+	float GetReloadElapsedTime() { return m_fReloadTime; }
 
 	WEAPON_TYPE GetWeaponType();
 

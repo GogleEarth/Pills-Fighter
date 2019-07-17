@@ -21,7 +21,7 @@ struct VS_UI_OUTPUT
 	float2 size : SIZE;
 };
 
-VS_UI_OUTPUT VSUi(VS_UI_INPUT input)
+VS_UI_OUTPUT VSUI(VS_UI_INPUT input)
 {
 	return(input);
 }
@@ -33,7 +33,7 @@ struct GS_UI_OUT
 };
 
 [maxvertexcount(4)]
-void GSUi(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GSUI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
@@ -64,7 +64,7 @@ void GSUi(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Trian
 }
 
 [maxvertexcount(4)]
-void GSUiBar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GSUIBar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float yPos = float(giValue) / float(giMaxValue);
 	float2 vValueByUp = float2(0.0f, 1.0f - yPos);
@@ -96,13 +96,13 @@ void GSUiBar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tr
 	}
 }
 
-float4 PSUi(GS_UI_OUT input) : SV_TARGET
+float4 PSUI(GS_UI_OUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
 	return gtxtTexture[0].Sample(gssWrap, input.uv);
 }
 
-float4 PSUiBullet(GS_UI_OUT input) : SV_TARGET
+float4 PSUIBullet(GS_UI_OUT input) : SV_TARGET
 {
 	float2 vNewUV = input.uv;
 	float fStride = 1.0f / float(giValue);
@@ -111,6 +111,25 @@ float4 PSUiBullet(GS_UI_OUT input) : SV_TARGET
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, vNewUV);
 
 	return(cColor);
+}
+
+cbuffer cbReloadInfo : register(UI_RELOAD_INFO)
+{
+	float gfTextColor;
+	float gfReloadTime;
+}
+
+float4 PSUIReload(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = float4(1.0f, 0.0f, 0.0f, 0.8f);
+
+	if (input.uv.y < gfReloadTime)
+	{
+		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+		cColor.rgb *= gfTextColor;
+	}
+
+	return cColor;
 }
 
 ////////////////////////////////////////////
@@ -248,13 +267,13 @@ VS_UI_MINIMAPROBOT_OUTPUT VSMinimapEnemy(VS_UI_MINIMAPROBOT_INPUT input)
 
 #define MINIMAP_ROBOT_MAX			1
 
-cbuffer cbMinimapRobotPos : register(b14)
+cbuffer cbMinimapRobotPos : register(MINIMAP_ROBOT_POS)
 {
 	float2 gvMinimapRobotPos[MINIMAP_ROBOT_MAX];
 	bool enemyOrTeam[MINIMAP_ROBOT_MAX];
 }
 
-cbuffer cbMinimapPlayerPos : register(b15)
+cbuffer cbMinimapPlayerPos : register(MINIMAP_PLAYER_POS)
 {
 	matrix gmtxPlayerView;
 	float2 gvMinimapPlayerLook;

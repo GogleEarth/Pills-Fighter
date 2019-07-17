@@ -67,6 +67,7 @@ bool CPlayer::IsPrepareDashAnimation()
 	return AnimationIs(ANIMATION_DOWN, ANIMATION_STATE_DASH_BACKWARD) || AnimationIs(ANIMATION_DOWN, ANIMATION_STATE_DASH_FORWARD) ||
 		AnimationIs(ANIMATION_DOWN, ANIMATION_STATE_DASH_LEFT) || AnimationIs(ANIMATION_DOWN, ANIMATION_STATE_DASH_RIGHT);
 }
+
 void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pCamera) m_pCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);

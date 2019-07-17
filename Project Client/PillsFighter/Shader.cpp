@@ -2125,31 +2125,37 @@ CUserInterface::~CUserInterface()
 
 	if (m_pd3dPipelineStateBar) m_pd3dPipelineStateBar->Release();
 	if (m_pd3dPipelineStateBullet) m_pd3dPipelineStateBullet->Release();
+	if (m_pd3dPipelineStateReload) m_pd3dPipelineStateReload->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUI", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUi", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUI", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUiBar", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUIBar", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUI", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUiBullet", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUIBullet", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUIReload", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
@@ -2212,12 +2218,14 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderBar(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
-
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBar);
 
 	d3dPipelineStateDesc.PS = CreatePixelShaderBullet(&pd3dPixelShaderBlob);
-
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBullet);
+
+	d3dPipelineStateDesc.PS = CreatePixelShaderReload(&pd3dPixelShaderBlob);
+	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateReload);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
@@ -2232,18 +2240,21 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 
 	m_pd3dcbPlayerHP = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
-
 	m_pd3dcbPlayerHP->Map(0, NULL, (void **)&m_pcbMappedPlayerHP);
 
 	m_pd3dcbPlayerBooster = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
-
 	m_pd3dcbPlayerBooster->Map(0, NULL, (void **)&m_pcbMappedPlayerBooster);
 
 	m_pd3dcbPlayerAmmo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
-
 	m_pd3dcbPlayerAmmo->Map(0, NULL, (void **)&m_pcbMappedPlayerAmmo);
+
+	ncbElementBytes = ((sizeof(CB_RELOAD_INFO) + 255) & ~255);
+
+	m_pd3dcbReloadInfo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+	m_pd3dcbReloadInfo->Map(0, NULL, (void **)&m_pcbMappedReloadInfo);
 }
 
 void CUserInterface::ReleaseShaderVariables()
@@ -2266,6 +2277,12 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbPlayerAmmo->Release();
 	}
 
+	if (m_pd3dcbReloadInfo)
+	{
+		m_pd3dcbReloadInfo->Unmap(0, NULL);
+		m_pd3dcbReloadInfo->Release();
+	}
+
 	CShader::ReleaseShaderVariables();
 }
 
@@ -2276,6 +2293,24 @@ void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dComman
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = pd3dcb->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
+}
+
+void CUserInterface::UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fReloadTime, float fReloadElapsedTime)
+{
+	float f = (fReloadTime - fReloadElapsedTime) / fReloadTime; // min 0 -> max 1
+	float t = fmod(f, 0.5f); // 0 ~ 0.5
+	float v = t / 0.25; // 0 ~ 1[-], 1 ~ 2[+]
+	float color = 1.0f;
+	if (v >= 1.0f)
+		color = fmod(v, 1.0f);
+	else
+		color = color - v;
+
+	m_pcbMappedReloadInfo->fReloadTime = 1.0f - f;
+	m_pcbMappedReloadInfo->fTextColor = color;
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbReloadInfo->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_RELOAD_INFO, d3dGpuVirtualAddress);
 }
 
 void CUserInterface::ReleaseUploadBuffers()
@@ -2303,7 +2338,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_nTextures = 5;
+	m_nTextures = 6;
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[0] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
@@ -2325,6 +2360,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[4] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[4]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScoreBoard.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[4], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[5] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[5]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Reload.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[5], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_nUIRect = 5;
 	m_ppUIRects = new CRect*[m_nUIRect];
@@ -2370,22 +2409,39 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		m_ppUIRects[2]->Render(pd3dCommandList, 0);
 	}
 
-	// Draw Ammo
-	if (m_pd3dPipelineStateBullet) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBullet);
 	CWeapon *pWeapon = m_pPlayer->GetRHWeapon();
+	CGun *pRHGun = (CGun*)pWeapon;
 
-	if (pWeapon->GetType() & WEAPON_TYPE_OF_GUN)
+	if (m_pPlayer->IsReload())
 	{
-		CGun *pRHGun = (CGun*)pWeapon;
-		int nMaxReloadAmmo = pRHGun->GetMaxReloadAmmo();
-		int nReloadedAmmo = pRHGun->GetReloadedAmmo();
+		// Draw Reload
+		if (m_pd3dPipelineStateReload) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateReload);
 
-		UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
+		UpdateReloadShaderVariable(pd3dCommandList, pRHGun->GetReloadTime(), m_pPlayer->GetReloadElapsedTime());
 
-		if (m_ppTextures[3])
+		if (m_ppTextures[5])
 		{
-			m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
+			m_ppTextures[5]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[3]->Render(pd3dCommandList, 0);
+		}
+	}
+	else
+	{
+		// Draw Ammo
+		if (m_pd3dPipelineStateBullet) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBullet);
+
+		if (pWeapon->GetType() & WEAPON_TYPE_OF_GUN)
+		{
+			int nMaxReloadAmmo = pRHGun->GetMaxReloadAmmo();
+			int nReloadedAmmo = pRHGun->GetReloadedAmmo();
+
+			UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
+
+			if (m_ppTextures[3])
+			{
+				m_ppTextures[3]->UpdateShaderVariables(pd3dCommandList);
+				m_ppUIRects[3]->Render(pd3dCommandList, 0);
+			}
 		}
 	}
 
@@ -2514,17 +2570,17 @@ CLobbyShader::~CLobbyShader()
 
 D3D12_SHADER_BYTECODE CLobbyShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUI", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CLobbyShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUi", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUI", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CLobbyShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUI", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CLobbyShader::CreateInputLayout()
@@ -2627,7 +2683,7 @@ CCursorShader::~CCursorShader()
 
 D3D12_SHADER_BYTECODE CCursorShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUI", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CCursorShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
@@ -2637,7 +2693,7 @@ D3D12_SHADER_BYTECODE CCursorShader::CreateGeometryShader(ID3DBlob **ppd3dShader
 
 D3D12_SHADER_BYTECODE CCursorShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUI", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CCursorShader::CreateInputLayout()
@@ -2947,7 +3003,7 @@ CMinimapShader::~CMinimapShader()
 
 D3D12_SHADER_BYTECODE CMinimapShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUi", "vs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "VSUI", "vs_5_1", ppd3dShaderBlob));
 }
 D3D12_SHADER_BYTECODE CMinimapShader::CreateVertexShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
 {
@@ -2956,7 +3012,7 @@ D3D12_SHADER_BYTECODE CMinimapShader::CreateVertexShaderMinimapRobot(ID3DBlob **
 
 D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUi", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUI", "gs_5_1", ppd3dShaderBlob));
 }
 D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
 {
@@ -2969,7 +3025,7 @@ D3D12_SHADER_BYTECODE CMinimapShader::CreateGeometryShaderMinimapSight(ID3DBlob 
 
 D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUi", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUI", "ps_5_1", ppd3dShaderBlob));
 }
 D3D12_SHADER_BYTECODE CMinimapShader::CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob)
 {

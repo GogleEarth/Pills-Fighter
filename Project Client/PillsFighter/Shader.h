@@ -514,11 +514,10 @@ struct CB_PLAYER_VALUE
 	int nValue;
 };
 
-struct CB_MINIMAP_PLAYER_POSITION
+struct CB_RELOAD_INFO
 {
-	XMFLOAT4X4 playerView;
-	XMFLOAT2 playerLook;
-	XMFLOAT2 playerRight;
+	float fTextColor;
+	float fReloadTime;
 };
 
 class CUserInterface : public CShader
@@ -532,12 +531,14 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
+	virtual void UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fReloadTime, float fReloadElapsedTime);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -548,6 +549,7 @@ public:
 protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateBar = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateBullet = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateReload = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
@@ -559,6 +561,9 @@ protected:
 
 	ID3D12Resource					*m_pd3dcbPlayerAmmo = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
+
+	ID3D12Resource					*m_pd3dcbReloadInfo = NULL;
+	CB_RELOAD_INFO					*m_pcbMappedReloadInfo = NULL;
 
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
@@ -697,6 +702,13 @@ struct CB_MINIMAP_ROBOT_POSITION
 {
 	XMFLOAT2 robotPosition;
 	BOOL enemyOrTeam;
+};
+
+struct CB_MINIMAP_PLAYER_POSITION
+{
+	XMFLOAT4X4 playerView;
+	XMFLOAT2 playerLook;
+	XMFLOAT2 playerRight;
 };
 
 class CMinimapShader : public CShader
