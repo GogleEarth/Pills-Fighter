@@ -2317,7 +2317,7 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case 'R': 
 			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 			break;
-		case 'A':
+		case VK_F1:
 			Alert();
 			break;
 		case VK_SPACE:
@@ -2436,7 +2436,6 @@ void CBattleScene::ReleaseObjects()
 
 void CBattleScene::Alert()
 {
-	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundAlert);
 	m_bAlert = true;
 }
 
@@ -2466,7 +2465,7 @@ void CBattleScene::ProcessAlert(float fElapsedTime)
 	{
 		m_bAlert = false;
 		m_fAlertCount = 0;
-		m_fMulCalcAlertColor = -1.0f;
+		m_fMulCalcAlertColor = 1.0f;
 		m_xmf4ScreenColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_fAlertColor = 1.0f;
 	}

@@ -579,10 +579,10 @@ protected:
 	float							m_fCameraToTarget = 0.0f;
 
 	XMFLOAT4						m_xmf4ScreenColor;
-#define ALERT_COUNT 5
+#define ALERT_COUNT 9
 #define ALERT_SPEED 1.9f
 	float							m_fAlertColor = 1.0f;
-	float							m_fMulCalcAlertColor = -1.0f;
+	float							m_fMulCalcAlertColor = 1.0f;
 	int								m_fAlertCount = 0;
 	bool							m_bAlert = false;
 
