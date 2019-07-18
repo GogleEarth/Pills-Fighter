@@ -47,7 +47,7 @@ class Room
 	std::queue<PKT_UPDATE_OBJECT*> update_object_queue_;
 	std::queue<PKT_DELETE_OBJECT*> delete_object_queue_;
 	std::queue<PKT_CREATE_EFFECT*> create_effect_queue_;
-
+	std::queue<PKT_MAP_EVENT*> map_event_queue_;
 	char blue_score_;
 	char red_score_;
 	float item_cooltime_[3];
@@ -98,5 +98,6 @@ public:
 	PKT_UPDATE_OBJECT* update_object_dequeue();
 	PKT_DELETE_OBJECT* delete_object_dequeue();
 	PKT_CREATE_EFFECT* create_effect_dequeue();
+	PKT_MAP_EVENT* map_event_dequeue();
 };
 

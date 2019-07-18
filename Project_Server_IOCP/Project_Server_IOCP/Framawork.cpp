@@ -86,12 +86,17 @@ int Framawork::thread_process()
 		{
 			using namespace std;
 			using namespace chrono;
-			auto elapsed_time = 16ms;
+			float elapsed_time;
+
+			if (over_ex->elapsed_time < 0.016f)
+				elapsed_time = 0.016f;
+			else
+				elapsed_time = over_ex->elapsed_time;
 
 			PKT_TIME_INFO pkt_ti;
 			pkt_ti.PktId = PKT_ID_TIME_INFO;
 			pkt_ti.PktSize = sizeof(PKT_TIME_INFO);
-			pkt_ti.elapsedtime = float(elapsed_time.count()) / 1000.0f;
+			pkt_ti.elapsedtime = elapsed_time;
 			send_packet_to_room_player(key, (char*)&pkt_ti);
 
 			while (true)
@@ -109,7 +114,7 @@ int Framawork::thread_process()
 				send_packet_to_room_player(key, (char*)data);
 			}
 
-			rooms_[key].room_update(float(elapsed_time.count()) / 1000.0f);
+			rooms_[key].room_update(elapsed_time);
 
 			while (true)
 			{
@@ -128,6 +133,14 @@ int Framawork::thread_process()
 			while (true)
 			{
 				auto data = rooms_[key].create_effect_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+			}
+
+
+			while (true)
+			{
+				auto data = rooms_[key].map_event_dequeue();
 				if (data == nullptr) break;
 				send_packet_to_room_player(key, (char*)data);
 			}
@@ -261,7 +274,7 @@ int Framawork::timer_process()
 	while (true) {
 		using namespace std;
 		using namespace chrono;
-		std::this_thread::sleep_for(10ms);
+		std::this_thread::sleep_for(16ms);
 		while (true) {
 			timer_l.lock();
 			if (true == timer_queue.empty()) {
@@ -278,6 +291,7 @@ int Framawork::timer_process()
 			timer_l.unlock();
 			OVER_EX *over_ex = new OVER_EX;
 			over_ex->event_t = ev.type;
+			over_ex->elapsed_time = (float)(duration_cast<milliseconds>(std::chrono::high_resolution_clock::now() - ev.start_time).count()) / 1000.0f;
 			PostQueuedCompletionStatus(iocp_, 1, ev.obj_id, &over_ex->over);
 		}
 	}
@@ -462,6 +476,7 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_rio.PktSize = sizeof(PKT_ROOM_IN_OK);
 			int player_id = rooms_[room_num].findindex();
 			pkt_rio.index = player_id;
+			pkt_rio.map = rooms_[room_num].get_map();
 
 			send_packet_to_player(id, (char*)&pkt_rio);
 			rooms_[room_num].add_player(id, clients_[id].socket);
@@ -491,7 +506,6 @@ void Framawork::process_packet(int id, char* packet)
 					send_packet_to_player(player->get_serverid(), (char*)&pkt_pin);
 				
 			}
-
 
 			PKT_CHANGE_ROOM_INFO pkt_cmi;
 			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);

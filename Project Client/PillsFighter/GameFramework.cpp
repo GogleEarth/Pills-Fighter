@@ -1086,6 +1086,22 @@ void CGameFramework::ProcessPacket()
 
 		break;
 	}
+	case PKT_ID_MAP_EVENT:
+	{
+		PKT_MAP_EVENT *pPacket = (PKT_MAP_EVENT*)m_pPacketBuffer;
+		switch (pPacket->type)
+		{
+		case MAP_EVENT_TYPE_ALERT:
+			((CBattleScene*)m_pScene)->Alert();
+			break;
+		case MAP_EVENT_TYPE_START:
+			break;
+		case MAP_EVENT_TYPE_END:
+			break;
+		default:
+			break;
+		}
+	}
 	default:
 	{
 		printf("Received Unknown Packet\n");

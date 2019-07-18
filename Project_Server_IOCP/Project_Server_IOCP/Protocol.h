@@ -1,6 +1,6 @@
 #pragma once
 
-//#define ON_NETWORKING
+#define ON_NETWORKING
 
 typedef enum PKT_ID
 {
@@ -31,7 +31,8 @@ typedef enum PKT_ID
 	PKT_ID_CHANGE_MAP,
 	PKT_ID_ADD_ROOM,
 	PKT_ID_DELETE_ROOM,
-	PKT_ID_CHANGE_ROOM_INFO
+	PKT_ID_CHANGE_ROOM_INFO,
+	PKT_ID_MAP_EVENT
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -123,6 +124,13 @@ enum ITEM_TYPE
 {
 	ITEM_TYPE_HEALING,
 	ITEM_TYPE_AMMO
+};
+
+enum MAP_EVENT_TYPE
+{
+	MAP_EVENT_TYPE_START,
+	MAP_EVENT_TYPE_END,
+	MAP_EVENT_TYPE_ALERT
 };
 
 #pragma pack(push, 1)
@@ -323,6 +331,13 @@ struct PKT_CHANGE_MAP
 	BYTE PktSize;
 	BYTE PktId;
 	BYTE map;
+};
+
+struct PKT_MAP_EVENT
+{
+	BYTE PktSize;
+	BYTE PktId;
+	MAP_EVENT_TYPE type;
 };
 
 #pragma pack(pop)

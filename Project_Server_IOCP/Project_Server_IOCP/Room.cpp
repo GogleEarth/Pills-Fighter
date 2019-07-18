@@ -230,6 +230,39 @@ void Room::room_update(float elapsed_time)
 
 	scenes_[using_scene_]->AnimateObjects(elapsed_time);
 
+	if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_GROUND - 5.0f &&
+		!scenes_[using_scene_]->get_alert())
+	{
+		PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
+		pkt_mev->PktId = PKT_ID_MAP_EVENT;
+		pkt_mev->PktSize = sizeof(PKT_MAP_EVENT);
+		pkt_mev->type = MAP_EVENT_TYPE_ALERT;
+		map_event_queue_.push(pkt_mev);
+		scenes_[using_scene_]->set_alert(true);
+	}
+
+	if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_GROUND &&
+		!scenes_[using_scene_]->get_is_being_event())
+	{
+		PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
+		pkt_mev->PktId = PKT_ID_MAP_EVENT;
+		pkt_mev->PktSize = sizeof(PKT_MAP_EVENT);
+		pkt_mev->type = MAP_EVENT_TYPE_START;
+		map_event_queue_.push(pkt_mev);
+		scenes_[using_scene_]->start_event();
+	}
+
+	if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_GROUND + EVENT_TIME_GROUND &&
+		scenes_[using_scene_]->get_is_being_event())
+	{
+		PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
+		pkt_mev->PktId = PKT_ID_MAP_EVENT;
+		pkt_mev->PktSize = sizeof(PKT_MAP_EVENT);
+		pkt_mev->type = MAP_EVENT_TYPE_END;
+		map_event_queue_.push(pkt_mev);
+		scenes_[using_scene_]->end_event();
+	}
+
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 	{
 		GameObject* object = scenes_[using_scene_]->get_object(i);
@@ -368,6 +401,14 @@ PKT_CREATE_EFFECT* Room::create_effect_dequeue()
 	if (create_effect_queue_.empty()) return nullptr;
 	auto packet = create_effect_queue_.front();
 	create_effect_queue_.pop();
+	return packet;
+}
+
+PKT_MAP_EVENT * Room::map_event_dequeue()
+{
+	if (map_event_queue_.empty()) return nullptr;
+	auto packet = map_event_queue_.front();
+	map_event_queue_.pop();
 	return packet;
 }
 

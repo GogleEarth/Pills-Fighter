@@ -15,6 +15,7 @@ struct OVER_EX {
 	WSABUF			dataBuffer;
 	char			messageBuffer[MAX_BUFFER];
 	EVENT_TYPE		event_t;
+	float			elapsed_time;
 };
 
 class Client

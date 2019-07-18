@@ -14,6 +14,8 @@ Scene::~Scene()
 
 void Scene::AnimateObjects(float fTimeElapsed)
 {
+	elapsed_game_time_ += fTimeElapsed;
+
 	for (int i = 0; i < MAX_NUM_OBJECT; i++)
 	{
 		if (Objects_[i].GetUse() != false)
@@ -147,6 +149,11 @@ void Scene::init(CRepository * pRepository)
 		BeamsaberCollisionmesh_[i].SetIndex(i);
 		BeamsaberCollisionmesh_[i].SetHitPoint(3);
 	}
+
+	elapsed_game_time_ = 0.0f;
+	event_time_ = 0.0f;
+	is_being_event_ = false;
+	alert_ = false;
 }
 
 void Scene::InsertObject(GameObject * pObject, int nGroup, bool bPrepareRotate, void * pContext)
@@ -192,30 +199,18 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 	return index;
 }
 
-void Scene::releaseObject(int index)
+void Scene::start_event()
 {
-	//delete Objects_[index];
-	Objects_[index].SetUse(false);
+	std::cout << "이벤트 시작\n";
+	is_being_event_ = true;
 }
 
-XMFLOAT4X4 Scene::get_player_worldmatrix(int id)
+void Scene::end_event()
 {
-	return Objects_[id].GetWorldTransf();
-}
-
-void Scene::set_player_worldmatrix(int id, XMFLOAT4X4 matrix)
-{
-	Objects_[id].SetWorldTransf(matrix);
-}
-
-void Scene::set_player_is_play(int id, bool play)
-{
-	Objects_[id].SetPlay(play);
-}
-
-void Scene::set_object_id(int id)
-{
-	Objects_[id].SetId(id);
+	elapsed_game_time_ = 0.0f;
+	event_time_ = 0.0f;
+	is_being_event_ = false;
+	alert_ = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,6 +250,11 @@ void GroundScene::BuildObjects(CRepository * pRepository)
 void GroundScene::AnimateObjects(float fTimeElapsed)
 {
 	Scene::AnimateObjects(fTimeElapsed);
+}
+
+void GroundScene::SceneEvent(float fTimeElapsed)
+{
+	event_time_ += fTimeElapsed;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

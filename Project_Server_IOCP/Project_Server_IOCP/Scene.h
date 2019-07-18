@@ -4,6 +4,11 @@
 #include "Protocol.h"
 #include "GameObject.h"
 
+#define EVENT_TIME_GROUND 10.0f
+#define EVENT_START_INTERVAL_GROUND 180.0f
+#define EVENT_TIME_SPACE 30.0f
+#define EVENT_START_INTERVAL_SPACE 300.0f
+
 class Scene
 {
 protected:
@@ -13,13 +18,17 @@ protected:
 	GameObject Objects_[MAX_NUM_OBJECT];
 	std::vector<GameObject*> Obstacles_;
 	GameObject BeamsaberCollisionmesh_[24];
+	float elapsed_game_time_;
+	float event_time_;
+	bool is_being_event_;
+	bool alert_;
 public:
 	Scene();
 	~Scene();
 
 	virtual void BuildObjects(CRepository* pRepository) = 0;
 	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent() = 0;
+	virtual void SceneEvent(float fTimeElapsed) = 0;
 
 	void InsertObjectFromLoadInfFromBin(char *pstrFileName, int nGroup);
 
@@ -50,12 +59,21 @@ public:
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
 	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix);
-	void releaseObject(int index);
-	XMFLOAT4X4 get_player_worldmatrix(int id); 
-	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);
-	void set_player_is_play(int id, bool play);
-	void set_object_id(int id);
+	void start_event();
+	void end_event();
+
+	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
+
+	inline void set_player_worldmatrix(int id, XMFLOAT4X4 matrix) { Objects_[id].SetWorldTransf(matrix); }
+	inline void set_player_is_play(int id, bool play) { Objects_[id].SetPlay(play); }
+	inline void set_object_id(int id) { Objects_[id].SetId(id); }
+	inline XMFLOAT4X4 get_player_worldmatrix(int id) { return Objects_[id].GetWorldTransf(); }
 	inline GameObject* get_object(int id) { return &Objects_[id]; }
+	inline float get_elapsed_game_time() { return elapsed_game_time_; }
+	inline float get_event_time() { return event_time_; }
+	inline bool get_is_being_event() { return is_being_event_; }
+	inline void set_alert(bool alert) { alert_ = alert; }
+	inline bool get_alert() { return alert_; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +86,7 @@ public:
 
 	virtual void BuildObjects(CRepository* pRepository);
 	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent() {}
+	virtual void SceneEvent(float fTimeElapsed);
 
 };
 
@@ -82,6 +100,6 @@ public:
 
 	virtual void BuildObjects(CRepository* pRepository);
 	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent() {}
+	virtual void SceneEvent(float fTimeElapsed) {}
 
 };
