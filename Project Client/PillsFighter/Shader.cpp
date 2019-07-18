@@ -2224,15 +2224,15 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
 
+	d3dPipelineStateDesc.PS = CreatePixelShaderBullet(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBullet);
+
 	d3dPipelineStateDesc.PS = CreatePixelShaderColored(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateColored);
 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderBar(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBar);
-
-	d3dPipelineStateDesc.PS = CreatePixelShaderBullet(&pd3dPixelShaderBlob);
-	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBullet);
 
 	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShaderReload(&pd3dPixelShaderBlob);
@@ -2403,9 +2403,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BOOSTER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Booster.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BOOSTER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[UI_TEXTURE_BULLET] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[UI_TEXTURE_BULLET]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BULLET], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY] = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bullet.dds", 0);
+	m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BulletEmpty.dds", 1);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_RELOAD] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_RELOAD]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Reload.dds", 0);
@@ -2455,8 +2456,8 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Size = ::CalculateSize(0.375000f, 0.417287f, 0.257778f, -0.257778f);
 	m_ppUIRects[UI_RECT_BOOSTER] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = ::CalculateCenter(0.417187f, 0.456250f, 0.257778f, -0.257778f);
-	xmf2Size = ::CalculateSize(0.417187f, 0.456250f, 0.257778f, -0.257778f);
+	xmf2Center = ::CalculateCenter(0.418007f, 0.457070f, 0.257778f, -0.257778f);
+	xmf2Size = ::CalculateSize(0.418007f, 0.457070f, 0.257778f, -0.257778f);
 	m_ppUIRects[UI_RECT_BULLET_N_RELOAD] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	float fCenterX = 0.87f;
@@ -2530,9 +2531,9 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 			UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
 
-			if (m_ppTextures[UI_TEXTURE_BULLET])
+			if (m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY])
 			{
-				m_ppTextures[UI_TEXTURE_BULLET]->UpdateShaderVariables(pd3dCommandList);
+				m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY]->UpdateShaderVariables(pd3dCommandList);
 				m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
 			}
 		}

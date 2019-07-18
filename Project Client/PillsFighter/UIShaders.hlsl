@@ -3,12 +3,6 @@
 #include "Define.hlsl"
 #endif
 
-cbuffer cbUIInfo : register(UI_INFO)
-{
-	int		giMaxValue;// : packoffset(c0.x);
-	int		giValue; //: packoffset(c0.y);
-};
-
 struct VS_UI_INPUT
 {
 	float2 center : POSITION;
@@ -63,6 +57,12 @@ void GSUI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Trian
 	}
 }
 
+cbuffer cbUIInfo : register(UI_INFO)
+{
+	int		giMaxValue;// : packoffset(c0.x);
+	int		giValue; //: packoffset(c0.y);
+};
+
 [maxvertexcount(4)]
 void GSUIBar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
@@ -105,10 +105,14 @@ float4 PSUI(GS_UI_OUT input) : SV_TARGET
 float4 PSUIBullet(GS_UI_OUT input) : SV_TARGET
 {
 	float2 vNewUV = input.uv;
-	float fStride = 1.0f / float(giValue);
-	vNewUV.y = 1 - fmod(vNewUV.y, fStride) * giValue;
+	float fStride = 1.0f / float(giMaxValue);
+	vNewUV.y = 1 - fmod(vNewUV.y, fStride) * giMaxValue;
 
-	float4 cColor = gtxtTexture[0].Sample(gssClamp, vNewUV);
+	float4 cColor = 1.0f;
+	
+	float r = float(giValue) / float(giMaxValue);
+	if(1.0f - input.uv.y < r) cColor = gtxtTexture[0].Sample(gssClamp, vNewUV);
+	else cColor = gtxtTexture[1].Sample(gssClamp, vNewUV);
 
 	return(cColor);
 }
