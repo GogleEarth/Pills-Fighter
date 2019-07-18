@@ -2329,9 +2329,6 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case 'R':
 			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 			break;
-		case VK_F1:
-			Alert();
-			break;
 		case VK_SPACE:
 			m_pPlayer->ActivationBooster();
 			break;
@@ -3344,6 +3341,24 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		ChangeText(m_pRedScoreText, pstrText, XMFLOAT2(-0.05f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 		wsprintfW(pstrText, L"%d", pktScore->BlueScore);
 		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
+		break;
+	}
+	case PKT_ID_MAP_EVENT:
+	{
+		PKT_MAP_EVENT *pktScore = (PKT_MAP_EVENT*)pktData;
+		
+		switch (pktScore->type)
+		{
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_ALERT:
+			Alert();
+			break;
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_START:
+			m_fGravAcc = pktScore->gravity;
+			break;
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_END:
+			m_fGravAcc = -9.8f;
+			break;
+		}
 		break;
 	}
 	}
