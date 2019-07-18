@@ -2377,6 +2377,22 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BAZOOKA]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bazooka.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BAZOOKA], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+	m_ppTextures[UI_TEXTURE_BEAMSABER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BEAMSABER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamSaber.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAMSABER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_SMG] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SMG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_SMG.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SMG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_SNIPER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SNIPER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Sniper.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SNIPER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TOMAHAWK] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TOMAHAWK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Tomahawk.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TOMAHAWK], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
@@ -2396,6 +2412,29 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(0.417187f, 0.456250f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(0.417187f, 0.456250f, 0.257778f, -0.257778f);
 	m_ppUIRects[UI_RECT_BULLET_N_RELOAD] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	float fCenterX = 0.87f;
+	float fCenterY = -0.875f;
+	float fSizeX = 116.0f / FRAME_BUFFER_WIDTH;
+	float fSizeY = 58.0f / FRAME_BUFFER_HEIGHT;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SLOT_1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.15f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SLOT_2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.15f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SLOT_3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.15f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SLOT_4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -2454,6 +2493,19 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+
+	// Draw Weapons
+	if (m_ppTextures[UI_TEXTURE_BAZOOKA])
+	{
+		m_ppTextures[UI_TEXTURE_TOMAHAWK]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_SLOT_1]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_BAZOOKA]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_SLOT_2]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_BEAMSABER]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_SLOT_3]->Render(pd3dCommandList, 0);
+		m_ppTextures[UI_TEXTURE_SNIPER]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_SLOT_4]->Render(pd3dCommandList, 0);
+	}
 
 	// Draw Base UI
 	if (m_ppTextures[UI_TEXTURE_BASE])
@@ -3229,7 +3281,6 @@ void CMinimapShader::UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandLis
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PLAYER_INFO, m_MinimapPlayerRsc->GetGPUVirtualAddress());
 }
-
 
 void CMinimapShader::ReleaseShaderVariables()
 {

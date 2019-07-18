@@ -99,7 +99,7 @@ void GSUIBar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout Tr
 float4 PSUI(GS_UI_OUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
-	return gtxtTexture[0].Sample(gssWrap, input.uv);
+	return gtxtTexture[0].Sample(gssClamp, input.uv);
 }
 
 float4 PSUIBullet(GS_UI_OUT input) : SV_TARGET

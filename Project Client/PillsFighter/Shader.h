@@ -508,7 +508,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 8
+#define UI_TEXTURE_COUNT 12
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -518,13 +518,21 @@ protected:
 #define UI_TEXTURE_GM_GUN 5
 #define UI_TEXTURE_MACHINEGUN 6
 #define UI_TEXTURE_BAZOOKA 7
+#define UI_TEXTURE_BEAMSABER 8
+#define UI_TEXTURE_SMG 9
+#define UI_TEXTURE_SNIPER 10
+#define UI_TEXTURE_TOMAHAWK 11
 
-#define UI_RECT_COUNT 4
+#define UI_RECT_COUNT 8
 
 #define UI_RECT_BASE 0
 #define UI_RECT_HP 1
 #define UI_RECT_BOOSTER 2
 #define UI_RECT_BULLET_N_RELOAD 3
+#define UI_RECT_SLOT_1 4
+#define UI_RECT_SLOT_2 5
+#define UI_RECT_SLOT_3 6
+#define UI_RECT_SLOT_4 7
 
 struct CB_PLAYER_VALUE
 {
