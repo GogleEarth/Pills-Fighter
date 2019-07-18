@@ -338,6 +338,7 @@ struct PKT_MAP_EVENT
 	BYTE PktSize;
 	BYTE PktId;
 	MAP_EVENT_TYPE type;
+	float gravity;
 };
 
 #pragma pack(pop)

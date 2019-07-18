@@ -22,6 +22,7 @@ protected:
 	float event_time_;
 	bool is_being_event_;
 	bool alert_;
+	float gravity_;
 public:
 	Scene();
 	~Scene();
@@ -59,8 +60,8 @@ public:
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
 	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix);
-	void start_event();
-	void end_event();
+	virtual void start_event();
+	virtual void end_event();
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
 
@@ -74,6 +75,7 @@ public:
 	inline bool get_is_being_event() { return is_being_event_; }
 	inline void set_alert(bool alert) { alert_ = alert; }
 	inline bool get_alert() { return alert_; }
+	inline float get_gravity() { return gravity_; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +89,8 @@ public:
 	virtual void BuildObjects(CRepository* pRepository);
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void SceneEvent(float fTimeElapsed);
-
+	virtual void start_event();
+	virtual void end_event();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

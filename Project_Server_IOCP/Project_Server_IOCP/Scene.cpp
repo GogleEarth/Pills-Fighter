@@ -257,6 +257,18 @@ void GroundScene::SceneEvent(float fTimeElapsed)
 	event_time_ += fTimeElapsed;
 }
 
+void GroundScene::start_event()
+{
+	Scene::start_event();
+	gravity_ = ((float)((rand() % 196) - 98)) / 10.0f;
+}
+
+void GroundScene::end_event()
+{
+	Scene::end_event();
+	gravity_ = -9.8f;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SpaceScene::BuildObjects(CRepository * pRepository)
