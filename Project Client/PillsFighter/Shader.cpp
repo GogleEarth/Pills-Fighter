@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "Animation.h"
 #include "Weapon.h"
+#include "Font.h"
 
 CShader::CShader()
 {
@@ -2212,7 +2213,7 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
 	d3dPipelineStateDesc.RasterizerState = CreateRasterizerState();
 	d3dPipelineStateDesc.BlendState = CreateBlendState();
-	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
+	d3dPipelineStateDesc.DepthStencilState = CreateAlwaysDepthStencilState();
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
@@ -2384,6 +2385,69 @@ void CUserInterface::ChangeWeapon(int nIndex)
 	m_nEquipWeaponIndex = nIndex;
 }
 
+void CUserInterface::GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex)
+{
+	CGun *pGun = (CGun*)m_pPlayer->GetWeapon(nIndex);
+	nReloadedAmmo = pGun->GetReloadedAmmo();
+
+	int nWeaponType = m_pPlayer->GetWeapon(nIndex)->GetType();
+
+	if (nWeaponType & WEAPON_TYPE_OF_GM_GUN)
+		nAmmo = m_pPlayer->GetGMGunAmmo();
+	if (nWeaponType & WEAPON_TYPE_OF_BAZOOKA)
+		nAmmo = m_pPlayer->GetBazookaAmmo();
+	if (nWeaponType & WEAPON_TYPE_OF_MACHINEGUN)
+		nAmmo = m_pPlayer->GetMachineGunAmmo();
+	if (nWeaponType & WEAPON_TYPE_OF_SMG)
+		nAmmo = m_pPlayer->GetSMGAmmo();
+	if (nWeaponType & WEAPON_TYPE_OF_SNIPER)
+		nAmmo = m_pPlayer->GetSniperAmmo();
+}
+
+void CUserInterface::SetAmmoText(int nWeaponIndex)
+{
+	int nReloadedAmmo;
+	int nAmmo;
+
+	GetAmmos(nAmmo, nReloadedAmmo, nWeaponIndex);
+
+	wchar_t wpstrNumber[5];
+
+	float fCenterX = 0.745f;
+	float fCenterY = -0.935f + nWeaponIndex * 0.15f;
+	wsprintfW(wpstrNumber, L"%d", nAmmo);
+	m_pAmmoText = m_pFont->SetText(wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
+
+	fCenterX -= 0.010f;
+	fCenterY += 0.095f;
+	wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
+	m_pReloadedAmmoText = m_pFont->SetText(wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
+}
+
+void CUserInterface::ChangeAmmoText(int nWeaponIndex)
+{
+	int nReloadedAmmo;
+	int nAmmo;
+
+	GetAmmos(nAmmo, nReloadedAmmo, nWeaponIndex);
+
+	wchar_t wpstrNumber[5];
+
+	float fCenterX = 0.745f;
+	float fCenterY = -0.935f + nWeaponIndex * 0.15f;
+
+	if (nWeaponIndex != 3) wsprintfW(wpstrNumber, L"%d", nAmmo);
+	else wsprintfW(wpstrNumber, L"-", nAmmo);
+	m_pFont->ChangeText(m_pAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
+
+	fCenterX -= 0.010f;
+	fCenterY += 0.095f;
+
+	if (nWeaponIndex != 3) wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
+	else wsprintfW(wpstrNumber, L"-", nAmmo);
+	m_pFont->ChangeText(m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
+}
+
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -2440,6 +2504,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_TOMAHAWK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Tomahawk.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TOMAHAWK], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+	m_ppTextures[UI_TEXTURE_SLOT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SLOT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Slot.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SLOT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
@@ -2482,10 +2550,43 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	m_ppUIRects[UI_RECT_SLOT_4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	float f = (116.0f - 178.0f) / FRAME_BUFFER_WIDTH;
+	fCenterX = 0.87f;
+	fCenterY = -0.875f;
+	fSizeX = 180.0f / FRAME_BUFFER_WIDTH;
+	fSizeY = 58.0f / FRAME_BUFFER_HEIGHT;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SELECTED_SLOT_1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.15f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SELECTED_SLOT_2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.15f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SELECTED_SLOT_3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.15f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_SELECTED_SLOT_4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+
+	// Draw Base UI
+	if (m_ppTextures[UI_TEXTURE_BASE])
+	{
+		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
+	}
+
 	// Draw HP BAR
 	if (m_pd3dPipelineStateBar) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBar);
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerHP, m_pcbMappedPlayerHP, m_pPlayer->GetMaxHitPoint(), m_pPlayer->GetHitPoint());
@@ -2545,24 +2646,21 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	for (int i = 0; i < 4; i++)
 	{
 		if (m_nEquipWeaponIndex == i)
-			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.8f));
+			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		else
-			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f));
+			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.15f));
 
 		if (m_pWeaponTextures[i])
 		{
 			m_pWeaponTextures[i]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
 		}
-	}
 
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-
-	// Draw Base UI
-	if (m_ppTextures[UI_TEXTURE_BASE])
-	{
-		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
+		if (m_nEquipWeaponIndex == i)
+		{
+			m_ppTextures[UI_TEXTURE_SLOT]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[UI_RECT_SELECTED_SLOT_1 + i]->Render(pd3dCommandList, 0);
+		}
 	}
 }
 

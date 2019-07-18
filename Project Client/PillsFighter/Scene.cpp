@@ -2526,6 +2526,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	pUserInterface->SetPlayer(m_pPlayer);
+	pUserInterface->SetFont(m_pFont);
+	pUserInterface->SetAmmoText(0);
 
 	m_pUserInterface = pUserInterface;
 

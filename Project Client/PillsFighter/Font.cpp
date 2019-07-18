@@ -584,6 +584,8 @@ void CFont::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	for (const auto& pTextObject : m_vpTextObjects)
 	{
+		if (pTextObject->IsHide()) continue;
+
 		pTextObject->Render(pd3dCommandList);
 	}
 }

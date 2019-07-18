@@ -101,9 +101,11 @@ public:
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 
 protected:
-	int		m_nGimGunAmmo = 0;
+	int		m_nGmGunAmmo = 0;
 	int		m_nBazookaAmmo = 0;
 	int		m_nMachineGunAmmo = 0;
+	int		m_nSMGAmmo = 0;
+	int		m_nSniperAmmo = 0;
 
 	bool	m_bReloading = false;
 	float	m_fReloadTime = 0.0f;
@@ -117,6 +119,12 @@ public:
 	void Reload(CWeapon *pWeapon);
 	bool IsReload() { return m_bReloading; }
 	float GetReloadElapsedTime() { return m_fReloadTime; }
+
+	int GetGMGunAmmo() { return m_nGmGunAmmo; };
+	int GetBazookaAmmo() { return m_nBazookaAmmo; };
+	int GetMachineGunAmmo() { return m_nMachineGunAmmo; };
+	int GetSMGAmmo() { return m_nSMGAmmo; };
+	int GetSniperAmmo() { return m_nSniperAmmo; };
 
 	WEAPON_TYPE GetWeaponType();
 
@@ -199,10 +207,12 @@ public:
 	void GenerateViewMatrix();
 	XMFLOAT4X4 GetViewMatrix() { return(m_xmf4x4View); }
 	void SetUserInterface(CUserInterface *pUI) { m_pUI = pUI; }
+	void ChangeUIAmmo();
 
 protected:
 	XMFLOAT4X4 	m_xmf4x4View;
 
 protected:
 	CUserInterface *m_pUI = NULL;
+	int m_nEquipWeaponIndex = 0;
 };

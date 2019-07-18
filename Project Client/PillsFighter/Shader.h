@@ -4,6 +4,8 @@
 #include "Camera.h"
 #include "Player.h"
 
+class CFont;
+class CTextObject;
 class CRepository;
 
 class CShader
@@ -508,7 +510,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 12
+#define UI_TEXTURE_COUNT 13
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -522,8 +524,9 @@ protected:
 #define UI_TEXTURE_SMG 9
 #define UI_TEXTURE_SNIPER 10
 #define UI_TEXTURE_TOMAHAWK 11
+#define UI_TEXTURE_SLOT 12
 
-#define UI_RECT_COUNT 8
+#define UI_RECT_COUNT 12
 
 #define UI_RECT_BASE 0
 #define UI_RECT_HP 1
@@ -533,6 +536,10 @@ protected:
 #define UI_RECT_SLOT_2 5
 #define UI_RECT_SLOT_3 6
 #define UI_RECT_SLOT_4 7
+#define UI_RECT_SELECTED_SLOT_1 8
+#define UI_RECT_SELECTED_SLOT_2 9
+#define UI_RECT_SELECTED_SLOT_3 10
+#define UI_RECT_SELECTED_SLOT_4 11
 
 struct CB_PLAYER_VALUE
 {
@@ -606,9 +613,17 @@ protected:
 	CTexture						*m_pWeaponTextures[4];
 	int								m_nEquipWeaponIndex = 0;
 
+	CFont							*m_pFont = NULL;
+	CTextObject						*m_pReloadedAmmoText = NULL;
+	CTextObject						*m_pAmmoText = NULL;
+
 public:
 	void SetPlayer(CPlayer *pPlayer);
+	void SetFont(CFont *pFont) { m_pFont = pFont; }
 	void ChangeWeapon(int nIndex);
+	void SetAmmoText(int nWeaponIndex);
+	void ChangeAmmoText(int nWeaponIndex);
+	void GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -769,6 +769,7 @@ void CPlayer::ProcessShootAnimation()
 			else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
 
 			pGun->Shot();
+			ChangeUIAmmo();
 			m_bShootable = false;
 		}
 
@@ -957,7 +958,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 
 void CPlayer::PickUpAmmo(int nType, int nAmmo)
 {
-	if (nType & WEAPON_TYPE_OF_GM_GUN) m_nGimGunAmmo += nAmmo;
+	if (nType & WEAPON_TYPE_OF_GM_GUN) m_nGmGunAmmo += nAmmo;
 	else if (nType & WEAPON_TYPE_OF_BAZOOKA) m_nBazookaAmmo += nAmmo;
 	else if (nType & WEAPON_TYPE_OF_MACHINEGUN) m_nMachineGunAmmo += nAmmo;
 }
@@ -976,7 +977,7 @@ void CPlayer::PrepareAttack(CWeapon *pWeapon)
 			{
 				if (nType & WEAPON_TYPE_OF_GM_GUN)
 				{
-					if (m_nGimGunAmmo > 0) Reload(pGun);
+					if (m_nGmGunAmmo > 0) Reload(pGun);
 				}
 				else if (nType & WEAPON_TYPE_OF_BAZOOKA)
 				{
@@ -1027,15 +1028,27 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 				{
 					if (nType & WEAPON_TYPE_OF_GM_GUN)
 					{
-						if (m_nGimGunAmmo > 0) pGun->Reload(m_nGimGunAmmo);
+						if (m_nGmGunAmmo > 0)
+						{
+							pGun->Reload(m_nGmGunAmmo);
+							ChangeUIAmmo();
+						}
 					}
 					else if (nType & WEAPON_TYPE_OF_BAZOOKA)
 					{
-						if (m_nBazookaAmmo > 0) pGun->Reload(m_nBazookaAmmo);
+						if (m_nBazookaAmmo > 0)
+						{
+							pGun->Reload(m_nBazookaAmmo);
+							ChangeUIAmmo();
+						}
 					}
 					else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
 					{
-						if (m_nMachineGunAmmo > 0) pGun->Reload(m_nMachineGunAmmo);
+						if (m_nMachineGunAmmo > 0)
+						{
+							pGun->Reload(m_nMachineGunAmmo);
+							ChangeUIAmmo();
+						}
 					}
 
 					m_bReloading = false;
@@ -1047,6 +1060,12 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 	ProcessMouseUpTime(fTimeElapsed);
 }
 
+void CPlayer::ChangeUIAmmo()
+{
+	if (m_pUI) 
+		m_pUI->ChangeAmmoText(m_nEquipWeaponIndex); 
+}
+
 void CPlayer::ChangeWeapon(int nIndex)
 {
 	if (IsShooting()) return;
@@ -1055,8 +1074,14 @@ void CPlayer::ChangeWeapon(int nIndex)
 	CRobotObject::ChangeWeapon(nIndex);
 
 	m_bReloading = false;
-	m_bWeaponChanged = TRUE;
-	if(m_pUI) m_pUI->ChangeWeapon(nIndex);
+	m_bWeaponChanged = TRUE; 
+	m_nEquipWeaponIndex = nIndex;
+	if (m_pUI)
+	{
+		m_pUI->ChangeWeapon(nIndex);
+
+		m_pUI->ChangeAmmoText(nIndex);
+	}
 }
 
 WEAPON_TYPE CPlayer::GetWeaponType()

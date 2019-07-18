@@ -49,6 +49,9 @@ public:
 
 	virtual void FreeText();
 	wchar_t* GetText() { return m_pText; }
+	bool IsHide() { return m_bHide; }
+	void Hide() { m_bHide = true; }
+	void Display() { m_bHide = false; }
 
 protected:
 #define MAX_TEXT_LENGTH 100
@@ -64,6 +67,8 @@ protected:
 
 	XMFLOAT2					m_xmf2Position;
 	XMFLOAT4					m_xmf4Color;
+
+	bool						m_bHide = false;
 };
 
 class CFont
