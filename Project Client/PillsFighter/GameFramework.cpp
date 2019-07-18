@@ -1010,7 +1010,7 @@ void CGameFramework::ProcessPacket()
 		{
 			if (pPacket->ID == m_nClinetIndex)
 			{
-				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, pPacket->AMMO);
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
 				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickAmmo);

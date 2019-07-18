@@ -201,4 +201,6 @@ public:
 
 protected:
 	XMFLOAT4X4 	m_xmf4x4View;
+
+protected:
 };

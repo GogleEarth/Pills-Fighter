@@ -957,7 +957,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 
 void CPlayer::PickUpAmmo(int nType, int nAmmo)
 {
-	if (nType & WEAPON_TYPE_OF_GIM_GUN) m_nGimGunAmmo += nAmmo;
+	if (nType & WEAPON_TYPE_OF_GM_GUN) m_nGimGunAmmo += nAmmo;
 	else if (nType & WEAPON_TYPE_OF_BAZOOKA) m_nBazookaAmmo += nAmmo;
 	else if (nType & WEAPON_TYPE_OF_MACHINEGUN) m_nMachineGunAmmo += nAmmo;
 }
@@ -974,7 +974,7 @@ void CPlayer::PrepareAttack(CWeapon *pWeapon)
 
 			if (pGun->GetReloadedAmmo() == 0)
 			{
-				if (nType & WEAPON_TYPE_OF_GIM_GUN)
+				if (nType & WEAPON_TYPE_OF_GM_GUN)
 				{
 					if (m_nGimGunAmmo > 0) Reload(pGun);
 				}
@@ -1025,7 +1025,7 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 
 				if (m_fReloadTime < 0.0f)
 				{
-					if (nType & WEAPON_TYPE_OF_GIM_GUN)
+					if (nType & WEAPON_TYPE_OF_GM_GUN)
 					{
 						if (m_nGimGunAmmo > 0) pGun->Reload(m_nGimGunAmmo);
 					}
@@ -1064,7 +1064,7 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 	{
 		int nType = m_pRHWeapon->GetType();
 
-		if (nType & WEAPON_TYPE_OF_GIM_GUN)
+		if (nType & WEAPON_TYPE_OF_GM_GUN)
 			return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
 		else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
 			return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
@@ -1083,7 +1083,7 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 
 	switch (nType)
 	{
-	case WEAPON_TYPE_OF_GIM_GUN:
+	case WEAPON_TYPE_OF_GM_GUN:
 		pWeapon = new CGimGun();
 		if (pBulletShader) ((CGimGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;

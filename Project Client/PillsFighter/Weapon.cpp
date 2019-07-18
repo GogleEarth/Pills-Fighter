@@ -184,7 +184,7 @@ void CGimGun::Initialize()
 
 void CGimGun::SetType()
 {
-	m_nType |= WEAPON_TYPE_OF_GIM_GUN;
+	m_nType |= WEAPON_TYPE_OF_GM_GUN;
 
 	CGun::SetType();
 }

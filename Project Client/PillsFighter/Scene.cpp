@@ -2502,7 +2502,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	}
 
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pGimGun, WEAPON_TYPE_OF_GIM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
+		m_pGimGun, WEAPON_TYPE_OF_GM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
@@ -2511,7 +2511,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
 
 #ifndef ON_NETWORKING
-	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GIM_GUN, 50);
+	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
 #endif

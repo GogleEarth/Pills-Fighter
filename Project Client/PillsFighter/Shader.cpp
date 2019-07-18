@@ -1115,7 +1115,7 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
 
 	pRobot->SetWeaponShader(pShader);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GIM_GUN);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GM_GUN);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
@@ -2338,6 +2338,32 @@ void CUserInterface::ReleaseUploadBuffers()
 	CShader::ReleaseUploadBuffers();
 }
 
+void CUserInterface::SetPlayer(CPlayer *pPlayer)
+{
+	m_pPlayer = pPlayer;
+
+	for (int i = 0; i < 4; i++)
+	{
+		int nWeaponType = m_pPlayer->GetWeapon(i)->GetType();
+		m_pWeaponTextures[i] = NULL;
+
+		if (nWeaponType & WEAPON_TYPE_OF_GM_GUN)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_GM_GUN];
+		if (nWeaponType & WEAPON_TYPE_OF_BAZOOKA)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_BAZOOKA];
+		if (nWeaponType & WEAPON_TYPE_OF_MACHINEGUN)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_MACHINEGUN];
+		if (nWeaponType & WEAPON_TYPE_OF_SMG)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SMG];
+		if (nWeaponType & WEAPON_TYPE_OF_SNIPER)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SNIPER];
+		if (nWeaponType & WEAPON_TYPE_OF_SABER)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SABER];
+		if (nWeaponType & WEAPON_TYPE_OF_TOMAHAWK)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_TOMAHAWK];
+	}
+}
+
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -2377,9 +2403,9 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BAZOOKA]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Bazooka.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BAZOOKA], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[UI_TEXTURE_BEAMSABER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[UI_TEXTURE_BEAMSABER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamSaber.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAMSABER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_SABER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SABER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_SABER.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SABER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_SMG] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_SMG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_SMG.dds", 0);
@@ -2495,16 +2521,13 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Weapons
-	if (m_ppTextures[UI_TEXTURE_BAZOOKA])
+	for (int i = 0; i < 4; i++)
 	{
-		m_ppTextures[UI_TEXTURE_TOMAHAWK]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_SLOT_1]->Render(pd3dCommandList, 0);
-		m_ppTextures[UI_TEXTURE_BAZOOKA]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_SLOT_2]->Render(pd3dCommandList, 0);
-		m_ppTextures[UI_TEXTURE_BEAMSABER]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_SLOT_3]->Render(pd3dCommandList, 0);
-		m_ppTextures[UI_TEXTURE_SNIPER]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_SLOT_4]->Render(pd3dCommandList, 0);
+		if (m_pWeaponTextures[i])
+		{
+			m_pWeaponTextures[i]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
+		}
 	}
 
 	// Draw Base UI

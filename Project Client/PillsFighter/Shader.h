@@ -518,7 +518,7 @@ protected:
 #define UI_TEXTURE_GM_GUN 5
 #define UI_TEXTURE_MACHINEGUN 6
 #define UI_TEXTURE_BAZOOKA 7
-#define UI_TEXTURE_BEAMSABER 8
+#define UI_TEXTURE_SABER 8
 #define UI_TEXTURE_SMG 9
 #define UI_TEXTURE_SNIPER 10
 #define UI_TEXTURE_TOMAHAWK 11
@@ -600,8 +600,10 @@ protected:
 	int								m_nTextures;
 	CTexture						**m_ppTextures = NULL;
 
+	CTexture						*m_pWeaponTextures[4];
+
 public:
-	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
+	void SetPlayer(CPlayer *pPlayer);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
