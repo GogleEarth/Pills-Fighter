@@ -276,6 +276,7 @@ cbuffer cbMinimapRobotPos : register(MINIMAP_ROBOT_POS)
 cbuffer cbMinimapPlayerPos : register(MINIMAP_PLAYER_POS)
 {
 	matrix gmtxPlayerView;
+	float2 gvMinimapPlayerPosition;
 	float2 gvMinimapPlayerLook;
 	float2 gvMinimapPlayerRight;
 }
@@ -316,13 +317,17 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	world.x *= 0.0009f;
 	world.y *= 0.0016f;
 
+	float2 enemyPos;
+	enemyPos.x = (gvMinimapRobotPos[input[0].index].x - gvMinimapPlayerPosition.x);
+	enemyPos.y = (gvMinimapRobotPos[input[0].index].y - gvMinimapPlayerPosition.y);
+	enemyPos = mul(float4(enemyPos.x, 0.0f, enemyPos.y, 1.0f), gmtxPlayerView).xz;
+	if (sqrt((enemyPos.x*enemyPos.x) + (enemyPos.y*enemyPos.y)) > 320) output.outOfRange = true;
 
 	for (int i = 0; i < 4; i++)
 	{
 		output.pos = float4(fVertices[i] + world, 0.0f, 1.0f);
 		output.uv = fUVs[i];
 		output.eort = eOrT;
-		if (world.x > 0.145f || world.x < -0.145f || world.y > 0.26f || world.y < -0.26f) output.outOfRange = true;
 
 		outStream.Append(output);
 	}
@@ -331,7 +336,7 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 
 float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 {
-	if (input.outOfRange == true) discard;
+	if (input.outOfRange) discard;
 
 	float4 cColor;
 	if (input.eort == false) {

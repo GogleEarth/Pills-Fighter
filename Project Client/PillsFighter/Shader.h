@@ -728,6 +728,7 @@ struct CB_MINIMAP_ROBOT_POSITION
 struct CB_MINIMAP_PLAYER_POSITION
 {
 	XMFLOAT4X4 playerView;
+	XMFLOAT2 playerPosition;
 	XMFLOAT2 playerLook;
 	XMFLOAT2 playerRight;
 };

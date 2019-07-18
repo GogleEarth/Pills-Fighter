@@ -3218,10 +3218,12 @@ void CMinimapShader::UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandLis
 {
 	m_pPlayer->GenerateViewMatrix();
 	XMFLOAT4X4 playerView = m_pPlayer->GetViewMatrix();
+	XMFLOAT3 playerPos = m_pPlayer->GetPosition();
 	XMFLOAT3 playerLook = m_pPlayer->GetLook();
 	XMFLOAT3 playerRight = m_pPlayer->GetRight();
 
 	XMStoreFloat4x4(&m_cbMinimapPlayerInfo->playerView, XMMatrixTranspose(XMLoadFloat4x4(&playerView)));
+	m_cbMinimapPlayerInfo->playerPosition = XMFLOAT2(playerPos.x, playerPos.z);
 	m_cbMinimapPlayerInfo->playerLook = XMFLOAT2(playerLook.x, playerLook.z);
 	m_cbMinimapPlayerInfo->playerRight = XMFLOAT2(playerRight.x, playerRight.z);
 
