@@ -559,6 +559,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderColored(ID3DBlob **ppd3dShaderBlob);
 	//virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -567,6 +568,7 @@ public:
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
 	virtual void UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fReloadTime, float fReloadElapsedTime);
+	virtual void UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -579,6 +581,7 @@ protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateBullet = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateReload = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateTeamHP = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateColored = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
@@ -601,9 +604,11 @@ protected:
 	CTexture						**m_ppTextures = NULL;
 
 	CTexture						*m_pWeaponTextures[4];
+	int								m_nEquipWeaponIndex = 0;
 
 public:
 	void SetPlayer(CPlayer *pPlayer);
+	void ChangeWeapon(int nIndex);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

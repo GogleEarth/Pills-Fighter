@@ -15,6 +15,7 @@
 #define UI_RELOAD_INFO					b15
 #define MINIMAP_ROBOT_POS				b16
 #define MINIMAP_PLAYER_POS				b17
+#define UI_COLOR_INFO					b18
 
 #define DIFFUSE_TEXTURES				t1 // t1 ~ t3
 #define SPECULAR_TEXTURE				t4

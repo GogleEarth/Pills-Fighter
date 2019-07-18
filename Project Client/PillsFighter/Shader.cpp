@@ -2128,6 +2128,7 @@ CUserInterface::~CUserInterface()
 	if (m_pd3dPipelineStateBullet) m_pd3dPipelineStateBullet->Release();
 	if (m_pd3dPipelineStateReload) m_pd3dPipelineStateReload->Release();
 	if (m_pd3dPipelineStateTeamHP) m_pd3dPipelineStateTeamHP->Release();
+	if (m_pd3dPipelineStateColored) m_pd3dPipelineStateColored->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -2158,6 +2159,11 @@ D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderBullet(ID3DBlob **ppd3dSh
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUIReload", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderColored(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUIColored", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
@@ -2217,6 +2223,9 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
+
+	d3dPipelineStateDesc.PS = CreatePixelShaderColored(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateColored);
 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderBar(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
@@ -2317,6 +2326,11 @@ void CUserInterface::UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dC
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_RELOAD_INFO, d3dGpuVirtualAddress);
 }
 
+void CUserInterface::UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color)
+{
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_COLOR_INFO, 4, &xmf4Color, 0);
+}
+
 void CUserInterface::ReleaseUploadBuffers()
 {
 	if (m_ppUIRects)
@@ -2341,6 +2355,7 @@ void CUserInterface::ReleaseUploadBuffers()
 void CUserInterface::SetPlayer(CPlayer *pPlayer)
 {
 	m_pPlayer = pPlayer;
+	m_pPlayer->SetUserInterface(this);
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -2362,6 +2377,11 @@ void CUserInterface::SetPlayer(CPlayer *pPlayer)
 		if (nWeaponType & WEAPON_TYPE_OF_TOMAHAWK)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_TOMAHAWK];
 	}
+}
+
+void CUserInterface::ChangeWeapon(int nIndex)
+{
+	m_nEquipWeaponIndex = nIndex;
 }
 
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
@@ -2518,17 +2538,24 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		}
 	}
 
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+	if (m_pd3dPipelineStateColored) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateColored);
 
 	// Draw Weapons
 	for (int i = 0; i < 4; i++)
 	{
+		if (m_nEquipWeaponIndex == i)
+			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.8f));
+		else
+			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f));
+
 		if (m_pWeaponTextures[i])
 		{
 			m_pWeaponTextures[i]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
 		}
 	}
+
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Base UI
 	if (m_ppTextures[UI_TEXTURE_BASE])

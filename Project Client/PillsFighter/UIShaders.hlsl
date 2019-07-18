@@ -108,7 +108,7 @@ float4 PSUIBullet(GS_UI_OUT input) : SV_TARGET
 	float fStride = 1.0f / float(giValue);
 	vNewUV.y = 1 - fmod(vNewUV.y, fStride) * giValue;
 
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, vNewUV);
+	float4 cColor = gtxtTexture[0].Sample(gssClamp, vNewUV);
 
 	return(cColor);
 }
@@ -125,11 +125,23 @@ float4 PSUIReload(GS_UI_OUT input) : SV_TARGET
 
 	if (input.uv.y < gfReloadTime)
 	{
-		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+		cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
 		cColor.rgb *= gfTextColor;
 	}
 
 	return cColor;
+}
+
+cbuffer cbUIColorInfo : register(UI_COLOR_INFO)
+{
+	float4 gvUIColor;
+}
+
+float4 PSUIColored(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
+
+	return cColor * gvUIColor;
 }
 
 ////////////////////////////////////////////

@@ -198,9 +198,11 @@ public:
 public:
 	void GenerateViewMatrix();
 	XMFLOAT4X4 GetViewMatrix() { return(m_xmf4x4View); }
+	void SetUserInterface(CUserInterface *pUI) { m_pUI = pUI; }
 
 protected:
 	XMFLOAT4X4 	m_xmf4x4View;
 
 protected:
+	CUserInterface *m_pUI = NULL;
 };

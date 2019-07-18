@@ -812,6 +812,12 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.Num32BitValues = 4;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.ShaderRegister = 18;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;

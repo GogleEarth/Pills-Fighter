@@ -1056,6 +1056,7 @@ void CPlayer::ChangeWeapon(int nIndex)
 
 	m_bReloading = false;
 	m_bWeaponChanged = TRUE;
+	if(m_pUI) m_pUI->ChangeWeapon(nIndex);
 }
 
 WEAPON_TYPE CPlayer::GetWeaponType()
