@@ -251,6 +251,8 @@ void Room::room_update(float elapsed_time)
 
 	scenes_[using_scene_]->AnimateObjects(elapsed_time);
 
+	//std::cout << scenes_[using_scene_]->get_elapsed_game_time() << "ÃÊ Áö³²\n";
+
 	if (using_scene_ == COLONY)
 	{
 		if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_GROUND - 5.0f &&
@@ -290,43 +292,6 @@ void Room::room_update(float elapsed_time)
 		}
 	}
 
-	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
-	{
-		GameObject* object = scenes_[using_scene_]->get_object(i);
-		if (object->GetUse() == false) continue;
-
-		PKT_UPDATE_OBJECT* updateobj = new PKT_UPDATE_OBJECT();
-		updateobj->PktId = (char)PKT_ID_UPDATE_OBJECT;
-		updateobj->PktSize = (char)sizeof(PKT_UPDATE_OBJECT);
-		updateobj->Object_Index = i;
-		updateobj->Object_Position = object->GetPosition();
-		update_object_queue_.push(updateobj);
-		if (object->IsDelete())
-		{
-			PKT_DELETE_OBJECT* pkt_d = new PKT_DELETE_OBJECT();
-			pkt_d->PktId = (char)PKT_ID_DELETE_OBJECT;
-			pkt_d->PktSize = (char)sizeof(PKT_DELETE_OBJECT);
-			pkt_d->Object_Index = i;
-			delete_object_queue_.push(pkt_d);
-
-			OBJECT_TYPE type = object->GetObjectType();
-			if (type == OBJECT_TYPE_MACHINE_BULLET
-				|| type == OBJECT_TYPE_BZK_BULLET
-				|| type == OBJECT_TYPE_BEAM_BULLET)
-			{
-				PKT_CREATE_EFFECT* pktCE = new PKT_CREATE_EFFECT();
-				pktCE->PktId = PKT_ID_CREATE_EFFECT;
-				pktCE->PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-				if (type == OBJECT_TYPE_BZK_BULLET)
-					pktCE->efType = EFFECT_TYPE_EXPLOSION;
-				else
-					pktCE->efType = EFFECT_TYPE_HIT;
-				pktCE->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-				pktCE->xmf3Position = object->GetPosition();
-				create_effect_queue_.push(pktCE);
-			}
-		}
-	}
 }
 
 void Room::spawn_healing_item()
@@ -383,6 +348,22 @@ void Room::spawn_ammo_item()
 		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
+	}
+}
+
+void Room::check_collision_obstacles(int object)
+{
+	if (scenes_[using_scene_]->check_collision_obstacles(object))
+	{
+		scenes_[using_scene_]->deleteObject(object);
+	}
+}
+
+void Room::check_collision_player(int object)
+{
+	if (scenes_[using_scene_]->check_collision_player(object))
+	{
+		scenes_[using_scene_]->deleteObject(object);
 	}
 }
 

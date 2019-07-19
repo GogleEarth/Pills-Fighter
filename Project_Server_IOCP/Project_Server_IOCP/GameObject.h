@@ -57,6 +57,8 @@ public:
 	void Animate(float fTimeElapsed);
 	void OnPrepareRender();
 
+	bool CollisionCheck(GameObject* object);
+
 	//게임 객체의 월드 변환 행렬에서 위치 벡터와 방향(x-축, y-축, z-축) 벡터를 반환한다. 
 	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
 	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }

@@ -94,6 +94,9 @@ public:
 	void spawn_healing_item();
 	void spawn_ammo_item();
 
+	void check_collision_obstacles(int object);
+	void check_collision_player(int object);
+
 	void player_info_inqueue(char* packet);
 	PKT_PLAYER_INFO* player_info_dequeue();
 	PKT_CREATE_OBJECT* create_object_dequeue();

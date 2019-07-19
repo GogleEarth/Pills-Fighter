@@ -4,6 +4,18 @@
 
 GameObject::GameObject()
 {
+	m_xmf4x4World = Matrix4x4::Identity();
+	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	m_fPitch = 0.0f;
+	m_fRoll = 0.0f;
+	m_fYaw = 0.0f;
+
+	SetPrepareRotate(0.0f, 0.0f, 0.0f);
+
 	ElapsedTime_ = 0.0f;
 }
 
@@ -21,7 +33,7 @@ void GameObject::SetModel(CModel * pModel)
 		model_ = pModel;
 		model_->AddRef();
 
-		aabb_.empty();
+		aabb_.clear();
 
 		num_meshes_ = pModel->GetMeshes();
 		for (int i = 0; i < num_meshes_; i++) aabb_.emplace_back(BoundingBox());
@@ -88,6 +100,19 @@ void GameObject::OnPrepareRender()
 
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPreparePitch), XMConvertToRadians(m_fPrepareYaw), XMConvertToRadians(m_fPrepareRoll));
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+}
+
+bool GameObject::CollisionCheck(GameObject* object)
+{
+	auto AABB = (object->GetAABB())[0];
+
+	if (!object->IsDelete())
+	{
+		if (aabb_[0].Intersects(AABB))
+			return true;
+	}
+
+	return false;
 }
 
 void GameObject::SetWorldTransf(XMFLOAT4X4 & xmf4x4World)

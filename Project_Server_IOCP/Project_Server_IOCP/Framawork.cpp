@@ -108,11 +108,6 @@ int Framawork::thread_process()
 				send_packet_to_room_player(key, (char*)data);
 			}
 
-			PKT_SEND_COMPLETE pkt_sc;
-			pkt_sc.PktID = PKT_ID_SEND_COMPLETE;
-			pkt_sc.PktSize = sizeof(PKT_SEND_COMPLETE);
-			send_packet_to_room_player(key, (char*)&pkt_sc);
-
 			if (rooms_[key].get_num_player_in_room() > 0)
 				add_timer(key, key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 			else
@@ -131,6 +126,8 @@ int Framawork::thread_process()
 				elapsed_time = over_ex->elapsed_time;
 				
 			object->Animate(elapsed_time);
+			rooms_[over_ex->room_num].check_collision_obstacles(key);
+			rooms_[over_ex->room_num].check_collision_player(key);
 
 			if (object->IsDelete())
 			{
@@ -529,6 +526,8 @@ void Framawork::process_packet(int id, char* packet)
 			PKT_PLAYER_IN pkt_pin;
 			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
 			pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
+
+			// 새로들어온 애한테 원래있던애들 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
 			{
 				if (i == player_id) continue;
@@ -541,15 +540,17 @@ void Framawork::process_packet(int id, char* packet)
 					send_packet_to_player(id, (char*)&pkt_pin);
 				}
 			}
+
 			pkt_pin.id = player_id;
 			pkt_pin.Team = player_id % 2;
+			pkt_pin.robot = ROBOT_TYPE_GM;
+			// 원래있던애들한테 새로들어온애 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
 			{
 				if (i == player_id) continue;
 				auto player = rooms_[room_num].get_player(i);
-				if (player->get_use())
-					send_packet_to_player(player->get_serverid(), (char*)&pkt_pin);
-				
+				if (!player->get_use()) continue;
+				send_packet_to_player(player->get_serverid(), (char*)&pkt_pin);
 			}
 
 			PKT_CHANGE_ROOM_INFO pkt_cmi;

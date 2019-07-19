@@ -28,10 +28,10 @@ protected:
 
 	CModel			*m_pParent = NULL;
 	CModel			*m_pSibling = NULL;
-	CModel			*m_pChild = NULL;
 
 	char			m_pstrModelName[64] = { 0 };
 public:
+	CModel			*m_pChild = NULL;
 
 	void SetChild(CModel *pChild, bool bAddReference = false);
 	void SetToParent(XMFLOAT4X4 xmf4x4ToParent) { m_xmf4x4ToParent = xmf4x4ToParent; }

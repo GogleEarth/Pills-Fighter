@@ -16,19 +16,10 @@ void Scene::AnimateObjects(float fTimeElapsed)
 {
 	elapsed_game_time_ += fTimeElapsed;
 
-	//for (int i = 0; i < MAX_NUM_OBJECT; i++)
-	//{
-	//	if (Objects_[i].GetUse() != false)
-	//	{
-	//		if (!Objects_[i].IsDelete())
-	//			Objects_[i].Animate(fTimeElapsed);
-	//		else if (Objects_[i].IsDelete())
-	//			releaseObject(i);
-	//	}
-	//}
-
-	for (auto obstacle : Obstacles_)
-		obstacle->Animate(fTimeElapsed);
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		Objects_[i].Animate(fTimeElapsed);
+	}
 }
 
 void Scene::InsertObjectFromLoadInfFromBin(char * pstrFileName, int nGroup)
@@ -148,6 +139,9 @@ void Scene::init(CRepository * pRepository)
 		BeamsaberCollisionmesh_[i].SetHitPoint(3);
 	}
 
+	for (auto obstacle : Obstacles_)
+		obstacle->Animate(0.016f);
+
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
 	is_being_event_ = false;
@@ -231,6 +225,48 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 	return index;
 }
 
+bool Scene::check_collision_obstacles(int object)
+{
+	for (auto obstacle : Obstacles_)
+	{
+		for (auto objaabb : Objects_[object].GetAABB())
+		{
+			for (auto playeraabb : obstacle->GetAABB())
+			{
+				if (objaabb.Intersects(playeraabb))
+				{
+					std::cout << "건탄충\n";
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+bool Scene::check_collision_player(int object)
+{
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		if (Objects_[i].GetPlay())
+		{
+			for (auto objaabb : Objects_[object].GetAABB())
+			{
+				for (auto playeraabb : Objects_[i].GetAABB())
+				{
+					if (objaabb.Intersects(playeraabb))
+					{
+						std::cout << "플탄충\n";
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 void Scene::start_event()
 {
 	std::cout << "이벤트 시작\n";
@@ -249,8 +285,6 @@ void Scene::end_event()
 
 void GroundScene::BuildObjects(CRepository * pRepository)
 {
-	init(pRepository);
-
 	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Hangar.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_HangarSelfData.bin", 0);
 
@@ -277,6 +311,8 @@ void GroundScene::BuildObjects(CRepository * pRepository)
 
 	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/fence.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/FenceSelfData.bin", 8);
+
+	init(pRepository);
 }
 
 void GroundScene::AnimateObjects(float fTimeElapsed)
@@ -305,8 +341,6 @@ void GroundScene::end_event()
 
 void SpaceScene::BuildObjects(CRepository * pRepository)
 {
-	init(pRepository);
-
 	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids1.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_1SelfData.bin", 0);
 
@@ -333,8 +367,11 @@ void SpaceScene::BuildObjects(CRepository * pRepository)
 
 	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/StarShip_Light.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_StarShipSelfData.bin", 8);
+
+	init(pRepository);
 }
 
 void SpaceScene::AnimateObjects(float fTimeElapsed)
 {
+	Scene::AnimateObjects(fTimeElapsed);
 }

@@ -61,10 +61,15 @@ public:
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
 	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix);
+
+	bool check_collision_obstacles(int object);
+	bool check_collision_player(int object);
+
 	virtual void start_event();
 	virtual void end_event();
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
+	inline void deleteObject(int index) { Objects_[index].Delete(); }
 
 	inline void set_player_worldmatrix(int id, XMFLOAT4X4 matrix) { Objects_[id].SetWorldTransf(matrix); }
 	inline void set_player_is_play(int id, bool play) { Objects_[id].SetPlay(play); }
