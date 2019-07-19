@@ -88,7 +88,7 @@ int Framawork::thread_process()
 			using namespace chrono;
 			float elapsed_time;
 
-			if (over_ex->elapsed_time < 0.016f)
+			if (over_ex->elapsed_time <= 0.001f)
 				elapsed_time = 0.016f;
 			else
 				elapsed_time = over_ex->elapsed_time;
@@ -98,21 +98,6 @@ int Framawork::thread_process()
 			pkt_ti.PktSize = sizeof(PKT_TIME_INFO);
 			pkt_ti.elapsedtime = elapsed_time;
 			send_packet_to_room_player(key, (char*)&pkt_ti);
-
-			while (true)
-			{
-				auto data = rooms_[key].player_info_dequeue();
-				if (data == nullptr) break;
-				rooms_[key].set_player_worldmatrix(data->ID, data->WorldMatrix);
-				send_packet_to_room_player(key, (char*)data);
-			}
-			
-			while (true)
-			{
-				auto data = rooms_[key].create_object_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-			}
 
 			rooms_[key].room_update(elapsed_time);
 
@@ -137,7 +122,6 @@ int Framawork::thread_process()
 				send_packet_to_room_player(key, (char*)data);
 			}
 
-
 			while (true)
 			{
 				auto data = rooms_[key].map_event_dequeue();
@@ -148,10 +132,13 @@ int Framawork::thread_process()
 			PKT_SEND_COMPLETE pkt_sc;
 			pkt_sc.PktID = PKT_ID_SEND_COMPLETE;
 			pkt_sc.PktSize = sizeof(PKT_SEND_COMPLETE);
-			pkt_sc.map = 0;
-			
 			send_packet_to_room_player(key, (char*)&pkt_sc);
-			add_timer(key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+
+			if (rooms_[key].get_num_player_in_room() > 0)
+				add_timer(key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+			else
+				rooms_[key].init();
+
 			delete over_ex;
 		}
 		else
@@ -347,7 +334,7 @@ void Framawork::disconnect_client(int id)
 		send_packet_to_room_player(room_num, (char*)&packet);
 		rooms_[room_num].disconnect_client(clients_[id].socket);
 
-		if (rooms_[room_num].get_players_in_room() <= 0)
+		if (rooms_[room_num].get_num_player_in_room() <= 0)
 		{
 			PKT_ROOM_DELETE pkt_rd;
 			pkt_rd.PktId = PKT_ID_DELETE_ROOM;
@@ -392,14 +379,17 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_PLAYER_INFO:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		rooms_[room_num].player_info_inqueue(packet);
+		int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+		//rooms_[room_num].player_info_inqueue(packet);
+		rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
+		send_packet_to_room_player(room_num, packet);
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
 		std::cout << "로드완료패킷\n";
-		rooms_[room_num].player_load_complete(id);
+		rooms_[room_num].player_load_complete(clients_[id].socket);
 		if (rooms_[room_num].all_load_complete())
 		{
 			PKT_LOAD_COMPLETE pktgamestate;
@@ -543,10 +533,11 @@ void Framawork::process_packet(int id, char* packet)
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
 
-		rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+		auto pkt_co = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 			reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
 		
+		send_packet_to_room_player(room_num, (char*)pkt_co);
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:

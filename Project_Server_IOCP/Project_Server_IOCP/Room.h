@@ -74,19 +74,19 @@ public:
 
 	int get_num_player_in_room();
 	void init(CRepository* repository);
+	void init();
 	bool search_client(SOCKET client);
 	void disconnect_client(SOCKET client);
 	int findindex();
 	void add_player(int id, SOCKET socket);
 	void set_player_lobby_info(int id, char selectedrobot, char team);
-	void shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
-	void player_load_complete(int id);
+	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
+	void player_load_complete(SOCKET socket);
 	void player_send_complete(int id);
 	bool all_send_complete();
 	bool all_load_complete();
 	Player* get_player(int id);
 	int find_player_by_socket(SOCKET client);
-	int get_players_in_room();
 	void start_game();
 	void room_update(float elapsed_time);
 	void spawn_healing_item();

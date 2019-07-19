@@ -64,6 +64,37 @@ void Room::init(CRepository* repository)
 		players_[i].init();
 }
 
+void Room::init()
+{
+	is_playing_ = false;
+	using_scene_ = 3;
+	blue_score_ = 0;
+	red_score_ = 0;
+
+	while (player_info_queue_.size() > 0)
+			player_info_queue_.pop();
+	while (create_object_queue_.size() > 0)
+		create_object_queue_.pop();
+	while (update_object_queue_.size() > 0)
+		update_object_queue_.pop();
+	while (delete_object_queue_.size() > 0)
+		delete_object_queue_.pop();
+	while (create_effect_queue_.size() > 0)
+		create_effect_queue_.pop();
+	while (map_event_queue_.size() > 0)
+		map_event_queue_.pop();
+
+	scenes_[0]->init();
+	scenes_[1]->init();
+
+	for (int i = 0; i < 8; ++i)
+		players_[i].init();
+
+	std::cout << "방 준비 완료\n";
+
+	in_use_ = false;
+}
+
 bool Room::search_client(SOCKET client)
 {
 	bool ret = false;
@@ -110,7 +141,7 @@ void Room::set_player_lobby_info(int id, char selectedrobot, char team)
 	players_[id].set_team(team);
 }
 
-void Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
+PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 {
 	int hp;
 	float life_time;
@@ -146,11 +177,12 @@ void Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	pkt_co->Object_Type = type;
 	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix);
 
-	create_object_queue_.push(pkt_co);
+	return pkt_co;
 }
 
-void Room::player_load_complete(int id)
+void Room::player_load_complete(SOCKET socket)
 {
+	int id = find_player_by_socket(socket);
 	players_[id].set_load(true);
 }
 
@@ -192,17 +224,6 @@ int Room::find_player_by_socket(SOCKET client)
 		if(players_[i].get_use())
 			if (players_[i].get_socket() == client) ret = i;
 
-	return ret;
-}
-
-int Room::get_players_in_room()
-{
-	int ret = 0;
-	for (int i = 0; i < MAX_CLIENT; ++i)
-	{
-		if (!players_[i].get_use()) continue;
-		ret += 1;
-	}
 	return ret;
 }
 

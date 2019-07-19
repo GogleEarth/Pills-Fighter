@@ -57,6 +57,7 @@ public:
 	}
 
 	void init(CRepository* pRepository);
+	void init();
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
 	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix);

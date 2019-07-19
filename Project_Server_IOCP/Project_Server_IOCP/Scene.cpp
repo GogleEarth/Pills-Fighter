@@ -156,6 +156,40 @@ void Scene::init(CRepository * pRepository)
 	alert_ = false;
 }
 
+void Scene::init()
+{
+	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
+	{
+		Objects_[i].SetUse(false);
+	}
+
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		Objects_[i].SetHitPoint(PLAYER_HP);
+		Objects_[i].SetPlay(false);
+	}
+
+	Objects_[0].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[1].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[2].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[3].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[4].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
+	Objects_[5].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
+	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
+
+	for (int i = 0; i < 24; ++i)
+	{
+		BeamsaberCollisionmesh_[i].SetUse(false);
+		BeamsaberCollisionmesh_[i].SetHitPoint(3);
+	}
+
+	elapsed_game_time_ = 0.0f;
+	event_time_ = 0.0f;
+	is_being_event_ = false;
+	alert_ = false;
+}
+
 void Scene::InsertObject(GameObject * pObject, int nGroup, bool bPrepareRotate, void * pContext)
 {
 	pObject->SetModel(models_[nGroup]);
