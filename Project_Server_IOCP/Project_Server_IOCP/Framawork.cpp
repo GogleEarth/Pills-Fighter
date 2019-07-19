@@ -346,6 +346,26 @@ void Framawork::disconnect_client(int id)
 		packet.PktSize = sizeof(PKT_PLAYER_OUT);
 		send_packet_to_room_player(room_num, (char*)&packet);
 		rooms_[room_num].disconnect_client(clients_[id].socket);
+
+		if (rooms_[room_num].get_players_in_room() <= 0)
+		{
+			PKT_ROOM_DELETE pkt_rd;
+			pkt_rd.PktId = PKT_ID_DELETE_ROOM;
+			pkt_rd.PktSize = sizeof(PKT_ROOM_DELETE);
+			pkt_rd.Room_num = room_num;
+			send_packet_to_all_player((char*)&pkt_rd);
+			rooms_[room_num].set_is_use(false);
+		}
+		else
+		{
+			PKT_CHANGE_ROOM_INFO pkt_cri;
+			pkt_cri.PktId = PKT_ID_CHANGE_ROOM_INFO;
+			pkt_cri.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+			pkt_cri.Room_num = room_num;
+			pkt_cri.numpeople = rooms_[room_num].get_num_player_in_room();
+			pkt_cri.map = rooms_[room_num].get_map();
+			send_packet_to_all_player((char*)&pkt_cri);
+		}
 	}
 
 	closesocket(clients_[id].socket);
