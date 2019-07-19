@@ -2167,6 +2167,16 @@ D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderColored(ID3DBlob **ppd3dS
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUIColored", "ps_5_1", ppd3dShaderBlob));
 }
 
+D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderTeamHP(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUITeamHP", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUITeamHP", "ps_5_1", ppd3dShaderBlob));
+}
+
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
 {
 	UINT nInputElementDescs = 2;
@@ -2239,9 +2249,9 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.PS = CreatePixelShaderReload(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateReload);
 
-	//d3dPipelineStateDesc.GS = CreateGeometryShaderTeamHP(&pd3dGeometryShaderBlob);
-	//d3dPipelineStateDesc.PS = CreatePixelShaderTeamHP(&pd3dPixelShaderBlob);
-	//hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateTeamHP);
+	d3dPipelineStateDesc.GS = CreateGeometryShaderTeamHP(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShaderTeamHP(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateTeamHP);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
@@ -2271,6 +2281,13 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 	m_pd3dcbReloadInfo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 	m_pd3dcbReloadInfo->Map(0, NULL, (void **)&m_pcbMappedReloadInfo);
+
+	for (int i = 0; i < 3; i++)
+	{
+		m_pd3dcbTeamHP[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+			D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+		m_pd3dcbTeamHP[i]->Map(0, NULL, (void **)&m_pcbMappedTeamHP[i]);
+	}
 }
 
 void CUserInterface::ReleaseShaderVariables()
@@ -2297,6 +2314,15 @@ void CUserInterface::ReleaseShaderVariables()
 	{
 		m_pd3dcbReloadInfo->Unmap(0, NULL);
 		m_pd3dcbReloadInfo->Release();
+	}
+	
+	for (int i = 0; i < 3; i++)
+	{
+		if (m_pd3dcbTeamHP[i])
+		{
+			m_pd3dcbTeamHP[i]->Unmap(0, NULL);
+			m_pd3dcbTeamHP[i]->Release();
+		}
 	}
 
 	CShader::ReleaseShaderVariables();
@@ -2330,6 +2356,15 @@ void CUserInterface::UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dC
 void CUserInterface::UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color)
 {
 	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_COLOR_INFO, 4, &xmf4Color, 0);
+}
+
+void CUserInterface::UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex)
+{
+	m_pcbMappedTeamHP[nIndex]->nMaxValue = m_nTeamMaxHP[nIndex];
+	m_pcbMappedTeamHP[nIndex]->nValue = m_nTeamHP[nIndex];
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbTeamHP[nIndex]->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
 }
 
 void CUserInterface::ReleaseUploadBuffers()
@@ -2448,6 +2483,18 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 	m_pFont->ChangeText(m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
+void CUserInterface::SetTeamInfo(int nIndex, int nHP, wchar_t *pstrName)
+{
+	float fCenterX = -0.77f;
+	float fCenterY = -0.935f + 0.1f * nIndex;
+
+	lstrcpynW(m_wpstrTeamName[nIndex], pstrName, 10);
+	m_nTeamMaxHP[nIndex] = nHP;
+	m_nTeamHP[nIndex] = nHP;
+	m_bTeamIn[nIndex] = true;
+	m_pTeamNameText[nIndex] = m_pFont->SetText(pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN);
+}
+
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -2507,6 +2554,14 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_SLOT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_SLOT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Slot.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SLOT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TEAM_HP_BASE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEAM_HP_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_TeamHPBase.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEAM_HP_BASE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TEAM_HP] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEAM_HP]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_TeamHP.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEAM_HP], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
@@ -2574,6 +2629,29 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
 	m_ppUIRects[UI_RECT_SELECTED_SLOT_4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterX = -0.875f;
+	fCenterY = -0.925f;
+	fSizeX = 120.0f / FRAME_BUFFER_WIDTH;
+	fSizeY = 20.0f / FRAME_BUFFER_HEIGHT;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX , fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_TEAM_HP_1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.1f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_TEAM_HP_2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterY += 0.1f;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_TEAM_HP_3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	::ZeroMemory(m_bTeamIn, sizeof(m_bTeamIn));
+	::ZeroMemory(m_nTeamMaxHP, sizeof(m_nTeamMaxHP));
+	::ZeroMemory(m_nTeamHP, sizeof(m_nTeamHP));
+	::ZeroMemory(m_wpstrTeamName, sizeof(wchar_t) * 3 * 10);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -2585,6 +2663,32 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	{
 		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
 		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
+	}
+
+	// Draw Team HP Base
+	for (int i = 0; i < 3; i++)
+	{
+		if (!m_bTeamIn[i]) continue;
+
+		m_ppTextures[UI_TEXTURE_TEAM_HP_BASE]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (!m_bTeamIn[i]) continue;
+
+		if (m_pd3dPipelineStateTeamHP) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateTeamHP);
+		break;
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (!m_bTeamIn[i]) continue;
+
+		UpdateTeamHPShaderVariable(pd3dCommandList, i);
+		m_ppTextures[UI_TEXTURE_TEAM_HP]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
 	}
 
 	// Draw HP BAR
@@ -2646,6 +2750,13 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	for (int i = 0; i < 4; i++)
 	{
 		if (m_nEquipWeaponIndex == i)
+		{
+			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+			m_ppTextures[UI_TEXTURE_SLOT]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[UI_RECT_SELECTED_SLOT_1 + i]->Render(pd3dCommandList, 0);
+		}
+
+		if (m_nEquipWeaponIndex == i)
 			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		else
 			UpdateUIColorShaderVariable(pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.15f));
@@ -2654,12 +2765,6 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		{
 			m_pWeaponTextures[i]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
-		}
-
-		if (m_nEquipWeaponIndex == i)
-		{
-			m_ppTextures[UI_TEXTURE_SLOT]->UpdateShaderVariables(pd3dCommandList);
-			m_ppUIRects[UI_RECT_SELECTED_SLOT_1 + i]->Render(pd3dCommandList, 0);
 		}
 	}
 }

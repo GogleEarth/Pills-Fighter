@@ -2335,6 +2335,15 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case VK_SHIFT:
 			m_pPlayer->ActivationDash();
 			break;
+		case VK_F1:
+			m_pUserInterface->SetTeamHP(0, 50);
+			break;
+		case VK_F2:
+			m_pUserInterface->SetTeamHP(1, 25);
+			break;
+		case VK_F3:
+			m_pUserInterface->SetTeamHP(2, 75);
+			break;
 		default:
 			break;
 		}
@@ -2527,6 +2536,12 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pUserInterface->SetAmmoText(0);
 
 	m_pUserInterface = pUserInterface;
+
+#ifndef ON_NETWORKING
+	m_pUserInterface->SetTeamInfo(0, 100, L"ÆÀ¿ø1");
+	m_pUserInterface->SetTeamInfo(1, 100, L"ÆÀ¿ø2");
+	m_pUserInterface->SetTeamInfo(2, 100, L"ÆÀ¿ø3");
+#endif
 
 	//
 	XMFLOAT2 xmf2Center = ::CalculateCenter(0.63f, 0.93f, 0.93f, 0.4f, true);

@@ -510,7 +510,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 13
+#define UI_TEXTURE_COUNT 15
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -525,8 +525,10 @@ protected:
 #define UI_TEXTURE_SNIPER 10
 #define UI_TEXTURE_TOMAHAWK 11
 #define UI_TEXTURE_SLOT 12
+#define UI_TEXTURE_TEAM_HP_BASE 13
+#define UI_TEXTURE_TEAM_HP 14
 
-#define UI_RECT_COUNT 12
+#define UI_RECT_COUNT 15
 
 #define UI_RECT_BASE 0
 #define UI_RECT_HP 1
@@ -540,6 +542,9 @@ protected:
 #define UI_RECT_SELECTED_SLOT_2 9
 #define UI_RECT_SELECTED_SLOT_3 10
 #define UI_RECT_SELECTED_SLOT_4 11
+#define UI_RECT_TEAM_HP_1 12
+#define UI_RECT_TEAM_HP_2 13
+#define UI_RECT_TEAM_HP_3 14
 
 struct CB_PLAYER_VALUE
 {
@@ -562,12 +567,12 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
-	//virtual D3D12_SHADER_BYTECODE CreateGeometryShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderColored(ID3DBlob **ppd3dShaderBlob);
-	//virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
@@ -576,6 +581,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
 	virtual void UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fReloadTime, float fReloadElapsedTime);
 	virtual void UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
+	virtual void UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
@@ -617,6 +623,15 @@ protected:
 	CTextObject						*m_pReloadedAmmoText = NULL;
 	CTextObject						*m_pAmmoText = NULL;
 
+	bool							m_bTeamIn[3];
+	int								m_nTeamHP[3];
+	int								m_nTeamMaxHP[3];
+	wchar_t							m_wpstrTeamName[3][10];
+	CTextObject						*m_pTeamNameText[3] = { NULL, NULL, NULL };
+
+	ID3D12Resource					*m_pd3dcbTeamHP[3] = { NULL, NULL, NULL };
+	CB_PLAYER_VALUE					*m_pcbMappedTeamHP[3] = { NULL, NULL, NULL };
+
 public:
 	void SetPlayer(CPlayer *pPlayer);
 	void SetFont(CFont *pFont) { m_pFont = pFont; }
@@ -624,6 +639,8 @@ public:
 	void SetAmmoText(int nWeaponIndex);
 	void ChangeAmmoText(int nWeaponIndex);
 	void GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex);
+	void SetTeamHP(int nIndex, int nHP) { m_nTeamHP[nIndex] = nHP; }
+	void SetTeamInfo(int nIndex, int nHP, wchar_t *pstrName);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

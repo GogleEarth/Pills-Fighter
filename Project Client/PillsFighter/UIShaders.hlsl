@@ -148,6 +148,46 @@ float4 PSUIColored(GS_UI_OUT input) : SV_TARGET
 	return cColor * gvUIColor;
 }
 
+[maxvertexcount(4)]
+void GSUITeamHP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float xPos = float(giValue) / float(giMaxValue);
+	float2 vValueByRight = float2(xPos, 0.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float2 vUp = float2(0.0f, 1.0f);
+	float fWidth = input[0].size.x * 2.0f;
+	float fHalfH = input[0].size.y;
+
+	input[0].center -= input[0].size.x * vRight;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center + fWidth * vValueByRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center + fWidth * vValueByRight, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(xPos, 1.0f);
+	fUVs[3] = float2(xPos, 0.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+float4 PSUITeamHP(GS_UI_OUT input) : SV_TARGET
+{
+	return gtxtTexture[0].Sample(gssClamp, input.uv);
+}
+
 ////////////////////////////////////////////
 
 cbuffer cbFontInfo : register(FONT_INFO)
