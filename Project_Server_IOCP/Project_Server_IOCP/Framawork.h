@@ -5,7 +5,8 @@ enum EVENT_TYPE {
 	EVENT_TYPE_SEND,
 	EVENT_TYPE_RECV,
 	EVENT_TYPE_ROOM_UPDATE,
-	EVENT_TYPE_LOAD_ALL
+	EVENT_TYPE_LOAD_ALL,
+	EVENT_TYPE_OBJECT_MOVE
 };
 
 #define MAX_BUFFER 1024
@@ -16,6 +17,7 @@ struct OVER_EX {
 	char			messageBuffer[MAX_BUFFER];
 	EVENT_TYPE		event_t;
 	float			elapsed_time;
+	int				room_num;
 };
 
 class Client
@@ -37,6 +39,7 @@ public:
 
 struct EVENT_ST {
 	int obj_id;
+	int room_num;
 	EVENT_TYPE type;
 	std::chrono::high_resolution_clock::time_point  start_time;
 
@@ -65,7 +68,7 @@ public:
 	int accept_process();
 	int timer_process();
 
-	void add_timer(int obj_id, EVENT_TYPE et, std::chrono::high_resolution_clock::time_point start_time);
+	void add_timer(int obj_id, int room_num, EVENT_TYPE et, std::chrono::high_resolution_clock::time_point start_time);
 	void do_recv(int id);
 	void error_display(const char *mess, int err_no);
 	void disconnect_client(int id);

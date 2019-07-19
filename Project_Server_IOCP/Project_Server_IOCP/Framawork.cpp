@@ -103,27 +103,6 @@ int Framawork::thread_process()
 
 			while (true)
 			{
-				auto data = rooms_[key].update_object_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-			}
-
-			while (true)
-			{
-				auto data = rooms_[key].delete_object_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-			}
-
-			while (true)
-			{
-				auto data = rooms_[key].create_effect_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-			}
-
-			while (true)
-			{
 				auto data = rooms_[key].map_event_dequeue();
 				if (data == nullptr) break;
 				send_packet_to_room_player(key, (char*)data);
@@ -135,9 +114,64 @@ int Framawork::thread_process()
 			send_packet_to_room_player(key, (char*)&pkt_sc);
 
 			if (rooms_[key].get_num_player_in_room() > 0)
-				add_timer(key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+				add_timer(key, key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 			else
 				rooms_[key].init();
+
+			delete over_ex;
+		}
+		else if (EVENT_TYPE_OBJECT_MOVE == over_ex->event_t)
+		{
+			auto object = rooms_[over_ex->room_num].get_object(key);
+			float elapsed_time;
+
+			if (over_ex->elapsed_time <= 0.001f)
+				elapsed_time = 0.016f;
+			else
+				elapsed_time = over_ex->elapsed_time;
+				
+			object->Animate(elapsed_time);
+
+			if (object->IsDelete())
+			{
+				PKT_DELETE_OBJECT pkt_do;
+				pkt_do.PktId = PKT_ID_DELETE_OBJECT;
+				pkt_do.PktSize = sizeof(PKT_DELETE_OBJECT);
+				pkt_do.Object_Index = key;
+				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_do);
+
+				OBJECT_TYPE type = object->GetObjectType();
+				if (type == OBJECT_TYPE_MACHINE_BULLET
+					|| type == OBJECT_TYPE_BZK_BULLET
+					|| type == OBJECT_TYPE_BEAM_BULLET)
+				{
+					PKT_CREATE_EFFECT pktCE;
+					pktCE.PktId = PKT_ID_CREATE_EFFECT;
+					pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+					if (type == OBJECT_TYPE_BZK_BULLET)
+						pktCE.efType = EFFECT_TYPE_EXPLOSION;
+					else
+						pktCE.efType = EFFECT_TYPE_HIT;
+					pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+					pktCE.xmf3Position = object->GetPosition();
+					send_packet_to_room_player(over_ex->room_num, (char*)&pktCE);
+				}
+				object->SetUse(false);
+			}
+			else
+			{
+				PKT_UPDATE_OBJECT pkt_uo;
+				pkt_uo.PktId = PKT_ID_UPDATE_OBJECT;
+				pkt_uo.PktSize = sizeof(PKT_UPDATE_OBJECT);
+				pkt_uo.Object_Index = key;
+				pkt_uo.Object_Position = object->GetPosition();
+
+				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_uo);
+
+				using namespace std;
+				using namespace chrono;
+				add_timer(key, over_ex->room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+			}
 
 			delete over_ex;
 		}
@@ -279,16 +313,17 @@ int Framawork::timer_process()
 			OVER_EX *over_ex = new OVER_EX;
 			over_ex->event_t = ev.type;
 			over_ex->elapsed_time = (float)(duration_cast<milliseconds>(std::chrono::high_resolution_clock::now() - ev.start_time).count()) / 1000.0f;
+			over_ex->room_num = ev.room_num;
 			PostQueuedCompletionStatus(iocp_, 1, ev.obj_id, &over_ex->over);
 		}
 	}
 	return 0;
 }
 
-void Framawork::add_timer(int obj_id, EVENT_TYPE et, std::chrono::high_resolution_clock::time_point start_time)
+void Framawork::add_timer(int obj_id, int room_num, EVENT_TYPE et, std::chrono::high_resolution_clock::time_point start_time)
 {
 	timer_l.lock();
-	timer_queue.emplace(EVENT_ST{ obj_id, et, start_time });
+	timer_queue.emplace(EVENT_ST{ obj_id, room_num, et, start_time });
 	timer_l.unlock();
 }
 
@@ -538,6 +573,9 @@ void Framawork::process_packet(int id, char* packet)
 			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
 		
 		send_packet_to_room_player(room_num, (char*)pkt_co);
+		using namespace std;
+		using namespace chrono;
+		add_timer(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
@@ -583,7 +621,7 @@ void Framawork::process_packet(int id, char* packet)
 
 		using namespace std;
 		using namespace chrono;
-		add_timer(room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+		add_timer(room_num, room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 		break;
 	}
 	case PKT_ID_LEAVE_ROOM:

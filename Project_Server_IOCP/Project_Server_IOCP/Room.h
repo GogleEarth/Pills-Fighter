@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Scene.h"
+#include "GameObject.h"
 
 #define COLONY 0
 #define SPACE 1
@@ -66,6 +67,7 @@ public:
 	inline char get_red_score() { return red_score_; }
 	inline Player* get_players() { return players_; }
 	inline bool get_playing() { return is_playing_; }
+	inline GameObject* get_object(int id) { return scenes_[using_scene_]->get_object(id); }
 
 	XMFLOAT4X4 get_player_worldmatrix(int id);
 	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);

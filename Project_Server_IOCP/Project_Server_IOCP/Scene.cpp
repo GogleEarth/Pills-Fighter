@@ -16,21 +16,19 @@ void Scene::AnimateObjects(float fTimeElapsed)
 {
 	elapsed_game_time_ += fTimeElapsed;
 
-	for (int i = 0; i < MAX_NUM_OBJECT; i++)
-	{
-		if (Objects_[i].GetUse() != false)
-		{
-			if (!Objects_[i].IsDelete())
-				Objects_[i].Animate(fTimeElapsed);
-			else if (Objects_[i].IsDelete())
-				releaseObject(i);
-		}
-	}
+	//for (int i = 0; i < MAX_NUM_OBJECT; i++)
+	//{
+	//	if (Objects_[i].GetUse() != false)
+	//	{
+	//		if (!Objects_[i].IsDelete())
+	//			Objects_[i].Animate(fTimeElapsed);
+	//		else if (Objects_[i].IsDelete())
+	//			releaseObject(i);
+	//	}
+	//}
 
 	for (auto obstacle : Obstacles_)
-	{
 		obstacle->Animate(fTimeElapsed);
-	}
 }
 
 void Scene::InsertObjectFromLoadInfFromBin(char * pstrFileName, int nGroup)

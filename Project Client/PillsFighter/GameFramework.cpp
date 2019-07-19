@@ -700,7 +700,7 @@ void CGameFramework::WaitForGpuComplete()
 void CGameFramework::FrameAdvance()
 {
 #ifdef ON_NETWORKING
-	if (m_pPlayer && m_bDrawScene && m_bSend_Complete)
+	if (m_pPlayer && m_bDrawScene /*&& m_bSend_Complete*/)
 	{
 		if (IsZero(m_fElapsedTime)) return;
 		SendToServer();
