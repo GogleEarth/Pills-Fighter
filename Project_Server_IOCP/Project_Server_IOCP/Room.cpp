@@ -24,11 +24,11 @@ XMFLOAT4X4 Room::make_matrix()
 
 	XMFLOAT3 position;
 	float randomangle = (float)(rand() % 36000) / 100.0f;
-	position.x = sin(randomangle) * 2000.0f;
+	position.x = sin(randomangle) * 1000.0f;
 	randomangle = (float)(rand() % 36000) / 100.0f;
-	position.y = sin(randomangle) * 2000.0f;
+	position.y = sin(randomangle) * 1000.0f;
 	randomangle = (float)(rand() % 36000) / 100.0f;
-	position.z = sin(randomangle) * 2000.0f;
+	position.z = sin(randomangle) * 1000.0f;
 
 	XMFLOAT3 look;
 	look = Vector3::Subtract(XMFLOAT3{ 0.0f,0.0f,0.0f }, position);

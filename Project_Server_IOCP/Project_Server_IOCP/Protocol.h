@@ -343,7 +343,7 @@ struct PKT_MAP_EVENT
 
 #pragma pack(pop)
 
-#define MAX_NUM_OBJECT 2000
+#define MAX_NUM_OBJECT 3000
 
 //#define SERVERIP	"119.64.25.5"
 #define SERVERIP	"127.0.0.1"

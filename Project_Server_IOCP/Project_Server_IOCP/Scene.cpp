@@ -219,6 +219,12 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 		{
 			Objects_[index].SetModel(bullet_mesh_);
 		}
+		else if (type == OBJECT_TYPE_METEOR)
+		{
+			Objects_[index].SetModel(bullet_mesh_);
+			Objects_[index].set_life(life_time);
+			Objects_[index].set_speed(speed);
+		}
 	}
 	Objects_[index].SetWorldTransf(matrix);
 	Objects_[index].SetUse(true);
@@ -388,7 +394,7 @@ void SpaceScene::SceneEvent(float fTimeElapsed)
 void SpaceScene::start_event()
 {
 	Scene::start_event();
-	meteor_cooltime_ = 0.5f;
+	meteor_cooltime_ = 0.05f;
 }
 
 void SpaceScene::end_event()

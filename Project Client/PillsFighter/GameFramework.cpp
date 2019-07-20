@@ -910,8 +910,7 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_CREATE_OBJECT:
 	{
 		PKT_CREATE_OBJECT *pPacket = (PKT_CREATE_OBJECT*)m_pPacketBuffer;
-		if (pPacket->Object_Type == OBJECT_TYPE_METEOR)
-			std::cout << "운석 생성 받음\n";
+
 		CreateObject(pPacket);
 		break;
 	}
