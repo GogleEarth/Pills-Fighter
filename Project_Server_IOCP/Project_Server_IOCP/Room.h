@@ -75,6 +75,9 @@ public:
 	inline char get_player_slot(int id) { return players_[id].get_slot(); }
 
 	int get_empty_slot();
+	int get_empty_slot_red_team();
+	int get_empty_slot_blue_team();
+
 
 	XMFLOAT4X4 get_player_worldmatrix(int id);
 	XMFLOAT4X4 make_matrix();
@@ -90,7 +93,7 @@ public:
 	int findindex();
 	void add_player(int id, SOCKET socket, char slot);
 	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix);
-	void set_player_lobby_info(int id, char selectedrobot, char team);
+	void set_player_lobby_info(int id, char selectedrobot, char team, char slot);
 	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
 	void player_load_complete(SOCKET socket);
 	void player_send_complete(int id);
@@ -102,6 +105,7 @@ public:
 	void room_update(float elapsed_time);
 	void spawn_healing_item();
 	void spawn_ammo_item();
+	void change_team(int id, char team);
 
 	void check_collision_obstacles(int object);
 	void check_collision_player(int object);

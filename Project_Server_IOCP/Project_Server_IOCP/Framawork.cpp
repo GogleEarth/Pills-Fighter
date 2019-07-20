@@ -556,7 +556,7 @@ void Framawork::process_packet(int id, char* packet)
 			}
 
 			pkt_pin.id = player_id;
-			pkt_pin.Team = player_id % 2;
+			pkt_pin.Team = pkt_rio.slot % 2;
 			pkt_pin.robot = ROBOT_TYPE_GM;
 			pkt_pin.slot = pkt_rio.slot;
 			// 원래있던애들한테 새로들어온애 알려주기
@@ -598,7 +598,7 @@ void Framawork::process_packet(int id, char* packet)
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
 		rooms_[room_num].set_player_lobby_info(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot,
-				reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team);
+				reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->slot);
 		
 		send_packet_to_room_player(room_num, packet);
 		break;
@@ -692,6 +692,24 @@ void Framawork::process_packet(int id, char* packet)
 			}
 		}
 			
+		break;
+	}
+	case PKT_ID_MOVE_TEAM:
+	{
+		int room_num = search_client_in_room(clients_[id].socket);
+		int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+		rooms_[room_num].change_team(player, reinterpret_cast<PKT_MOVE_TEAM*>(packet)->team);
+
+		auto player_data = rooms_[room_num].get_player(player);
+		PKT_LOBBY_PLAYER_INFO pkt_lpi;
+		pkt_lpi.id = player;
+		pkt_lpi.PktId = PKT_ID_LOBBY_PLAYER_INFO;
+		pkt_lpi.PktSize = sizeof(PKT_LOBBY_PLAYER_INFO);
+		pkt_lpi.selected_robot = player_data->get_robot();
+		pkt_lpi.slot = player_data->get_slot();
+		pkt_lpi.Team = player_data->get_team();
+
+		send_packet_to_room_player(room_num, (char*)&pkt_lpi);
 		break;
 	}
 	default:

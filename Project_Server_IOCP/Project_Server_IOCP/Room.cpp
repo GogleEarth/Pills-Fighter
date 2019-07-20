@@ -42,6 +42,32 @@ int Room::get_empty_slot()
 	return -1;
 }
 
+int Room::get_empty_slot_red_team()
+{
+	if (slots_[0] == false)
+		return 0;
+	if (slots_[2] == false)
+		return 2;
+	if (slots_[4] == false)
+		return 4;
+	if (slots_[6] == false)
+		return 6;
+	return -1;
+}
+
+int Room::get_empty_slot_blue_team()
+{
+	if (slots_[1] == false)
+		return 1;
+	if (slots_[3] == false)
+		return 3;
+	if (slots_[5] == false)
+		return 5;
+	if (slots_[7] == false)
+		return 7;
+	return -1;
+}
+
 XMFLOAT4X4 Room::get_player_worldmatrix(int id)
 {
 	return 	scenes_[using_scene_]->get_player_worldmatrix(id);
@@ -212,10 +238,13 @@ int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix)
 	return scenes_[using_scene_]->AddObject(type,hp,lifetime,speed,matrix);
 }
 
-void Room::set_player_lobby_info(int id, char selectedrobot, char team)
+void Room::set_player_lobby_info(int id, char selectedrobot, char team, char slot)
 {
 	players_[id].set_robot(selectedrobot);
 	players_[id].set_team(team);
+	slots_[players_[id].get_slot()] = false;
+	players_[id].set_slot(slot);
+	slots_[slot] = true;
 }
 
 PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
@@ -483,6 +512,29 @@ void Room::spawn_ammo_item()
 		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
+	}
+}
+
+void Room::change_team(int id, char team)
+{
+	if (players_[id].get_team() != team)
+	{
+		if (team == TEAM_TYPE_RED)
+		{
+			int slot = get_empty_slot_red_team();
+			slots_[players_[id].get_slot()] = false;
+			slots_[slot] = true;
+			players_[id].set_slot(slot);
+			players_[id].set_team(TEAM_TYPE_RED);
+		}
+		else if (team == TEAM_TYPE_BLUE)
+		{
+			int slot = get_empty_slot_blue_team();
+			slots_[players_[id].get_slot()] = false;
+			slots_[slot] = true;
+			players_[id].set_slot(slot);
+			players_[id].set_team(TEAM_TYPE_BLUE);
+		}
 	}
 }
 
