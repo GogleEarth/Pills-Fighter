@@ -2081,9 +2081,6 @@ int CLobbyRoomScene::MouseClick()
 
 	if (m_pCursor->CollisionCheck(m_TeamRedButton))
 	{
-#ifndef ON_NETWORKING
-		ChangeSlot(0, 7, L"0");
-#endif
 		return LOBBY_MOUSE_CLICK_CHANGE_TEAM_RED;
 	}
 
@@ -2181,7 +2178,7 @@ void CLobbyRoomScene::JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlaye
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 }
 
-void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot, const wchar_t *pstrPlayerName)
+void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot)
 {
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nChangeSlot);
 

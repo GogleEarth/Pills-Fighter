@@ -428,7 +428,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 	case LOBBY_MOUSE_CLICK_CREATE_ROOM:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_CREATE_ROOM);
+		SendToServer(PKT_ID_CREATE_ROOM, NULL);
 #else
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		m_pScene->ReleaseObjects();
@@ -444,7 +444,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 	case LOBBY_MOUSE_CLICK_JOIN_ROOM:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_ROOM_IN);
+		SendToServer(PKT_ID_ROOM_IN, NULL);
 #else
 		std::cout << m_pScene->GetSelectRoom() << "\n";
 #endif
@@ -453,7 +453,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 	case LOBBY_MOUSE_CLICK_START:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_GAME_START);
+		SendToServer(PKT_ID_GAME_START, NULL);
 #else
 		int map = m_pScene->GetSelectedMap();
 
@@ -469,7 +469,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 	case LOBBY_MOUSE_CLICK_LEAVE:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_LEAVE_ROOM);
+		SendToServer(PKT_ID_LEAVE_ROOM, NULL);
 #endif
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		m_pScene->ReleaseObjects();
@@ -485,15 +485,27 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 	case LOBBY_MOUSE_CLICK_SELECT_ROBOT:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_LOBBY_PLAYER_INFO);
+		SendToServer(PKT_ID_LOBBY_PLAYER_INFO, NULL);
 #endif
 		break;
 	}
 	case LOBBY_MOUSE_CLICK_SELECT_MAP:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_CHANGE_MAP);
+		SendToServer(PKT_ID_CHANGE_MAP, NULL);
 #endif
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_CHANGE_TEAM_RED:
+	{
+		int nTeam = TEAM_TYPE::TEAM_TYPE_RED;
+		SendToServer(PKT_ID_MOVE_TEAM, &nTeam);
+		break;
+	}
+	case LOBBY_MOUSE_CLICK_CHANGE_TEAM_BLUE:
+	{
+		int nTeam = TEAM_TYPE::TEAM_TYPE_BLUE;
+		SendToServer(PKT_ID_MOVE_TEAM, &nTeam);
 		break;
 	}
 	}
@@ -962,7 +974,7 @@ void CGameFramework::ProcessPacket()
 
 		m_bDrawScene = false;
 
-		SendToServer(PKT_ID_LOAD_COMPLETE);
+		SendToServer(PKT_ID_LOAD_COMPLETE, NULL);
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE_ALL:
@@ -981,6 +993,7 @@ void CGameFramework::ProcessPacket()
 		PKT_LOBBY_PLAYER_INFO *pPacket = (PKT_LOBBY_PLAYER_INFO*)m_pPacketBuffer;
 
 		m_pScene->ChangeSelectRobot(pPacket->id, pPacket->selected_robot);
+		m_pScene->ChangeSlot(pPacket->id, pPacket->slot);
 		break;
 	}
 	case PKT_ID_SCORE:
@@ -1225,7 +1238,7 @@ void CGameFramework::SendToServer()
 		m_bSend_Complete = false;
 }
 
-void CGameFramework::SendToServer(PKT_ID pktID)
+void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 {
 	switch (pktID)
 	{
@@ -1321,8 +1334,20 @@ void CGameFramework::SendToServer(PKT_ID pktID)
 			printf("Send Change Map Error\n");
 		break;
 	}
+	case PKT_ID_MOVE_TEAM:
+	{
+		int *p = (int*)pData;
+
+		PKT_MOVE_TEAM pktToServer;
+		pktToServer.PktId = PKT_ID_MOVE_TEAM;
+		pktToServer.PktSize = sizeof(pktToServer);
+		pktToServer.team = *p;
+
+		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Change Map Error\n");
+		break;
+	}
 	default:
 		break;
 	}
-	
 }

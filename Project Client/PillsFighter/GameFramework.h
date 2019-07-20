@@ -122,7 +122,7 @@ public:
 	void recvn();
 	void ProcessPacket();
 	void SendToServer();
-	void SendToServer(PKT_ID pktID);
+	void SendToServer(PKT_ID pktID, void *pData);
 	void OnProcessingSocketMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	void CreateObject(PKT_CREATE_OBJECT *pCreateObjectInfo);
 	void CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo);

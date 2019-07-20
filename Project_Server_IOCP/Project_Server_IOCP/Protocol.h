@@ -32,7 +32,8 @@ typedef enum PKT_ID
 	PKT_ID_ADD_ROOM,
 	PKT_ID_DELETE_ROOM,
 	PKT_ID_CHANGE_ROOM_INFO,
-	PKT_ID_MAP_EVENT
+	PKT_ID_MAP_EVENT,
+	PKT_ID_MOVE_TEAM
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -131,6 +132,12 @@ enum MAP_EVENT_TYPE
 	MAP_EVENT_TYPE_START,
 	MAP_EVENT_TYPE_END,
 	MAP_EVENT_TYPE_ALERT
+};
+
+enum TEAM_TYPE
+{
+	TEAM_TYPE_RED,
+	TEAM_TYPE_BLUE
 };
 
 #pragma pack(push, 1)
@@ -238,6 +245,7 @@ struct PKT_LOBBY_PLAYER_INFO
 	int			id;
 	BYTE		selected_robot;
 	BYTE		Team;
+	BYTE		slot;
 };
 
 typedef struct PKT_GAME_START
@@ -333,6 +341,13 @@ struct PKT_CHANGE_MAP
 	BYTE PktSize;
 	BYTE PktId;
 	BYTE map;
+};
+
+struct PKT_MOVE_TEAM
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE team;
 };
 
 struct PKT_MAP_EVENT

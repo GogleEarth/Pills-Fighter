@@ -235,6 +235,7 @@ public: // Network
 	virtual void SetClientIndex(int nIndex, int nSlot) {}
 	virtual void SetMap(int nMap) {}
 	virtual void ChangeSelectRobot(int nIndex, int nRobotType) {}
+	virtual void ChangeSlot(int nIndex, int nChangeSlot) {}
 
 protected:
 	int	m_nMyIndex = 0;
@@ -430,7 +431,7 @@ public:
 	virtual void SetMap(int nMap);
 	virtual void ChangeSelectRobot(int nIndex, int nRobotType);
 	virtual void ChangeMap(int nMap) { m_nCurrentMap = nMap; }
-	virtual void ChangeSlot(int nIndex, int nChangeSlot, const wchar_t *pstrPlayerName);
+	virtual void ChangeSlot(int nIndex, int nChangeSlot);
 	virtual int MouseClick();
 
 	XMFLOAT2 GetPlayerTextPosition(int nServerIndex);
