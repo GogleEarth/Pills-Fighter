@@ -1675,7 +1675,7 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 CLobbyRoomScene::CLobbyRoomScene()
 {
-	::ZeroMemory(m_pRoomInfos, sizeof(m_pRoomInfos));
+	::ZeroMemory(m_pPlayerInfos, sizeof(m_pPlayerInfos));
 }
 
 CLobbyRoomScene::~CLobbyRoomScene()
@@ -1779,6 +1779,22 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/MapSpace.dds", 0);
 		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/TeamRed.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED_HL] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED_HL]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/TeamRedHL.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED_HL], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/TeamBlue.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE_HL] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE_HL]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/TeamBlueHL.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE_HL], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 	}
 
 	{
@@ -1834,6 +1850,20 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
 		m_MapRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+		width = 47.0f / FRAME_BUFFER_WIDTH;
+		height = 22.0f / FRAME_BUFFER_HEIGHT;
+		centerx = -0.562500f;
+		centery = 0.866667f;
+		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
+		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
+		m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_RED] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+		centerx = 0.223438f;
+		centery = 0.866667f;
+		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
+		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
+		m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_BLUE] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
 		width = 58.0f / FRAME_BUFFER_WIDTH;
 		height = 76.0f / FRAME_BUFFER_HEIGHT;
 		centerx = 0.697313f;
@@ -1853,44 +1883,44 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		centery = 0.705f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[0].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.455f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[2].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.205f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[4].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = -0.055f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[6].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[6] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		// right
 		centerx = 0.516312f;
 		centery = 0.705f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[1].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.455f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[3].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.205f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[5].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = -0.055f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_pRoomInfos[7].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pPlayerRobotRects[7] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 	}
 }
 
@@ -1899,14 +1929,10 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	CLobbyScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
 
 #ifndef ON_NETWORKING
-	JoinPlayer(0, L"1 : First Player", SELECT_CHARACTER_GM);
-	JoinPlayer(1, L"2 : Second Player", SELECT_CHARACTER_GM);
-	JoinPlayer(2, L"3 : Third Player", SELECT_CHARACTER_GM);
-	JoinPlayer(3, L"4 : Fourth Player", SELECT_CHARACTER_GM);
-	JoinPlayer(4, L"5 : Fifth Player", SELECT_CHARACTER_GM);
-	JoinPlayer(5, L"6 : Sixth Player", SELECT_CHARACTER_GM);
-	JoinPlayer(6, L"7 : Seventh Player", SELECT_CHARACTER_GM);
-	JoinPlayer(7, L"8 : Ehighth Player", SELECT_CHARACTER_GM);
+	JoinPlayer(0, 0, L"0번 플레이어", SELECT_CHARACTER_GM);
+	JoinPlayer(1, 1, L"1번 플레이어", SELECT_CHARACTER_GM);
+	JoinPlayer(2, 2, L"2번 플레이어", SELECT_CHARACTER_GM);
+	JoinPlayer(3, 3, L"3번 플레이어", SELECT_CHARACTER_GM);
 #endif
 
 	float width = 185.0f / FRAME_BUFFER_WIDTH;
@@ -1951,8 +1977,20 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	centery = -0.090444f;
 	m_GundamButton.Center = XMFLOAT3(centerx, centery, 1.0f);
 	m_GundamButton.Extents = XMFLOAT3(width, height, 1.0f);
-}
 
+
+	width = 496.0f / FRAME_BUFFER_WIDTH;
+	height = 21.0f / FRAME_BUFFER_HEIGHT;
+	centerx = -0.562500f;
+	centery = 0.866667f;
+	m_TeamRedButton.Center = XMFLOAT3(centerx, centery, 1.0f);
+	m_TeamRedButton.Extents = XMFLOAT3(width, height, 1.0f);
+
+	centerx = 0.223438f;
+	centery = 0.866667f;
+	m_TeamBlueButton.Center = XMFLOAT3(centerx, centery, 1.0f);
+	m_TeamBlueButton.Extents = XMFLOAT3(width, height, 1.0f);
+}
 
 void CLobbyRoomScene::SetMap(int nMap)
 {
@@ -1965,8 +2003,8 @@ void CLobbyRoomScene::ReleaseObjects()
 
 	for (int i = 0; i < 8; i++)
 	{
-		if (m_pRoomInfos[i].m_pPlayerRobotRect)
-			delete m_pRoomInfos[i].m_pPlayerRobotRect;
+		if (m_pPlayerRobotRects[i])
+			delete m_pPlayerRobotRects[i];
 	}
 
 	if (m_MapRect)
@@ -1982,8 +2020,8 @@ void CLobbyRoomScene::ReleaseUploadBuffers()
 
 	for (int i = 0; i < 8; i++)
 	{
-		if (m_pRoomInfos[i].m_pPlayerRobotRect)
-			m_pRoomInfos[i].m_pPlayerRobotRect->ReleaseUploadBuffers();
+		if (m_pPlayerRobotRects[i])
+			m_pPlayerRobotRects[i]->ReleaseUploadBuffers();
 	}
 
 	if (m_MapRect) m_MapRect->ReleaseUploadBuffers();
@@ -2041,6 +2079,19 @@ int CLobbyRoomScene::MouseClick()
 		return LOBBY_MOUSE_CLICK_SELECT_ROBOT;
 	}
 
+	if (m_pCursor->CollisionCheck(m_TeamRedButton))
+	{
+#ifndef ON_NETWORKING
+		ChangeSlot(0, 7, L"0");
+#endif
+		return LOBBY_MOUSE_CLICK_CHANGE_TEAM_RED;
+	}
+
+	if (m_pCursor->CollisionCheck(m_TeamBlueButton))
+	{
+		return LOBBY_MOUSE_CLICK_CHANGE_TEAM_BLUE;
+	}
+
 	return 0;
 }
 
@@ -2069,6 +2120,12 @@ void CLobbyRoomScene::CheckCollision()
 
 	if (m_pCursor->CollisionCheck(m_GundamButton)) m_bHLGundamButton = true;
 	else m_bHLGundamButton = false;
+
+	if (m_pCursor->CollisionCheck(m_TeamRedButton)) m_bHLTeamRedButton = true;
+	else m_bHLTeamRedButton = false;
+
+	if (m_pCursor->CollisionCheck(m_TeamBlueButton)) m_bHLTeamBlueButton = true;
+	else m_bHLTeamBlueButton = false;
 }
 
 void CLobbyRoomScene::StartScene()
@@ -2076,18 +2133,18 @@ void CLobbyRoomScene::StartScene()
 	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
-void CLobbyRoomScene::SetPlayerIndex(int nSlotIndex)
+void CLobbyRoomScene::SetClientIndex(int nIndex, int nSlot)
 {
 	wchar_t id[32];
-	wsprintfW(id, L"%d", nSlotIndex);
+	wsprintfW(id, L"%d", nIndex);
 
-	m_nMyIndex = nSlotIndex;
-	JoinPlayer(nSlotIndex, id, SELECT_CHARACTER_GM);
+	m_nMyIndex = nIndex;
+	JoinPlayer(nIndex, nSlot, id, SELECT_CHARACTER_GM);
 }
 
-void CLobbyRoomScene::ChangeSelectRobot(int nSlotIndex, int nRobotType)
+void CLobbyRoomScene::ChangeSelectRobot(int nIndex, int nRobotType)
 {
-	m_pRoomInfos[nSlotIndex].m_nRobotType = nRobotType;
+	m_pPlayerInfos[nIndex].m_nRobotType = nRobotType;
 }
 
 XMFLOAT2 CLobbyRoomScene::GetPlayerTextPosition(int nSlotIndex)
@@ -2105,27 +2162,36 @@ XMFLOAT2 CLobbyRoomScene::GetPlayerTextPosition(int nSlotIndex)
 	return xmf2Pos;
 }
 
-void CLobbyRoomScene::JoinPlayer(int nSlotIndex, const wchar_t *pstrPlayerName, int nRobotType)
+void CLobbyRoomScene::JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlayerName, int nRobotType)
 {
-	m_pRoomInfos[nSlotIndex].m_bSlotIn = true;
-	m_pRoomInfos[nSlotIndex].m_nRobotType = nRobotType;
+	m_pPlayerInfos[nIndex].m_nSlot = nSlot;
+	m_pPlayerInfos[nIndex].m_nRobotType = nRobotType;
+	m_pPlayerInfos[nIndex].m_bUsed = true;
 
-	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nSlotIndex);
+	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nSlot);
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (nSlotIndex == m_nMyIndex)
+	if (nIndex == m_nMyIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
 	}
 
-	m_pRoomInfos[nSlotIndex].m_pTextObject = AddText(pstrPlayerName, xmf2Pos, XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
+	m_pPlayerInfos[nIndex].m_pTextObject = AddText(pstrPlayerName, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
+	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 }
 
-void CLobbyRoomScene::LeavePlayer(int nSlotIndex)
+void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot, const wchar_t *pstrPlayerName)
 {
-	m_pRoomInfos[nSlotIndex].m_bSlotIn = false;
-	m_pRoomInfos[nSlotIndex].m_pTextObject->Release();
+	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nChangeSlot);
+
+	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
+}
+
+void CLobbyRoomScene::LeavePlayer(int nIndex)
+{
+	m_pPlayerInfos[nIndex].m_bUsed = false;
+	m_pPlayerInfos[nIndex].m_pTextObject->Release();
 }
 
 void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -2148,6 +2214,18 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	CScene::RenderUI(pd3dCommandList);
 
 	if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, NULL);
+
+	if (m_bHLTeamRedButton)
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED_HL]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_RED]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_RED]->Render(pd3dCommandList, 0);
+
+	if (m_bHLTeamBlueButton)
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE_HL]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_BLUE]->Render(pd3dCommandList, 0);
 
 	if (m_nMyIndex == 0)
 	{
@@ -2206,14 +2284,14 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	for(int i = 0 ; i < 8; i++)
 	{
-		if (!m_pRoomInfos[i].m_bSlotIn) continue;
+		if (!m_pPlayerInfos[i].m_bUsed) continue;
 
-		if (m_pRoomInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GM)
+		if (m_pPlayerInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GM)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GM]->UpdateShaderVariables(pd3dCommandList);
-		else if (m_pRoomInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
+		else if (m_pPlayerInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM]->UpdateShaderVariables(pd3dCommandList);
 
-		m_pRoomInfos[i].m_pPlayerRobotRect->Render(pd3dCommandList, 0);
+		m_pPlayerRobotRects[m_pPlayerInfos[i].m_nSlot]->Render(pd3dCommandList, 0);
 	}
 
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);

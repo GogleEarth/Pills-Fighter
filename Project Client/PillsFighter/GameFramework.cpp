@@ -942,7 +942,7 @@ void CGameFramework::ProcessPacket()
 		wchar_t pstrid[32];
 		wsprintfW(pstrid, L"%d", pPacket->id);
 
-		m_pScene->JoinPlayer(pPacket->id, pstrid, pPacket->robot);
+		m_pScene->JoinPlayer(pPacket->id, pPacket->slot, pstrid, pPacket->robot);
 		break;
 	}
 	case PKT_ID_PLAYER_OUT:
@@ -1064,7 +1064,7 @@ void CGameFramework::ProcessPacket()
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
-		m_pScene->SetPlayerIndex(0);
+		m_pScene->SetClientIndex(0, 0);
 		m_nClinetIndex = 0;
 		break;
 	}
@@ -1080,7 +1080,7 @@ void CGameFramework::ProcessPacket()
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
-		m_pScene->SetPlayerIndex(pPacket->index);
+		m_pScene->SetClientIndex(pPacket->index, pPacket->slot);
 		m_pScene->SetMap(pPacket->map);
 		m_nClinetIndex = pPacket->index;
 

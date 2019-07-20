@@ -230,11 +230,11 @@ public: // Network
 	virtual void DeleteObject(int nIndex) {}
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
-	virtual void JoinPlayer(int nSlotIndex, const wchar_t *pstrPlayerName, int nRobotType) {};
-	virtual void LeavePlayer(int nSlotIndex) {};
-	virtual void SetPlayerIndex(int nSlotIndex) {}
+	virtual void JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlayerName, int nRobotType) {}
+	virtual void LeavePlayer(int nIndex) {}
+	virtual void SetClientIndex(int nIndex, int nSlot) {}
 	virtual void SetMap(int nMap) {}
-	virtual void ChangeSelectRobot(int nSlotIndex, int nRobotType) {}
+	virtual void ChangeSelectRobot(int nIndex, int nRobotType) {}
 
 protected:
 	int	m_nMyIndex = 0;
@@ -358,16 +358,16 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct ROOM_INFO
+struct ROOM_PLAYER_INFO
 {
 	CTextObject	*m_pTextObject;
-	CRect		*m_pPlayerRobotRect;
 	int			m_nRobotType;
-	bool		m_bSlotIn;
-
+	int			m_nSlot;
+	bool		m_bUsed;
 };
+
 // UI Texture Index
-#define LOBBY_ROOM_UI_TEXTURE_COUNT 22
+#define LOBBY_ROOM_UI_TEXTURE_COUNT 26
 
 #define LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER 0
 #define LOBBY_ROOM_UI_TEXTURE_BASE_MEMBER 1
@@ -391,9 +391,13 @@ struct ROOM_INFO
 #define LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT 19
 #define LOBBY_ROOM_UI_TEXTURE_MAP_COLONY 20
 #define LOBBY_ROOM_UI_TEXTURE_MAP_SPACE 21
+#define LOBBY_ROOM_UI_TEXTURE_TEAM_RED 22
+#define LOBBY_ROOM_UI_TEXTURE_TEAM_RED_HL 23
+#define LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE 24
+#define LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE_HL 25
 
 // UI Rect Index
-#define LOBBY_ROOM_UI_RECT_COUNT 8
+#define LOBBY_ROOM_UI_RECT_COUNT 10
 
 #define LOBBY_ROOM_UI_RECT_BASE 0
 #define LOBBY_ROOM_UI_RECT_START_BUTTON 1
@@ -403,6 +407,8 @@ struct ROOM_INFO
 #define LOBBY_ROOM_UI_RECT_SPACE 5
 #define LOBBY_ROOM_UI_RECT_GM 6
 #define LOBBY_ROOM_UI_RECT_GUNDAM 7
+#define LOBBY_ROOM_UI_RECT_TEAM_RED 8
+#define LOBBY_ROOM_UI_RECT_TEAM_BLUE 9
 
 class CLobbyRoomScene : public CLobbyScene
 {
@@ -418,12 +424,13 @@ public:
 	virtual void CheckCollision();
 	virtual void StartScene();
 
-	virtual void JoinPlayer(int nSlotIndex, const wchar_t *pstrPlayerName, int nRobotType);
-	virtual void LeavePlayer(int nSlotIndex);
-	virtual void SetPlayerIndex(int nSlotIndex);
+	virtual void JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlayerName, int nRobotType);
+	virtual void LeavePlayer(int nIndex);
+	virtual void SetClientIndex(int nIndex, int nSlot);
 	virtual void SetMap(int nMap);
-	virtual void ChangeSelectRobot(int nSlotIndex, int nRobotType);
+	virtual void ChangeSelectRobot(int nIndex, int nRobotType);
 	virtual void ChangeMap(int nMap) { m_nCurrentMap = nMap; }
+	virtual void ChangeSlot(int nIndex, int nChangeSlot, const wchar_t *pstrPlayerName);
 	virtual int MouseClick();
 
 	XMFLOAT2 GetPlayerTextPosition(int nServerIndex);
@@ -433,7 +440,9 @@ public:
 
 protected:
 	int									m_nCurrentMap = SCENE_TYPE_COLONY;
-	ROOM_INFO							m_pRoomInfos[8];
+	ROOM_PLAYER_INFO					m_pPlayerInfos[8];
+
+	CRect								*m_pPlayerRobotRects[8];
 
 protected:
 	BoundingBox		m_StartButton;
@@ -458,6 +467,12 @@ protected:
 	bool			m_bHLGundamButton = false;
 
 	CRect			*m_MapRect = NULL;
+
+	BoundingBox		m_TeamRedButton;
+	bool			m_bHLTeamRedButton = false;
+
+	BoundingBox		m_TeamBlueButton;
+	bool			m_bHLTeamBlueButton = false;
 
 	std::vector<char*> m_vstrPlayerNames;
 };
