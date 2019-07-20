@@ -1675,7 +1675,7 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 
 CLobbyRoomScene::CLobbyRoomScene()
 {
-
+	::ZeroMemory(m_pRoomInfos, sizeof(m_pRoomInfos));
 }
 
 CLobbyRoomScene::~CLobbyRoomScene()
@@ -1853,44 +1853,44 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		centery = 0.705f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[0] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[0].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.455f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[2] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[2].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.205f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[4].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = -0.055f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[6] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[6].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		// right
 		centerx = 0.516312f;
 		centery = 0.705f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[1] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[1].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.455f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[3].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = 0.205f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[5] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[5].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centery = -0.055f;
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppPlayerRobotRects[7] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+		m_pRoomInfos[7].m_pPlayerRobotRect = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 	}
 }
 
@@ -1953,23 +1953,10 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	m_GundamButton.Extents = XMFLOAT3(width, height, 1.0f);
 }
 
-void CLobbyRoomScene::SetPlayerIndex(int nServerIndex)
-{
-	wchar_t id[32];
-	wsprintfW(id, L"%d", nServerIndex);
-
-	m_nMyIndex = nServerIndex;
-	JoinPlayer(nServerIndex, id, SELECT_CHARACTER_GM);
-}
 
 void CLobbyRoomScene::SetMap(int nMap)
 {
 	m_nCurrentMap = nMap;
-}
-
-void CLobbyRoomScene::ChangeSelectRobot(int nServerIndex, int nRobotType)
-{
-	m_umPlayerInfo[nServerIndex].nRobotType = nRobotType;
 }
 
 void CLobbyRoomScene::ReleaseObjects()
@@ -1978,8 +1965,8 @@ void CLobbyRoomScene::ReleaseObjects()
 
 	for (int i = 0; i < 8; i++)
 	{
-		if (m_ppPlayerRobotRects[i])
-			delete m_ppPlayerRobotRects[i];
+		if (m_pRoomInfos[i].m_pPlayerRobotRect)
+			delete m_pRoomInfos[i].m_pPlayerRobotRect;
 	}
 
 	if (m_MapRect)
@@ -1995,8 +1982,8 @@ void CLobbyRoomScene::ReleaseUploadBuffers()
 
 	for (int i = 0; i < 8; i++)
 	{
-		if (m_ppPlayerRobotRects[i])
-			m_ppPlayerRobotRects[i]->ReleaseUploadBuffers();
+		if (m_pRoomInfos[i].m_pPlayerRobotRect)
+			m_pRoomInfos[i].m_pPlayerRobotRect->ReleaseUploadBuffers();
 	}
 
 	if (m_MapRect) m_MapRect->ReleaseUploadBuffers();
@@ -2089,71 +2076,56 @@ void CLobbyRoomScene::StartScene()
 	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
 
-XMFLOAT2 CLobbyRoomScene::GetPlayerTextPosition(int nServerIndex)
+void CLobbyRoomScene::SetPlayerIndex(int nSlotIndex)
+{
+	wchar_t id[32];
+	wsprintfW(id, L"%d", nSlotIndex);
+
+	m_nMyIndex = nSlotIndex;
+	JoinPlayer(nSlotIndex, id, SELECT_CHARACTER_GM);
+}
+
+void CLobbyRoomScene::ChangeSelectRobot(int nSlotIndex, int nRobotType)
+{
+	m_pRoomInfos[nSlotIndex].m_nRobotType = nRobotType;
+}
+
+XMFLOAT2 CLobbyRoomScene::GetPlayerTextPosition(int nSlotIndex)
 {
 	XMFLOAT2 xmf2Pos;
 	xmf2Pos.y = 0.705f;
 
-	if (m_nCurrentSlotIndex % 2 == 0)
+	if (nSlotIndex % 2 == 0)
 		xmf2Pos.x = -0.916875f;
 	else
 		xmf2Pos.x = -0.130937f;
 
-	xmf2Pos.y += ((int)(m_nCurrentSlotIndex / 2)) * -0.255f;
-
-	m_nCurrentSlotIndex++;
+	xmf2Pos.y += ((int)(nSlotIndex / 2)) * -0.255f;
 
 	return xmf2Pos;
 }
 
-void CLobbyRoomScene::JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType)
+void CLobbyRoomScene::JoinPlayer(int nSlotIndex, const wchar_t *pstrPlayerName, int nRobotType)
 {
-	m_umPlayerInfo[nServerIndex].nSlotIndex = m_nCurrentSlotIndex;
-	m_umPlayerInfo[nServerIndex].nRobotType = nRobotType;
+	m_pRoomInfos[nSlotIndex].m_bSlotIn = true;
+	m_pRoomInfos[nSlotIndex].m_nRobotType = nRobotType;
 
-	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(m_nCurrentSlotIndex);
+	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nSlotIndex);
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (nServerIndex == m_nMyIndex)
+	if (nSlotIndex == m_nMyIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
 	}
 
-	m_ppTextObjects[nServerIndex] = AddText(pstrPlayerName, xmf2Pos, XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
+	m_pRoomInfos[nSlotIndex].m_pTextObject = AddText(pstrPlayerName, xmf2Pos, XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
 }
 
-void CLobbyRoomScene::LeavePlayer(int nServerIndex)
+void CLobbyRoomScene::LeavePlayer(int nSlotIndex)
 {
-	int nSlotIndex = m_umPlayerInfo[nServerIndex].nSlotIndex;
-
-	if (!m_ppTextObjects[nServerIndex])
-		return;
-
-	m_ppTextObjects[nServerIndex]->Release();
-	m_ppTextObjects[nServerIndex] = NULL;
-	m_nCurrentSlotIndex = 0;
-
-	m_umPlayerInfo.erase(nServerIndex);
-
-	for (auto& playerinfo : m_umPlayerInfo)
-	{
-		int nServerIndex = playerinfo.first;
-
-		playerinfo.second.nSlotIndex = m_nCurrentSlotIndex;
-
-		XMFLOAT2 xmf2Pos = GetPlayerTextPosition(m_nCurrentSlotIndex);
-
-		XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-
-		if (nServerIndex == m_nMyIndex)
-		{
-			xmf4Color.x = 1.0f;
-			xmf4Color.z = 0.0f;
-		}
-
-		ChangeText(m_ppTextObjects[nServerIndex], m_ppTextObjects[nServerIndex]->GetText(), xmf2Pos, XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
-	}
+	m_pRoomInfos[nSlotIndex].m_bSlotIn = false;
+	m_pRoomInfos[nSlotIndex].m_pTextObject->Release();
 }
 
 void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -2232,20 +2204,16 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[LOBBY_ROOM_UI_RECT_GUNDAM]->Render(pd3dCommandList, 0);
 
-	for (auto& playerinfo : m_umPlayerInfo)
+	for(int i = 0 ; i < 8; i++)
 	{
-		int nServerIndex = playerinfo.first;
-		int nSlotIndex = playerinfo.second.nSlotIndex;
-		int nRobotType = playerinfo.second.nRobotType;
+		if (!m_pRoomInfos[i].m_bSlotIn) continue;
 
-		if (!m_ppTextObjects[nServerIndex]) continue;
-
-		if (nRobotType == SKINNED_OBJECT_INDEX_GM)
+		if (m_pRoomInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GM)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GM]->UpdateShaderVariables(pd3dCommandList);
-		else if (nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
+		else if (m_pRoomInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM]->UpdateShaderVariables(pd3dCommandList);
 
-		m_ppPlayerRobotRects[nSlotIndex]->Render(pd3dCommandList, 0);
+		m_pRoomInfos[i].m_pPlayerRobotRect->Render(pd3dCommandList, 0);
 	}
 
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);

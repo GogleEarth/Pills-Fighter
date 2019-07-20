@@ -230,11 +230,11 @@ public: // Network
 	virtual void DeleteObject(int nIndex) {}
 	virtual void CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_EFFECT *pCreateEffectInfo) {}
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData) {}
-	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType) {};
-	virtual void LeavePlayer(int nServerIndex) {};
-	virtual void SetPlayerIndex(int nServerIndex) {}
+	virtual void JoinPlayer(int nSlotIndex, const wchar_t *pstrPlayerName, int nRobotType) {};
+	virtual void LeavePlayer(int nSlotIndex) {};
+	virtual void SetPlayerIndex(int nSlotIndex) {}
 	virtual void SetMap(int nMap) {}
-	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType) {}
+	virtual void ChangeSelectRobot(int nSlotIndex, int nRobotType) {}
 
 protected:
 	int	m_nMyIndex = 0;
@@ -358,12 +358,14 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct SERVERINFO
+struct ROOM_INFO
 {
-	int nSlotIndex;
-	int nRobotType;
-};
+	CTextObject	*m_pTextObject;
+	CRect		*m_pPlayerRobotRect;
+	int			m_nRobotType;
+	bool		m_bSlotIn;
 
+};
 // UI Texture Index
 #define LOBBY_ROOM_UI_TEXTURE_COUNT 22
 
@@ -416,11 +418,11 @@ public:
 	virtual void CheckCollision();
 	virtual void StartScene();
 
-	virtual void JoinPlayer(int nServerIndex, const wchar_t *pstrPlayerName, int nRobotType);
-	virtual void LeavePlayer(int nServerIndex);
-	virtual void SetPlayerIndex(int nServerIndex);
+	virtual void JoinPlayer(int nSlotIndex, const wchar_t *pstrPlayerName, int nRobotType);
+	virtual void LeavePlayer(int nSlotIndex);
+	virtual void SetPlayerIndex(int nSlotIndex);
 	virtual void SetMap(int nMap);
-	virtual void ChangeSelectRobot(int nServerIndex, int nRobotType);
+	virtual void ChangeSelectRobot(int nSlotIndex, int nRobotType);
 	virtual void ChangeMap(int nMap) { m_nCurrentMap = nMap; }
 	virtual int MouseClick();
 
@@ -431,11 +433,7 @@ public:
 
 protected:
 	int									m_nCurrentMap = SCENE_TYPE_COLONY;
-	int									m_nCurrentSlotIndex = 0;
-	CTextObject							*m_ppTextObjects[8] = { NULL }; // ServerIndex
-	std::unordered_map<int, SERVERINFO>	m_umPlayerInfo;			// ServerIndex, Info
-
-	CRect								*m_ppPlayerRobotRects[8] = { NULL }; // SlotIndex
+	ROOM_INFO							m_pRoomInfos[8];
 
 protected:
 	BoundingBox		m_StartButton;
