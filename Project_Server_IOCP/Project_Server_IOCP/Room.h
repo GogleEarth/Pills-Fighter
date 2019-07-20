@@ -15,7 +15,7 @@ class Player
 	char team_;
 	bool load_;
 	bool send_;
-
+	char slot_;
 public:
 	Player() {}
 	~Player() {}
@@ -34,11 +34,14 @@ public:
 	inline bool get_send() { return send_; }
 	inline void set_team(char team) { team_ = team; }
 	inline char get_team() { return team_; }
+	inline void set_slot(char slot) { slot_ = slot; }
+	inline char get_slot() { return slot_; }
 };
 
 class Room
 {
 	Player players_[8];
+	bool slots_[8];
 	Scene* scenes_[2];
 	int	using_scene_;
 	bool in_use_;
@@ -68,6 +71,10 @@ public:
 	inline Player* get_players() { return players_; }
 	inline bool get_playing() { return is_playing_; }
 	inline GameObject* get_object(int id) { return scenes_[using_scene_]->get_object(id); }
+	void set_player_slot(int id, char slot);
+	inline char get_player_slot(int id) { return players_[id].get_slot(); }
+
+	int get_empty_slot();
 
 	XMFLOAT4X4 get_player_worldmatrix(int id);
 	XMFLOAT4X4 make_matrix();
@@ -81,7 +88,7 @@ public:
 	bool search_client(SOCKET client);
 	void disconnect_client(SOCKET client);
 	int findindex();
-	void add_player(int id, SOCKET socket);
+	void add_player(int id, SOCKET socket, char slot);
 	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix);
 	void set_player_lobby_info(int id, char selectedrobot, char team);
 	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);

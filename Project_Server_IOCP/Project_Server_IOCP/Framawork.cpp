@@ -500,7 +500,7 @@ void Framawork::process_packet(int id, char* packet)
 
 			send_packet_to_player(id, (char*)&pkt_cro);
 			rooms_[room_num].set_is_use(true);
-			rooms_[room_num].add_player(id, clients_[id].socket);
+			rooms_[room_num].add_player(id, clients_[id].socket, 0);
 			rooms_[room_num].set_map(3);
 
 			PKT_ADD_ROOM pkt_ar;
@@ -532,9 +532,9 @@ void Framawork::process_packet(int id, char* packet)
 			int player_id = rooms_[room_num].findindex();
 			pkt_rio.index = player_id;
 			pkt_rio.map = rooms_[room_num].get_map();
-
+			pkt_rio.slot = rooms_[room_num].get_empty_slot();
+			rooms_[room_num].add_player(id, clients_[id].socket, pkt_rio.slot);
 			send_packet_to_player(id, (char*)&pkt_rio);
-			rooms_[room_num].add_player(id, clients_[id].socket);
 
 			PKT_PLAYER_IN pkt_pin;
 			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
@@ -550,6 +550,7 @@ void Framawork::process_packet(int id, char* packet)
 					pkt_pin.id = i;
 					pkt_pin.Team = player->get_team();
 					pkt_pin.robot = player->get_robot();
+					pkt_pin.slot = player->get_slot();
 					send_packet_to_player(id, (char*)&pkt_pin);
 				}
 			}
@@ -557,6 +558,7 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_pin.id = player_id;
 			pkt_pin.Team = player_id % 2;
 			pkt_pin.robot = ROBOT_TYPE_GM;
+			pkt_pin.slot = pkt_rio.slot;
 			// 원래있던애들한테 새로들어온애 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
 			{

@@ -228,6 +228,7 @@ typedef struct PKT_PLAYER_IN
 	int			id;
 	BYTE		Team;
 	int			robot;
+	BYTE		slot;
 }PKT_PLAYER_IN, PKT_PLAYER_OUT;
 
 struct PKT_LOBBY_PLAYER_INFO
@@ -302,6 +303,7 @@ struct PKT_ROOM_IN_OK
 	BYTE PktId;
 	BYTE index;
 	BYTE map;
+	BYTE slot;
 };
 
 struct PKT_ROOM_DELETE

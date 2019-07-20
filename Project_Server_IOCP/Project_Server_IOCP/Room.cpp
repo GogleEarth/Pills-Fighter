@@ -13,6 +13,32 @@ Room::~Room()
 {
 }
 
+void Room::set_player_slot(int id, char slot)
+{
+	if (!slots_[slot])
+	{
+		players_[id].set_slot(slot);
+		slots_[slot] = true;
+	}
+	else
+	{
+		int empty_slot = get_empty_slot();
+		players_[id].set_slot(empty_slot);
+		slots_[empty_slot] = true;
+	}
+}
+
+int Room::get_empty_slot()
+{
+	for (int i = 0; i < 8; ++i)
+	{
+		if (!slots_[i])
+			return i;
+	}
+
+	return -1;
+}
+
 XMFLOAT4X4 Room::get_player_worldmatrix(int id)
 {
 	return 	scenes_[using_scene_]->get_player_worldmatrix(id);
@@ -91,6 +117,8 @@ void Room::init(CRepository* repository)
 
 	for (int i = 0; i < 8; ++i)
 		players_[i].init();
+	for (int i = 0; i < 8; ++i)
+		slots_[i] = false;
 }
 
 void Room::init()
@@ -155,13 +183,15 @@ int Room::findindex()
 	return num;
 }
 
-void Room::add_player(int id, SOCKET socket)
+void Room::add_player(int id, SOCKET socket, char slot)
 {
 	int num = findindex();
 	players_[num].set_use(true);
 	players_[num].set_serverid(id);
 	players_[num].set_socket(socket);
 	players_[num].set_robot(ROBOT_TYPE_GM);
+	players_[num].set_slot(slot);
+	slots_[slot] = true;
 }
 
 int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix)
@@ -530,4 +560,5 @@ void Player::init()
 	team_ = -1;
 	load_ = false;
 	send_ = false;
+	slot_ = -1;
 }
