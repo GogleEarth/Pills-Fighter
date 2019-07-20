@@ -257,7 +257,7 @@ bool Scene::check_collision_player(int object)
 				{
 					if (objaabb.Intersects(playeraabb))
 					{
-						std::cout << "ÇÃÅºÃæ\n";
+						//std::cout << "ÇÃÅºÃæ\n";
 						return true;
 					}
 				}
@@ -275,6 +275,7 @@ void Scene::start_event()
 
 void Scene::end_event()
 {
+	std::cout << "ÀÌº¥Æ® ³¡\n";
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
 	is_being_event_ = false;
@@ -313,6 +314,7 @@ void GroundScene::BuildObjects(CRepository * pRepository)
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/FenceSelfData.bin", 8);
 
 	init(pRepository);
+	gravity_ = -9.8f;
 }
 
 void GroundScene::AnimateObjects(float fTimeElapsed)
@@ -369,9 +371,27 @@ void SpaceScene::BuildObjects(CRepository * pRepository)
 	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_StarShipSelfData.bin", 8);
 
 	init(pRepository);
+	gravity_ = 0.0f;
 }
 
 void SpaceScene::AnimateObjects(float fTimeElapsed)
 {
 	Scene::AnimateObjects(fTimeElapsed);
+}
+
+void SpaceScene::SceneEvent(float fTimeElapsed)
+{
+	event_time_ += fTimeElapsed;
+	meteor_cooltime_duration_ += fTimeElapsed;
+}
+
+void SpaceScene::start_event()
+{
+	Scene::start_event();
+	meteor_cooltime_ = 0.5f;
+}
+
+void SpaceScene::end_event()
+{
+	Scene::end_event();
 }

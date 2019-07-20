@@ -70,6 +70,7 @@ public:
 	inline GameObject* get_object(int id) { return scenes_[using_scene_]->get_object(id); }
 
 	XMFLOAT4X4 get_player_worldmatrix(int id);
+	XMFLOAT4X4 make_matrix();
 	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);
 	void set_player_is_play(int id, bool play);
 	void set_object_id(int id);
@@ -81,6 +82,7 @@ public:
 	void disconnect_client(SOCKET client);
 	int findindex();
 	void add_player(int id, SOCKET socket);
+	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix);
 	void set_player_lobby_info(int id, char selectedrobot, char team);
 	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
 	void player_load_complete(SOCKET socket);

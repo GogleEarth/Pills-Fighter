@@ -73,6 +73,18 @@ void GameObject::Animate(float fTimeElapsed)
 			ElapsedTime_ += fTimeElapsed;
 		}
 	}
+	else if (Object_Type_ == OBJECT_TYPE_METEOR)
+	{
+		if (ElapsedTime_ >= DurationTime_)
+		{
+			Delete();
+		}
+		else
+		{
+			MoveForward(MovingSpeed_ * fTimeElapsed);
+			ElapsedTime_ += fTimeElapsed;
+		}
+	}
 
 	if (model_)
 	{

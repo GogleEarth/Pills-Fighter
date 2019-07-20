@@ -5,9 +5,9 @@
 #include "GameObject.h"
 
 #define EVENT_TIME_GROUND 10.0f
-#define EVENT_START_INTERVAL_GROUND 180.0f
+#define EVENT_START_INTERVAL_GROUND 90.0f
 #define EVENT_TIME_SPACE 30.0f
-#define EVENT_START_INTERVAL_SPACE 300.0f
+#define EVENT_START_INTERVAL_SPACE 120.0f
 
 class Scene
 {
@@ -103,12 +103,19 @@ public:
 
 class SpaceScene : public Scene
 {
+	float meteor_cooltime_;
+	float meteor_cooltime_duration_;
 public:
 	SpaceScene() {}
 	~SpaceScene() {}
 
 	virtual void BuildObjects(CRepository* pRepository);
 	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent(float fTimeElapsed) {}
-
+	virtual void SceneEvent(float fTimeElapsed);
+	virtual void start_event();
+	virtual void end_event();
+	
+	inline void init_meteor_cooltime_duration() { meteor_cooltime_duration_ = 0.0f; }
+	inline float get_meteor_cooltime_duration() { return meteor_cooltime_duration_; }
+	inline float get_meteor_cooltime() { return meteor_cooltime_; }
 };

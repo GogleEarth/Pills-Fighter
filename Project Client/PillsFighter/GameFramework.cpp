@@ -910,7 +910,8 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_CREATE_OBJECT:
 	{
 		PKT_CREATE_OBJECT *pPacket = (PKT_CREATE_OBJECT*)m_pPacketBuffer;
-
+		if (pPacket->Object_Type == OBJECT_TYPE_METEOR)
+			std::cout << "운석 생성 받음\n";
 		CreateObject(pPacket);
 		break;
 	}
@@ -1089,22 +1090,12 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_MAP_EVENT:
 	{
 		PKT_MAP_EVENT *pPacket = (PKT_MAP_EVENT*)m_pPacketBuffer;
-		switch (pPacket->type)
-		{
-		case MAP_EVENT_TYPE_ALERT:
-			((CBattleScene*)m_pScene)->Alert();
-			break;
-		case MAP_EVENT_TYPE_START:
-			break;
-		case MAP_EVENT_TYPE_END:
-			break;
-		default:
-			break;
-		}
+		m_pScene->ApplyRecvInfo(PKT_ID_MAP_EVENT, (LPVOID)pPacket);
+		break;
 	}
 	default:
 	{
-		printf("Received Unknown Packet\n");
+  		printf("Received Unknown Packet\n");
 		break;
 	}
 	}

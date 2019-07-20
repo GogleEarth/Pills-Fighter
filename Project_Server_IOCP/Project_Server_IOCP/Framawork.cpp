@@ -103,9 +103,23 @@ int Framawork::thread_process()
 
 			while (true)
 			{
+				auto data = rooms_[key].create_object_dequeue();
+				if (data == nullptr) break;
+				if (data->Object_Type == OBJECT_TYPE_METEOR)
+				{
+					data->Object_Index = rooms_[key].add_object(data->Object_Type, data->WorldMatrix);
+					add_timer(data->Object_Index, key, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+				}
+				send_packet_to_room_player(key, (char*)data);
+				delete data;
+			}
+
+			while (true)
+			{
 				auto data = rooms_[key].map_event_dequeue();
 				if (data == nullptr) break;
 				send_packet_to_room_player(key, (char*)data);
+				delete data;
 			}
 
 			if (rooms_[key].get_num_player_in_room() > 0)
@@ -429,7 +443,6 @@ void Framawork::process_packet(int id, char* packet)
 			pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
 			send_packet_to_room_player(room_num, (char*)&pktgamestate);
 			std::cout << "전원 로드 완료\n";
-			rooms_[room_num].set_map(COLONY);
 
 			Player* players = rooms_[room_num].get_players();
 			for (int i = 0; i < MAX_CLIENT; ++i)

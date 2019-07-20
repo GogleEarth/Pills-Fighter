@@ -18,6 +18,35 @@ XMFLOAT4X4 Room::get_player_worldmatrix(int id)
 	return 	scenes_[using_scene_]->get_player_worldmatrix(id);
 }
 
+XMFLOAT4X4 Room::make_matrix()
+{
+	XMFLOAT4X4 matrix;
+
+	XMFLOAT3 position;
+	float randomangle = (float)(rand() % 36000) / 100.0f;
+	position.x = sin(randomangle) * 2000.0f;
+	randomangle = (float)(rand() % 36000) / 100.0f;
+	position.y = sin(randomangle) * 2000.0f;
+	randomangle = (float)(rand() % 36000) / 100.0f;
+	position.z = sin(randomangle) * 2000.0f;
+
+	XMFLOAT3 look;
+	look = Vector3::Subtract(XMFLOAT3{ 0.0f,0.0f,0.0f }, position);
+	look = Vector3::Normalize(look);
+
+	XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
+
+	XMFLOAT3 right = Vector3::CrossProduct(look, up, true);
+
+	up = Vector3::CrossProduct(look, right, true);
+
+	matrix._11 = look.x; matrix._12 = look.y; matrix._13 = look.z; matrix._14 = 0.0f;
+	matrix._21 = up.x; matrix._22 = up.y; matrix._23 = up.z; matrix._24 = 0.0f;
+	matrix._31 = right.x; matrix._32 = right.y; matrix._33 = right.z; matrix._34 = 0.0f;
+	matrix._41 = position.x; matrix._42 = position.y; matrix._43 = position.z; matrix._44 = 1.0f;
+	return matrix;
+}
+
 void Room::set_player_worldmatrix(int id, XMFLOAT4X4 matrix)
 {
 	scenes_[using_scene_]->set_player_worldmatrix(id, matrix);
@@ -135,6 +164,20 @@ void Room::add_player(int id, SOCKET socket)
 	players_[num].set_robot(ROBOT_TYPE_GM);
 }
 
+int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix)
+{
+	int hp;
+	float lifetime;
+	float speed;
+	if (type == OBJECT_TYPE_METEOR)
+	{
+		hp = 10;
+		lifetime = 30.0f;
+		speed = 800.0f;
+	}
+	return scenes_[using_scene_]->AddObject(type,hp,lifetime,speed,matrix);
+}
+
 void Room::set_player_lobby_info(int id, char selectedrobot, char team)
 {
 	players_[id].set_robot(selectedrobot);
@@ -232,7 +275,12 @@ void Room::start_game()
 	is_playing_ = true;
 	blue_score_ = MAX_SCORE;
 	red_score_ = MAX_SCORE;
-	using_scene_ -= 3;
+
+	if (get_map() == 3)
+		using_scene_ = 0;
+	else if (get_map() == 4)
+		using_scene_ = 1;
+
 	for (int i = 0; i < 3; ++i)
 	{
 		item_cooltime_[i] = 0.0f;
@@ -280,6 +328,59 @@ void Room::room_update(float elapsed_time)
 
 
 		if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_GROUND + EVENT_TIME_GROUND &&
+			scenes_[using_scene_]->get_is_being_event())
+		{
+			PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
+			pkt_mev->PktId = PKT_ID_MAP_EVENT;
+			pkt_mev->PktSize = sizeof(PKT_MAP_EVENT);
+			pkt_mev->type = MAP_EVENT_TYPE_END;
+			scenes_[using_scene_]->end_event();
+			pkt_mev->gravity = scenes_[using_scene_]->get_gravity();
+			map_event_queue_.push(pkt_mev);
+		}
+	}
+	else
+	{
+		if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_SPACE - 5.0f &&
+			!scenes_[using_scene_]->get_alert())
+		{
+			PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
+			pkt_mev->PktId = PKT_ID_MAP_EVENT;
+			pkt_mev->PktSize = sizeof(PKT_MAP_EVENT);
+			pkt_mev->type = MAP_EVENT_TYPE_ALERT;
+			map_event_queue_.push(pkt_mev);
+			scenes_[using_scene_]->set_alert(true);
+		}
+
+		if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_SPACE &&
+			!scenes_[using_scene_]->get_is_being_event())
+		{
+			PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
+			pkt_mev->PktId = PKT_ID_MAP_EVENT;
+			pkt_mev->PktSize = sizeof(PKT_MAP_EVENT);
+			pkt_mev->type = MAP_EVENT_TYPE_START;
+			scenes_[using_scene_]->start_event();
+			pkt_mev->gravity = scenes_[using_scene_]->get_gravity();
+			map_event_queue_.push(pkt_mev);
+		}
+
+		if (scenes_[using_scene_]->get_is_being_event())
+		{
+			scenes_[using_scene_]->SceneEvent(elapsed_time);
+			if (((SpaceScene*)scenes_[using_scene_])->get_meteor_cooltime_duration() >= ((SpaceScene*)scenes_[using_scene_])->get_meteor_cooltime())
+			{
+				((SpaceScene*)scenes_[using_scene_])->init_meteor_cooltime_duration();
+				std::cout << "운석생성\n";
+				PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
+				pkt_co->PktId = PKT_ID_CREATE_OBJECT;
+				pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
+				pkt_co->Object_Type = OBJECT_TYPE_METEOR;
+				pkt_co->WorldMatrix = make_matrix();
+				create_object_queue_.push(pkt_co);
+			}
+		}
+
+		if (scenes_[using_scene_]->get_elapsed_game_time() >= EVENT_START_INTERVAL_SPACE + EVENT_TIME_SPACE &&
 			scenes_[using_scene_]->get_is_being_event())
 		{
 			PKT_MAP_EVENT* pkt_mev = new PKT_MAP_EVENT();
