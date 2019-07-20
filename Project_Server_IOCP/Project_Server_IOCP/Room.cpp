@@ -33,7 +33,10 @@ int Room::get_empty_slot()
 	for (int i = 0; i < 8; ++i)
 	{
 		if (!slots_[i])
+		{
+			std::cout << "ºó ½½·Ô : " << i << "\n";
 			return i;
+		}
 	}
 
 	return -1;
@@ -169,6 +172,7 @@ void Room::disconnect_client(SOCKET client)
 {
 	int index = find_player_by_socket(client);
 	players_[index].set_use(false);
+	slots_[players_[index].get_slot()] = false;
 }
 
 int Room::findindex()
