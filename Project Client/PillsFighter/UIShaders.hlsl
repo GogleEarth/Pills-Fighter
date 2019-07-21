@@ -192,8 +192,8 @@ float4 PSUITeamHP(GS_UI_OUT input) : SV_TARGET
 
 cbuffer cbFontInfo : register(FONT_INFO)
 {
-	float4 gf4Color;
-	float2 gf2Position;
+	float4 gf4FontColor;
+	float3 gf3FontPosition;
 }
 
 struct VS_FONT_IN
@@ -222,7 +222,7 @@ void GSFont(point VS_FONT_IN input[1], inout TriangleStream<GS_FONT_OUT> outStre
 {
 	float fWidth = input[0].size.x;
 	float fHeight = input[0].size.y;
-	float2 pos = input[0].pos + gf2Position;
+	float2 pos = input[0].pos + gf3FontPosition.xy;
 
 	float4 fVertices[4];
 	fVertices[0] = float4(pos.x, pos.y, 0.0f, 1.0f);
@@ -256,7 +256,7 @@ float4 PSFont(GS_FONT_OUT input) : SV_TARGET
 {
 	float4 fColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return fColor * input.color * gf4Color;
+	return fColor * input.color * gf4FontColor;
 }
 
 ////////////////////////////////////////////////////////////////

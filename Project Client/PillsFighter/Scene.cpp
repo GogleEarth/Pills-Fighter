@@ -67,9 +67,9 @@ void CScene::SetFont(ID3D12Device *pd3dDevice, CFont *pFont)
 	m_pFont = pFont;
 }
 
-CTextObject* CScene::AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+CTextObject* CScene::AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType, bool bIs3D)
 {
-	return (m_pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType));
+	return (m_pFont->SetText(pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType, bIs3D));
 }
 
 void CScene::ChangeText(CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
@@ -417,9 +417,11 @@ void CScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, NULL);
 
-	if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
-
+	if (m_pFontShader) m_pFontShader->OnPrepareRender(pd3dCommandList, 0);
 	if (m_pFont) m_pFont->Render(pd3dCommandList);
+
+	if (m_pFontShader) m_pFontShader->OnPrepareRender(pd3dCommandList, 1);
+	if (m_pFont) m_pFont->Render3DFont(pd3dCommandList);
 }
 
 void CScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -775,7 +777,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Constants.Num32BitValues = 6;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Constants.Num32BitValues = 7;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Constants.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Constants.ShaderRegister = 12;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -1470,10 +1472,10 @@ int CLobbyMainScene::MouseClick()
 
 			for (auto& Room : m_Rooms)
 			{
-				Room.pRoom_map->MovePosition(XMFLOAT2(0.0f, -0.1162f));
-				Room.pRoom_name->MovePosition(XMFLOAT2(0.0f, -0.1162f));
-				Room.pRoom_num->MovePosition(XMFLOAT2(0.0f, -0.1162f));
-				Room.pRoom_num_people->MovePosition(XMFLOAT2(0.0f, -0.1162f));
+				Room.pRoom_map->MovePosition(XMFLOAT3(0.0f, -0.1162f, 0.0f));
+				Room.pRoom_name->MovePosition(XMFLOAT3(0.0f, -0.1162f, 0.0f));
+				Room.pRoom_num->MovePosition(XMFLOAT3(0.0f, -0.1162f, 0.0f));
+				Room.pRoom_num_people->MovePosition(XMFLOAT3(0.0f, -0.1162f, 0.0f));
 			}
 		}
 	}
@@ -1486,10 +1488,10 @@ int CLobbyMainScene::MouseClick()
 
 			for (auto& Room : m_Rooms)
 			{
-				Room.pRoom_map->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-				Room.pRoom_name->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-				Room.pRoom_num->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-				Room.pRoom_num_people->MovePosition(XMFLOAT2(0.0f, 0.1162f));
+				Room.pRoom_map->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
+				Room.pRoom_name->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
+				Room.pRoom_num->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
+				Room.pRoom_num_people->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
 			}
 		}
 	}
@@ -1544,17 +1546,17 @@ void CLobbyMainScene::AddRoom(int n)
 	wsprintfW(pstrNumber, L"%d", n);
 
 	newRoom.nRoom_num = n;
-	newRoom.pRoom_num = AddText(pstrNumber, XMFLOAT2(-0.943750f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_name = AddText(L"name", XMFLOAT2(-0.806250f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_map = AddText(L"콜로니", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_num_people = AddText(L"1/8", XMFLOAT2(0.776562f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	newRoom.pRoom_num = AddText(pstrNumber, XMFLOAT2(-0.943750f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN, false);
+	newRoom.pRoom_name = AddText(L"name", XMFLOAT2(-0.806250f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN, false);
+	newRoom.pRoom_map = AddText(L"콜로니", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN, false);
+	newRoom.pRoom_num_people = AddText(L"1/8", XMFLOAT2(0.776562f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN, false);
 
 	float yPos = (m_RoomStart + m_Rooms.size())* 0.1162f;
-	XMFLOAT2 xmf2Position = XMFLOAT2(0.0f, 0.730222f - yPos);
-	newRoom.pRoom_num->SetPosition(xmf2Position);
-	newRoom.pRoom_name->SetPosition(xmf2Position);
-	newRoom.pRoom_map->SetPosition(xmf2Position);
-	newRoom.pRoom_num_people->SetPosition(xmf2Position);
+	XMFLOAT3 xmf3Position = XMFLOAT3(0.0f, 0.730222f - yPos, 0.0f);
+	newRoom.pRoom_num->SetPosition(xmf3Position);
+	newRoom.pRoom_name->SetPosition(xmf3Position);
+	newRoom.pRoom_map->SetPosition(xmf3Position);
+	newRoom.pRoom_num_people->SetPosition(xmf3Position);
 
 	m_Rooms.emplace_back(newRoom);
 }
@@ -1583,10 +1585,10 @@ void CLobbyMainScene::DeleteRoom(int n)
 
 	for (int i = nStart; i < m_Rooms.size(); i++)
 	{
-		m_Rooms[i].pRoom_num->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-		m_Rooms[i].pRoom_name->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-		m_Rooms[i].pRoom_map->MovePosition(XMFLOAT2(0.0f, 0.1162f));
-		m_Rooms[i].pRoom_num_people->MovePosition(XMFLOAT2(0.0f, 0.1162f));
+		m_Rooms[i].pRoom_num->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
+		m_Rooms[i].pRoom_name->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
+		m_Rooms[i].pRoom_map->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
+		m_Rooms[i].pRoom_num_people->MovePosition(XMFLOAT3(0.0f, 0.1162f, 0.0f));
 	}
 }
 
@@ -2174,7 +2176,7 @@ void CLobbyRoomScene::JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlaye
 		xmf4Color.z = 0.0f;
 	}
 
-	m_pPlayerInfos[nIndex].m_pTextObject = AddText(pstrPlayerName, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN);
+	m_pPlayerInfos[nIndex].m_pTextObject = AddText(pstrPlayerName, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), xmf4Color, LEFT_ALIGN, false);
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 }
 
@@ -2183,6 +2185,7 @@ void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot)
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nChangeSlot);
 
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
+	m_pPlayerInfos[nIndex].m_nSlot = nChangeSlot;
 }
 
 void CLobbyRoomScene::LeavePlayer(int nIndex)
@@ -2598,8 +2601,10 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pMinimapShader = pMinimapShader;
 	//
 
-	m_pRedScoreText = AddText(L"0", XMFLOAT2(-0.05f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
-	m_pBlueScoreText = AddText(L"0", XMFLOAT2(0.02f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
+	m_pRedScoreText = AddText(L"0", XMFLOAT2(-0.05f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN, false);
+	m_pBlueScoreText = AddText(L"0", XMFLOAT2(0.02f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN, false);
+
+	m_pTeamNameText[0] = AddText(L"클라이언트", XMFLOAT2(0.0f, 0.0f), XMFLOAT2(50.0f, 50.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN, true);
 }
 
 void CBattleScene::CreateEnvironmentMap(ID3D12Device *pd3dDevice)
@@ -2795,6 +2800,8 @@ void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *p
 void CBattleScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pMinimapShader) m_pMinimapShader->Render(pd3dCommandList, NULL);
+
+	m_pTeamNameText[0]->SetPosition(Vector3::Add(m_pPlayer->GetPosition(), XMFLOAT3(0.0f, 20.0f, 0.0f)));
 
 	CScene::RenderUI(pd3dCommandList);
 }

@@ -20,7 +20,7 @@ CTextObject::CTextObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd
 	m_d3dFontView.SizeInBytes = sizeof(CFontVertex) * MAX_TEXT_LENGTH;
 	m_d3dFontView.StrideInBytes = sizeof(CFontVertex);
 
-	m_xmf2Position = XMFLOAT2(0.0f, 0.0f);
+	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
@@ -40,7 +40,7 @@ void CTextObject::UpdateVertexBuffer(ID3D12GraphicsCommandList *pd3dCommandList)
 void CTextObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_FONT_INFO, 4, &m_xmf4Color, 0);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_FONT_INFO, 2, &m_xmf2Position, 4);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_FONT_INFO, 3, &m_xmf3Position, 4);
 }
 
 void CTextObject::Render(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -151,6 +151,10 @@ void CFont::ClearTexts()
 	{
 		pTextObject->Release();
 	}
+	for (const auto& pTextObject : m_vp3DTextObjects)
+	{
+		pTextObject->Release();
+	}
 }
 
 void CFont::Destroy()
@@ -166,6 +170,13 @@ void CFont::Destroy()
 	}
 
 	for (const auto& pTextObject : m_vpTextObjects)
+	{
+		pTextObject->Release();
+
+		delete pTextObject;
+	}
+
+	for (const auto& pTextObject : m_vp3DTextObjects)
 	{
 		pTextObject->Release();
 
@@ -549,7 +560,7 @@ void CFont::CreateText(int nLength, CFontVertex* pFontVertices, const wchar_t *p
 	}
 }
 
-CTextObject* CFont::SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+CTextObject* CFont::SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType, bool bIs3D)
 {
 	int nLength = (int)lstrlenW(pstrText);
 	CFontVertex *pFontVertices = new CFontVertex[nLength];
@@ -561,7 +572,10 @@ CTextObject* CFont::SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFL
 
 	pTextObject->SetText(pstrText, pFontVertices, nLength);
 
-	m_vpTextObjects.emplace_back(pTextObject);
+	if(bIs3D)
+		m_vp3DTextObjects.emplace_back(pTextObject);
+	else
+		m_vpTextObjects.emplace_back(pTextObject);
 
 	return pTextObject;
 }
@@ -590,6 +604,18 @@ void CFont::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 }
 
+void CFont::Render3DFont(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pFontTexture->UpdateShaderVariables(pd3dCommandList);
+
+	for (const auto& pTextObject : m_vp3DTextObjects)
+	{
+		if (pTextObject->IsHide()) continue;
+
+		pTextObject->Render(pd3dCommandList);
+	}
+}
+
 void CFont::CheckUsingTexts()
 {
 	for (auto& pText = m_vpTextObjects.begin(); pText != m_vpTextObjects.end();)
@@ -598,6 +624,17 @@ void CFont::CheckUsingTexts()
 		{
 			m_qpTempTextObjects.push(*pText);
 			pText = m_vpTextObjects.erase(pText);
+		}
+		else
+			pText++;
+	}
+
+	for (auto& pText = m_vp3DTextObjects.begin(); pText != m_vp3DTextObjects.end();)
+	{
+		if (!(*pText)->IsUsed())
+		{
+			m_qpTempTextObjects.push(*pText);
+			pText = m_vp3DTextObjects.erase(pText);
 		}
 		else
 			pText++;

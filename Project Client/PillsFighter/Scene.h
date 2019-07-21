@@ -172,7 +172,7 @@ public:
 
 public:
 	void SetFont(ID3D12Device *pd3dDevice, CFont *pFont);
-	CTextObject* AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	CTextObject* AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType, bool bIs3D);
 	void ChangeText(CTextObject *pTextObject,const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 
 protected:
@@ -599,6 +599,8 @@ protected:
 	float							m_fMulCalcAlertColor = 1.0f;
 	int								m_fAlertCount = 0;
 	bool							m_bAlert = false;
+
+	CTextObject						*m_pTeamNameText[3];
 
 public:
 	float GetToTargetDistance() { return m_fCameraToTarget; }

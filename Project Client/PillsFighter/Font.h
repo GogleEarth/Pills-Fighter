@@ -40,8 +40,9 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void SetText(const wchar_t *pstrText, CFontVertex *pFontVertex, int nLength);
-	virtual void SetPosition(XMFLOAT2 xmf2Position) { m_xmf2Position = xmf2Position; };
-	virtual void MovePosition(XMFLOAT2 xmf2Position) { m_xmf2Position.x += xmf2Position.x; m_xmf2Position.y += xmf2Position.y; };
+	virtual void SetPosition(XMFLOAT3 xmf3Position) { m_xmf3Position = xmf3Position; };
+	virtual void SetPosition(XMFLOAT2 xmf2Position) { m_xmf3Position = XMFLOAT3(xmf2Position.x, xmf2Position.y, 0.0f); };
+	virtual void MovePosition(XMFLOAT3 xmf3Position) { m_xmf3Position.x += xmf3Position.x; m_xmf3Position.y += xmf3Position.y; m_xmf3Position.z += xmf3Position.z; };
 	virtual void SetColor(XMFLOAT4 xmf4Color) { m_xmf4Color = xmf4Color; };
 
 	virtual void Release();
@@ -65,7 +66,7 @@ protected:
 	bool						m_bUse;
 	wchar_t						m_pText[MAX_TEXT_LENGTH];
 
-	XMFLOAT2					m_xmf2Position;
+	XMFLOAT3					m_xmf3Position;
 	XMFLOAT4					m_xmf4Color;
 
 	bool						m_bHide = false;
@@ -94,10 +95,12 @@ public:
 
 #define LEFT_ALIGN 0
 #define RIGHT_ALIGN 1
+#define CENTER_ALIGN 1
 	void CreateText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	CTextObject* SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	CTextObject* SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType, bool bIs3D);
 	void ChangeText(CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	void Render3DFont(ID3D12GraphicsCommandList *pd3dCommandList);
 
 protected:
 	char m_pstrName[32];
@@ -125,6 +128,7 @@ protected:
 #define MAX_TEXT_SIZE 200
 	std::queue<CTextObject*> m_qpTempTextObjects;
 	std::vector<CTextObject*> m_vpTextObjects;
+	std::vector<CTextObject*> m_vp3DTextObjects;
 };
 
 
