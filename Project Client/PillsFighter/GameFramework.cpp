@@ -994,6 +994,8 @@ void CGameFramework::ProcessPacket()
 
 		m_pScene->ChangeSelectRobot(pPacket->id, pPacket->selected_robot);
 		m_pScene->ChangeSlot(pPacket->id, pPacket->slot);
+		if (pPacket->id == m_nClinetIndex)
+			m_nClientSlot = pPacket->slot;
 		break;
 	}
 	case PKT_ID_SCORE:
@@ -1079,6 +1081,7 @@ void CGameFramework::ProcessPacket()
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetClientIndex(0, 0);
 		m_nClinetIndex = 0;
+		m_nClientSlot = 0;
 		break;
 	}
 	case PKT_ID_ROOM_IN_OK:
@@ -1096,7 +1099,7 @@ void CGameFramework::ProcessPacket()
 		m_pScene->SetClientIndex(pPacket->index, pPacket->slot);
 		m_pScene->SetMap(pPacket->map);
 		m_nClinetIndex = pPacket->index;
-
+		m_nClientSlot = pPacket->slot;
 		break;
 	}
 	case PKT_ID_MAP_EVENT:
@@ -1303,6 +1306,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktId = PKT_ID_LOBBY_PLAYER_INFO;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.selected_robot = m_pScene->GetPlayerRobotType();
+		pktToServer.slot = m_nClientSlot;
 
 		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
 		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
