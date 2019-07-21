@@ -229,6 +229,14 @@ void GameObject::UpdateWorldTransform()
 	if (model_) model_->UpdateWorldTransform(&m_xmf4x4World);
 }
 
+void GameObject::SetHitPoint(int nHitPoint)
+{
+	if (nHitPoint >= max_hp_)
+		hp_ = max_hp_;
+	else
+		hp_ = nHitPoint;
+}
+
 void GameObject::SetUse(bool use)
 {
 	 in_used_ = use; 

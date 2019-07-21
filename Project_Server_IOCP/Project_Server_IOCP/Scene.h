@@ -15,6 +15,7 @@ protected:
 	CModel*	bullet_mesh_;
 	CModel*	robot_mesh_;
 	std::vector<CModel*> models_;
+	std::mutex obj_lock;
 	GameObject Objects_[MAX_NUM_OBJECT];
 	std::vector<GameObject*> Obstacles_;
 	GameObject BeamsaberCollisionmesh_[24];
@@ -23,6 +24,8 @@ protected:
 	bool is_being_event_;
 	bool alert_;
 	float gravity_;
+
+	std::queue<PKT_PICK_ITEM*> item_queue_;
 public:
 	Scene();
 	~Scene();
@@ -30,6 +33,9 @@ public:
 	virtual void BuildObjects(CRepository* pRepository) = 0;
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void SceneEvent(float fTimeElapsed) = 0;
+
+	virtual void start_event();
+	virtual void end_event();
 
 	void InsertObjectFromLoadInfFromBin(char *pstrFileName, int nGroup);
 
@@ -65,8 +71,7 @@ public:
 	bool check_collision_obstacles(int object);
 	bool check_collision_player(int object);
 
-	virtual void start_event();
-	virtual void end_event();
+	PKT_PICK_ITEM* item_dequeue();
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
 	inline void deleteObject(int index) { Objects_[index].Delete(); }

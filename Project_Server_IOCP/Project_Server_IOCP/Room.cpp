@@ -464,15 +464,13 @@ void Room::spawn_healing_item()
 	{
 		item_spawn_[0] = true;
 		int hp = 50;
-		OBJECT_TYPE type = OBJECT_TYPE_ITEM_HEALING;
 		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 5.0f, 0.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
-		pkt_co->Robot_Type = ROBOT_TYPE_GM;
 		pkt_co->WorldMatrix = matrix;
-		pkt_co->Object_Type = type;
-		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
+		pkt_co->Object_Type = OBJECT_TYPE_ITEM_HEALING;
+		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(OBJECT_TYPE_ITEM_HEALING, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
 	}
@@ -484,15 +482,13 @@ void Room::spawn_ammo_item()
 	{
 		item_spawn_[1] = true;
 		int hp = 100;
-		OBJECT_TYPE type = OBJECT_TYPE_ITEM_AMMO;
 		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
-		pkt_co->Robot_Type = ROBOT_TYPE_GM;
 		pkt_co->WorldMatrix = matrix;
-		pkt_co->Object_Type = type;
-		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
+		pkt_co->Object_Type = OBJECT_TYPE_ITEM_AMMO;
+		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(OBJECT_TYPE_ITEM_AMMO_1, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
 	}
@@ -501,15 +497,13 @@ void Room::spawn_ammo_item()
 	{
 		item_spawn_[2] = true;
 		int hp = 100;
-		OBJECT_TYPE type = OBJECT_TYPE_ITEM_AMMO;
 		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 5.0f, 0.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
-		pkt_co->Robot_Type = ROBOT_TYPE_GM;
 		pkt_co->WorldMatrix = matrix;
-		pkt_co->Object_Type = type;
-		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, 0.0f, 0.0f, matrix);
+		pkt_co->Object_Type = OBJECT_TYPE_ITEM_AMMO;
+		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(OBJECT_TYPE_ITEM_AMMO_2, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
 	}
@@ -599,12 +593,36 @@ PKT_CREATE_EFFECT* Room::create_effect_dequeue()
 	return packet;
 }
 
-PKT_MAP_EVENT * Room::map_event_dequeue()
+PKT_MAP_EVENT* Room::map_event_dequeue()
 {
 	if (map_event_queue_.empty()) return nullptr;
 	auto packet = map_event_queue_.front();
 	map_event_queue_.pop();
 	return packet;
+}
+
+PKT_PICK_ITEM* Room::item_dequeue()
+{
+	auto item = scenes_[using_scene_]->item_dequeue();
+	if (item != nullptr)
+	{
+		if (item->Item_type == ITEM_TYPE_HEALING)
+		{
+			item_cooltime_[0] = 0.0f;
+			item_spawn_[0] = false;
+		}
+		else if (item->Item_type == ITEM_TYPE_AMMO1)
+		{
+			item_cooltime_[1] = 0.0f;
+			item_spawn_[1] = false;
+		}
+		else if (item->Item_type == ITEM_TYPE_AMMO2)
+		{
+			item_cooltime_[2] = 0.0f;
+			item_spawn_[2] = false;
+		}
+	}
+	return item;
 }
 
 void Player::init()

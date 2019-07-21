@@ -150,8 +150,9 @@ void Scene::init(CRepository * pRepository)
 
 void Scene::init()
 {
-	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
+	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 	{
+		Objects_[i].Delete();
 		Objects_[i].SetUse(false);
 	}
 
@@ -200,8 +201,10 @@ int Scene::GetIndex()
 
 int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix)
 {
+	obj_lock.lock();
 	int index = GetIndex();
 	Objects_[index].SetObjectType(type);
+	Objects_[index].SetMaxHitPoint(hp);
 	Objects_[index].SetHitPoint(hp);
 	if (index != -1)
 	{
@@ -228,6 +231,7 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 	}
 	Objects_[index].SetWorldTransf(matrix);
 	Objects_[index].SetUse(true);
+	obj_lock.unlock();
 	return index;
 }
 
@@ -263,7 +267,44 @@ bool Scene::check_collision_player(int object)
 				{
 					if (objaabb.Intersects(playeraabb))
 					{
-						//std::cout << "플탄충\n";
+						if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
+							Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
+						{
+							std::cout << "아플충\n";
+
+							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
+							pkt_pi->PktId = PKT_ID_PICK_ITEM;
+							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
+							pkt_pi->ID = i;
+							pkt_pi->AMMO = Objects_[object].GetHitPoint();
+							if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1)
+								pkt_pi->Item_type = ITEM_TYPE_AMMO1;
+							else
+								pkt_pi->Item_type = ITEM_TYPE_AMMO2;
+							item_queue_.push(pkt_pi);
+						}
+						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
+						{
+							std::cout << "아플충\n";
+
+							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
+							pkt_pi->PktId = PKT_ID_PICK_ITEM;
+							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
+							pkt_pi->ID = i;
+							pkt_pi->HP = Objects_[object].GetHitPoint();
+							pkt_pi->Item_type = ITEM_TYPE_HEALING;
+
+							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
+
+							item_queue_.push(pkt_pi);
+						}
+						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
+							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET || 
+							Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
+						{
+							std::cout << "플탄충\n";
+
+						}
 						return true;
 					}
 				}
@@ -271,6 +312,14 @@ bool Scene::check_collision_player(int object)
 		}
 	}
 	return false;
+}
+
+PKT_PICK_ITEM* Scene::item_dequeue()
+{
+	if (item_queue_.empty()) return nullptr;
+	auto packet = item_queue_.front();
+	item_queue_.pop();
+	return packet;
 }
 
 void Scene::start_event()

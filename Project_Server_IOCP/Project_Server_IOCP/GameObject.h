@@ -97,7 +97,7 @@ public:
 	inline int GetHitPoint() { return hp_; }
 	inline int GetMaxHitPoint() { return max_hp_; }
 	inline void SetMaxHitPoint(int nMaxHitPoint) { max_hp_ = nMaxHitPoint; }
-	inline void SetHitPoint(int nHitPoint) { hp_ = nHitPoint; }
+	void SetHitPoint(int nHitPoint);
 
 	inline void SetId(int id) { id_ = id; }
 	inline int GetId() { return id_; }

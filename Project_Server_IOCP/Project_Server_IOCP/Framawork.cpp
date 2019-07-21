@@ -110,6 +110,10 @@ int Framawork::thread_process()
 					data->Object_Index = rooms_[key].add_object(data->Object_Type, data->WorldMatrix);
 					add_timer(data->Object_Index, key, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
 				}
+				else if (data->Object_Type == OBJECT_TYPE_ITEM_AMMO || data->Object_Type == OBJECT_TYPE_ITEM_HEALING)
+				{
+					add_timer(data->Object_Index, key, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
+				}
 				send_packet_to_room_player(key, (char*)data);
 				delete data;
 			}
@@ -118,6 +122,16 @@ int Framawork::thread_process()
 			{
 				auto data = rooms_[key].map_event_dequeue();
 				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+				delete data;
+			}
+
+			while (true)
+			{
+				auto data = rooms_[key].item_dequeue();
+				if (data == nullptr) break;
+				if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)
+					data->Item_type = ITEM_TYPE_AMMO;
 				send_packet_to_room_player(key, (char*)data);
 				delete data;
 			}
@@ -131,59 +145,95 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_OBJECT_MOVE == over_ex->event_t)
 		{
-			auto object = rooms_[over_ex->room_num].get_object(key);
-			float elapsed_time;
-
-			if (over_ex->elapsed_time <= 0.001f)
-				elapsed_time = 0.016f;
-			else
-				elapsed_time = over_ex->elapsed_time;
-				
-			object->Animate(elapsed_time);
-			rooms_[over_ex->room_num].check_collision_obstacles(key);
-			rooms_[over_ex->room_num].check_collision_player(key);
-
-			if (object->IsDelete())
+			if (rooms_[over_ex->room_num].get_is_use())
 			{
-				PKT_DELETE_OBJECT pkt_do;
-				pkt_do.PktId = PKT_ID_DELETE_OBJECT;
-				pkt_do.PktSize = sizeof(PKT_DELETE_OBJECT);
-				pkt_do.Object_Index = key;
-				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_do);
+				auto object = rooms_[over_ex->room_num].get_object(key);
+				float elapsed_time;
 
-				OBJECT_TYPE type = object->GetObjectType();
-				if (type == OBJECT_TYPE_MACHINE_BULLET
-					|| type == OBJECT_TYPE_BZK_BULLET
-					|| type == OBJECT_TYPE_BEAM_BULLET)
+				if (over_ex->elapsed_time <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = over_ex->elapsed_time;
+
+				object->Animate(elapsed_time);
+				rooms_[over_ex->room_num].check_collision_obstacles(key);
+				rooms_[over_ex->room_num].check_collision_player(key);
+
+				if (object->IsDelete())
 				{
-					PKT_CREATE_EFFECT pktCE;
-					pktCE.PktId = PKT_ID_CREATE_EFFECT;
-					pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-					if (type == OBJECT_TYPE_BZK_BULLET)
-						pktCE.efType = EFFECT_TYPE_EXPLOSION;
-					else
-						pktCE.efType = EFFECT_TYPE_HIT;
-					pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-					pktCE.xmf3Position = object->GetPosition();
-					send_packet_to_room_player(over_ex->room_num, (char*)&pktCE);
+					PKT_DELETE_OBJECT pkt_do;
+					pkt_do.PktId = PKT_ID_DELETE_OBJECT;
+					pkt_do.PktSize = sizeof(PKT_DELETE_OBJECT);
+					pkt_do.Object_Index = key;
+					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_do);
+
+					OBJECT_TYPE type = object->GetObjectType();
+					if (type == OBJECT_TYPE_MACHINE_BULLET
+						|| type == OBJECT_TYPE_BZK_BULLET
+						|| type == OBJECT_TYPE_BEAM_BULLET)
+					{
+						PKT_CREATE_EFFECT pktCE;
+						pktCE.PktId = PKT_ID_CREATE_EFFECT;
+						pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
+						if (type == OBJECT_TYPE_BZK_BULLET)
+							pktCE.efType = EFFECT_TYPE_EXPLOSION;
+						else
+							pktCE.efType = EFFECT_TYPE_HIT;
+						pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+						pktCE.xmf3Position = object->GetPosition();
+						send_packet_to_room_player(over_ex->room_num, (char*)&pktCE);
+					}
+					object->SetUse(false);
 				}
-				object->SetUse(false);
+				else
+				{
+					PKT_UPDATE_OBJECT pkt_uo;
+					pkt_uo.PktId = PKT_ID_UPDATE_OBJECT;
+					pkt_uo.PktSize = sizeof(PKT_UPDATE_OBJECT);
+					pkt_uo.Object_Index = key;
+					pkt_uo.Object_Position = object->GetPosition();
+
+					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_uo);
+
+					using namespace std;
+					using namespace chrono;
+					add_timer(key, over_ex->room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+				}
 			}
-			else
+			delete over_ex;
+		}
+		else if (EVENT_TYPE_ITEM == over_ex->event_t)
+		{
+			if(rooms_[over_ex->room_num].get_is_use())
 			{
-				PKT_UPDATE_OBJECT pkt_uo;
-				pkt_uo.PktId = PKT_ID_UPDATE_OBJECT;
-				pkt_uo.PktSize = sizeof(PKT_UPDATE_OBJECT);
-				pkt_uo.Object_Index = key;
-				pkt_uo.Object_Position = object->GetPosition();
+				auto object = rooms_[over_ex->room_num].get_object(key);
+				float elapsed_time;
 
-				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_uo);
+				if (over_ex->elapsed_time <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = over_ex->elapsed_time;
 
-				using namespace std;
-				using namespace chrono;
-				add_timer(key, over_ex->room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+				object->Animate(elapsed_time);
+				rooms_[over_ex->room_num].check_collision_player(key);
+
+				if (object->IsDelete())
+				{
+					PKT_DELETE_OBJECT pkt_do;
+					pkt_do.PktId = PKT_ID_DELETE_OBJECT;
+					pkt_do.PktSize = sizeof(PKT_DELETE_OBJECT);
+					pkt_do.Object_Index = key;
+					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_do);
+
+					object->SetUse(false);
+				}
+				else
+				{
+					using namespace std;
+					using namespace chrono;
+					add_timer(key, over_ex->room_num, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
+				}
 			}
-
 			delete over_ex;
 		}
 		else

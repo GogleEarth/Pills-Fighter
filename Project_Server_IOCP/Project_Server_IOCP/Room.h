@@ -117,5 +117,6 @@ public:
 	PKT_DELETE_OBJECT* delete_object_dequeue();
 	PKT_CREATE_EFFECT* create_effect_dequeue();
 	PKT_MAP_EVENT* map_event_dequeue();
+	PKT_PICK_ITEM* item_dequeue();
 };
 
