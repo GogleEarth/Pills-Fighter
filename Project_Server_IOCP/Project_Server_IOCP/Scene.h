@@ -27,10 +27,15 @@ protected:
 	bool alert_;
 	float gravity_;
 
+	int red_score_;
+	int blue_score_;
+
 	std::mutex item_lock;
 	std::queue<PKT_PICK_ITEM*> item_queue_;
 	std::mutex life_lock;
 	std::queue<PKT_PLAYER_LIFE*> player_life_queue_;
+	std::mutex score_lock;
+	std::queue<PKT_SCORE*> score_queue_;
 public:
 	Scene();
 	~Scene();
@@ -72,12 +77,14 @@ public:
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
 	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix);
+	void set_player_team(int id, char team);
 
 	bool check_collision_obstacles(int object);
 	bool check_collision_player(int object);
 
 	PKT_PICK_ITEM* item_dequeue();
 	PKT_PLAYER_LIFE* player_life_dequeue();
+	PKT_SCORE* score_dequeue();
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
 	inline void deleteObject(int index) { Objects_[index].Delete(); }
@@ -93,6 +100,11 @@ public:
 	inline void set_alert(bool alert) { alert_ = alert; }
 	inline bool get_alert() { return alert_; }
 	inline float get_gravity() { return gravity_; }
+	inline void set_red_score(int score) { red_score_ = score; }
+	inline void set_blue_score(int score) { blue_score_ = score; }
+	inline int get_red_score() { return red_score_; }
+	inline int get_blue_score() { return blue_score_; }
+
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -136,6 +136,14 @@ int Framawork::thread_process()
 
 			while (true)
 			{
+				auto data = rooms_[key].score_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_room_player(key, (char*)data);
+				delete data;
+			}
+
+			while (true)
+			{
 				auto data = rooms_[key].item_dequeue();
 				if (data == nullptr) break;
 				if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)

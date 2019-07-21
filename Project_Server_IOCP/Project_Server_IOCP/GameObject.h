@@ -47,6 +47,8 @@ protected:
 	float DurationTime_;
 	float ElapsedTime_;
 
+	char team_;
+
 public:
 	GameObject();
 	~GameObject();
@@ -113,6 +115,9 @@ public:
 	inline void set_speed(float speed) { MovingSpeed_ = speed; }
 	inline float get_speed() { return MovingSpeed_; }
 	inline void set_life(float life) { DurationTime_ = life; }
+
+	inline void set_team(char team) { team_ = team; }
+	inline char get_team() { return team_; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -119,5 +119,6 @@ public:
 	PKT_MAP_EVENT* map_event_dequeue();
 	PKT_PICK_ITEM* item_dequeue();
 	PKT_PLAYER_LIFE* player_life_dequeue();
+	PKT_SCORE* score_dequeue();
 };
 

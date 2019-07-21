@@ -118,6 +118,7 @@ void Scene::init(CRepository * pRepository)
 		Objects_[i].SetObjectType(OBJECT_TYPE_PLAYER);
 		Objects_[i].SetId(i);
 		Objects_[i].SetModel(robot_mesh_);
+		Objects_[i].SetMaxHitPoint(PLAYER_HP);
 		Objects_[i].SetHitPoint(PLAYER_HP);
 		Objects_[i].SetPlay(false);
 	}
@@ -136,6 +137,7 @@ void Scene::init(CRepository * pRepository)
 		BeamsaberCollisionmesh_[i].SetUse(false);
 		BeamsaberCollisionmesh_[i].SetModel(robot_mesh_);
 		BeamsaberCollisionmesh_[i].SetIndex(i);
+		BeamsaberCollisionmesh_[i].SetMaxHitPoint(3);
 		BeamsaberCollisionmesh_[i].SetHitPoint(3);
 	}
 
@@ -237,6 +239,11 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 	return index;
 }
 
+void Scene::set_player_team(int id, char team)
+{
+	Objects_[id].set_team(team);
+}
+
 bool Scene::check_collision_obstacles(int object)
 {
 	for (auto obstacle : Obstacles_)
@@ -272,7 +279,6 @@ bool Scene::check_collision_player(int object)
 						if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
 							Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
 						{
-							std::cout << "탄약상자 플레이어\n";
 							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
 							pkt_pi->PktId = PKT_ID_PICK_ITEM;
 							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
@@ -288,8 +294,6 @@ bool Scene::check_collision_player(int object)
 						}
 						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
 						{
-							std::cout << "회복 플레이어\n";
-
 							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
 							pkt_pi->PktId = PKT_ID_PICK_ITEM;
 							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
@@ -304,7 +308,7 @@ bool Scene::check_collision_player(int object)
 							item_lock.unlock();
 						}
 						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
-							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET || 
+							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
 						{
 							std::cout << "플레이어 총알\n";
@@ -314,6 +318,25 @@ bool Scene::check_collision_player(int object)
 							pkt_pl->HP = Objects_[object].GetHitPoint();
 							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+							if (Objects_[i].GetHitPoint() <= 0)
+							{
+								if (Objects_[i].get_team() == 0)
+									red_score_ -= 5;
+								else
+									blue_score_ -= 5;
+								PKT_SCORE* pkt_sco = new PKT_SCORE;
+								pkt_sco->PktId = PKT_ID_SCORE;
+								pkt_sco->PktSize = sizeof(PKT_SCORE);
+								pkt_sco->RedScore = red_score_;
+								pkt_sco->BlueScore = blue_score_;
+
+								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+								score_lock.lock();
+								score_queue_.push(pkt_sco);
+								score_lock.unlock();
+							}
 
 							life_lock.lock();
 							player_life_queue_.push(pkt_pl);
@@ -353,6 +376,20 @@ PKT_PLAYER_LIFE * Scene::player_life_dequeue()
 	auto packet = player_life_queue_.front();
 	player_life_queue_.pop();
 	life_lock.unlock();
+	return packet;
+}
+
+PKT_SCORE * Scene::score_dequeue()
+{
+	score_lock.lock();
+	if (score_queue_.empty())
+	{
+		score_lock.unlock();
+		return nullptr;
+	}
+	auto packet = score_queue_.front();
+	score_queue_.pop();
+	score_lock.unlock();
 	return packet;
 }
 

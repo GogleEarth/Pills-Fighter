@@ -221,6 +221,7 @@ void Room::add_player(int id, SOCKET socket, char slot)
 	players_[num].set_socket(socket);
 	players_[num].set_robot(ROBOT_TYPE_GM);
 	players_[num].set_slot(slot);
+	players_[num].set_team(slot % 2);
 	slots_[slot] = true;
 }
 
@@ -343,6 +344,15 @@ void Room::start_game()
 		using_scene_ = 0;
 	else if (get_map() == 4)
 		using_scene_ = 1;
+
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		if (!players_[i].get_use()) continue;
+		scenes_[using_scene_]->set_player_team(i, players_[i].get_team());
+	}
+
+	scenes_[using_scene_]->set_red_score(red_score_);
+	scenes_[using_scene_]->set_blue_score(blue_score_);
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -628,6 +638,11 @@ PKT_PICK_ITEM* Room::item_dequeue()
 PKT_PLAYER_LIFE * Room::player_life_dequeue()
 {
 	return scenes_[using_scene_]->player_life_dequeue();
+}
+
+PKT_SCORE * Room::score_dequeue()
+{
+	return scenes_[using_scene_]->score_dequeue();
 }
 
 void Player::init()
