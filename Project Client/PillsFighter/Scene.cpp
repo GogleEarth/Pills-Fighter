@@ -3408,24 +3408,6 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.845f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
 		break;
 	}
-	case PKT_ID_MAP_EVENT:
-	{
-		PKT_MAP_EVENT *pktScore = (PKT_MAP_EVENT*)pktData;
-		
-		switch (pktScore->type)
-		{
-		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_ALERT:
-			Alert();
-			break;
-		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_START:
-			m_fGravAcc = pktScore->gravity;
-			break;
-		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_END:
-			m_fGravAcc = -9.8f;
-			break;
-		}
-		break;
-	}
 	}
 }
 
@@ -3598,6 +3580,35 @@ void CColonyScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	CBattleScene::RenderUI(pd3dCommandList);
 
 	//RenderTestTexture(pd3dCommandList, m_d3dSrvShadowMapGPUHandle);
+}
+
+void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
+{
+	CBattleScene::ApplyRecvInfo(pktID, pktData);
+	switch (pktID)
+	{
+	case PKT_ID_MAP_EVENT:
+	{
+		PKT_MAP_EVENT *pktScore = (PKT_MAP_EVENT*)pktData;
+
+		switch (pktScore->type)
+		{
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_ALERT:
+			std::cout << "지상맵 이벤트 경고\n";
+			Alert();
+			break;
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_START:
+			std::cout << "지상맵 이벤트 시작\n";
+			m_fGravAcc = pktScore->gravity;
+			break;
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_END:
+			std::cout << "지상맵 이벤트 끝\n";
+			m_fGravAcc = -9.8f;
+			break;
+		}
+		break;
+	}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3990,4 +4001,33 @@ void CSpaceScene::CheckCollision()
 	}
 
 	FindAimToTargetDistance();
+}
+
+void CSpaceScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
+{
+	CBattleScene::ApplyRecvInfo(pktID, pktData);
+	switch (pktID)
+	{
+	case PKT_ID_MAP_EVENT:
+	{
+		PKT_MAP_EVENT *pktScore = (PKT_MAP_EVENT*)pktData;
+
+		switch (pktScore->type)
+		{
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_ALERT:
+			Alert();
+			std::cout << "우주맵 이벤트 경고\n";
+			break;
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_START:
+			std::cout << "우주맵 이벤트 시작\n";
+			m_fGravAcc = 0.0f;
+			break;
+		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_END:
+			std::cout << "우주맵 이벤트 끝\n";
+			m_fGravAcc = 0.0f;
+			break;
+		}
+		break;
+	}
+	}
 }

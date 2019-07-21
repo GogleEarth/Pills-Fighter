@@ -650,6 +650,8 @@ public:
 	virtual void EndScene();
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -679,4 +681,6 @@ public:
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void CheckCollision();
+	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
+
 };
