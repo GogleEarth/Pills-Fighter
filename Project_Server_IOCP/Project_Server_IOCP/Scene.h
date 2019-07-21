@@ -15,8 +15,10 @@ protected:
 	CModel*	bullet_mesh_;
 	CModel*	robot_mesh_;
 	std::vector<CModel*> models_;
+
 	std::mutex obj_lock;
 	GameObject Objects_[MAX_NUM_OBJECT];
+
 	std::vector<GameObject*> Obstacles_;
 	GameObject BeamsaberCollisionmesh_[24];
 	float elapsed_game_time_;
@@ -25,7 +27,10 @@ protected:
 	bool alert_;
 	float gravity_;
 
+	std::mutex item_lock;
 	std::queue<PKT_PICK_ITEM*> item_queue_;
+	std::mutex life_lock;
+	std::queue<PKT_PLAYER_LIFE*> player_life_queue_;
 public:
 	Scene();
 	~Scene();
@@ -72,6 +77,7 @@ public:
 	bool check_collision_player(int object);
 
 	PKT_PICK_ITEM* item_dequeue();
+	PKT_PLAYER_LIFE* player_life_dequeue();
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
 	inline void deleteObject(int index) { Objects_[index].Delete(); }

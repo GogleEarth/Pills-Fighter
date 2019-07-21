@@ -118,5 +118,6 @@ public:
 	PKT_CREATE_EFFECT* create_effect_dequeue();
 	PKT_MAP_EVENT* map_event_dequeue();
 	PKT_PICK_ITEM* item_dequeue();
+	PKT_PLAYER_LIFE* player_life_dequeue();
 };
 

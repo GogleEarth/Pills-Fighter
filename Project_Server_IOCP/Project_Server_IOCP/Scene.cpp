@@ -218,7 +218,9 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			Objects_[index].set_speed(speed);
 		}
 		else if (type == OBJECT_TYPE_ITEM_HEALING
-			|| type == OBJECT_TYPE_ITEM_AMMO)
+			|| type == OBJECT_TYPE_ITEM_AMMO
+			|| type == OBJECT_TYPE_ITEM_AMMO_1
+			|| type == OBJECT_TYPE_ITEM_AMMO_2)
 		{
 			Objects_[index].SetModel(bullet_mesh_);
 		}
@@ -270,8 +272,7 @@ bool Scene::check_collision_player(int object)
 						if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
 							Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
 						{
-							std::cout << "아플충\n";
-
+							std::cout << "탄약상자 플레이어\n";
 							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
 							pkt_pi->PktId = PKT_ID_PICK_ITEM;
 							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
@@ -281,11 +282,13 @@ bool Scene::check_collision_player(int object)
 								pkt_pi->Item_type = ITEM_TYPE_AMMO1;
 							else
 								pkt_pi->Item_type = ITEM_TYPE_AMMO2;
+							item_lock.lock();
 							item_queue_.push(pkt_pi);
+							item_lock.unlock();
 						}
 						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
 						{
-							std::cout << "아플충\n";
+							std::cout << "회복 플레이어\n";
 
 							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
 							pkt_pi->PktId = PKT_ID_PICK_ITEM;
@@ -296,14 +299,25 @@ bool Scene::check_collision_player(int object)
 
 							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
 
+							item_lock.lock();
 							item_queue_.push(pkt_pi);
+							item_lock.unlock();
 						}
 						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET || 
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
 						{
-							std::cout << "플탄충\n";
+							std::cout << "플레이어 총알\n";
+							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+							pkt_pl->ID = i;
+							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+							pkt_pl->HP = Objects_[object].GetHitPoint();
+							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
+							life_lock.lock();
+							player_life_queue_.push(pkt_pl);
+							life_lock.unlock();
 						}
 						return true;
 					}
@@ -316,9 +330,29 @@ bool Scene::check_collision_player(int object)
 
 PKT_PICK_ITEM* Scene::item_dequeue()
 {
-	if (item_queue_.empty()) return nullptr;
+	item_lock.lock();
+	if (item_queue_.empty())
+	{
+		item_lock.unlock();
+		return nullptr;
+	}
 	auto packet = item_queue_.front();
 	item_queue_.pop();
+	item_lock.unlock();
+	return packet;
+}
+
+PKT_PLAYER_LIFE * Scene::player_life_dequeue()
+{
+	life_lock.lock();
+	if (player_life_queue_.empty())
+	{
+		life_lock.unlock();
+		return nullptr;
+	}
+	auto packet = player_life_queue_.front();
+	player_life_queue_.pop();
+	life_lock.unlock();
 	return packet;
 }
 
