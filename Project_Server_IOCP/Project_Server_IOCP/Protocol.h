@@ -223,6 +223,7 @@ struct PKT_CREATE_EFFECT
 	XMFLOAT3				xmf3Position;
 	EFFECT_TYPE				efType;
 	EFFECT_ANIMATION_TYPE	EftAnitType;
+	int id;
 };
 
 struct PKT_GAME_STATE

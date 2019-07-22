@@ -158,15 +158,9 @@ void Room::init()
 	red_score_ = 0;
 
 	while (player_info_queue_.size() > 0)
-			player_info_queue_.pop();
+		player_info_queue_.pop();
 	while (create_object_queue_.size() > 0)
 		create_object_queue_.pop();
-	while (update_object_queue_.size() > 0)
-		update_object_queue_.pop();
-	while (delete_object_queue_.size() > 0)
-		delete_object_queue_.pop();
-	while (create_effect_queue_.size() > 0)
-		create_effect_queue_.pop();
 	while (map_event_queue_.size() > 0)
 		map_event_queue_.pop();
 
@@ -282,7 +276,7 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	pkt_co->Robot_Type = ROBOT_TYPE_GM;
 	pkt_co->WorldMatrix = matrix;
 	pkt_co->Object_Type = type;
-	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix);
+	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix, id);
 
 	return pkt_co;
 }
@@ -579,28 +573,9 @@ PKT_CREATE_OBJECT* Room::create_object_dequeue()
 	return packet;
 }
 
-PKT_UPDATE_OBJECT* Room::update_object_dequeue()
-{
-	if (update_object_queue_.empty()) return nullptr;
-	auto packet = update_object_queue_.front();
-	update_object_queue_.pop();
-	return packet;
-}
-
-PKT_DELETE_OBJECT* Room::delete_object_dequeue()
-{
-	if (delete_object_queue_.empty()) return nullptr;
-	auto packet = delete_object_queue_.front();
-	delete_object_queue_.pop();
-	return packet;
-}
-
 PKT_CREATE_EFFECT* Room::create_effect_dequeue()
 {
-	if (create_effect_queue_.empty()) return nullptr;
-	auto packet = create_effect_queue_.front();
-	create_effect_queue_.pop();
-	return packet;
+	return scenes_[using_scene_]->create_effect_dequeue();
 }
 
 PKT_MAP_EVENT* Room::map_event_dequeue()

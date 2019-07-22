@@ -201,7 +201,7 @@ int Scene::GetIndex()
 	return -1;
 }
 
-int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix)
+int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix, int id)
 {
 	obj_lock.lock();
 	int index = GetIndex();
@@ -218,6 +218,7 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			Objects_[index].SetModel(bullet_mesh_);
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
+			Objects_[index].set_owner_id(id);
 		}
 		else if (type == OBJECT_TYPE_ITEM_HEALING
 			|| type == OBJECT_TYPE_ITEM_AMMO
@@ -319,6 +320,20 @@ bool Scene::check_collision_player(int object)
 							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
+							PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+							pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+							pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+							pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
+							pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+							auto position = Objects_[i].GetPosition();
+							position.y += 20.0f;
+							pkt_ce->xmf3Position = position;
+							pkt_ce->id = Objects_[object].get_owner_id();
+
+							effect_lock_.lock();
+							create_effect_queue_.push(pkt_ce);
+							effect_lock_.unlock();
+
 							if (Objects_[i].GetHitPoint() <= 0)
 							{
 								if (Objects_[i].get_team() == 0)
@@ -390,6 +405,20 @@ PKT_SCORE * Scene::score_dequeue()
 	auto packet = score_queue_.front();
 	score_queue_.pop();
 	score_lock.unlock();
+	return packet;
+}
+
+PKT_CREATE_EFFECT* Scene::create_effect_dequeue()
+{
+	effect_lock_.lock();
+	if (create_effect_queue_.empty())
+	{
+		effect_lock_.unlock();
+		return nullptr;
+	}
+	auto packet = create_effect_queue_.front();
+	create_effect_queue_.pop();
+	effect_lock_.unlock();
 	return packet;
 }
 

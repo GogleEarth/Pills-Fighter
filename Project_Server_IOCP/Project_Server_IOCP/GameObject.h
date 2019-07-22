@@ -48,7 +48,7 @@ protected:
 	float ElapsedTime_;
 
 	char team_;
-
+	int owner_id_;
 public:
 	GameObject();
 	~GameObject();
@@ -118,6 +118,9 @@ public:
 
 	inline void set_team(char team) { team_ = team; }
 	inline char get_team() { return team_; }
+
+	inline void set_owner_id(int id) { owner_id_ = id; }
+	inline int get_owner_id() { return owner_id_; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

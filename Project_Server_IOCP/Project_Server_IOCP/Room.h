@@ -48,9 +48,6 @@ class Room
 	bool is_playing_;
 	std::queue<PKT_PLAYER_INFO*> player_info_queue_;
 	std::queue<PKT_CREATE_OBJECT*> create_object_queue_;
-	std::queue<PKT_UPDATE_OBJECT*> update_object_queue_;
-	std::queue<PKT_DELETE_OBJECT*> delete_object_queue_;
-	std::queue<PKT_CREATE_EFFECT*> create_effect_queue_;
 	std::queue<PKT_MAP_EVENT*> map_event_queue_;
 	char blue_score_;
 	char red_score_;
@@ -113,8 +110,6 @@ public:
 	void player_info_inqueue(char* packet);
 	PKT_PLAYER_INFO* player_info_dequeue();
 	PKT_CREATE_OBJECT* create_object_dequeue();
-	PKT_UPDATE_OBJECT* update_object_dequeue();
-	PKT_DELETE_OBJECT* delete_object_dequeue();
 	PKT_CREATE_EFFECT* create_effect_dequeue();
 	PKT_MAP_EVENT* map_event_dequeue();
 	PKT_PICK_ITEM* item_dequeue();

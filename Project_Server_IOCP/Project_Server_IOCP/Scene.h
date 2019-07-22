@@ -36,6 +36,9 @@ protected:
 	std::queue<PKT_PLAYER_LIFE*> player_life_queue_;
 	std::mutex score_lock;
 	std::queue<PKT_SCORE*> score_queue_;
+	std::mutex effect_lock_;
+	std::queue<PKT_CREATE_EFFECT*> create_effect_queue_;
+
 public:
 	Scene();
 	~Scene();
@@ -76,7 +79,7 @@ public:
 	void init();
 	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
 	int GetIndex();
-	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix);
+	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix, int id = -1);
 	void set_player_team(int id, char team);
 
 	bool check_collision_obstacles(int object);
@@ -85,6 +88,7 @@ public:
 	PKT_PICK_ITEM* item_dequeue();
 	PKT_PLAYER_LIFE* player_life_dequeue();
 	PKT_SCORE* score_dequeue();
+	PKT_CREATE_EFFECT* create_effect_dequeue();
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
 	inline void deleteObject(int index) { Objects_[index].Delete(); }

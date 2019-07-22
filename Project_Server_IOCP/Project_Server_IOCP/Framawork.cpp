@@ -144,6 +144,14 @@ int Framawork::thread_process()
 
 			while (true)
 			{
+				auto data = rooms_[key].create_effect_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_player(rooms_[key].get_player(data->id)->get_serverid(), (char*)data);
+				delete data;
+			}
+
+			while (true)
+			{
 				auto data = rooms_[key].item_dequeue();
 				if (data == nullptr) break;
 				if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)
