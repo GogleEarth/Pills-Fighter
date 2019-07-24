@@ -961,6 +961,8 @@ void CPlayer::PickUpAmmo(int nType, int nAmmo)
 	if (nType & WEAPON_TYPE_OF_GM_GUN) m_nGmGunAmmo += nAmmo;
 	else if (nType & WEAPON_TYPE_OF_BAZOOKA) m_nBazookaAmmo += nAmmo;
 	else if (nType & WEAPON_TYPE_OF_MACHINEGUN) m_nMachineGunAmmo += nAmmo;
+
+	if(m_pUI) m_pUI->ChangeAmmoText(m_nEquipWeaponIndex);
 }
 
 void CPlayer::PrepareAttack(CWeapon *pWeapon)

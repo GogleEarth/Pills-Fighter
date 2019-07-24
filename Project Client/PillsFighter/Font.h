@@ -28,12 +28,20 @@ struct CFontVertex
 	XMFLOAT4 xmf4Color;
 };
 
+struct CB_FONT_INFO
+{
+	XMFLOAT4	m_xmf4Color;
+	XMFLOAT3	m_xmf3Position;
+};
+
 class CTextObject
 {
 public:
 	CTextObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CTextObject();
 
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
 	virtual void UpdateVertexBuffer(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 
@@ -63,11 +71,15 @@ protected:
 	CFontVertex					*m_pcbMappedFont;
 	D3D12_VERTEX_BUFFER_VIEW	m_d3dFontView;
 
+	XMFLOAT4					m_xmf4Color;
+	XMFLOAT3					m_xmf3Position;
+
+	ID3D12Resource				*m_pd3dcbFontInfo = NULL;
+	CB_FONT_INFO				*m_pcbMappedFontInfo = NULL;
+
 	bool						m_bUse;
 	wchar_t						m_pText[MAX_TEXT_LENGTH];
 
-	XMFLOAT3					m_xmf3Position;
-	XMFLOAT4					m_xmf4Color;
 
 	bool						m_bHide = false;
 };
@@ -96,9 +108,13 @@ public:
 #define LEFT_ALIGN 0
 #define RIGHT_ALIGN 1
 #define CENTER_ALIGN 1
-	void CreateText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	CTextObject* SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType, bool bIs3D);
-	void ChangeText(CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void CreateText(int nWidth, int nHeight, int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	CTextObject* SetText(int nWidth, int nHeight, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+	void ChangeText(int nWidth, int nHeight, CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
+
+	XMINT2 Create3DText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+	CTextObject* Set3DText(int& nWidth, int& nHeight, const wchar_t *pstrText, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color);
+
 	void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	void Render3DFont(ID3D12GraphicsCommandList *pd3dCommandList);
 
@@ -111,7 +127,6 @@ protected:
 	float m_fRightPadding;
 
 	float m_fLineHeight;
-	float m_fBaseHeight;
 	int m_nTextureWidth;
 	int m_nTextureHeight;
 

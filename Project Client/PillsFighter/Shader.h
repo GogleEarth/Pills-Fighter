@@ -568,11 +568,13 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader3DUI(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderColored(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader3DUI(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
@@ -595,6 +597,7 @@ protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateReload = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateTeamHP = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateColored = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineState3DUI = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
@@ -627,12 +630,19 @@ protected:
 	int								m_nTeamHP[3];
 	int								m_nTeamMaxHP[3];
 	wchar_t							m_wpstrTeamName[3][10];
-	CTextObject						*m_pTeamNameText[3] = { NULL, NULL, NULL };
+	CTextObject						*m_pTeamNameText[3] = { NULL };
 
-	ID3D12Resource					*m_pd3dcbTeamHP[3] = { NULL, NULL, NULL };
-	CB_PLAYER_VALUE					*m_pcbMappedTeamHP[3] = { NULL, NULL, NULL };
+	ID3D12Resource					*m_pd3dcbTeamHP[3] = { NULL };
+	CB_PLAYER_VALUE					*m_pcbMappedTeamHP[3] = { NULL };
+
+	ID3D12Resource					*m_pd3dTeamNameTexture[3] = { NULL };;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dTeamNameTextureSRVGPUHandle[3];
+	CRect							*m_pTeamNameRect[3] = { NULL };
+	CGameObject						*m_pTeamObject[3] = { NULL };
 
 public:
+	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect, CGameObject *pObject, int nIndex);
+
 	void SetPlayer(CPlayer *pPlayer);
 	void SetFont(CFont *pFont) { m_pFont = pFont; }
 	void ChangeWeapon(int nIndex);
@@ -654,16 +664,10 @@ public:
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE Create3DFontGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
-
-	virtual void OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipeline = 0);
-
-protected:
-	ID3D12PipelineState *m_pd3d3DFontPipelineState = NULL;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

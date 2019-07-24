@@ -260,6 +260,58 @@ float4 PSFont(GS_FONT_OUT input) : SV_TARGET
 }
 
 ////////////////////////////////////////////////////////////////
+//
+
+cbuffer cb3DUIInfo : register(UI_3D_INFO)
+{
+	float4 gf43DUIColor;
+	float3 gf33DUIWorldPosition;
+}
+
+[maxvertexcount(4)]
+void GS3DUI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float3 f3Position = gf33DUIWorldPosition + float3(input[0].center, 0.0f);
+
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(f3Position - gvCameraPosition);
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(f3Position - fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(f3Position + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(f3Position - fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[3] = float4(f3Position + fHalfW * vRight - fHalfH * vUp, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 0.0f);
+	fUVs[1] = float2(1.0f, 0.0f);
+	fUVs[2] = float2(0.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 1.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = mul(fVertices[i], gmtxViewProjection);
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+float4 PS3DUI(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
+
+	return cColor * gf43DUIColor;
+}
+
+////////////////////////////////////////////////////////////////
+//
 
 cbuffer cbCursorInfo : register(CURSOR_INFO)
 {

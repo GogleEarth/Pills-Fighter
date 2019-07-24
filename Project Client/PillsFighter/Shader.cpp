@@ -2125,11 +2125,24 @@ CUserInterface::~CUserInterface()
 			delete m_ppTextures[i];
 	}
 
+	for (int i = 0; i < 3; i++)
+	{
+		if (m_pTeamNameRect[i])
+			delete m_pTeamNameRect[i];
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (m_pd3dTeamNameTexture[i])
+			m_pd3dTeamNameTexture[i]->Release();
+	}
+
 	if (m_pd3dPipelineStateBar) m_pd3dPipelineStateBar->Release();
 	if (m_pd3dPipelineStateBullet) m_pd3dPipelineStateBullet->Release();
 	if (m_pd3dPipelineStateReload) m_pd3dPipelineStateReload->Release();
 	if (m_pd3dPipelineStateTeamHP) m_pd3dPipelineStateTeamHP->Release();
 	if (m_pd3dPipelineStateColored) m_pd3dPipelineStateColored->Release();
+	if (m_pd3dPipelineState3DUI) m_pd3dPipelineState3DUI->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -2175,6 +2188,16 @@ D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderTeamHP(ID3DBlob **ppd3
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUITeamHP", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader3DUI(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GS3DUI", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader3DUI(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PS3DUI", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CUserInterface::CreateInputLayout()
@@ -2252,6 +2275,11 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderTeamHP(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShaderTeamHP(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateTeamHP);
+
+	d3dPipelineStateDesc.DepthStencilState = CreateDepthStencilState();
+	d3dPipelineStateDesc.GS = CreateGeometryShader3DUI(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShader3DUI(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState3DUI);
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
@@ -2385,7 +2413,21 @@ void CUserInterface::ReleaseUploadBuffers()
 		}
 	}
 
+	for (int i = 0; i < 3; i++)
+	{
+		if (m_pTeamNameRect[i])
+			m_pTeamNameRect[i]->ReleaseUploadBuffers();
+	}
+
 	CShader::ReleaseUploadBuffers();
+}
+
+void CUserInterface::SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect, CGameObject *pObject, int nIndex)
+{
+	m_pd3dTeamNameTexture[nIndex] = pd3dTexture;
+	m_d3dTeamNameTextureSRVGPUHandle[nIndex] = CScene::CreateShaderResourceViews(pd3dDevice, pd3dTexture, RESOURCE_TEXTURE2D, false);
+	m_pTeamNameRect[nIndex] = pRect;
+	m_pTeamObject[nIndex] = pObject;
 }
 
 void CUserInterface::SetPlayer(CPlayer *pPlayer)
@@ -2449,14 +2491,14 @@ void CUserInterface::SetAmmoText(int nWeaponIndex)
 	wchar_t wpstrNumber[5];
 
 	float fCenterX = 0.745f;
-	float fCenterY = -0.935f + nWeaponIndex * 0.15f;
+	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 	wsprintfW(wpstrNumber, L"%d", nAmmo);
-	m_pAmmoText = m_pFont->SetText(wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN, false);
+	m_pAmmoText = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
 
 	fCenterX -= 0.010f;
 	fCenterY += 0.095f;
 	wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
-	m_pReloadedAmmoText = m_pFont->SetText(wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN, false);
+	m_pReloadedAmmoText = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
 void CUserInterface::ChangeAmmoText(int nWeaponIndex)
@@ -2469,30 +2511,30 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 	wchar_t wpstrNumber[5];
 
 	float fCenterX = 0.745f;
-	float fCenterY = -0.935f + nWeaponIndex * 0.15f;
+	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 
 	if (nWeaponIndex != 3) wsprintfW(wpstrNumber, L"%d", nAmmo);
 	else wsprintfW(wpstrNumber, L"-", nAmmo);
-	m_pFont->ChangeText(m_pAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
+	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
 
 	fCenterX -= 0.010f;
 	fCenterY += 0.095f;
 
 	if (nWeaponIndex != 3) wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
 	else wsprintfW(wpstrNumber, L"-", nAmmo);
-	m_pFont->ChangeText(m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
+	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
 void CUserInterface::SetTeamInfo(int nIndex, int nHP, wchar_t *pstrName)
 {
 	float fCenterX = -0.77f;
-	float fCenterY = -0.935f + 0.1f * nIndex;
+	float fCenterY = -0.905f + 0.1f * nIndex;
 
 	lstrcpynW(m_wpstrTeamName[nIndex], pstrName, 10);
 	m_nTeamMaxHP[nIndex] = nHP;
 	m_nTeamHP[nIndex] = nHP;
 	m_bTeamIn[nIndex] = true;
-	m_pTeamNameText[nIndex] = m_pFont->SetText(pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN, false);
+	m_pTeamNameText[nIndex] = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN);
 }
 
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
@@ -2767,6 +2809,22 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
 		}
 	}
+
+	if (m_pd3dPipelineState3DUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (!m_pd3dTeamNameTexture[i]) continue;
+
+		XMFLOAT4 COLOR = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+		XMFLOAT3 POSITION = Vector3::Add(m_pTeamObject[i]->GetPosition(), XMFLOAT3(0.0f, 19.0f, 0.0f));
+
+		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 4, &COLOR, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 3, &POSITION, 4);
+
+		pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dTeamNameTextureSRVGPUHandle[i]);
+		m_pTeamNameRect[i]->Render(pd3dCommandList, 1);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2778,7 +2836,6 @@ CFontShader::CFontShader()
 
 CFontShader::~CFontShader()
 {
-	if (m_pd3d3DFontPipelineState) m_pd3d3DFontPipelineState->Release();
 }
 
 D3D12_SHADER_BYTECODE CFontShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -2789,11 +2846,6 @@ D3D12_SHADER_BYTECODE CFontShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob
 D3D12_SHADER_BYTECODE CFontShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSFont", "gs_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CFontShader::Create3DFontGeometryShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GS3DFont", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CFontShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
@@ -2861,9 +2913,6 @@ void CFontShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
-/*
-	d3dPipelineStateDesc.GS = Create3DFontGeometryShader(&pd3dGeometryShaderBlob);
-	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3d3DFontPipelineState);*/
 
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dGeometryShaderBlob) pd3dGeometryShaderBlob->Release();
@@ -2871,22 +2920,6 @@ void CFontShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd
 
 	if (d3dPipelineStateDesc.InputLayout.pInputElementDescs) delete[] d3dPipelineStateDesc.InputLayout.pInputElementDescs;
 }
-
-void CFontShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList, int nPipeline)
-{
-	switch (nPipeline)
-	{
-	case 0:
-		if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-		break;
-	case 1:
-		if (m_pd3d3DFontPipelineState) pd3dCommandList->SetPipelineState(m_pd3d3DFontPipelineState);
-		break;
-	}
-
-	UpdateShaderVariables(pd3dCommandList);
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

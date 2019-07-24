@@ -337,6 +337,8 @@ void CGameFramework::BuildScene(int nSceneType)
 	if (m_pScene) m_pScene->ReleaseUploadBuffers();
 	if (m_pPlayer) m_pPlayer->ReleaseUploadBuffers();
 	if (m_pRepository) m_pRepository->ReleaseUploadBuffers();
+
+	
 }
 
 void CGameFramework::BuildBattleScene(int nType)

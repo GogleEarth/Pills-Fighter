@@ -172,7 +172,7 @@ public:
 
 public:
 	void SetFont(ID3D12Device *pd3dDevice, CFont *pFont);
-	CTextObject* AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType, bool bIs3D);
+	CTextObject* AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 	void ChangeText(CTextObject *pTextObject,const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 
 protected:
@@ -567,6 +567,10 @@ public:
 
 	virtual void CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight) {}
 
+	void CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void CreateNameTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource **pd3dResource, int nWidth, int nHeight);
+	void AddTeamName(wchar_t *pstrName) { m_vwstrTeamName.emplace_back(pstrName); }
+
 protected:
 	ID3D12Resource					*m_pd3dEnvirCube = NULL;
 	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
@@ -600,7 +604,7 @@ protected:
 	int								m_fAlertCount = 0;
 	bool							m_bAlert = false;
 
-	CTextObject						*m_pTeamNameText[3];
+	std::vector<std::wstring>		m_vwstrTeamName;
 
 public:
 	float GetToTargetDistance() { return m_fCameraToTarget; }
