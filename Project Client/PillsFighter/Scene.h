@@ -236,9 +236,14 @@ public: // Network
 	virtual void SetMap(int nMap) {}
 	virtual void ChangeSelectRobot(int nIndex, int nRobotType) {}
 	virtual void ChangeSlot(int nIndex, int nChangeSlot) {}
+	virtual void SetMyTeam(int nTeam) { m_nMyTeam = nTeam; }
+	virtual int GetMyTeam() { return m_nMyTeam; }
+	virtual void AddTeam(int nIndex, wchar_t *pstrName) {}
+	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames) {}
 
 protected:
 	int	m_nMyIndex = 0;
+	int m_nMyTeam = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -438,6 +443,7 @@ public:
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual int GetSelectedMap() { return m_nCurrentMap; }
+	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames);
 
 protected:
 	int									m_nCurrentMap = SCENE_TYPE_COLONY;
@@ -569,7 +575,7 @@ public:
 
 	void CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void CreateNameTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource **pd3dResource, int nWidth, int nHeight);
-	void AddTeamName(wchar_t *pstrName) { m_vwstrTeamName.emplace_back(pstrName); }
+	virtual void AddTeam(int nIndex, wchar_t *pstrName) { m_vwstrTeamName.emplace_back(pstrName); m_vTeamIndex.emplace_back(nIndex); }
 
 protected:
 	ID3D12Resource					*m_pd3dEnvirCube = NULL;
@@ -605,6 +611,7 @@ protected:
 	bool							m_bAlert = false;
 
 	std::vector<std::wstring>		m_vwstrTeamName;
+	std::vector<int>				m_vTeamIndex;
 
 public:
 	float GetToTargetDistance() { return m_fCameraToTarget; }

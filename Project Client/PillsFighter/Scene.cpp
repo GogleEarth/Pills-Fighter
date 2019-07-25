@@ -2140,6 +2140,8 @@ void CLobbyRoomScene::SetClientIndex(int nIndex, int nSlot)
 
 	m_nMyIndex = nIndex;
 	JoinPlayer(nIndex, nSlot, id, SELECT_CHARACTER_GM);
+
+	m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::ChangeSelectRobot(int nIndex, int nRobotType)
@@ -2187,6 +2189,8 @@ void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot)
 
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 	m_pPlayerInfos[nIndex].m_nSlot = nChangeSlot;
+
+	if(nIndex == m_nMyIndex) m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::LeavePlayer(int nIndex)
@@ -2296,6 +2300,40 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
+}
+
+void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames)
+{
+	std::map<int, int> slotindex;
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (!m_pPlayerInfos[i].m_bUsed) continue;
+		if (i == m_nMyIndex) continue;
+
+		if (nTeam == TEAM_TYPE::TEAM_TYPE_RED)
+		{
+			if (m_pPlayerInfos[i].m_nSlot % 2 == 0)
+			{
+				slotindex[m_pPlayerInfos[i].m_nSlot] = i;
+			}
+		}
+		else if (nTeam == TEAM_TYPE::TEAM_TYPE_BLUE)
+		{
+			if (m_pPlayerInfos[i].m_nSlot % 2 == 1)
+			{
+				slotindex[m_pPlayerInfos[i].m_nSlot] = i;
+			}
+		}
+	}
+
+	for (auto iter : slotindex)
+	{
+		int nIndex = iter.second;
+
+		vnIndices.emplace_back(nIndex);
+		vpwstrNames.emplace_back(m_pPlayerInfos[nIndex].m_pTextObject->GetText());
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2566,19 +2604,20 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 #endif
 
 	CUserInterface *pUserInterface = new CUserInterface();
-	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pUserInterface->SetPlayer(m_pPlayer);
 	pUserInterface->SetFont(m_pFont);
 	pUserInterface->SetAmmoText(0);
+	for (int i = 0; i < m_vTeamIndex.size(); i++)
+	{
+		pUserInterface->SetTeamInfo(&m_pObjects[m_vTeamIndex[i]], m_vwstrTeamName[i].c_str());
+	}
+	pUserInterface->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
 
 	m_pUserInterface = pUserInterface;
 
-#ifndef ON_NETWORKING
-	m_pUserInterface->SetTeamInfo(0, 100, L"ÆÀ¿ø1");
-	m_pUserInterface->SetTeamInfo(1, 100, L"ÆÀ¿ø2");
-	m_pUserInterface->SetTeamInfo(2, 100, L"ÆÀ¿ø3");
-#endif
 
 	//
 	XMFLOAT2 xmf2Center = ::CalculateCenter(0.63f, 0.93f, 0.93f, 0.4f, true);
@@ -2594,8 +2633,6 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	m_pRedScoreText = AddText(L"0", XMFLOAT2(-0.05f, 0.88f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 	m_pBlueScoreText = AddText(L"0", XMFLOAT2(0.02f, 0.88f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
-
-	//AddTeamName(L"ÆÀ¿ø1");
 
 	CreateEnvironmentMap(pd3dDevice);
 	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
@@ -2635,7 +2672,7 @@ void CBattleScene::CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 		vpTeamTextObject.emplace_back(pTemp);
 
 		CRect *pRect = new CRect(pd3dDevice, pd3dCommandList, XMFLOAT2(0.0f, 0.0f), XMFLOAT2(float(W) * 0.04f, float(H) * 0.04f));
-		D3D12_VIEWPORT viewport = { 0, 0, W, H, 0.0f, 1.0f };
+		D3D12_VIEWPORT viewport = { 0, 0, float(W), float(H), 0.0f, 1.0f };
 		vd3dViewport.emplace_back(viewport);
 
 		D3D12_RECT scissorRect = { 0, 0, W, H };
@@ -2657,7 +2694,7 @@ void CBattleScene::CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 		d3dHeapCPUHandle.ptr += ::gnRtvDescriptorIncrementSize;
 		d3dHeapGPUHandle.ptr += ::gnRtvDescriptorIncrementSize;
 
-		m_pUserInterface->SetTeamNameTexture(pd3dDevice, pTextTexture, pRect, m_pPlayer, i);
+		m_pUserInterface->SetTeamNameTexture(pd3dDevice, pTextTexture, pRect);
 	}
 
 	CScene::SetDescHeapsAndGraphicsRootSignature(pd3dCommandList);
@@ -3481,6 +3518,9 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		if (!m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]) break;
 
 		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
+
+		if(((PKT_PLAYER_LIFE*)pktData)->ID != m_nMyIndex)
+			m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
 		break;
 	case PKT_ID_CREATE_OBJECT:
 		break;

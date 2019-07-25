@@ -325,6 +325,11 @@ void CGameFramework::BuildScene(int nSceneType)
 	
 	m_pScene->SetFont(m_pd3dDevice, &m_Font);
 
+	for (int i = 0; i < m_vnIndices.size(); i++)
+	{
+		m_pScene->AddTeam(m_vnIndices[i], m_vpwstrNames[i]);
+	}
+
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList, NULL);
 	m_pScene->StartScene();
 
@@ -337,8 +342,6 @@ void CGameFramework::BuildScene(int nSceneType)
 	if (m_pScene) m_pScene->ReleaseUploadBuffers();
 	if (m_pPlayer) m_pPlayer->ReleaseUploadBuffers();
 	if (m_pRepository) m_pRepository->ReleaseUploadBuffers();
-
-	
 }
 
 void CGameFramework::BuildBattleScene(int nType)
@@ -970,9 +973,15 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_GAME_START *pPacket = (PKT_GAME_START*)m_pPacketBuffer;
 
+		int nPlayerTeam = m_pScene->GetMyTeam();
+
+		m_pScene->GetTeamsInfo(nPlayerTeam, m_vnIndices, m_vpwstrNames);
+
 		ReleaseObjects();
 
 		BuildScene(pPacket->map);
+
+		m_pScene->SetMyTeam(nPlayerTeam);
 
 		m_bDrawScene = false;
 

@@ -626,22 +626,22 @@ protected:
 	CTextObject						*m_pReloadedAmmoText = NULL;
 	CTextObject						*m_pAmmoText = NULL;
 
-	bool							m_bTeamIn[3];
-	int								m_nTeamHP[3];
-	int								m_nTeamMaxHP[3];
-	wchar_t							m_wpstrTeamName[3][10];
-	CTextObject						*m_pTeamNameText[3] = { NULL };
+// Team
+	std::vector<CTextObject*>		m_vpTeamNameText;
 
-	ID3D12Resource					*m_pd3dcbTeamHP[3] = { NULL };
-	CB_PLAYER_VALUE					*m_pcbMappedTeamHP[3] = { NULL };
+	std::vector<CGameObject**>		m_vppTeamObject;
 
-	ID3D12Resource					*m_pd3dTeamNameTexture[3] = { NULL };;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dTeamNameTextureSRVGPUHandle[3];
-	CRect							*m_pTeamNameRect[3] = { NULL };
-	CGameObject						*m_pTeamObject[3] = { NULL };
+	std::vector<ID3D12Resource*>	m_vpd3dcbTeamHP;
+	std::vector<CB_PLAYER_VALUE*>	m_vpcbMappedTeamHP;
+
+// Team Name Texture
+	std::vector<ID3D12Resource*>				m_vpd3dTeamNameTexture;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE>	m_vd3dTeamNameTextureSRVGPUHandle;
+	std::vector<CRect*>							m_vpTeamNameRect;
+
 
 public:
-	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect, CGameObject *pObject, int nIndex);
+	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect);
 
 	void SetPlayer(CPlayer *pPlayer);
 	void SetFont(CFont *pFont) { m_pFont = pFont; }
@@ -649,8 +649,7 @@ public:
 	void SetAmmoText(int nWeaponIndex);
 	void ChangeAmmoText(int nWeaponIndex);
 	void GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex);
-	void SetTeamHP(int nIndex, int nHP) { m_nTeamHP[nIndex] = nHP; }
-	void SetTeamInfo(int nIndex, int nHP, wchar_t *pstrName);
+	void SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

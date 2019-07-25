@@ -110,15 +110,15 @@ protected:
 
 	bool							 m_Delete = FALSE;
 
-	int								m_nHitPoint = 0;
-	int								m_nMaxHitPoint = 0;
+	int								m_nHitPoint = 100;
+	int								m_nMaxHitPoint = 100;
 	XMFLOAT3						serverPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 public:
 	int GetHitPoint() { return m_nHitPoint; }
 	int GetMaxHitPoint() { return m_nMaxHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
-	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nMaxHitPoint < m_nHitPoint) m_nHitPoint = m_nMaxHitPoint; }
+	void SetHitPoint(int nHitPoint) { m_nHitPoint = nHitPoint; if (m_nHitPoint > m_nMaxHitPoint) m_nHitPoint = m_nMaxHitPoint; }
 	virtual void OnPrepareAnimate() {};
 
 public:

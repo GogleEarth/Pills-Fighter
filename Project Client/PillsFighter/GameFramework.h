@@ -119,6 +119,9 @@ protected: // for Network
 	float	m_fFPSTimeElapsed;
 	int		m_nFramePerSecond;
 
+	std::vector<int> m_vnIndices;
+	std::vector<wchar_t*> m_vpwstrNames;
+
 public:
 	void recvn();
 	void ProcessPacket();

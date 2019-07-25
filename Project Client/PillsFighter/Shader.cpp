@@ -1030,12 +1030,13 @@ D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateShadowVertexShader(ID3DBlob *
 
 void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CShader::Render(pd3dCommandList, pCamera);
 
 	for (int i = 0; i < m_nObjectGroup; i++)
 	{
 		for (auto& Object : m_pvpObjects[i])
 		{
+			CShader::Render(pd3dCommandList, pCamera);
+
 			Object->Render(pd3dCommandList, pCamera, true, false, 1);
 		}
 	}
@@ -1043,14 +1044,14 @@ void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, C
 
 void CSkinnedObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CShader::RenderToShadow(pd3dCommandList, pCamera);
-
 	for (int i = 0; i < m_nObjectGroup; i++)
 	{
 		int nIndex = 0;
 
 		for (auto& Object : m_pvpObjects[i])
 		{
+			CShader::RenderToShadow(pd3dCommandList, pCamera);
+
 			if (nIndex == 0)
 				Object->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
 			else
@@ -1087,20 +1088,20 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
 
 #ifndef ON_NETWORKING
-	//CRobotObject *pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+	CRobotObject *pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
 
-	//pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
 
-	//pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
 #endif
 }
 
@@ -2125,16 +2126,13 @@ CUserInterface::~CUserInterface()
 			delete m_ppTextures[i];
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < m_vpd3dTeamNameTexture.size(); i++)
 	{
-		if (m_pTeamNameRect[i])
-			delete m_pTeamNameRect[i];
-	}
+		if (m_vpTeamNameRect[i])
+			delete m_vpTeamNameRect[i];
 
-	for (int i = 0; i < 3; i++)
-	{
-		if (m_pd3dTeamNameTexture[i])
-			m_pd3dTeamNameTexture[i]->Release();
+		if (m_vpd3dTeamNameTexture[i])
+			m_vpd3dTeamNameTexture[i]->Release();
 	}
 
 	if (m_pd3dPipelineStateBar) m_pd3dPipelineStateBar->Release();
@@ -2310,11 +2308,17 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 	m_pd3dcbReloadInfo->Map(0, NULL, (void **)&m_pcbMappedReloadInfo);
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < m_vppTeamObject.size(); i++)
 	{
-		m_pd3dcbTeamHP[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		ID3D12Resource *pd3dcb = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 			D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
-		m_pd3dcbTeamHP[i]->Map(0, NULL, (void **)&m_pcbMappedTeamHP[i]);
+
+		CB_PLAYER_VALUE *pcbMapped;
+
+		pd3dcb->Map(0, NULL, (void **)&pcbMapped);
+
+		m_vpd3dcbTeamHP.emplace_back(pd3dcb);
+		m_vpcbMappedTeamHP.emplace_back(pcbMapped);
 	}
 }
 
@@ -2344,12 +2348,12 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbReloadInfo->Release();
 	}
 	
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < m_vpd3dcbTeamHP.size(); i++)
 	{
-		if (m_pd3dcbTeamHP[i])
+		if (m_vpd3dcbTeamHP[i])
 		{
-			m_pd3dcbTeamHP[i]->Unmap(0, NULL);
-			m_pd3dcbTeamHP[i]->Release();
+			m_vpd3dcbTeamHP[i]->Unmap(0, NULL);
+			m_vpd3dcbTeamHP[i]->Release();
 		}
 	}
 
@@ -2388,10 +2392,10 @@ void CUserInterface::UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3d
 
 void CUserInterface::UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex)
 {
-	m_pcbMappedTeamHP[nIndex]->nMaxValue = m_nTeamMaxHP[nIndex];
-	m_pcbMappedTeamHP[nIndex]->nValue = m_nTeamHP[nIndex];
+	m_vpcbMappedTeamHP[nIndex]->nMaxValue = 100;
+	m_vpcbMappedTeamHP[nIndex]->nValue = (*m_vppTeamObject[nIndex])->GetHitPoint();
 
-	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbTeamHP[nIndex]->GetGPUVirtualAddress();
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_vpd3dcbTeamHP[nIndex]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
 }
 
@@ -2413,21 +2417,20 @@ void CUserInterface::ReleaseUploadBuffers()
 		}
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < m_vpTeamNameRect.size(); i++)
 	{
-		if (m_pTeamNameRect[i])
-			m_pTeamNameRect[i]->ReleaseUploadBuffers();
+		if (m_vpTeamNameRect[i])
+			m_vpTeamNameRect[i]->ReleaseUploadBuffers();
 	}
 
 	CShader::ReleaseUploadBuffers();
 }
 
-void CUserInterface::SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect, CGameObject *pObject, int nIndex)
+void CUserInterface::SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect)
 {
-	m_pd3dTeamNameTexture[nIndex] = pd3dTexture;
-	m_d3dTeamNameTextureSRVGPUHandle[nIndex] = CScene::CreateShaderResourceViews(pd3dDevice, pd3dTexture, RESOURCE_TEXTURE2D, false);
-	m_pTeamNameRect[nIndex] = pRect;
-	m_pTeamObject[nIndex] = pObject;
+	m_vpd3dTeamNameTexture.emplace_back(pd3dTexture);
+	m_vd3dTeamNameTextureSRVGPUHandle.emplace_back(CScene::CreateShaderResourceViews(pd3dDevice, pd3dTexture, RESOURCE_TEXTURE2D, false));
+	m_vpTeamNameRect.emplace_back(pRect);
 }
 
 void CUserInterface::SetPlayer(CPlayer *pPlayer)
@@ -2525,22 +2528,17 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
-void CUserInterface::SetTeamInfo(int nIndex, int nHP, wchar_t *pstrName)
+void CUserInterface::SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName)
 {
 	float fCenterX = -0.77f;
-	float fCenterY = -0.905f + 0.1f * nIndex;
+	float fCenterY = -0.905f + 0.1f * m_vpTeamNameText.size();
 
-	lstrcpynW(m_wpstrTeamName[nIndex], pstrName, 10);
-	m_nTeamMaxHP[nIndex] = nHP;
-	m_nTeamHP[nIndex] = nHP;
-	m_bTeamIn[nIndex] = true;
-	m_pTeamNameText[nIndex] = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN);
+	m_vpTeamNameText.emplace_back(m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN));
+	m_vppTeamObject.emplace_back(ppObject);
 }
 
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
 	m_nTextures = UI_TEXTURE_COUNT;
 	m_ppTextures = new CTexture*[m_nTextures];
 
@@ -2689,15 +2687,26 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	m_ppUIRects[UI_RECT_TEAM_HP_3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
-
-	::ZeroMemory(m_bTeamIn, sizeof(m_bTeamIn));
-	::ZeroMemory(m_nTeamMaxHP, sizeof(m_nTeamMaxHP));
-	::ZeroMemory(m_nTeamHP, sizeof(m_nTeamHP));
-	::ZeroMemory(m_wpstrTeamName, sizeof(wchar_t) * 3 * 10);
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	if (m_pd3dPipelineState3DUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
+
+	for (int i = 0; i < m_vpd3dTeamNameTexture.size(); i++)
+	{
+		if (!(*m_vppTeamObject[i])) continue;
+
+		XMFLOAT4 COLOR = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+		XMFLOAT3 POSITION = Vector3::Add((*m_vppTeamObject[i])->GetPosition(), XMFLOAT3(0.0f, 19.0f, 0.0f));
+
+		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 4, &COLOR, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 3, &POSITION, 4);
+
+		pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_vd3dTeamNameTextureSRVGPUHandle[i]);
+		m_vpTeamNameRect[i]->Render(pd3dCommandList, 1);
+	}
+
 	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
 
 	// Draw Base UI
@@ -2708,25 +2717,12 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	// Draw Team HP Base
-	for (int i = 0; i < 3; i++)
+	for(int i = 0; i < m_vppTeamObject.size(); i++)
 	{
-		if (!m_bTeamIn[i]) continue;
+		if (!(*m_vppTeamObject[i])) continue;
 
 		m_ppTextures[UI_TEXTURE_TEAM_HP_BASE]->UpdateShaderVariables(pd3dCommandList);
 		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
-	}
-
-	for (int i = 0; i < 3; i++)
-	{
-		if (!m_bTeamIn[i]) continue;
-
-		if (m_pd3dPipelineStateTeamHP) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateTeamHP);
-		break;
-	}
-
-	for (int i = 0; i < 3; i++)
-	{
-		if (!m_bTeamIn[i]) continue;
 
 		UpdateTeamHPShaderVariable(pd3dCommandList, i);
 		m_ppTextures[UI_TEXTURE_TEAM_HP]->UpdateShaderVariables(pd3dCommandList);
@@ -2808,22 +2804,6 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 			m_pWeaponTextures[i]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
 		}
-	}
-
-	if (m_pd3dPipelineState3DUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
-
-	for (int i = 0; i < 3; i++)
-	{
-		if (!m_pd3dTeamNameTexture[i]) continue;
-
-		XMFLOAT4 COLOR = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-		XMFLOAT3 POSITION = Vector3::Add(m_pTeamObject[i]->GetPosition(), XMFLOAT3(0.0f, 19.0f, 0.0f));
-
-		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 4, &COLOR, 0);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 3, &POSITION, 4);
-
-		pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dTeamNameTextureSRVGPUHandle[i]);
-		m_pTeamNameRect[i]->Render(pd3dCommandList, 1);
 	}
 }
 
