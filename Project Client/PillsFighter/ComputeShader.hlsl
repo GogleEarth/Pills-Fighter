@@ -89,11 +89,12 @@ cbuffer cbMotionBlurInfo : register(b0)
 	matrix gmtxInverseViewProjection;
 	int gnWidth;
 	int gnHeight;
-	float gDeltaTime;
+	//float gfDeltaFPS;
 }
 
 #define SAMPLES 32
 #define MAXVELOCITY 0.1f
+#define T 0.016667f;
 
 [numthreads(8, 8, 1)]
 void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
@@ -122,8 +123,8 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 
 	prevPos /= prevPos.w;
 
-	float2 velocity = (currPos - prevPos).xy;
-	//velocity *= 1.0f - gDeltaTime;
+	float2 velocity = (currPos - prevPos).xy * 2.0f;
+	//velocity *= 1.0f - gfDeltaFPS;
 
 	float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 

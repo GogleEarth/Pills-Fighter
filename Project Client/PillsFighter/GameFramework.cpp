@@ -727,6 +727,8 @@ void CGameFramework::FrameAdvance()
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
 
+	std::cout << m_fElapsedTime << "\n";
+
 	ProcessInput();
 
 	m_Font.CheckUsingTexts();
@@ -909,7 +911,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_TIME_INFO *pPacket = (PKT_TIME_INFO*)m_pPacketBuffer;
 
-		m_fElapsedTime += pPacket->elapsedtime;
+		m_fElapsedTime = pPacket->elapsedtime;
 		break;
 	}
 	case PKT_ID_PLAYER_LIFE:

@@ -331,7 +331,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 	CheckCollision();
 
-	m_fFPS = fTimeElapsed;
+	m_fDeltaFPS = fTimeElapsed - m_fDeltaFPS;
 }
 
 void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -482,7 +482,7 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &xmf4x4Inverse, 16);
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nWidth, 32);
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nHeight, 33);
-			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fFPS, 34);
+			//pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fDeltaFPS, 34);
 
 			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_DEPTH, m_d3dSrvDepthStencilGPUHandle);
 			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_MASK, m_d3dSrvMaskTextureGPUHandle);

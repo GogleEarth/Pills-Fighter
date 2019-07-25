@@ -154,7 +154,7 @@ protected:
 	XMFLOAT4X4							m_xmf4x4PrevViewProjection;
 	XMFLOAT4X4							m_xmf4x4CurrViewProjection;
 	XMFLOAT3							m_xmf3PrevPlayerPosition;
-	float								m_fFPS = 0.0f;
+	float								m_fDeltaFPS = 0.0f;
 
 	bool								m_bSelfIllumination = true;
 	bool								m_bBloom = false;
