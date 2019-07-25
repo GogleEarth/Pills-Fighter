@@ -841,6 +841,7 @@ void Framawork::send_packet_to_team_player(int room, char * packet, char team)
 		if (!player->get_use()) continue;
 		if (player->get_team() != team) continue;
 		send_packet_to_player(player->get_serverid(), packet);
+		std::cout << (int)team << "ÆÀÀÇ " << i << "¹øÂ° ÇÃ·¹ÀÌ¾î¿¡°Ô º¸³¿\n";
 	}
 }
 

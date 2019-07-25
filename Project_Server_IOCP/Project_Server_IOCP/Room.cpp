@@ -523,7 +523,7 @@ void Room::change_team(int id, char team)
 			slots_[players_[id].get_slot()] = false;
 			slots_[slot] = true;
 			players_[id].set_slot(slot);
-			players_[id].set_team(TEAM_TYPE_RED);
+			players_[id].set_team(0);
 		}
 		else if (team == TEAM_TYPE_BLUE)
 		{
@@ -531,7 +531,7 @@ void Room::change_team(int id, char team)
 			slots_[players_[id].get_slot()] = false;
 			slots_[slot] = true;
 			players_[id].set_slot(slot);
-			players_[id].set_team(TEAM_TYPE_BLUE);
+			players_[id].set_team(1);
 		}
 	}
 }

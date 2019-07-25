@@ -312,7 +312,7 @@ bool Scene::check_collision_player(int object)
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
 						{
-							std::cout << "플레이어 총알\n";
+							//std::cout << "플레이어 총알\n";
 							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 							pkt_pl->ID = i;
 							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
