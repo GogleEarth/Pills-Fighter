@@ -3517,10 +3517,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_PLAYER_LIFE:
 		if (!m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]) break;
 
-		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
-
-		if(((PKT_PLAYER_LIFE*)pktData)->ID != m_nMyIndex)
-			m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(((PKT_PLAYER_LIFE*)pktData)->HP);
+		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->GetHitPoint() - ((PKT_PLAYER_LIFE*)pktData)->HP);
 		break;
 	case PKT_ID_CREATE_OBJECT:
 		break;
@@ -3547,6 +3544,31 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		ChangeText(m_pRedScoreText, pstrText, XMFLOAT2(-0.05f, 0.88f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
 		wsprintfW(pstrText, L"%d", pktScore->BlueScore);
 		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.88f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
+		break;
+	}
+	case PKT_ID_PICK_ITEM:
+	{
+		PKT_PICK_ITEM *pPacket = (PKT_PICK_ITEM*)pktData;
+
+		if (pPacket->Item_type == ITEM_TYPE_AMMO)
+		{
+			if (pPacket->ID == m_nMyIndex)
+			{
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, pPacket->AMMO);
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
+				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
+				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickAmmo);
+			}
+		}
+		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
+		{
+			if (pPacket->ID == m_nMyIndex)
+			{
+				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
+			}
+
+			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() + pPacket->HP);
+		}
 		break;
 	}
 	}

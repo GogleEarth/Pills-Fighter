@@ -1030,26 +1030,9 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_PICK_ITEM:
 	{
-		PKT_PICK_ITEM *pPacket = (PKT_PICK_ITEM*)m_pPacketBuffer;
+		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
 
-		if (pPacket->Item_type == ITEM_TYPE_AMMO)
-		{
-			if (pPacket->ID == m_nClinetIndex)
-			{
-				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, pPacket->AMMO);
-				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
-				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, pPacket->AMMO);
-				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickAmmo);
-			}
-		}
-		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
-		{
-			if (pPacket->ID == m_nClinetIndex)
-			{
-				m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() + pPacket->HP);
-				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
-			}
-		}
+		m_pScene->ApplyRecvInfo(PKT_ID_SCORE, (LPVOID)pPacket);
 		break;
 	}
 	case PKT_ID_CHANGE_MAP:
