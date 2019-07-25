@@ -78,6 +78,7 @@ public:
 	void send_packet_to_player(int id, char* packet);
 	void send_packet_to_all_player(char* packet);
 	void send_packet_to_room_player(int room, char* packet);
+	void send_packet_to_team_player(int room, char* packet, char team);
 	int find_empty_room();
 };
 

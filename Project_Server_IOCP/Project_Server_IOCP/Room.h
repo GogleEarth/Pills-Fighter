@@ -70,6 +70,7 @@ public:
 	inline GameObject* get_object(int id) { return scenes_[using_scene_]->get_object(id); }
 	void set_player_slot(int id, char slot);
 	inline char get_player_slot(int id) { return players_[id].get_slot(); }
+	inline char get_player_team(int id) { return players_[id].get_team(); }
 
 	int get_empty_slot();
 	int get_empty_slot_red_team();

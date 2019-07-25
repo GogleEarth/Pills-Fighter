@@ -130,7 +130,7 @@ int Framawork::thread_process()
 			{
 				auto data = rooms_[key].player_life_dequeue();
 				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
+				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
 				delete data;
 			}
 
@@ -829,6 +829,17 @@ void Framawork::send_packet_to_room_player(int room, char *packet)
 	{
 		Player* player = rooms_[room].get_player(i);
 		if (!player->get_use()) continue;
+		send_packet_to_player(player->get_serverid(), packet);
+	}
+}
+
+void Framawork::send_packet_to_team_player(int room, char * packet, char team)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		Player* player = rooms_[room].get_player(i);
+		if (!player->get_use()) continue;
+		if (player->get_team() != team) continue;
 		send_packet_to_player(player->get_serverid(), packet);
 	}
 }
