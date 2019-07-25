@@ -3559,7 +3559,6 @@ void CBattleScene::LeavePlayer(int nServerIndex)
 	DeleteObject(nServerIndex);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 CColonyScene::CColonyScene() : CBattleScene()

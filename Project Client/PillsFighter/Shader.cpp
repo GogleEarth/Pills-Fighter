@@ -2723,6 +2723,13 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 		m_ppTextures[UI_TEXTURE_TEAM_HP_BASE]->UpdateShaderVariables(pd3dCommandList);
 		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
+	}
+
+	if (m_pd3dPipelineStateTeamHP) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateTeamHP);
+
+	for (int i = 0; i < m_vppTeamObject.size(); i++)
+	{
+		if (!(*m_vppTeamObject[i])) continue;
 
 		UpdateTeamHPShaderVariable(pd3dCommandList, i);
 		m_ppTextures[UI_TEXTURE_TEAM_HP]->UpdateShaderVariables(pd3dCommandList);
