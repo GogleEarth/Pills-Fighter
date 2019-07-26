@@ -23,11 +23,14 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 	switch (nRobotType)
 	{
-	case SKINNED_OBJECT_INDEX_GM:
+	case SELECT_CHARACTER_GM:
 		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
 		break;
-	case SKINNED_OBJECT_INDEX_GUNDAM:
+	case SELECT_CHARACTER_GUNDAM:
 		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
+		break;
+	case SELECT_CHARACTER_ZAKU:
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Zaku.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
 		break;
 	default:
 		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");

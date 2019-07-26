@@ -1774,6 +1774,18 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/GundamSelect.dds", 0);
 		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM_SELECT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/Zaku.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_HL] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_HL]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/ZakuHL.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_HL], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_SELECT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_SELECT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/ZakuSelect.dds", 0);
+		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_SELECT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/MapColony.dds", 0);
 		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_COLONY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
@@ -1880,6 +1892,12 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
 		m_ppUIRects[LOBBY_ROOM_UI_RECT_GUNDAM] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+		centerx = 0.897313f;
+		centery = -0.090444f;
+		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
+		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
+		m_ppUIRects[LOBBY_ROOM_UI_RECT_ZAKU] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
 		// left
 		centerx = -0.270312f;
 		centery = 0.705f;
@@ -1979,6 +1997,11 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	centery = -0.090444f;
 	m_GundamButton.Center = XMFLOAT3(centerx, centery, 1.0f);
 	m_GundamButton.Extents = XMFLOAT3(width, height, 1.0f);
+
+	centerx = 0.897313f;
+	centery = -0.090444f;
+	m_ZakuButton.Center = XMFLOAT3(centerx, centery, 1.0f);
+	m_ZakuButton.Extents = XMFLOAT3(width, height, 1.0f);
 
 
 	width = 496.0f / FRAME_BUFFER_WIDTH;
@@ -2080,6 +2103,12 @@ int CLobbyRoomScene::MouseClick()
 
 		return LOBBY_MOUSE_CLICK_SELECT_ROBOT;
 	}
+	if (m_pCursor->CollisionCheck(m_ZakuButton))
+	{
+		CScene::m_nPlayerRobotType = SELECT_CHARACTER_ZAKU;
+
+		return LOBBY_MOUSE_CLICK_SELECT_ROBOT;
+	}
 
 	if (m_pCursor->CollisionCheck(m_TeamRedButton))
 	{
@@ -2119,6 +2148,9 @@ void CLobbyRoomScene::CheckCollision()
 
 	if (m_pCursor->CollisionCheck(m_GundamButton)) m_bHLGundamButton = true;
 	else m_bHLGundamButton = false;
+
+	if (m_pCursor->CollisionCheck(m_ZakuButton)) m_bHLZakuButton = true;
+	else m_bHLZakuButton = false;
 
 	if (m_pCursor->CollisionCheck(m_TeamRedButton)) m_bHLTeamRedButton = true;
 	else m_bHLTeamRedButton = false;
@@ -2286,14 +2318,24 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[LOBBY_ROOM_UI_RECT_GUNDAM]->Render(pd3dCommandList, 0);
 
+	if (m_bHLZakuButton)
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_HL]->UpdateShaderVariables(pd3dCommandList);
+	else if (m_nPlayerRobotType == SELECT_CHARACTER_ZAKU)
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU_SELECT]->UpdateShaderVariables(pd3dCommandList);
+	else
+		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU]->UpdateShaderVariables(pd3dCommandList);
+	m_ppUIRects[LOBBY_ROOM_UI_RECT_ZAKU]->Render(pd3dCommandList, 0);
+
 	for(int i = 0 ; i < 8; i++)
 	{
 		if (!m_pPlayerInfos[i].m_bUsed) continue;
 
-		if (m_pPlayerInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GM)
+		if (m_pPlayerInfos[i].m_nRobotType == SELECT_CHARACTER_GM)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GM]->UpdateShaderVariables(pd3dCommandList);
-		else if (m_pPlayerInfos[i].m_nRobotType == SKINNED_OBJECT_INDEX_GUNDAM)
+		else if (m_pPlayerInfos[i].m_nRobotType == SELECT_CHARACTER_GUNDAM)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_GUNDAM]->UpdateShaderVariables(pd3dCommandList);
+		else if (m_pPlayerInfos[i].m_nRobotType == SELECT_CHARACTER_ZAKU)
+			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_ZAKU]->UpdateShaderVariables(pd3dCommandList);
 
 		m_pPlayerRobotRects[m_pPlayerInfos[i].m_nSlot]->Render(pd3dCommandList, 0);
 	}
