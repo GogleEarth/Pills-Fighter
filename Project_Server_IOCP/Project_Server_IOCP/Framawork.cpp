@@ -606,8 +606,9 @@ void Framawork::process_packet(int id, char* packet)
 			int player_id = rooms_[room_num].findindex();
 			pkt_rio.index = player_id;
 			pkt_rio.map = rooms_[room_num].get_map();
-			pkt_rio.slot = rooms_[room_num].get_empty_slot();
-			rooms_[room_num].add_player(id, clients_[id].socket, pkt_rio.slot);
+			char empty_slot = rooms_[room_num].get_empty_slot();
+			pkt_rio.slot = empty_slot;
+			rooms_[room_num].add_player(id, clients_[id].socket, empty_slot);
 			send_packet_to_player(id, (char*)&pkt_rio);
 
 			PKT_PLAYER_IN pkt_pin;
@@ -673,7 +674,7 @@ void Framawork::process_packet(int id, char* packet)
 		int room_num = search_client_in_room(clients_[id].socket);
 		rooms_[room_num].set_player_lobby_info(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot,
 				reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->slot);
-		
+		reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team = rooms_[room_num].get_player_team(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id);
 		send_packet_to_room_player(room_num, packet);
 		break;
 	}
@@ -841,7 +842,7 @@ void Framawork::send_packet_to_team_player(int room, char * packet, char team)
 		if (!player->get_use()) continue;
 		if (player->get_team() != team) continue;
 		send_packet_to_player(player->get_serverid(), packet);
-		//std::cout << (int)team << "팀의 " << i << "번째 플레이어에게 보냄\n";
+		std::cout << (int)team << "팀의 " << i << "번째 플레이어에게 보냄\n";
 	}
 }
 
