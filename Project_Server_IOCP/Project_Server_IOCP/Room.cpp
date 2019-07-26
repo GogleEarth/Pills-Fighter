@@ -215,7 +215,8 @@ void Room::add_player(int id, SOCKET socket, char slot)
 	players_[num].set_socket(socket);
 	players_[num].set_robot(ROBOT_TYPE_GM);
 	players_[num].set_slot(slot);
-	players_[num].set_team(slot % 2);
+	players_[num].set_team((char)((int)slot % 2));
+	std::cout << "player " << num << "ÀÇ ÆÀ : " << (int)players_[num].get_team() << "\n";
 	slots_[slot] = true;
 }
 
