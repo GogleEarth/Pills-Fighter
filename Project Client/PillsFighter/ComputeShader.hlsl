@@ -79,7 +79,7 @@ void Add3CS(int3 vDispatchThreadID : SV_DispatchThreadID)
 void BrightFilterCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	float brightness = dot(gtxtInputA[vDispatchThreadID.xy].rgb, float3(0.2126f, 0.7152f, 0.0722));
-	if (brightness > 0.85f)
+	if (brightness > 0.95f)
 		gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy];
 }
 
@@ -89,12 +89,9 @@ cbuffer cbMotionBlurInfo : register(b0)
 	matrix gmtxInverseViewProjection;
 	int gnWidth;
 	int gnHeight;
-	//float gfDeltaFPS;
 }
 
 #define SAMPLES 32
-#define MAXVELOCITY 0.1f
-#define T 0.016667f;
 
 [numthreads(8, 8, 1)]
 void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
@@ -123,8 +120,7 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 
 	prevPos /= prevPos.w;
 
-	float2 velocity = (currPos - prevPos).xy * 2.0f;
-	//velocity *= 1.0f - gfDeltaFPS;
+	float2 velocity = (currPos - prevPos).xy;
 
 	float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -139,8 +135,6 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 		if (texcoord.y >= 0.9999f) break;
 		if (texcoord.x <= 0.0001f) break;
 		if (texcoord.y <= 0.0001f) break;
-		if (abs(texcoord.x - oriTex.x) > 0.1f) break;
-		if (abs(texcoord.y - oriTex.y) > 0.1f) break;
 
 		int2 nIndex = int2(texcoord.x * gnWidth, texcoord.y * gnHeight);
 		if (gtxtDepth[nIndex].r - zOverW > 0.1f) continue;

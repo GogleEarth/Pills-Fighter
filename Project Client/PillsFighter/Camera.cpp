@@ -121,7 +121,6 @@ void CCamera::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CCamera::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	GenerateViewMatrix();
 	UpdateShaderVariables(pd3dCommandList);
 
 	pd3dCommandList->RSSetViewports(1, &m_d3dViewport);

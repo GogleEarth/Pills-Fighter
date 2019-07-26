@@ -157,7 +157,7 @@ protected:
 	float								m_fDeltaFPS = 0.0f;
 
 	bool								m_bSelfIllumination = true;
-	bool								m_bBloom = false;
+	bool								m_bBloom = true;
 	bool								m_bMotionBlur = true;
 	bool								m_bMotionBlurred = false;
 

@@ -113,8 +113,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	{
 		float fDashSpeed = fDistance;
 
-		if (IsPrepareDashAnimation()) fDashSpeed *= 1.5f;
-		else fDashSpeed *= 2.0f;
+		if (IsPrepareDashAnimation()) fDashSpeed *= 2.0f;
+		else fDashSpeed *= 3.0f;
 
 		DashMove(dwDirection, fDashSpeed);
 	}
@@ -297,8 +297,6 @@ void CPlayer::DashMove(ULONG dwDirection, float fDistance)
 void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 {
 	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
-
-	m_pCamera->Move(xmf3Shift);
 }
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
@@ -327,6 +325,7 @@ void CPlayer::Update(float fTimeElapsed)
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	m_pCamera->SetLookAt(xmf3LookAt);
+	m_pCamera->GenerateViewMatrix();
 }
 
 void CPlayer::Rotate(float x, float y, float z)

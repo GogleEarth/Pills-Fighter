@@ -482,7 +482,6 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &xmf4x4Inverse, 16);
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nWidth, 32);
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nHeight, 33);
-			//pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fDeltaFPS, 34);
 
 			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_DEPTH, m_d3dSrvDepthStencilGPUHandle);
 			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_MASK, m_d3dSrvMaskTextureGPUHandle);
@@ -2883,6 +2882,7 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 	for (int i = 0; i < 6; i++)
 	{
 		m_pCubeMapCamera[i]->SetPosition(pMainObject->GetPosition());
+		m_pCubeMapCamera[i]->GenerateViewMatrix();
 		m_pCubeMapCamera[i]->OnPrepareRender(pd3dCommandList);
 
 		pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
@@ -3709,6 +3709,7 @@ void CColonyScene::RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_pLightCamera)
 	{
+		m_pLightCamera->GenerateViewMatrix();
 		m_pLightCamera->OnPrepareRender(pd3dCommandList);
 	}
 
@@ -3922,6 +3923,7 @@ void CSpaceScene::RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_pLightCamera)
 	{
+		m_pLightCamera->GenerateViewMatrix();
 		m_pLightCamera->OnPrepareRender(pd3dCommandList);
 	}
 

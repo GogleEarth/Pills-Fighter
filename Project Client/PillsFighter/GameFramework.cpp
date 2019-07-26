@@ -726,9 +726,7 @@ void CGameFramework::FrameAdvance()
 	m_GameTimer.Tick(60.0f);
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
-
-	std::cout << m_fElapsedTime << "\n";
-
+	
 	ProcessInput();
 
 	m_Font.CheckUsingTexts();
@@ -738,30 +736,19 @@ void CGameFramework::FrameAdvance()
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 		
-	int nFPS = 0;
-
-#ifdef ON_NETWORKING
-	nFPS = m_nFramePerSecond;
-#else
-	nFPS = m_GameTimer.GetFPS();
-#endif
-
 	if (m_bDrawScene)
 	{
 		CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
 
-		if (m_pScene) m_pScene->PrepareRender(m_pd3dCommandList);
-		
 		if (m_pScene)
 		{
+			m_pScene->PrepareRender(m_pd3dCommandList);
+
 			m_pScene->Render(m_pd3dCommandList, m_pCamera);
 
 			if (m_bWireRender)
 				m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
-		}
 
-		if (m_pScene)
-		{
 			if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 
 			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
