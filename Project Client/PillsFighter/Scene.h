@@ -237,14 +237,14 @@ public: // Network
 	virtual void SetMap(int nMap) {}
 	virtual void ChangeSelectRobot(int nIndex, int nRobotType) {}
 	virtual void ChangeSlot(int nIndex, int nChangeSlot) {}
-	virtual void SetMyTeam(int nTeam) { m_nMyTeam = nTeam; }
+	virtual void SetMyTeam(int nTeam) { CScene::m_nMyTeam = nTeam; }
 	virtual int GetMyTeam() { return m_nMyTeam; }
 	virtual void AddTeam(int nIndex, wchar_t *pstrName) {}
 	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames) {}
 
 protected:
-	int	m_nMyIndex = 0;
-	int m_nMyTeam = 0;
+	static int m_nMyIndex;
+	static int m_nMyTeam;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -682,8 +682,6 @@ class CSpaceScene : public CBattleScene
 public:
 	CSpaceScene();
 	virtual ~CSpaceScene();
-
-	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);

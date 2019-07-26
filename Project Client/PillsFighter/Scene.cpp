@@ -23,6 +23,9 @@ D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvGPUDesciptorStartHandle;
 
 int								CScene::m_nPlayerRobotType = SELECT_CHARACTER_GM;
 
+int								CScene::m_nMyIndex = 0;
+int								CScene::m_nMyTeam = TEAM_TYPE::TEAM_TYPE_RED;
+
 extern CFMODSound gFmodSound;
 
 CScene::CScene()
@@ -349,6 +352,8 @@ void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	std::cout << CScene::m_nMyIndex << "\n";
+
 	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dGlowScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dMaskTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -2055,7 +2060,7 @@ void CLobbyRoomScene::ReleaseUploadBuffers()
 
 int CLobbyRoomScene::MouseClick()
 {
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_StartButton))
 		{
@@ -2075,7 +2080,7 @@ int CLobbyRoomScene::MouseClick()
 		return LOBBY_MOUSE_CLICK_LEAVE;
 	}
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_ColonyButton))
 		{
@@ -2135,7 +2140,7 @@ void CLobbyRoomScene::CheckCollision()
 	if (m_pCursor->CollisionCheck(m_LeaveButton)) m_bHLLeaveButton = true;
 	else m_bHLLeaveButton = false;
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_ColonyButton)) m_bHLColonyButton = true;
 		else m_bHLColonyButton = false;
@@ -2170,10 +2175,10 @@ void CLobbyRoomScene::SetClientIndex(int nIndex, int nSlot)
 	wchar_t id[32];
 	wsprintfW(id, L"%d", nIndex);
 
-	m_nMyIndex = nIndex;
+	CScene::m_nMyIndex = nIndex;
 	JoinPlayer(nIndex, nSlot, id, SELECT_CHARACTER_GM);
 
-	m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
+	CScene::m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::ChangeSelectRobot(int nIndex, int nRobotType)
@@ -2205,7 +2210,7 @@ void CLobbyRoomScene::JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlaye
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nSlot);
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (nIndex == m_nMyIndex)
+	if (CScene::m_nMyIndex == nIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
@@ -2222,7 +2227,7 @@ void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot)
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 	m_pPlayerInfos[nIndex].m_nSlot = nChangeSlot;
 
-	if(nIndex == m_nMyIndex) m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
+	if(CScene::m_nMyIndex == nIndex) CScene::m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::LeavePlayer(int nIndex)
@@ -2241,7 +2246,7 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE]->UpdateShaderVariables(pd3dCommandList);
 	m_MapRect->Render(pd3dCommandList, 0);
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER]->UpdateShaderVariables(pd3dCommandList);
 	else
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MEMBER]->UpdateShaderVariables(pd3dCommandList);
@@ -2264,7 +2269,7 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_BLUE]->Render(pd3dCommandList, 0);
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_bHLStartButton)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_START_HL]->UpdateShaderVariables(pd3dCommandList);
@@ -2351,7 +2356,7 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 	for (int i = 0; i < 8; i++)
 	{
 		if (!m_pPlayerInfos[i].m_bUsed) continue;
-		if (i == m_nMyIndex) continue;
+		if (i == CScene::m_nMyIndex) continue;
 
 		if (nTeam == TEAM_TYPE::TEAM_TYPE_RED)
 		{
@@ -2434,6 +2439,9 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case VK_SPACE:
 			m_pPlayer->SpaceUp();
 			break;
+		case 'V':
+			m_pPlayer->VUp();
+			break;
 		default:
 			break;
 		}
@@ -2464,6 +2472,10 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 			break;
 		case VK_F1:
 			Alert();
+			break;
+		case 'V':
+			m_pPlayer->ActivationBooster();
+			m_pPlayer->VDown();
 			break;
 		default:
 			break;
@@ -3619,7 +3631,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 
 		if (pPacket->Item_type == ITEM_TYPE_AMMO)
 		{
-			if (pPacket->ID == m_nMyIndex)
+			if (pPacket->ID == CScene::m_nMyIndex)
 			{
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
@@ -3629,7 +3641,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		}
 		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
 		{
-			if (pPacket->ID == m_nMyIndex)
+			if (pPacket->ID == CScene::m_nMyIndex)
 			{
 				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
 			}
@@ -3850,34 +3862,6 @@ CSpaceScene::CSpaceScene() : CBattleScene()
 
 CSpaceScene::~CSpaceScene()
 {
-}
-
-void CSpaceScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	CBattleScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
-
-	switch (nMessageID)
-	{
-	case WM_KEYUP:
-		switch (wParam)
-		{
-		case 'V':
-			m_pPlayer->VUp();
-			break;
-		}
-		break;
-	case WM_KEYDOWN:
-		switch (wParam)
-		{
-		case 'V':
-			m_pPlayer->ActivationBooster();
-			m_pPlayer->VDown();
-			break;
-		}
-		break;
-	default:
-		break;
-	}
 }
 
 void CSpaceScene::BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
