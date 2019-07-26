@@ -265,6 +265,13 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	}
 	else if (weapon == WEAPON_TYPE_BEAM_RIFLE)
 	{
+		hp = 10;
+		life_time = 0.75f;
+		speed = 600.0;
+		type = OBJECT_TYPE_BEAM_BULLET;
+	}
+	else if (weapon == WEAPON_TYPE_GM_GUN)
+	{
 		hp = 5;
 		life_time = 0.75f;
 		speed = 600.0;
