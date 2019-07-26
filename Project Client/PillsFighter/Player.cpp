@@ -30,7 +30,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", "./Resource/Animation/gundam_UpperBody.bin", "./Resource/Animation/gundam_LowerBody.bin");
 		break;
 	case SELECT_CHARACTER_ZAKU:
-		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Zaku.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");
+		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Zaku.bin", "./Resource/Animation/Zaku_UpperBody.bin", "./Resource/Animation/UnderBody.bin");
 		break;
 	default:
 		pModel = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin");

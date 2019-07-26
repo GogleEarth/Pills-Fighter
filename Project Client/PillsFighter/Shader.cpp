@@ -1078,7 +1078,7 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin"));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", "./Resource/Animation/gundam_UpperBody.bin", "./Resource/Animation/gundam_LowerBody.bin"));
-	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Zaku.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin"));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Zaku.bin", "./Resource/Animation/Zaku_UpperBody.bin", "./Resource/Animation/UnderBody.bin"));
 
 	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL);
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
