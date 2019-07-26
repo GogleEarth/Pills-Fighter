@@ -237,7 +237,7 @@ int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix)
 void Room::set_player_lobby_info(int id, char selectedrobot, char team, char slot)
 {
 	players_[id].set_robot(selectedrobot);
-	players_[id].set_team(team);
+	//players_[id].set_team(team);
 	slots_[players_[id].get_slot()] = false;
 	players_[id].set_slot(slot);
 	slots_[slot] = true;

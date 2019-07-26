@@ -484,7 +484,8 @@ void GroundScene::SceneEvent(float fTimeElapsed)
 void GroundScene::start_event()
 {
 	Scene::start_event();
-	gravity_ = ((float)((rand() % 196) - 98)) / 10.0f;
+	//-30~0.5
+	gravity_ = ((float)((rand() % 306) - 300)) / 10.0f;
 }
 
 void GroundScene::end_event()
