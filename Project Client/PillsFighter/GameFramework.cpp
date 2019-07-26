@@ -819,13 +819,9 @@ void CGameFramework::FrameAdvance()
 #endif
 
 #else
-
-#ifdef _DEBUG
 	m_GameTimer.GetFrameRate(m_pszCaption + strlen(GAME_TITLE), 37);
 	size_t nLength = _tcslen(m_pszCaption);
 	_stprintf(m_pszCaption + nLength, _T("(%f, %f)"), Screenx, Screeny);
-#endif
-
 #endif
 	
 	::SetWindowText(m_hWnd, m_pszCaption);

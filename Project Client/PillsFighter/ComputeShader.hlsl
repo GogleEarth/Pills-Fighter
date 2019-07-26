@@ -100,6 +100,7 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 {
 	float zOverW = gtxtDepth[vDispatchThreadID.xy];
 	float mask = gtxtMask[vDispatchThreadID.xy].r;
+
 	if (mask > 0.5f)
 	{
 		gtxtRWOutput[vDispatchThreadID.xy] = gtxtInputA[vDispatchThreadID.xy];
@@ -143,6 +144,7 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 		if (texcoord.y <= 0.0001f) break;
 
 		int2 nIndex = int2(texcoord.x * gnWidth, texcoord.y * gnHeight);
+
 		if (gtxtDepth[nIndex].r - zOverW > 0.1f) continue;
 		mask = gtxtMask[nIndex].r;
 		if (mask > 0.5f) continue;

@@ -352,8 +352,6 @@ void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	std::cout << CScene::m_nMyIndex << "\n";
-
 	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dGlowScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dMaskTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -468,8 +466,6 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 {
 	if (m_bMotionBlur)
 	{
-		m_pComputeShader->SetMotionBlurPipelineState(pd3dCommandList);
-
 		XMFLOAT3 xmf3PrevPosition = XMFLOAT3(m_xmf4x4PrevViewProjection._41, m_xmf4x4PrevViewProjection._42, m_xmf4x4PrevViewProjection._43);
 		XMFLOAT3 xmf3Position = XMFLOAT3(m_xmf4x4CurrViewProjection._41, m_xmf4x4CurrViewProjection._42, m_xmf4x4CurrViewProjection._43);
 
@@ -481,6 +477,8 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 
 		if ((rotVel > 45.0f) || (moveVel > 2.5f))
 		{
+			m_pComputeShader->SetMotionBlurPipelineState(pd3dCommandList);
+
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
 
 			XMFLOAT4X4 xmf4x4Inverse = Matrix4x4::Inverse(m_xmf4x4CurrViewProjection);
@@ -2458,9 +2456,6 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case '3':
 			m_pPlayer->ChangeWeapon(2);
 			break;
-		case '4':
-			m_pPlayer->ChangeWeapon(3);
-			break;
 		case 'R':
 			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 			break;
@@ -2553,6 +2548,7 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
 	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
 	m_pTomahawk = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL);
+	m_pBeamRifle = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL);
 }
 
 void CBattleScene::ReleaseObjects()
@@ -2642,16 +2638,21 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pPlayer->SetScene(this);
 	}
 
-	//if(m_pPlayer->GetType())
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pGimGun, WEAPON_TYPE_OF_GM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
-	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
-		m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
-
+	switch (CScene::m_nPlayerRobotType)
+	{
+	case SELECT_CHARACTER_GM:
+	case SELECT_CHARACTER_GUNDAM: // 빔사벨, 빔라이플, 바주카
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
+		break;
+	case SELECT_CHARACTER_ZAKU: // 토마호크, 머신건, 바주카
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pTomahawk, WEAPON_TYPE_OF_TOMAHAWK, NULL, NULL, NULL);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
+		break;
+	}
+	
 #ifndef ON_NETWORKING
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
@@ -2664,6 +2665,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pUserInterface->SetPlayer(m_pPlayer);
 	pUserInterface->SetFont(m_pFont);
 	pUserInterface->SetAmmoText(0);
+
 	for (int i = 0; i < m_vTeamIndex.size(); i++)
 	{
 		pUserInterface->SetTeamInfo(&m_pObjects[m_vTeamIndex[i]], m_vwstrTeamName[i].c_str());
@@ -3032,7 +3034,7 @@ void CBattleScene::CheckCollision()
 			CRobotObject *enemy = (CRobotObject*)Enemy;
 
 			if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
-			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(3);
+			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(0);
 
 			for (const auto& anotherE : vEnemys)
 			{
@@ -3095,7 +3097,7 @@ void CBattleScene::CheckCollision()
 			{
 				for (const auto& Enemy : vEnemys)
 				{
-					CWeapon *pWeapon = m_pPlayer->GetWeapon(3);
+					CWeapon *pWeapon = m_pPlayer->GetWeapon(0);
 					if (!pWeapon->CollisionCheck(Enemy)) continue;
 
 					XMFLOAT3 xmf3Pos = pWeapon->GetPosition();

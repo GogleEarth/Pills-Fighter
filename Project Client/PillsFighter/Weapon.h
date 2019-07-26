@@ -41,13 +41,35 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CSaber : public CWeapon
+class CSword : public CWeapon
+{
+public:
+	CSword();
+	virtual ~CSword();
+
+	virtual void SetType() { m_nType |= WEAPON_TYPE_OF_SWORD; };
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CSaber : public CSword
 {
 public:
 	CSaber();
 	virtual ~CSaber();
 
-	virtual void SetType() { m_nType |= WEAPON_TYPE_OF_SABER; };
+	virtual void SetType();
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CTomahawk : public CSword
+{
+public:
+	CTomahawk();
+	virtual ~CTomahawk();
+
+	virtual void SetType();
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,6 +101,7 @@ public:
 	void SetBullet(CShader *pBullet, CShader *pEffect, int nGroup) { m_pBulletShader = (CObjectsShader*)pBullet; m_pEffectShader = (CEffectShader*)pEffect;  m_nBulletGroup = nGroup; }
 
 	virtual void Reload(int& nAmmo);
+	virtual void Charge() {};
 
 public:
 	virtual void Shot();
@@ -169,7 +192,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define MG_SHOT_COOLTIME	0.08f
+#define MG_SHOT_COOLTIME	0.1f
 #define MG_RELOAD_TIME		3.0f
 
 class CMachineGun : public CGun
@@ -190,4 +213,32 @@ public:
 	virtual void OnPrepareAnimate();
 
 	virtual int ShootNumber() { return 1; };
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+#define BR_SHOT_COOLTIME	0.8f
+#define BR_RELOAD_TIME		0.3f
+
+class CBeamRifle : public CGun
+{
+public:
+	CBeamRifle();
+	virtual ~CBeamRifle();
+
+	virtual void Initialize();
+
+	virtual void Shot();
+
+	virtual void SetReloadTime() { m_fReloadTime = BR_RELOAD_TIME; }
+	virtual void SetShotCoolTime();
+	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 100; }
+
+	virtual void SetType();
+	virtual void OnPrepareAnimate();
+
+	virtual int ShootNumber() { return 1; };
+	virtual void CheckShootable(float fElapsedTime);
+	virtual void Charge();
 };

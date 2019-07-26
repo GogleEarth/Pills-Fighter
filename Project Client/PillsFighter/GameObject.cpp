@@ -919,6 +919,9 @@ void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
 		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_MACHINEGUN);
 		break;
 	case WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_BEAM_RIFLE);
+		break;
+	case WEAPON_TYPE::WEAPON_TYPE_GM_GUN:
 		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_GM_GUN);
 		break;
 	case WEAPON_TYPE::WEAPON_TYPE_BAZOOKA:
@@ -926,6 +929,9 @@ void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
 		break;
 	case WEAPON_TYPE::WEAPON_TYPE_SABER:
 		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_SABER);
+		break;
+	case WEAPON_TYPE::WEAPON_TYPE_TOMAHAWK:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_TOMAHAWK);
 		break;
 	}
 

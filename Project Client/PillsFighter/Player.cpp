@@ -950,7 +950,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 				}
 			}
 		}
-		else if (nType & WEAPON_TYPE_OF_SABER)
+		else if (nType & WEAPON_TYPE_OF_SWORD)
 		{
 			if (!IsSwording())
 			{
@@ -1007,12 +1007,30 @@ void CPlayer::Reload(CWeapon *pWeapon)
 {
 	if (pWeapon)
 	{
+		if (pWeapon->GetType() & WEAPON_TYPE_OF_BEAM_RIFLE) return;
+		if (pWeapon->GetType() & WEAPON_TYPE_OF_SWORD) return;
+
 		CGun *pGun = (CGun*)pWeapon;
 
 		if (pGun->GetReloadedAmmo() < pGun->GetMaxReloadAmmo())
 		{
 			if (!m_bReloading)
 			{
+				int nType = pGun->GetType();
+			
+				if (nType & WEAPON_TYPE_OF_BAZOOKA)
+				{
+					if (m_nBazookaAmmo == 0) return;
+				}
+				else if (nType & WEAPON_TYPE_OF_GM_GUN)
+				{
+					if (m_nGmGunAmmo == 0) return;
+				}
+				else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
+				{
+					if (m_nMachineGunAmmo == 0) return;
+				}
+
 				m_bReloading = true;
 				m_fReloadTime = pGun->GetReloadTime();
 			}
@@ -1030,7 +1048,7 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 		{
 			CGun *pGun = (CGun*)pWeapon;
 
-			if (m_bReloading)
+			if (m_bReloading || nType & WEAPON_TYPE_OF_BEAM_RIFLE)
 			{
 				m_fReloadTime -= fTimeElapsed;
 
@@ -1059,6 +1077,12 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 							pGun->Reload(m_nMachineGunAmmo);
 							ChangeUIAmmo();
 						}
+					}
+					else if (nType & WEAPON_TYPE_OF_BEAM_RIFLE)
+					{
+						pGun->Charge();
+						ChangeUIAmmo();
+						m_fReloadTime = pGun->GetReloadTime();
 					}
 
 					m_bReloading = false;
@@ -1101,16 +1125,20 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 		int nType = m_pRHWeapon->GetType();
 
 		if (nType & WEAPON_TYPE_OF_GM_GUN)
-			return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
+			return WEAPON_TYPE::WEAPON_TYPE_GM_GUN;
 		else if (nType & WEAPON_TYPE_OF_MACHINEGUN)
 			return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
 		else if (nType & WEAPON_TYPE_OF_BAZOOKA)
 			return WEAPON_TYPE::WEAPON_TYPE_BAZOOKA;
 		else if (nType & WEAPON_TYPE_OF_SABER)
 			return WEAPON_TYPE::WEAPON_TYPE_SABER;
+		else if (nType & WEAPON_TYPE_OF_TOMAHAWK)
+			return WEAPON_TYPE::WEAPON_TYPE_TOMAHAWK;
+		else if (nType & WEAPON_TYPE_OF_BEAM_RIFLE)
+			return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
 	}
 
-	return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
+	return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
 }
 
 void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, CShader *pEffectShader, int nGroup)
@@ -1121,18 +1149,25 @@ void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3
 	{
 	case WEAPON_TYPE_OF_GM_GUN:
 		pWeapon = new CGimGun();
-		if (pBulletShader) ((CGimGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
+		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_BAZOOKA:
 		pWeapon = new CBazooka();
-		if (pBulletShader) ((CBazooka*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
+		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_MACHINEGUN:
 		pWeapon = new CMachineGun();
-		if (pBulletShader) ((CMachineGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
+		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
+		break;
+	case WEAPON_TYPE_OF_BEAM_RIFLE:
+		pWeapon = new CBeamRifle();
+		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
 		break;
 	case WEAPON_TYPE_OF_SABER:
 		pWeapon = new CSaber();
+		break;
+	case WEAPON_TYPE_OF_TOMAHAWK:
+		pWeapon = new CTomahawk();
 		break;
 	default:
 		exit(1);

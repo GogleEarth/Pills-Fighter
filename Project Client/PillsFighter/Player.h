@@ -107,7 +107,6 @@ protected:
 	int		m_nBazookaAmmo = 0;
 	int		m_nMachineGunAmmo = 0;
 	int		m_nSMGAmmo = 0;
-	int		m_nSniperAmmo = 0;
 
 	bool	m_bReloading = false;
 	float	m_fReloadTime = 0.0f;
@@ -121,12 +120,12 @@ public:
 	void Reload(CWeapon *pWeapon);
 	bool IsReload() { return m_bReloading; }
 	float GetReloadElapsedTime() { return m_fReloadTime; }
+	void SetReloadTime(float fTime) { m_fReloadTime = fTime; }
 
 	int GetGMGunAmmo() { return m_nGmGunAmmo; };
 	int GetBazookaAmmo() { return m_nBazookaAmmo; };
 	int GetMachineGunAmmo() { return m_nMachineGunAmmo; };
 	int GetSMGAmmo() { return m_nSMGAmmo; };
-	int GetSniperAmmo() { return m_nSniperAmmo; };
 
 	WEAPON_TYPE GetWeaponType();
 

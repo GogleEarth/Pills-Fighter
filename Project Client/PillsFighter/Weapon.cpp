@@ -58,7 +58,20 @@ void CWeapon::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pC
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CSaber::CSaber() : CWeapon()
+CSword::CSword() : CWeapon()
+{
+
+}
+
+CSword::~CSword()
+{
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CSaber::CSaber() : CSword()
 {
 
 }
@@ -67,6 +80,34 @@ CSaber::~CSaber()
 {
 
 }
+
+void CSaber::SetType()
+{
+	CSword::SetType();  
+
+	m_nType |= WEAPON_TYPE_OF_SABER;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CTomahawk::CTomahawk() : CSword()
+{
+
+}
+
+CTomahawk::~CTomahawk()
+{
+
+}
+
+void CTomahawk::SetType()
+{
+	CSword::SetType();
+
+	m_nType |= WEAPON_TYPE_OF_TOMAHAWK;
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -311,4 +352,91 @@ void CMachineGun::Shot()
 	CGun::Shot();
 
 	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CBeamRifle::CBeamRifle() : CGun()
+{
+}
+
+CBeamRifle::~CBeamRifle()
+{
+}
+
+void CBeamRifle::Initialize()
+{
+	CGun::Initialize();
+
+	m_nReloadedAmmo = 100;
+}
+
+void CBeamRifle::SetType()
+{
+	m_nType |= WEAPON_TYPE_OF_BEAM_RIFLE;
+
+	CGun::SetType();
+}
+
+void CBeamRifle::SetShotCoolTime()
+{
+	CGun::SetShotCoolTime();
+
+	m_fShotCoolTime = BR_SHOT_COOLTIME;
+}
+
+void CBeamRifle::OnPrepareAnimate()
+{
+	m_pMuzzle = m_pModel->FindFrame("Bone001");
+}
+
+void CBeamRifle::Shot()
+{
+	CPlayer *pPlayer = (CPlayer*)m_pOwner;
+
+#ifndef ON_NETWORKING
+	Bullet *pBullet = NULL;
+	pBullet = new Bullet();
+
+	if (!m_pMuzzle) return;
+
+	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget(m_pMuzzle->GetPosition());
+
+	pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
+	pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
+	pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
+	pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
+
+	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
+
+	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43), XMFLOAT2(2.5f, 2.5f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
+#else
+	pPlayer->Shoot();
+#endif
+
+	SetShotCoolTime();
+	pPlayer->SetReloadTime(m_fReloadTime);
+
+	m_nShootCount++;
+	m_nReloadedAmmo = m_nReloadedAmmo - 10 < 0 ? 0 : m_nReloadedAmmo - 10;
+
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
+}
+
+void CBeamRifle::CheckShootable(float fElapsedTime)
+{
+	if (m_nReloadedAmmo >= 10)
+	{
+		m_bShootable = true;
+	}
+}
+
+void CBeamRifle::Charge()
+{ 
+	if (m_nReloadedAmmo < m_nMaxReloadAmmo)
+	{
+		m_nReloadedAmmo++;
+		SetReloadTime();
+	}
 }

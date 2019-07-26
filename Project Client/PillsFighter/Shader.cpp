@@ -1084,24 +1084,26 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
 	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
+	m_pBeamRifle = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL);
+	m_pTomahawk = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL);
 
 	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
 
 #ifndef ON_NETWORKING
-	//CRobotObject *pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+	CRobotObject *pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
 
-	//pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, pContext);
 
-	//pObject = new CRobotObject();
-	//pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));
 
-	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
 #endif
 }
 
@@ -1117,10 +1119,21 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
 
 	pRobot->SetWeaponShader(pShader);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GM_GUN);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
+
+	switch (nGroup)
+	{
+	case SKINNED_OBJECT_INDEX_GM:
+	case SKINNED_OBJECT_INDEX_GUNDAM: // 빔사벨, 빔라이플, 바주카
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA);
+		break;
+	case SKINNED_OBJECT_INDEX_ZAKU: // 토마호크, 머신건, 바주카
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pTomahawk, WEAPON_TYPE_OF_TOMAHAWK);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA);
+		break;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2438,7 +2451,7 @@ void CUserInterface::SetPlayer(CPlayer *pPlayer)
 	m_pPlayer = pPlayer;
 	m_pPlayer->SetUserInterface(this);
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		int nWeaponType = m_pPlayer->GetWeapon(i)->GetType();
 		m_pWeaponTextures[i] = NULL;
@@ -2451,8 +2464,8 @@ void CUserInterface::SetPlayer(CPlayer *pPlayer)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_MACHINEGUN];
 		if (nWeaponType & WEAPON_TYPE_OF_SMG)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SMG];
-		if (nWeaponType & WEAPON_TYPE_OF_SNIPER)
-			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SNIPER];
+		if (nWeaponType & WEAPON_TYPE_OF_BEAM_RIFLE)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_BEAM_RIFLE];
 		if (nWeaponType & WEAPON_TYPE_OF_SABER)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SABER];
 		if (nWeaponType & WEAPON_TYPE_OF_TOMAHAWK)
@@ -2480,8 +2493,6 @@ void CUserInterface::GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex)
 		nAmmo = m_pPlayer->GetMachineGunAmmo();
 	if (nWeaponType & WEAPON_TYPE_OF_SMG)
 		nAmmo = m_pPlayer->GetSMGAmmo();
-	if (nWeaponType & WEAPON_TYPE_OF_SNIPER)
-		nAmmo = m_pPlayer->GetSniperAmmo();
 }
 
 void CUserInterface::SetAmmoText(int nWeaponIndex)
@@ -2495,12 +2506,20 @@ void CUserInterface::SetAmmoText(int nWeaponIndex)
 
 	float fCenterX = 0.745f;
 	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
-	wsprintfW(wpstrNumber, L"%d", nAmmo);
+
+	if (nWeaponIndex != 0) 
+		wsprintfW(wpstrNumber, L"%d", nAmmo);
+	else 
+		wsprintfW(wpstrNumber, L"-", nAmmo);
 	m_pAmmoText = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
 
 	fCenterX -= 0.010f;
 	fCenterY += 0.095f;
-	wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
+
+	if (nWeaponIndex != 0) 
+		wsprintfW(wpstrNumber, L"%d", nAmmo);
+	else
+		wsprintfW(wpstrNumber, L"-", nAmmo);
 	m_pReloadedAmmoText = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
@@ -2516,15 +2535,29 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 	float fCenterX = 0.745f;
 	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 
-	if (nWeaponIndex != 3) wsprintfW(wpstrNumber, L"%d", nAmmo);
-	else wsprintfW(wpstrNumber, L"-", nAmmo);
+	CGun *pGun = (CGun*)m_pPlayer->GetWeapon(nWeaponIndex);
+	int nType = pGun->GetType();
+
+	if (nType & WEAPON_TYPE_OF_GUN)
+	{
+		if(nType & WEAPON_TYPE_OF_BEAM_RIFLE)
+			wsprintfW(wpstrNumber, L"-", nAmmo);
+		else
+			wsprintfW(wpstrNumber, L"%d", nAmmo);
+	}
+	else 
+		wsprintfW(wpstrNumber, L"-", nAmmo);
 	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
 
 	fCenterX -= 0.010f;
 	fCenterY += 0.095f;
 
-	if (nWeaponIndex != 3) wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
-	else wsprintfW(wpstrNumber, L"-", nAmmo);
+	if (nType & WEAPON_TYPE_OF_GUN)
+	{
+		wsprintfW(wpstrNumber, L"%d", nReloadedAmmo);
+	}
+	else 
+		wsprintfW(wpstrNumber, L"-", nAmmo);
 	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
@@ -2583,9 +2616,9 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_SMG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_SMG.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SMG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppTextures[UI_TEXTURE_SNIPER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[UI_TEXTURE_SNIPER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Sniper.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SNIPER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[UI_TEXTURE_BEAM_RIFLE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BEAM_RIFLE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamRifle.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_RIFLE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_TOMAHAWK] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_TOMAHAWK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Tomahawk.dds", 0);
@@ -2602,6 +2635,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_TEAM_HP] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_TEAM_HP]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_TeamHP.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEAM_HP], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_BEAM_GAUGE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BEAM_GAUGE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamGuage.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_GAUGE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
@@ -2754,6 +2791,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	CWeapon *pWeapon = m_pPlayer->GetRHWeapon();
+	int nWeaponType = pWeapon->GetType();
 	CGun *pRHGun = (CGun*)pWeapon;
 
 	if (m_pPlayer->IsReload())
@@ -2772,19 +2810,32 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	else
 	{
 		// Draw Ammo
-		if (m_pd3dPipelineStateBullet) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBullet);
-
-		if (pWeapon->GetType() & WEAPON_TYPE_OF_GUN)
+		if (nWeaponType & WEAPON_TYPE_OF_GUN)
 		{
 			int nMaxReloadAmmo = pRHGun->GetMaxReloadAmmo();
 			int nReloadedAmmo = pRHGun->GetReloadedAmmo();
 
 			UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
 
-			if (m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY])
+			if (nWeaponType & WEAPON_TYPE_OF_BEAM_RIFLE)
 			{
-				m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY]->UpdateShaderVariables(pd3dCommandList);
-				m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
+				if (m_pd3dPipelineStateBar) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBar);
+
+				if (m_ppTextures[UI_TEXTURE_BEAM_GAUGE])
+				{
+					m_ppTextures[UI_TEXTURE_BEAM_GAUGE]->UpdateShaderVariables(pd3dCommandList);
+					m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
+				}
+			}
+			else
+			{
+				if (m_pd3dPipelineStateBullet) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBullet);
+
+				if (m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY])
+				{
+					m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY]->UpdateShaderVariables(pd3dCommandList);
+					m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
+				}
 			}
 		}
 	}
@@ -2792,7 +2843,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	if (m_pd3dPipelineStateColored) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateColored);
 
 	// Draw Weapons
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		if (m_nEquipWeaponIndex == i)
 		{

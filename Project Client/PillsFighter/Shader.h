@@ -290,6 +290,8 @@ protected:
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
 	CModel		*m_pSaber = NULL;
+	CModel		*m_pBeamRifle = NULL;
+	CModel		*m_pTomahawk = NULL;
 
 	ID3D12RootSignature *m_pd3dSceneRootSignature = NULL;
 };
@@ -510,7 +512,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 15
+#define UI_TEXTURE_COUNT 16
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -522,11 +524,12 @@ protected:
 #define UI_TEXTURE_BAZOOKA 7
 #define UI_TEXTURE_SABER 8
 #define UI_TEXTURE_SMG 9
-#define UI_TEXTURE_SNIPER 10
+#define UI_TEXTURE_BEAM_RIFLE 10
 #define UI_TEXTURE_TOMAHAWK 11
 #define UI_TEXTURE_SLOT 12
 #define UI_TEXTURE_TEAM_HP_BASE 13
 #define UI_TEXTURE_TEAM_HP 14
+#define UI_TEXTURE_BEAM_GAUGE 15
 
 #define UI_RECT_COUNT 15
 

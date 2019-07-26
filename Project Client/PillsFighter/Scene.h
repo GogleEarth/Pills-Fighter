@@ -630,6 +630,13 @@ public:
 protected:
 	CMinimapShader						*m_pMinimapShader = NULL;
 
+	CModel		*m_pGimGun = NULL;
+	CModel		*m_pBazooka = NULL;
+	CModel		*m_pMachineGun = NULL;
+	CModel		*m_pSaber = NULL;
+	CModel		*m_pTomahawk = NULL;
+	CModel		*m_pBeamRifle = NULL;
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
 	virtual void DeleteObject(int nIndex);
@@ -639,12 +646,6 @@ public: // Network
 
 protected:
 	CGameObject* m_pObjects[MAX_NUM_OBJECT];
-
-	CModel		*m_pGimGun = NULL;
-	CModel		*m_pBazooka = NULL;
-	CModel		*m_pMachineGun = NULL;
-	CModel		*m_pSaber = NULL;
-	CModel		*m_pTomahawk = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
