@@ -117,7 +117,7 @@ protected:
 #define SELECT_CHARACTER_GUNDAM 1
 #define SELECT_CHARACTER_ZAKU 2
 	static int								m_nPlayerRobotType;
-	int										m_nFPS = 0;
+	int										m_nFPSCount = 0;
 
 public:
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
@@ -155,7 +155,7 @@ protected:
 	XMFLOAT4X4							m_xmf4x4PrevViewProjection;
 	XMFLOAT4X4							m_xmf4x4CurrViewProjection;
 	XMFLOAT3							m_xmf3PrevPlayerPosition;
-	float								m_fDeltaFPS = 0.0f;
+	float								m_fFPS = 0.0f;
 
 	bool								m_bSelfIllumination = true;
 	bool								m_bBloom = true;
@@ -644,6 +644,7 @@ protected:
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
 	CModel		*m_pSaber = NULL;
+	CModel		*m_pTomahawk = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
