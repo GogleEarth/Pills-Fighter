@@ -156,7 +156,7 @@ int Framawork::thread_process()
 				if (data == nullptr) break;
 				if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)
 					data->Item_type = ITEM_TYPE_AMMO;
-				send_packet_to_room_player(key, (char*)data);
+				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
 				delete data;
 			}
 
@@ -841,7 +841,7 @@ void Framawork::send_packet_to_team_player(int room, char * packet, char team)
 		if (!player->get_use()) continue;
 		if (player->get_team() != team) continue;
 		send_packet_to_player(player->get_serverid(), packet);
-		std::cout << (int)team << "ÆÀÀÇ " << i << "¹øÂ° ÇÃ·¹ÀÌ¾î¿¡°Ô º¸³¿\n";
+		//std::cout << (int)team << "ÆÀÀÇ " << i << "¹øÂ° ÇÃ·¹ÀÌ¾î¿¡°Ô º¸³¿\n";
 	}
 }
 
