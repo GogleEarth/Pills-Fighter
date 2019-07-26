@@ -73,7 +73,9 @@ protected:
 	float				m_StopRange = 0.0f;
 
 public:
-	void ActivationBooster();
+#define BOOSTER_TYPE_UP 1
+#define BOOSTER_TYPE_DOWN 2
+	void ActivationBooster(UINT nType);
 	void ActivationDash();
 	void DeactivationBooster() { if(!IsDash()) m_nState &= ~OBJECT_STATE_BOOSTER; m_bChangedSpaceStart = false; }
 	void DeactivationDash() { m_nState &= ~OBJECT_STATE_BOOSTER; m_nState &= ~OBJECT_STATE_DASH;  m_nDashDirection = 0; m_bChangedDashStart = false; }
@@ -143,11 +145,8 @@ protected:
 	bool		m_bVDown = false;
 public:
 	void ShiftUp() { m_bShiftDown = false; }
-
 	void SpaceUp() { m_bSpaceDown = false; }
-
 	void VUp() { m_bVDown = false; }
-	void VDown() { m_bVDown = true; }
 
 	BOOL GetWeaponChanged() { return m_bWeaponChanged; }
 	void SetWeaponChanged(BOOL bWeaponChanged) { m_bWeaponChanged = bWeaponChanged; }

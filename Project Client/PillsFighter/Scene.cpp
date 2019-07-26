@@ -2465,17 +2465,16 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 			break;
 		case VK_SPACE:
-			m_pPlayer->ActivationBooster();
+			m_pPlayer->ActivationBooster(BOOSTER_TYPE_UP);
+			break;
+		case 'V':
+			m_pPlayer->ActivationBooster(BOOSTER_TYPE_DOWN);
 			break;
 		case VK_SHIFT:
 			m_pPlayer->ActivationDash();
 			break;
 		case VK_F1:
 			Alert();
-			break;
-		case 'V':
-			m_pPlayer->ActivationBooster();
-			m_pPlayer->VDown();
 			break;
 		default:
 			break;
