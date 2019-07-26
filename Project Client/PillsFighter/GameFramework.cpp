@@ -898,7 +898,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_TIME_INFO *pPacket = (PKT_TIME_INFO*)m_pPacketBuffer;
 
-		m_fElapsedTime = pPacket->elapsedtime;
+		m_fElapsedTime += pPacket->elapsedtime;
 		break;
 	}
 	case PKT_ID_PLAYER_LIFE:
@@ -1021,7 +1021,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
 
-		m_pScene->ApplyRecvInfo(PKT_ID_SCORE, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_PICK_ITEM, (LPVOID)pPacket);
 		break;
 	}
 	case PKT_ID_CHANGE_MAP:
