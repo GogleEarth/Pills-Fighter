@@ -117,7 +117,7 @@ protected:
 #define SELECT_CHARACTER_GUNDAM 1
 #define SELECT_CHARACTER_ZAKU 2
 	static int								m_nPlayerRobotType;
-	int										m_nFPS = 0;
+	int										m_nFPSCount = 0;
 
 public:
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
@@ -155,7 +155,7 @@ protected:
 	XMFLOAT4X4							m_xmf4x4PrevViewProjection;
 	XMFLOAT4X4							m_xmf4x4CurrViewProjection;
 	XMFLOAT3							m_xmf3PrevPlayerPosition;
-	float								m_fDeltaFPS = 0.0f;
+	float								m_fFPS = 0.0f;
 
 	bool								m_bSelfIllumination = true;
 	bool								m_bBloom = true;
@@ -237,14 +237,14 @@ public: // Network
 	virtual void SetMap(int nMap) {}
 	virtual void ChangeSelectRobot(int nIndex, int nRobotType) {}
 	virtual void ChangeSlot(int nIndex, int nChangeSlot) {}
-	virtual void SetMyTeam(int nTeam) { m_nMyTeam = nTeam; }
+	virtual void SetMyTeam(int nTeam) { CScene::m_nMyTeam = nTeam; }
 	virtual int GetMyTeam() { return m_nMyTeam; }
 	virtual void AddTeam(int nIndex, wchar_t *pstrName) {}
 	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames) {}
 
 protected:
-	int	m_nMyIndex = 0;
-	int m_nMyTeam = 0;
+	static int m_nMyIndex;
+	static int m_nMyTeam;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -644,6 +644,7 @@ protected:
 	CModel		*m_pBazooka = NULL;
 	CModel		*m_pMachineGun = NULL;
 	CModel		*m_pSaber = NULL;
+	CModel		*m_pTomahawk = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -681,8 +682,6 @@ class CSpaceScene : public CBattleScene
 public:
 	CSpaceScene();
 	virtual ~CSpaceScene();
-
-	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void BuildSkybox(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);

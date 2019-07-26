@@ -242,6 +242,7 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 
 void Scene::set_player_team(int id, char team)
 {
+	std::cout << id << "ÀÇ ÆÀ : " << (int)team << "\n";
 	Objects_[id].set_team(team);
 }
 
@@ -255,7 +256,6 @@ bool Scene::check_collision_obstacles(int object)
 			{
 				if (objaabb.Intersects(playeraabb))
 				{
-					std::cout << "°ÇÅºÃæ\n";
 					return true;
 				}
 			}
@@ -312,7 +312,6 @@ bool Scene::check_collision_player(int object)
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
 							Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
 						{
-							//std::cout << "ÇÃ·¹ÀÌ¾î ÃÑ¾Ë\n";
 							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 							pkt_pl->ID = i;
 							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
@@ -485,7 +484,8 @@ void GroundScene::SceneEvent(float fTimeElapsed)
 void GroundScene::start_event()
 {
 	Scene::start_event();
-	gravity_ = ((float)((rand() % 196) - 98)) / 10.0f;
+	//-30~0.5
+	gravity_ = ((float)((rand() % 306) - 300)) / 10.0f;
 }
 
 void GroundScene::end_event()

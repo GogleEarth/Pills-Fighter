@@ -23,6 +23,9 @@ D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvGPUDesciptorStartHandle;
 
 int								CScene::m_nPlayerRobotType = SELECT_CHARACTER_GM;
 
+int								CScene::m_nMyIndex = 0;
+int								CScene::m_nMyTeam = TEAM_TYPE::TEAM_TYPE_RED;
+
 extern CFMODSound gFmodSound;
 
 CScene::CScene()
@@ -331,7 +334,7 @@ void CScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 	CheckCollision();
 
-	m_fDeltaFPS = fTimeElapsed - m_fDeltaFPS;
+	m_fFPS = fTimeElapsed;
 }
 
 void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -349,6 +352,8 @@ void CScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	std::cout << CScene::m_nMyIndex << "\n";
+
 	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dGlowScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dMaskTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -386,7 +391,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 			m_ppShaders[i]->Render(pd3dCommandList, pCamera);
 	}
 
-	m_nFPS = (m_nFPS + 1) % 5;
+	m_nFPSCount = (m_nFPSCount + 1) % 5;
 
 	if (pCamera) m_xmf4x4CurrViewProjection = pCamera->GetViewProjMatrix();
 }
@@ -474,7 +479,7 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 		if (m_pPlayer)
 			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
 
-		if ((rotVel > 25.0f) || (moveVel > 2.5f))
+		if ((rotVel > 45.0f) || (moveVel > 2.5f))
 		{
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
 
@@ -482,6 +487,7 @@ void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, 
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &xmf4x4Inverse, 16);
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nWidth, 32);
 			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nHeight, 33);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fFPS, 34);
 
 			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_DEPTH, m_d3dSrvDepthStencilGPUHandle);
 			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_MASK, m_d3dSrvMaskTextureGPUHandle);
@@ -2054,7 +2060,7 @@ void CLobbyRoomScene::ReleaseUploadBuffers()
 
 int CLobbyRoomScene::MouseClick()
 {
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_StartButton))
 		{
@@ -2074,7 +2080,7 @@ int CLobbyRoomScene::MouseClick()
 		return LOBBY_MOUSE_CLICK_LEAVE;
 	}
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_ColonyButton))
 		{
@@ -2134,7 +2140,7 @@ void CLobbyRoomScene::CheckCollision()
 	if (m_pCursor->CollisionCheck(m_LeaveButton)) m_bHLLeaveButton = true;
 	else m_bHLLeaveButton = false;
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_ColonyButton)) m_bHLColonyButton = true;
 		else m_bHLColonyButton = false;
@@ -2169,10 +2175,10 @@ void CLobbyRoomScene::SetClientIndex(int nIndex, int nSlot)
 	wchar_t id[32];
 	wsprintfW(id, L"%d", nIndex);
 
-	m_nMyIndex = nIndex;
+	CScene::m_nMyIndex = nIndex;
 	JoinPlayer(nIndex, nSlot, id, SELECT_CHARACTER_GM);
 
-	m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
+	CScene::m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::ChangeSelectRobot(int nIndex, int nRobotType)
@@ -2204,7 +2210,7 @@ void CLobbyRoomScene::JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlaye
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nSlot);
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (nIndex == m_nMyIndex)
+	if (CScene::m_nMyIndex == nIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
@@ -2221,7 +2227,7 @@ void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot)
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 	m_pPlayerInfos[nIndex].m_nSlot = nChangeSlot;
 
-	if(nIndex == m_nMyIndex) m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
+	if(CScene::m_nMyIndex == nIndex) CScene::m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::LeavePlayer(int nIndex)
@@ -2240,7 +2246,7 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE]->UpdateShaderVariables(pd3dCommandList);
 	m_MapRect->Render(pd3dCommandList, 0);
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER]->UpdateShaderVariables(pd3dCommandList);
 	else
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MEMBER]->UpdateShaderVariables(pd3dCommandList);
@@ -2263,7 +2269,7 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_BLUE]->Render(pd3dCommandList, 0);
 
-	if (m_nMyIndex == 0)
+	if (CScene::m_nMyIndex == 0)
 	{
 		if (m_bHLStartButton)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_START_HL]->UpdateShaderVariables(pd3dCommandList);
@@ -2350,7 +2356,7 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 	for (int i = 0; i < 8; i++)
 	{
 		if (!m_pPlayerInfos[i].m_bUsed) continue;
-		if (i == m_nMyIndex) continue;
+		if (i == CScene::m_nMyIndex) continue;
 
 		if (nTeam == TEAM_TYPE::TEAM_TYPE_RED)
 		{
@@ -2433,6 +2439,9 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 		case VK_SPACE:
 			m_pPlayer->SpaceUp();
 			break;
+		case 'V':
+			m_pPlayer->VUp();
+			break;
 		default:
 			break;
 		}
@@ -2456,7 +2465,10 @@ void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARA
 			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 			break;
 		case VK_SPACE:
-			m_pPlayer->ActivationBooster();
+			m_pPlayer->ActivationBooster(BOOSTER_TYPE_UP);
+			break;
+		case 'V':
+			m_pPlayer->ActivationBooster(BOOSTER_TYPE_DOWN);
 			break;
 		case VK_SHIFT:
 			m_pPlayer->ActivationDash();
@@ -2540,6 +2552,7 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
 	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
 	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
+	m_pTomahawk = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL);
 }
 
 void CBattleScene::ReleaseObjects()
@@ -2629,6 +2642,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		m_pPlayer->SetScene(this);
 	}
 
+	//if(m_pPlayer->GetType())
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
 		m_pGimGun, WEAPON_TYPE_OF_GM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
 	m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList,
@@ -2963,7 +2977,7 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	CScene::PrepareRender(pd3dCommandList);
 
-	if (m_nFPS % 5 == 0)
+	if (m_nFPSCount % 5 == 0)
 	{
 		RenderCubeMap(pd3dCommandList, m_pPlayer);
 	}
@@ -3297,6 +3311,7 @@ void CBattleScene::FindAimToTargetDistance()
 {
 	std::vector<CGameObject*> vGMs = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
 	std::vector<CGameObject*> vGundams = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
+	std::vector<CGameObject*> vZakus = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_ZAKU);
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -3338,6 +3353,25 @@ void CBattleScene::FindAimToTargetDistance()
 				{
 					fDistance = fTemp;
 					pTarget = Gundam;
+				}
+			}
+		}
+	}
+	
+
+	for (const auto& Zaku : vZakus)
+	{
+		// 카메라 이동 X 단 목표가 되지 않음.
+		if (Zaku->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		{
+			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+
+			if (fDistBetweenCnP < fTemp)
+			{
+				if (fDistance > fTemp)
+				{
+					fDistance = fTemp;
+					pTarget = Zaku;
 				}
 			}
 		}
@@ -3582,8 +3616,10 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	{
 		PKT_SCORE *pktScore = (PKT_SCORE*)pktData;
 		wchar_t pstrText[16];
+
 		wsprintfW(pstrText, L"%d", pktScore->RedScore);
 		ChangeText(m_pRedScoreText, pstrText, XMFLOAT2(-0.05f, 0.88f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.5f, 0.0f, 0.0f, 0.9f), RIGHT_ALIGN);
+
 		wsprintfW(pstrText, L"%d", pktScore->BlueScore);
 		ChangeText(m_pBlueScoreText, pstrText, XMFLOAT2(0.02f, 0.88f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.5f, 0.9f), LEFT_ALIGN);
 		break;
@@ -3594,7 +3630,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 
 		if (pPacket->Item_type == ITEM_TYPE_AMMO)
 		{
-			if (pPacket->ID == m_nMyIndex)
+			if (pPacket->ID == CScene::m_nMyIndex)
 			{
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
@@ -3604,7 +3640,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		}
 		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
 		{
-			if (pPacket->ID == m_nMyIndex)
+			if (pPacket->ID == CScene::m_nMyIndex)
 			{
 				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
 			}
@@ -3784,7 +3820,7 @@ void CColonyScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	CBattleScene::RenderUI(pd3dCommandList);
 
-	//RenderTestTexture(pd3dCommandList, m_d3dSrvShadowMapGPUHandle);
+	//RenderTestTexture(pd3dCommandList, m_d3dSrvGlowScreenGPUHandle);
 }
 
 void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
@@ -3825,34 +3861,6 @@ CSpaceScene::CSpaceScene() : CBattleScene()
 
 CSpaceScene::~CSpaceScene()
 {
-}
-
-void CSpaceScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	CBattleScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
-
-	switch (nMessageID)
-	{
-	case WM_KEYUP:
-		switch (wParam)
-		{
-		case 'V':
-			m_pPlayer->VUp();
-			break;
-		}
-		break;
-	case WM_KEYDOWN:
-		switch (wParam)
-		{
-		case 'V':
-			m_pPlayer->ActivationBooster();
-			m_pPlayer->VDown();
-			break;
-		}
-		break;
-	default:
-		break;
-	}
 }
 
 void CSpaceScene::BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)

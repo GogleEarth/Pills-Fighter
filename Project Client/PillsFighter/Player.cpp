@@ -432,7 +432,7 @@ void CPlayer::ProcessHitPoint()
 	}
 }
 
-void CPlayer::ActivationBooster()
+void CPlayer::ActivationBooster(UINT nType)
 {
 	if (IsBoostering()) return;
 
@@ -454,7 +454,11 @@ void CPlayer::ActivationBooster()
 		m_nState |= OBJECT_STATE_BOOSTER;
 
 		m_fTimeForChargeBoosterGauge = 0.0f;
-		m_bSpaceDown = true;
+
+		if(nType == BOOSTER_TYPE_UP)
+			m_bSpaceDown = true;
+		else if(nType == BOOSTER_TYPE_DOWN)
+			m_bVDown = true;
 	}
 }
 
@@ -527,6 +531,8 @@ void CPlayer::ActivationDash()
 
 void CPlayer::ProcessBooster(float fTimeElapsed)
 {
+	std::cout << m_fVelocityY << "\n";
+
 	if (m_fTimeForBoostUp > 0.0f)
 	{
 		float fUpPower = 0.0f;

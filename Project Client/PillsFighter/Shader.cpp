@@ -1088,20 +1088,20 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
 
 #ifndef ON_NETWORKING
-	CRobotObject *pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+	//CRobotObject *pObject = new CRobotObject();
+	//pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
+	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
 
-	pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
+	//pObject = new CRobotObject();
+	//pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, pContext);
+	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, pContext);
 
-	pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));
+	//pObject = new CRobotObject();
+	//pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));
 
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
+	//InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
 #endif
 }
 
@@ -1117,10 +1117,10 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
 
 	pRobot->SetWeaponShader(pShader);
-	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_GM_GUN);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_BAZOOKA);
 	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_GUN | WEAPON_TYPE_OF_MACHINEGUN);
+	pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2691,7 +2691,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_pd3dPipelineState3DUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
+	if (m_vpd3dTeamNameTexture.size() > 0) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
 
 	for (int i = 0; i < m_vpd3dTeamNameTexture.size(); i++)
 	{
@@ -2725,7 +2725,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
 	}
 
-	if (m_pd3dPipelineStateTeamHP) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateTeamHP);
+	if (m_vpd3dTeamNameTexture.size() > 0) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateTeamHP);
 
 	for (int i = 0; i < m_vppTeamObject.size(); i++)
 	{
