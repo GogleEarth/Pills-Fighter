@@ -3566,7 +3566,7 @@ void CBattleScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pCreateEffectInfo->xmf3Position, XMFLOAT2(fSize * 2, fSize * 2), nEffectAniType, SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_LASER_BEAM:
-		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
 		m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS]->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, pCreateEffectInfo->xmf3Position, XMFLOAT2(3.0f, pCreateEffectInfo->fDistance), pCreateEffectInfo->xmf3Look, nEffectAniType, LASER_EFFECT_INDEX_LASER_BEAM_TEXTURE_COUNT);
 		break;
 	}

@@ -246,7 +246,9 @@ void CGimGun::Shot()
 {
 	CGun::Shot();
 
+#ifndef ON_NETWORKING
 	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
+#endif
 }
 
 void CGimGun::CheckShootable(float fElapsedTime)
@@ -307,7 +309,9 @@ void CBazooka::Shot()
 {
 	CGun::Shot();
 
+#ifndef ON_NETWORKING
 	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKShot);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -351,7 +355,9 @@ void CMachineGun::Shot()
 {
 	CGun::Shot();
 
+#ifndef ON_NETWORKING
 	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -421,7 +427,9 @@ void CBeamRifle::Shot()
 	m_nShootCount++;
 	m_nReloadedAmmo = m_nReloadedAmmo - 10 < 0 ? 0 : m_nReloadedAmmo - 10;
 
-	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundMGShot);
+#ifndef ON_NETWORKING
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
+#endif
 }
 
 void CBeamRifle::CheckShootable(float fElapsedTime)

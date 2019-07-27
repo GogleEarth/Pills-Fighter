@@ -30,4 +30,5 @@ public:
 	FMOD::Sound *m_pSoundSaberHit1 = NULL;
 	FMOD::Sound *m_pSoundSaberHit2 = NULL;
 	FMOD::Sound *m_pSoundAlert = NULL;
+	FMOD::Sound *m_pSoundBeamRifle = NULL;
 };
