@@ -84,6 +84,7 @@ public:
 
 	bool check_collision_obstacles(int object);
 	bool check_collision_player(int object);
+	bool check_collision_player_to_vector(int object);
 
 	PKT_PICK_ITEM* item_dequeue();
 	PKT_PLAYER_LIFE* player_life_dequeue();

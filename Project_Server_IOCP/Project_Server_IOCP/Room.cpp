@@ -263,20 +263,6 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 		speed = 400.0f;
 		type = OBJECT_TYPE_BZK_BULLET;
 	}
-	else if (weapon == WEAPON_TYPE_BEAM_RIFLE)
-	{
-		hp = 10;
-		life_time = 0.75f;
-		speed = 600.0;
-		type = OBJECT_TYPE_BEAM_BULLET;
-	}
-	else if (weapon == WEAPON_TYPE_GM_GUN)
-	{
-		hp = 5;
-		life_time = 0.75f;
-		speed = 600.0;
-		type = OBJECT_TYPE_BEAM_BULLET;
-	}
 
 	PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 	pkt_co->PktId = PKT_ID_CREATE_OBJECT;
@@ -287,6 +273,43 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix, id);
 
 	return pkt_co;
+}
+
+PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, float len, int* index)
+{
+	int hp;
+	float life_time;
+	float speed;
+	OBJECT_TYPE type;
+	XMFLOAT3 look = XMFLOAT3{ matrix._31, matrix._32, matrix._33 };
+	XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
+	if (weapon == WEAPON_TYPE_BEAM_RIFLE)
+	{
+		hp = 20;
+		life_time = 0.001f;
+		speed = 600.0;
+		type = OBJECT_TYPE_BEAM_BULLET;
+	}
+	else if (weapon == WEAPON_TYPE_GM_GUN)
+	{
+		hp = 10;
+		life_time = 0.001f;
+		speed = 600.0;
+		type = OBJECT_TYPE_BEAM_BULLET;
+	}
+
+	PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+	pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+	pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+	pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+	pkt_ce->efType = EFFECT_TYPE_LASER_BEAM;
+	pkt_ce->xmf3Look = look;
+	pkt_ce->xmf3Position = position;
+	pkt_ce->fDistance = len;
+
+	*index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix, id);
+
+	return pkt_ce;
 }
 
 void Room::player_load_complete(SOCKET socket)
@@ -555,6 +578,14 @@ void Room::check_collision_obstacles(int object)
 void Room::check_collision_player(int object)
 {
 	if (scenes_[using_scene_]->check_collision_player(object))
+	{
+		scenes_[using_scene_]->deleteObject(object);
+	}
+}
+
+void Room::check_collision_player_to_vector(int object)
+{
+	if (scenes_[using_scene_]->check_collision_player_to_vector(object))
 	{
 		scenes_[using_scene_]->deleteObject(object);
 	}

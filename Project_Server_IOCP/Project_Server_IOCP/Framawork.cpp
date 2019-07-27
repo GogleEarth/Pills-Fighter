@@ -260,6 +260,34 @@ int Framawork::thread_process()
 			}
 			delete over_ex;
 		}
+		else if (EVENT_TYPE_BEAM_RIFLE == over_ex->event_t)
+		{
+			if (rooms_[over_ex->room_num].get_is_use())
+			{
+				auto object = rooms_[over_ex->room_num].get_object(key);
+				float elapsed_time;
+
+				if (over_ex->elapsed_time <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = over_ex->elapsed_time;
+
+				object->Animate(elapsed_time);
+				rooms_[over_ex->room_num].check_collision_player_to_vector(key);
+
+				if (object->IsDelete())
+				{
+					object->SetUse(false);
+				}
+				else
+				{
+					using namespace std;
+					using namespace chrono;
+					add_timer(key, over_ex->room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+				}
+			}
+			delete over_ex;
+		}
 		else
 		{
 			std::cout << "UNKNOWN EVENT\n";
@@ -659,14 +687,29 @@ void Framawork::process_packet(int id, char* packet)
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
 
-		auto pkt_co = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
-			reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
-			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
-		
-		send_packet_to_room_player(room_num, (char*)pkt_co);
 		using namespace std;
 		using namespace chrono;
-		add_timer(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+
+		if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon != WEAPON_TYPE_BEAM_RIFLE)
+		{
+			auto pkt_co = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
+
+			send_packet_to_room_player(room_num, (char*)pkt_co);
+			add_timer(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+			delete pkt_co;
+		}
+		else
+		{
+			int index;
+			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
+			std::cout << "ºö¶óÀÌÇÃ ÀÌÆåÆ®ÀÇ ÀÎµ¦½º : " << index << "\n";
+			send_packet_to_room_player(room_num, (char*)pkt_ce);
+			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+		}
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:

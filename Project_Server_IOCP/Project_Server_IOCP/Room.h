@@ -93,6 +93,7 @@ public:
 	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix);
 	void set_player_lobby_info(int id, char selectedrobot, char team, char slot);
 	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
+	PKT_CREATE_EFFECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, float len, int* index);
 	void player_load_complete(SOCKET socket);
 	void player_send_complete(int id);
 	bool all_send_complete();
@@ -107,6 +108,7 @@ public:
 
 	void check_collision_obstacles(int object);
 	void check_collision_player(int object);
+	void check_collision_player_to_vector(int object);
 
 	void player_info_inqueue(char* packet);
 	PKT_PLAYER_INFO* player_info_dequeue();
