@@ -120,6 +120,107 @@ void GSEffectStreamOut(point VS_EFFECT_INPUT input[1], inout PointStream<VS_EFFE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
+struct VS_LASER_EFFECT_INPUT
+{
+	float3	position : POSITION;
+	float2	size : SIZE;
+	float	age : AGE;
+	float3	look : LOOK;
+};
+
+struct VS_LASER_EFFECT_OUTPUT
+{
+	float3 position : POSITION;
+	float2 size : SIZE;
+	float3 look : LOOK;
+};
+
+VS_LASER_EFFECT_OUTPUT VSLaserEffectDraw(VS_LASER_EFFECT_INPUT input)
+{
+	VS_LASER_EFFECT_OUTPUT output;
+
+	output.size = input.size;
+	output.position = input.position;
+	output.look = input.look;
+
+	return output;
+}
+
+struct GS_LASER_EFFECT_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD;
+};
+
+[maxvertexcount(4)]
+void GSLaserEffectDraw(point VS_LASER_EFFECT_OUTPUT input[1], inout TriangleStream<GS_LASER_EFFECT_OUTPUT> outStream)
+{
+	float3 vUp = input[0].look;
+	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].position - fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(input[0].position + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(input[0].position - fHalfW * vRight, 1.0f);
+	fVertices[3] = float4(input[0].position + fHalfW * vRight, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 0.0f);
+	fUVs[1] = float2(1.0f, 0.0f);
+	fUVs[2] = float2(0.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 1.0f);
+
+	GS_LASER_EFFECT_OUTPUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.position = mul(fVertices[i], gmtxViewProjection);
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
+struct PS_LASER_EFFECT_OUTPUT
+{
+	float4 color : SV_TARGET0;
+	float4 glow : SV_TARGET1;
+};
+
+PS_LASER_EFFECT_OUTPUT PSLaserEffectDraw(GS_LASER_EFFECT_OUTPUT input) : SV_TARGET
+{
+	PS_LASER_EFFECT_OUTPUT output;
+
+	output.color = gtxtTexture[0].Sample(gssWrap, input.uv);
+	output.glow = gtxtTexture[1].Sample(gssWrap, input.uv);
+
+	return(output);
+}
+
+VS_LASER_EFFECT_INPUT VSLaserEffectStreamOut(VS_LASER_EFFECT_INPUT input)
+{
+	return input;
+}
+
+[maxvertexcount(1)]
+void GSLaserEffectStreamOut(point VS_LASER_EFFECT_INPUT input[1], inout PointStream<VS_LASER_EFFECT_INPUT> outStream)
+{
+	input[0].age += gEffect.m_fElapsedTime;
+
+	if (input[0].age <= gEffect.m_fDuration)
+	{
+		input[0].size.x *= 1.0f - input[0].age / gEffect.m_fDuration;
+		outStream.Append(input[0]);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 [maxvertexcount(4)]
 void GSTextEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFECT_OUTPUT> outStream)
 {

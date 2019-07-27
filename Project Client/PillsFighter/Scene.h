@@ -190,11 +190,7 @@ public:
 public:
 	void CreateOffScreenTextures(ID3D12Device *pd3dDevice);
 	void CreateRtvDsvSrvUavOffScreens(ID3D12Device *pd3dDevice);
-	void PreparePostProcessing(ID3D12GraphicsCommandList *pd3dCommandList);
-	void MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
-	void Bloom(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
-	void Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
-	void Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	virtual void PostProcessing(ID3D12GraphicsCommandList *pd3dCommandList) {};
 
 protected:
 	ID3D12Resource					*m_pd3dOffScreenTexture = NULL;
@@ -519,11 +515,12 @@ protected:
 #define SKINNED_OBJECT_INDEX_ZAKU 2
 
 // Scene's Effect Shader Index
-#define EFFECT_SHADER_INDEX 3
+#define EFFECT_SHADER_INDEX 4
 
 #define INDEX_SHADER_TIMED_EEFECTS 0
 #define INDEX_SHADER_SPRITE_EFFECTS 1
 #define INDEX_SHADER_TEXT_EEFECTS 2
+#define INDEX_SHADER_LASER_BEAM_EEFECTS 3
 
 struct MOTIONBLUR
 {
@@ -585,6 +582,12 @@ public:
 	void CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	void CreateNameTexture(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource **pd3dResource, int nWidth, int nHeight);
 	virtual void AddTeam(int nIndex, wchar_t *pstrName) { m_vwstrTeamName.emplace_back(pstrName); m_vTeamIndex.emplace_back(nIndex); }
+
+	virtual void PostProcessing(ID3D12GraphicsCommandList *pd3dCommandList);
+	void MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void Bloom(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
+	void Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
 
 protected:
 	ID3D12Resource					*m_pd3dEnvirCube = NULL;

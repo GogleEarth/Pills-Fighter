@@ -401,16 +401,16 @@ void CBeamRifle::Shot()
 
 	if (!m_pMuzzle) return;
 
-	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget(m_pMuzzle->GetPosition());
+	XMFLOAT3 xmf3MuzzlePos = m_pMuzzle->GetPosition();
 
-	pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
-	pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
-	pBullet->SetLook(XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33));
-	pBullet->SetPosition(XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43));
+	XMFLOAT3 xmf3TargetPos = pPlayer->GetToTargetPosition(xmf3MuzzlePos);
 
-	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
+	XMFLOAT3 xmf3Distance = Vector3::Subtract(xmf3TargetPos, xmf3MuzzlePos);
+	XMFLOAT3 xmf3Look = Vector3::Normalize(xmf3Distance);
+	float fDistance = Vector3::Length(xmf3Distance);
 
-	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43), XMFLOAT2(2.5f, 2.5f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
+	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(3.0f, fDistance), xmf3Look, 0, LASER_EFFECT_INDEX_LASER_BEAM_TEXTURE_COUNT);
+
 #else
 	pPlayer->Shoot();
 #endif

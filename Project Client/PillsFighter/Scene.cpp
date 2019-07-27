@@ -456,127 +456,6 @@ void CScene::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 	if (m_pPlayer) m_xmf3PrevPlayerPosition = m_pPlayer->GetPosition();
 }
 
-void CScene::PreparePostProcessing(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_bMotionBlur || m_bSelfIllumination || m_bBloom)
-		if (m_pd3dComputeRootSignature) pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
-}
-
-void CScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
-{
-	if (m_bMotionBlur)
-	{
-		XMFLOAT3 xmf3PrevPosition = XMFLOAT3(m_xmf4x4PrevViewProjection._41, m_xmf4x4PrevViewProjection._42, m_xmf4x4PrevViewProjection._43);
-		XMFLOAT3 xmf3Position = XMFLOAT3(m_xmf4x4CurrViewProjection._41, m_xmf4x4CurrViewProjection._42, m_xmf4x4CurrViewProjection._43);
-
-		float rotVel = Vector3::Length(Vector3::Subtract(xmf3Position, xmf3PrevPosition));
-
-		float moveVel = 0.0f;
-		if (m_pPlayer)
-			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
-
-		if ((rotVel > 45.0f) || (moveVel > 2.5f))
-		{
-			m_pComputeShader->SetMotionBlurPipelineState(pd3dCommandList);
-
-			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
-
-			XMFLOAT4X4 xmf4x4Inverse = Matrix4x4::Inverse(m_xmf4x4CurrViewProjection);
-			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &xmf4x4Inverse, 16);
-			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nWidth, 32);
-			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nHeight, 33);
-			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fFPS, 34);
-
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_DEPTH, m_d3dSrvDepthStencilGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_MASK, m_d3dSrvMaskTextureGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavMotionBlurScreenGPUHandle);
-			pd3dCommandList->Dispatch(nWidth, nHeight, 1);
-
-			m_bMotionBlurred = true;
-		}
-	}
-}
-
-void CScene::Bloom(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
-{
-	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
-	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
-
-	if (m_bBloom)
-	{
-		m_pComputeShader->SetBrightFilterPipelineState(pd3dCommandList);
-		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
-		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
-		pd3dCommandList->Dispatch(nWidth, nHeight, 1);
-	}
-
-	if (m_bBloom || m_bSelfIllumination)
-	{
-		for (int i = 0; i < 1; i++)
-		{
-			m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
-
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvGlowScreenGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavTempTextureGPUHandle);
-			pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
-
-			m_pComputeShader->SetVertPipelineState(pd3dCommandList);
-
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvTempTextureGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
-			pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
-		}
-	}
-}
-
-void CScene::Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
-{
-	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
-	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
-
-	if (m_bBloom || m_bSelfIllumination)
-	{
-		for (int i = 0; i < 1; i++)
-		{
-			m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
-
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvGlowScreenGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavTempTextureGPUHandle);
-			pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
-
-			m_pComputeShader->SetVertPipelineState(pd3dCommandList);
-
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvTempTextureGPUHandle);
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
-			pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
-		}
-	}
-}
-
-void CScene::Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
-{
-	if (m_bBloom || m_bSelfIllumination || m_bMotionBlurred)
-	{
-		m_pComputeShader->Set2AddPipelineState(pd3dCommandList);
-
-		if ((m_bBloom || m_bSelfIllumination) && m_bMotionBlurred)
-		{
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvMotionBlurScreenGPUHandle);
-		}
-		else
-		{
-			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
-		}
-
-		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B, m_d3dSrvGlowScreenGPUHandle);
-		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavOffScreenGPUHandle);
-		pd3dCommandList->Dispatch(nWidth, nHeight, 1);
-
-		m_bMotionBlurred = false;
-	}
-}
-
 D3D12_SHADER_RESOURCE_VIEW_DESC GetShaderResourceViewDesc(D3D12_RESOURCE_DESC d3dResourceDesc, UINT nTextureType, DXGI_FORMAT dxFormat)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC d3dShaderResourceViewDesc;
@@ -2526,6 +2405,12 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS] = pSpriteShader;
 
+	// 그룹 4 [ Laser Effect Shader ]
+	CLaserEffectShader *pLaserEffectShader = new CLaserEffectShader();
+	pLaserEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pLaserEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS] = pLaserEffectShader;
+
 	// Particle
 	m_pParticleShader = new CParticleShader();
 	m_pParticleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -2643,7 +2528,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	case SELECT_CHARACTER_GM:
 	case SELECT_CHARACTER_GUNDAM: // 빔사벨, 빔라이플, 바주카
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
 		break;
 	case SELECT_CHARACTER_ZAKU: // 토마호크, 머신건, 바주카
@@ -2993,6 +2878,132 @@ void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *p
 	if (m_pd3dShadowMap) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_SHADOW_MAP, m_d3dSrvShadowMapGPUHandle);
 
 	CScene::Render(pd3dCommandList, pCamera);
+}
+
+void CBattleScene::PostProcessing(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_bMotionBlur || m_bSelfIllumination || m_bBloom)
+		if (m_pd3dComputeRootSignature) pd3dCommandList->SetComputeRootSignature(m_pd3dComputeRootSignature);
+
+	MotionBlur(pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	Bloom(pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	Blurring(pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	Combine(pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+}
+
+void CBattleScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	if (m_bMotionBlur)
+	{
+		XMFLOAT3 xmf3PrevPosition = XMFLOAT3(m_xmf4x4PrevViewProjection._41, m_xmf4x4PrevViewProjection._42, m_xmf4x4PrevViewProjection._43);
+		XMFLOAT3 xmf3Position = XMFLOAT3(m_xmf4x4CurrViewProjection._41, m_xmf4x4CurrViewProjection._42, m_xmf4x4CurrViewProjection._43);
+
+		float rotVel = Vector3::Length(Vector3::Subtract(xmf3Position, xmf3PrevPosition));
+
+		float moveVel = 0.0f;
+		if (m_pPlayer)
+			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
+
+		if ((rotVel > 35.0f) || (moveVel > 2.5f))
+		{
+			m_pComputeShader->SetMotionBlurPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &m_xmf4x4PrevViewProjection, 0);
+
+			XMFLOAT4X4 xmf4x4Inverse = Matrix4x4::Inverse(m_xmf4x4CurrViewProjection);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 16, &xmf4x4Inverse, 16);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nWidth, 32);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &nHeight, 33);
+			pd3dCommandList->SetComputeRoot32BitConstants(COMPUTE_ROOT_PARAMETER_INDEX_MOTION_BLUR_INFO, 1, &m_fFPS, 34);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_DEPTH, m_d3dSrvDepthStencilGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_MASK, m_d3dSrvMaskTextureGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavMotionBlurScreenGPUHandle);
+			pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+
+			m_bMotionBlurred = true;
+		}
+	}
+}
+
+void CBattleScene::Bloom(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
+	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
+
+	if (m_bBloom)
+	{
+		m_pComputeShader->SetBrightFilterPipelineState(pd3dCommandList);
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
+		pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+	}
+
+	if (m_bBloom || m_bSelfIllumination)
+	{
+		for (int i = 0; i < 1; i++)
+		{
+			m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvGlowScreenGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavTempTextureGPUHandle);
+			pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
+
+			m_pComputeShader->SetVertPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvTempTextureGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
+			pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
+		}
+	}
+}
+
+void CBattleScene::Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	UINT cxGroups = (UINT)ceilf(nWidth / 256.0f);
+	UINT cyGroups = (UINT)ceilf(nHeight / 256.0f);
+
+	if (m_bBloom || m_bSelfIllumination)
+	{
+		for (int i = 0; i < 1; i++)
+		{
+			m_pComputeShader->SetHorzPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvGlowScreenGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavTempTextureGPUHandle);
+			pd3dCommandList->Dispatch(cxGroups, nHeight, 1);
+
+			m_pComputeShader->SetVertPipelineState(pd3dCommandList);
+
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvTempTextureGPUHandle);
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavGlowScreenGPUHandle);
+			pd3dCommandList->Dispatch(nWidth, cyGroups, 1);
+		}
+	}
+}
+
+void CBattleScene::Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight)
+{
+	if (m_bBloom || m_bSelfIllumination || m_bMotionBlurred)
+	{
+		m_pComputeShader->Set2AddPipelineState(pd3dCommandList);
+
+		if ((m_bBloom || m_bSelfIllumination) && m_bMotionBlurred)
+		{
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvMotionBlurScreenGPUHandle);
+		}
+		else
+		{
+			pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_A, m_d3dSrvOffScreenGPUHandle);
+		}
+
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_INPUT_B, m_d3dSrvGlowScreenGPUHandle);
+		pd3dCommandList->SetComputeRootDescriptorTable(COMPUTE_ROOT_PARAMETER_INDEX_OUTPUT, m_d3dUavOffScreenGPUHandle);
+		pd3dCommandList->Dispatch(nWidth, nHeight, 1);
+
+		m_bMotionBlurred = false;
+	}
 }
 
 void CBattleScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)

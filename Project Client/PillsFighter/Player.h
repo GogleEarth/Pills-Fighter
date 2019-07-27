@@ -100,6 +100,7 @@ public:
 
 public:
 	XMFLOAT4X4 GetToTarget(XMFLOAT3 xmf3Position);
+	XMFLOAT3 GetToTargetPosition(XMFLOAT3 xmf3Position);
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 
 protected:

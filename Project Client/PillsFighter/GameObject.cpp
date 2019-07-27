@@ -1325,6 +1325,24 @@ void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTexture
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CLaserVertex), fDuration)
+{
+}
+
+CLaserBeam::~CLaserBeam()
+{
+}
+
+void CLaserBeam::AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, UINT nTextureIndex, int nEffectAniType)
+{
+	((CLaserVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
+	((CLaserVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
+	((CLaserVertex*)m_pMappedInitVertices)[m_nInitVertices].m_fAge = 0.0f;
+	((CLaserVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_xmf3Look = xmf3Look;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 
 CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), fDuration)
 {

@@ -357,6 +357,7 @@ public:
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
 	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nTextures = 1);
+	virtual void AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, int nTextures = 1);
 
 protected:
 	// Effect Count = Texture Count
@@ -416,6 +417,33 @@ public:
 
 protected:
 	ID3D12PipelineState *m_pd3dTextPipelineState = NULL;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define LASER_EFFECT_COUNT 1
+
+#define LASER_EFFECT_INDEX_LASER_BEAM 0
+
+#define LASER_EFFECT_INDEX_LASER_BEAM_TEXTURE_COUNT 1
+
+class CLaserEffectShader : public CEffectShader
+{
+public:
+	CLaserEffectShader();
+	virtual ~CLaserEffectShader();
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual D3D12_SHADER_BYTECODE CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

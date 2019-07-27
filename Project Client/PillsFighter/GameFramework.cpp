@@ -753,15 +753,7 @@ void CGameFramework::FrameAdvance()
 
 			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
 			
-			m_pScene->PreparePostProcessing(m_pd3dCommandList);
-
-			m_pScene->MotionBlur(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
-
-			m_pScene->Bloom(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
-
-			m_pScene->Blurring(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
-
-			m_pScene->Combine(m_pd3dCommandList, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+			m_pScene->PostProcessing(m_pd3dCommandList);
 
 			//////
 			::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);

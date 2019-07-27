@@ -441,6 +441,7 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType) {}
+	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, UINT nTextureIndex, int nEffectAniType) {}
 };
 
 /////////////////////////////////////////////////////////
@@ -460,6 +461,25 @@ public:
 	virtual ~CFadeOut();
 
 	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, UINT nTextureIndex, int nEffectAniType);
+};
+
+/////////////////////////////////////////////////////////
+
+struct CLaserVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	XMFLOAT2	m_xmf2Size;
+	float		m_fAge;
+	XMFLOAT3	m_xmf3Look;
+};
+
+class CLaserBeam : public CEffect
+{
+public:
+	CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration);
+	virtual ~CLaserBeam();
+
+	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, UINT nTextureIndex, int nEffectAniType);
 };
 
 /////////////////////////////////////////////////////////

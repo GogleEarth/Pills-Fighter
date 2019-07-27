@@ -15,7 +15,7 @@ CPlayer::CPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 	m_pCamera = SetCamera(0.0f);
 
 	m_nHitPoint = m_nMaxHitPoint = 100;
-	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
+	SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
 	AddPrepareRotate(0.0f, 180.0f, 0.0f);
 
@@ -116,8 +116,8 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 	{
 		float fDashSpeed = fDistance;
 
-		if (IsPrepareDashAnimation()) fDashSpeed *= 2.0f;
-		else fDashSpeed *= 3.0f;
+		if (IsPrepareDashAnimation()) fDashSpeed *= 1.5f;
+		else fDashSpeed *= 2.5f;
 
 		DashMove(dwDirection, fDashSpeed);
 	}
@@ -370,6 +370,19 @@ XMFLOAT4X4 CPlayer::GetToTarget(XMFLOAT3 xmf3Position)
 		xmf3Up.x, xmf3Up.y, xmf3Up.z, 0.0f,
 		xmf3Look.x, xmf3Look.y, xmf3Look.z, 0.0f,
 		xmf3Position.x, xmf3Position.y, xmf3Position.z, 1.0f);
+}
+
+XMFLOAT3 CPlayer::GetToTargetPosition(XMFLOAT3 xmf3Position)
+{
+	float fDistance = m_pScene->GetToTargetDistance();
+
+	XMFLOAT3 xmf3CameraPos = m_pCamera->GetPosition();
+	XMFLOAT3 xmf3CameraLook = m_pCamera->GetLookVector();
+	XMFLOAT3 xmf3DestPos = XMFLOAT3(xmf3CameraPos.x + xmf3CameraLook.x * fDistance,
+		xmf3CameraPos.y + xmf3CameraLook.y * fDistance,
+		xmf3CameraPos.z + xmf3CameraLook.z * fDistance);
+
+	return xmf3DestPos;
 }
 
 void CPlayer::OnPlayerUpdateCallback(float fTimeElapsed)

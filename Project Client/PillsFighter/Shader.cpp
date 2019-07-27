@@ -1341,6 +1341,16 @@ void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Si
 	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nTextureIndex, nEffectAniType);
 }
 
+void CEffectShader::AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, int nTextures)
+{
+	int nTextureIndex = 0;
+
+	if (nTextures > 1)
+		nTextureIndex = rand() % nTextures;
+
+	if (m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertexWithLookV(xmf3Position, xmf2Size, xmf3Look, nTextureIndex, nEffectAniType);
+}
+
 //////////////////////////////////////////////////////////////////////
 
 CTimedEffectShader::CTimedEffectShader()
@@ -1510,6 +1520,99 @@ void CTextEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCame
 			if (m_ppEffects[i]) m_ppEffects[i]->Render(pd3dCommandList);
 		}
 	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+CLaserEffectShader::CLaserEffectShader()
+{
+
+}
+
+CLaserEffectShader::~CLaserEffectShader()
+{
+}
+
+D3D12_INPUT_LAYOUT_DESC CLaserEffectShader::CreateInputLayout()
+{
+	UINT nInputElementDescs = 4;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "LOOK", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
+D3D12_STREAM_OUTPUT_DESC CLaserEffectShader::CreateStreamOutput()
+{
+	UINT nSODecls = 4;
+	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
+
+	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
+	pd3dStreamOutputDeclarations[1] = { 0, "SIZE", 0, 0, 2, 0 };
+	pd3dStreamOutputDeclarations[2] = { 0, "AGE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[3] = { 0, "LOOK", 0, 0, 3, 0 };
+
+	UINT nStrides = 1;
+	UINT *pnStride = new UINT[nStrides];
+	pnStride[0] = sizeof(CLaserVertex);
+
+	D3D12_STREAM_OUTPUT_DESC d3dStreamOutputDesc;
+	d3dStreamOutputDesc.pSODeclaration = pd3dStreamOutputDeclarations;
+	d3dStreamOutputDesc.NumEntries = nSODecls;
+	d3dStreamOutputDesc.pBufferStrides = pnStride;
+	d3dStreamOutputDesc.NumStrides = nStrides;
+	d3dStreamOutputDesc.RasterizedStream = 0;
+
+	return(d3dStreamOutputDesc);
+}
+
+D3D12_SHADER_BYTECODE CLaserEffectShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSLaserEffectStreamOut", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CLaserEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSLaserEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CLaserEffectShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSLaserEffectDraw", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CLaserEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSLaserEffectDraw", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CLaserEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSLaserEffectDraw", "ps_5_1", ppd3dShaderBlob));
+}
+
+void CLaserEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	m_nEffects = LASER_EFFECT_COUNT;
+	m_ppTextures = new CTexture*[m_nEffects];
+	m_ppEffects = new CEffect*[m_nEffects];
+
+	m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM] = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Beam.dds", 0);
+	m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/BeamSI.dds", 1);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, 2.0f);
+	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 //////////////////////////////////////////////////////////////////////
