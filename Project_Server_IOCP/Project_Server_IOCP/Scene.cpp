@@ -429,6 +429,16 @@ bool Scene::check_collision_player_to_vector(int object)
 
 							Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
 
+							PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+							pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+							pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+							pkt_pd->id = Objects_[i].GetMaxHitPoint();
+							pkt_pd->id = i;
+
+							die_lock_.lock();
+							player_die_queue_.push(pkt_pd);
+							die_lock_.unlock();
+
 							score_lock.lock();
 							score_queue_.push(pkt_sco);
 							score_lock.unlock();
