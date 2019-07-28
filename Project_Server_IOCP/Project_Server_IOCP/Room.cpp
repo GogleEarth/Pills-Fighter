@@ -664,7 +664,7 @@ PKT_SCORE* Room::score_dequeue()
 
 PKT_PLAYER_DIE* Room::player_die_dequeue()
 {
-	return scenes_[using_scene_]->score_dequeue();
+	return scenes_[using_scene_]->player_die_dequeue();
 }
 
 void Player::init()
