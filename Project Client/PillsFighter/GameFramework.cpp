@@ -1079,6 +1079,12 @@ void CGameFramework::ProcessPacket()
 		m_pScene->ApplyRecvInfo(PKT_ID_MAP_EVENT, (LPVOID)pPacket);
 		break;
 	}
+	case PKT_ID_PLAYER_DIE:
+	{
+		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)m_pPacketBuffer;
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_DIE, (LPVOID)pPacket);
+		break;
+	}
 	default:
 	{
   		printf("Received Unknown Packet\n");
@@ -1151,65 +1157,65 @@ void CGameFramework::CreateEffect(PKT_CREATE_EFFECT *pCreateEffectInfo)
 
 void CGameFramework::SendToServer()
 {
-		int retval;
-		PKT_PLAYER_INFO pktPlayerInfo;
-		PKT_ID id = PKT_ID_PLAYER_INFO;
-		pktPlayerInfo.PktId = (char)PKT_ID_PLAYER_INFO;
-		pktPlayerInfo.PktSize = sizeof(PKT_PLAYER_INFO);
+	int retval;
+	PKT_PLAYER_INFO pktPlayerInfo;
+	PKT_ID id = PKT_ID_PLAYER_INFO;
+	pktPlayerInfo.PktId = (char)PKT_ID_PLAYER_INFO;
+	pktPlayerInfo.PktSize = sizeof(PKT_PLAYER_INFO);
 
-		pktPlayerInfo.ID = m_nClinetIndex;
+	pktPlayerInfo.ID = m_nClinetIndex;
 
-		pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
+	pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
 
-		if (m_pPlayer->IsShooted())
-		{
-			pktPlayerInfo.IsShooting = TRUE;
-			m_pPlayer->Shooted();
+	if (m_pPlayer->IsShooted())
+	{
+		pktPlayerInfo.IsShooting = TRUE;
+		m_pPlayer->Shooted();
 
-			//총알 생성 패킷 보내기
-			PKT_SHOOT pktShoot;
-			//PKT_ID id = PKT_ID_SHOOT;
-			pktShoot.PktId = (char)PKT_ID_SHOOT;
-			pktShoot.PktSize = sizeof(PKT_SHOOT);
-			pktShoot.ID = m_nClinetIndex;
-			pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
+		//총알 생성 패킷 보내기
+		PKT_SHOOT pktShoot;
+		//PKT_ID id = PKT_ID_SHOOT;
+		pktShoot.PktId = (char)PKT_ID_SHOOT;
+		pktShoot.PktSize = sizeof(PKT_SHOOT);
+		pktShoot.ID = m_nClinetIndex;
+		pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
 
-			CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
-			pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget(pGun->GetMuzzlePos());
-			//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-			if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
-			{
-				printf("Send Shoot Error\n");
-			}
-		}
-		else
-		{
-			pktPlayerInfo.IsShooting = FALSE;
-		}
-
-		pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
-
-		pktPlayerInfo.isChangeWeapon = m_pPlayer->GetWeaponChanged();
-
-		if (pktPlayerInfo.isChangeWeapon) m_pPlayer->SetWeaponChanged(FALSE);
-
-		pktPlayerInfo.Player_Up_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_UP));
-		pktPlayerInfo.isUpChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_UP);
-		if (pktPlayerInfo.isUpChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_UP, FALSE);
-		pktPlayerInfo.UpAnimationPosition = m_pPlayer->GetAnimationTrackPosition(ANIMATION_UP);
-
-		pktPlayerInfo.Player_Down_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_DOWN));
-		pktPlayerInfo.isDownChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_DOWN);
-		if (pktPlayerInfo.isDownChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_DOWN, FALSE);
-		pktPlayerInfo.DownAnimationPosition = m_pPlayer->GetAnimationTrackPosition(ANIMATION_DOWN);
-
-		pktPlayerInfo.State = m_pPlayer->GetState();
-
+		CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
+		pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget(pGun->GetMuzzlePos());
 		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (retval = send(m_Socket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
-			printf("Send Player Info Error\n");
+		if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
+		{
+			printf("Send Shoot Error\n");
+		}
+	}
+	else
+	{
+		pktPlayerInfo.IsShooting = FALSE;
+	}
 
-		m_bSend_Complete = false;
+	pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
+
+	pktPlayerInfo.isChangeWeapon = m_pPlayer->GetWeaponChanged();
+
+	if (pktPlayerInfo.isChangeWeapon) m_pPlayer->SetWeaponChanged(FALSE);
+
+	pktPlayerInfo.Player_Up_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_UP));
+	pktPlayerInfo.isUpChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_UP);
+	if (pktPlayerInfo.isUpChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_UP, FALSE);
+	pktPlayerInfo.UpAnimationPosition = m_pPlayer->GetAnimationTrackPosition(ANIMATION_UP);
+
+	pktPlayerInfo.Player_Down_Animation = ANIMATION_TYPE(m_pPlayer->GetAnimationState(ANIMATION_DOWN));
+	pktPlayerInfo.isDownChangeAnimation = m_pPlayer->GetAnimationChanged(ANIMATION_DOWN);
+	if (pktPlayerInfo.isDownChangeAnimation) m_pPlayer->SetAnimationChanged(ANIMATION_DOWN, FALSE);
+	pktPlayerInfo.DownAnimationPosition = m_pPlayer->GetAnimationTrackPosition(ANIMATION_DOWN);
+
+	pktPlayerInfo.State = m_pPlayer->GetState();
+
+	//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
+	if (retval = send(m_Socket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
+		printf("Send Player Info Error\n");
+
+	m_bSend_Complete = false;
 }
 
 void CGameFramework::SendToServer(PKT_ID pktID, void *pData)

@@ -3662,6 +3662,14 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		}
 		break;
 	}
+	case PKT_ID_PLAYER_DIE:
+	{
+		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)pktData;
+
+		if (m_pObjects[pPacket->id]) 
+			m_pObjects[pPacket->id]->SetHitPoint(pPacket->hp);
+		break;
+	}
 	}
 }
 

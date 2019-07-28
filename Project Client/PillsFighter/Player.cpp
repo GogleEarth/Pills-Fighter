@@ -314,12 +314,12 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 void CPlayer::Update(float fTimeElapsed)
 {
-	CRobotObject::Animate(fTimeElapsed);
-	
 	ProcessBooster(fTimeElapsed);
 	ProcessHitPoint();
 	ProcessTime(m_pRHWeapon, fTimeElapsed);
 	ProcessAnimation();
+
+	CRobotObject::Animate(fTimeElapsed);
 
 	if (!IsZero(m_fVelocityY)) Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 
@@ -544,8 +544,6 @@ void CPlayer::ActivationDash()
 
 void CPlayer::ProcessBooster(float fTimeElapsed)
 {
-	std::cout << m_fVelocityY << "\n";
-
 	if (m_fTimeForBoostUp > 0.0f)
 	{
 		float fUpPower = 0.0f;
@@ -689,7 +687,7 @@ void CPlayer::ProcessAnimation()
 
 	if (IsSwording())
 	{
-		if (IsAnimationEnd(ANIMATION_UP, 0) && IsAnimationSwording())
+		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
 			if (m_LButtonDown)
 			{
@@ -698,7 +696,9 @@ void CPlayer::ProcessAnimation()
 				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 			}
 			else
+			{
 				m_nState &= ~OBJECT_STATE_SWORDING;
+			}
 		}
 	}
 
@@ -963,10 +963,10 @@ void CPlayer::Attack(CWeapon *pWeapon)
 			if (!IsSwording())
 			{
 				m_nState |= OBJECT_STATE_SWORDING;
-
+				
 				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
 
-				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
+				//m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 			}
 		}
 	}

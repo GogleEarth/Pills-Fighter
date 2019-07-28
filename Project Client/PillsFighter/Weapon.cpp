@@ -453,6 +453,7 @@ void CBeamRifle::Animate(float fElapsedTime, CCamera *pCamera)
 		{
 			m_nReloadedAmmo++;
 			SetReloadTime();
+			((CPlayer*)m_pOwner)->ChangeUIAmmo();
 		}
 	}
 }
