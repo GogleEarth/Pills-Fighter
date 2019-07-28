@@ -38,6 +38,7 @@ int Framawork::thread_process()
 			int err_no = WSAGetLastError();
 			if (64 == err_no) {
 				disconnect_client(key);
+				clients_[key].in_room = false;
 				std::cout << "플레이어 접속 종료\n";
 				continue;
 			}
@@ -46,6 +47,7 @@ int Framawork::thread_process()
 
 		if (0 == io_byte) {
 			disconnect_client(key);
+			clients_[key].in_room = false;
 			std::cout << "플레이어 접속 종료\n";
 			continue;
 		}
@@ -604,6 +606,7 @@ void Framawork::process_packet(int id, char* packet)
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id, clients_[id].socket, 0);
 			rooms_[room_num].set_map(3);
+			clients_[id].in_room = true;
 
 			PKT_ADD_ROOM pkt_ar;
 			pkt_ar.PktId = PKT_ID_ADD_ROOM;
@@ -638,6 +641,7 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_rio.slot = empty_slot;
 			rooms_[room_num].add_player(id, clients_[id].socket, empty_slot);
 			send_packet_to_player(id, (char*)&pkt_rio);
+			clients_[id].in_room = true;
 
 			PKT_PLAYER_IN pkt_pin;
 			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
@@ -709,6 +713,7 @@ void Framawork::process_packet(int id, char* packet)
 			std::cout << "빔라이플 이펙트의 인덱스 : " << index << "\n";
 			send_packet_to_room_player(room_num, (char*)pkt_ce);
 			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+			delete pkt_ce;
 		}
 		break;
 	}
@@ -769,6 +774,7 @@ void Framawork::process_packet(int id, char* packet)
 		send_packet_to_room_player(room_num, (char*)&packet);
 
 		rooms_[room_num].disconnect_client(clients_[id].socket);
+		clients_[id].in_room = false;
 
 		if (rooms_[room_num].get_num_player_in_room() > 0)
 		{
@@ -863,6 +869,7 @@ void Framawork::send_packet_to_all_player(char* packet)
 	for (int i = 0; i < 1000; ++i)
 	{
 		if (!clients_[i].in_use) continue;
+		if (!clients_[i].in_room) continue;
 		send_packet_to_player(i, packet);
 	}
 }

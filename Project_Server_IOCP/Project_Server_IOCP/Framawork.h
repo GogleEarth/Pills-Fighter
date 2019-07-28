@@ -30,12 +30,13 @@ public:
 	SOCKET socket;
 	char packet_buffer[MAX_BUFFER];
 	int	prev_size;
-
+	bool in_room;
 	Client() {
 		in_use = false;
 		over_ex.dataBuffer.len = MAX_BUFFER;
 		over_ex.dataBuffer.buf = over_ex.messageBuffer;
 		over_ex.event_t = EVENT_TYPE_RECV;
+		in_room = false;
 	}
 };
 
