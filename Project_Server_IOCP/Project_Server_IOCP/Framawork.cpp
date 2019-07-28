@@ -694,7 +694,8 @@ void Framawork::process_packet(int id, char* packet)
 		using namespace std;
 		using namespace chrono;
 
-		if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon != WEAPON_TYPE_BEAM_RIFLE)
+		if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon != WEAPON_TYPE_BEAM_RIFLE && 
+			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon != WEAPON_TYPE_GM_GUN)
 		{
 			auto pkt_co = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
@@ -869,7 +870,7 @@ void Framawork::send_packet_to_all_player(char* packet)
 	for (int i = 0; i < 1000; ++i)
 	{
 		if (!clients_[i].in_use) continue;
-		if (!clients_[i].in_room) continue;
+		if (clients_[i].in_room) continue;
 		send_packet_to_player(i, packet);
 	}
 }
