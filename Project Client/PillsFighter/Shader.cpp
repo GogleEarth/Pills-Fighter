@@ -1123,6 +1123,9 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	switch (nGroup)
 	{
 	case SKINNED_OBJECT_INDEX_GM:
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_GM_GUN);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN);
 	case SKINNED_OBJECT_INDEX_GUNDAM: // ºö»çº§, ºö¶óÀÌÇÃ, ¹ÙÁÖÄ«
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE);
