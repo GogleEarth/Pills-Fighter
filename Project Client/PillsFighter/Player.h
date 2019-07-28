@@ -181,20 +181,17 @@ public:
 	bool IsIdle() { return !IsMoving(); }
 	bool IsUnderBodyChangeable() { return !IsJumping() && !IsWalking() && !IsDash() && IsOnGround(); }
 	bool AnimationIsShootStart() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_GM_GUN_SHOOT_START) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_DASH_SHOOT_START_ONCE); }
-	bool AnimationIsShootOnce() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_SHOOT_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_DASH_SHOOT_START_ONCE); }
+	bool AnimationIsShootOnce() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_SHOOT_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_SHOOT_DASH_ONCE); }
 	bool AnimationIsShootReturn() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_GM_GUN_SHOOT_RETURN) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_DASH_SHOOT_RETURN_ONCE); }
 	bool IsPrepareDashAnimation();
 
 	// For Attack
 protected:
-	bool m_bShootable = false;
 	bool m_LButtonDown = false;
 	float m_fMouseUpTime = 0.0f;
 	bool m_bShooted = false;
 
 public:
-	bool IsShootable() { return m_bShootable; }
-	void SetShootable(bool bShot) { m_bShootable = bShot; }
 	void LButtonUp() { m_LButtonDown = false; m_fMouseUpTime = 0.0f;}
 	bool IsShooted() { return m_bShooted; }
 	void Shooted() { m_bShooted = false; }

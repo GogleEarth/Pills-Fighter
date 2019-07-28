@@ -2526,6 +2526,10 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	switch (CScene::m_nPlayerRobotType)
 	{
 	case SELECT_CHARACTER_GM:
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_GM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
+
 	case SELECT_CHARACTER_GUNDAM: // ºö»çº§, ºö¶óÀÌÇÃ, ¹ÙÁÖÄ«
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
@@ -2847,14 +2851,6 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 			if (m_ppShaders[i])
 				m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 		}
-
-		for (int i = 0; i < m_nEffectShaders; i++)
-		{
-			if (m_ppEffectShaders[i])
-				m_ppEffectShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-		}
-
-		if (m_pParticleShader) m_pParticleShader->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 	}
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);

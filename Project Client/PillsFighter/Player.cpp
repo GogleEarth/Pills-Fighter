@@ -755,8 +755,6 @@ void CPlayer::ProcessAnimation()
 
 void CPlayer::ProcessShootAnimation()
 {
-	OutputDebugString(L"½´ÆÃÁß!");
-
 	// Start ÀÚ¼¼
 	if (AnimationIsShootStart())
 	{
@@ -791,7 +789,6 @@ void CPlayer::ProcessShootAnimation()
 
 			pGun->Shot();
 			ChangeUIAmmo();
-			m_bShootable = false;
 		}
 
 		if (m_LButtonDown)
@@ -802,8 +799,6 @@ void CPlayer::ProcessShootAnimation()
 				else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
 				m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
-
-				m_bShootable = true;
 			}
 		}
 

@@ -193,4 +193,5 @@ public:
 	float GetTrackPosition(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetPosition(); }
 	float GetTrackLength(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetLength(); }
 	bool IsEndPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(), m_pAnimationTracks[nAnimationTrack].GetLength()); }
+	bool IsStartPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(), 0.0f); }
 };

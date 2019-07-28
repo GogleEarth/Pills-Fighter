@@ -155,7 +155,8 @@ void CGun::Shot()
 
 	if (!m_pMuzzle) return;
 
-	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget(m_pMuzzle->GetPosition());
+	XMFLOAT3 xmf3MuzzlePos = m_pMuzzle->GetPosition();
+	XMFLOAT4X4 xmf4x4World = pPlayer->GetToTarget(xmf3MuzzlePos);
 
 	pBullet->SetRight(XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13));
 	pBullet->SetUp(XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23));
@@ -164,7 +165,7 @@ void CGun::Shot()
 
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 
-	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43), XMFLOAT2(2.5f, 2.5f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
+	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
 #else
 	pPlayer->Shoot();
 #endif

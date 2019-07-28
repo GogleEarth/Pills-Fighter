@@ -301,6 +301,7 @@ public:
 	bool GetAnimationChanged(int nController) { return m_pbAnimationChanged[nController]; }
 	void SetAnimationChanged(int nController, bool bAnimationChagned) { m_pbAnimationChanged[nController] = bAnimationChagned; }
 	bool IsAnimationEnd(int nUpperUnder, int nTrack) { return m_ppAnimationControllers[nUpperUnder]->IsEndPosition(nTrack); }
+	bool IsAnimationStart(int nUpperUnder, int nTrack) { return m_ppAnimationControllers[nUpperUnder]->IsStartPosition(nTrack); }
 	bool AnimationIs(int nUpperUnder, int nAnimation) {	return m_pnAnimationState[nUpperUnder] == nAnimation; }
 };
 

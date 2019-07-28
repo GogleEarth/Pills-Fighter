@@ -93,7 +93,7 @@ cbuffer cbMotionBlurInfo : register(b0)
 }
 
 #define T 0.016667f
-#define SAMPLES 32
+#define SAMPLES 16
 
 [numthreads(8, 8, 1)]
 void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
