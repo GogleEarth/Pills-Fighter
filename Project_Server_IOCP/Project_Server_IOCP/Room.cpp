@@ -652,12 +652,17 @@ PKT_PICK_ITEM* Room::item_dequeue()
 	return item;
 }
 
-PKT_PLAYER_LIFE * Room::player_life_dequeue()
+PKT_PLAYER_LIFE* Room::player_life_dequeue()
 {
 	return scenes_[using_scene_]->player_life_dequeue();
 }
 
-PKT_SCORE * Room::score_dequeue()
+PKT_SCORE* Room::score_dequeue()
+{
+	return scenes_[using_scene_]->score_dequeue();
+}
+
+PKT_PLAYER_DIE* Room::player_die_dequeue()
 {
 	return scenes_[using_scene_]->score_dequeue();
 }

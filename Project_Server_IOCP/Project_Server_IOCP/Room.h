@@ -118,5 +118,6 @@ public:
 	PKT_PICK_ITEM* item_dequeue();
 	PKT_PLAYER_LIFE* player_life_dequeue();
 	PKT_SCORE* score_dequeue();
+	PKT_PLAYER_DIE* player_die_dequeue();
 };
 

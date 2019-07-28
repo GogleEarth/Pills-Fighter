@@ -38,6 +38,8 @@ protected:
 	std::queue<PKT_SCORE*> score_queue_;
 	std::mutex effect_lock_;
 	std::queue<PKT_CREATE_EFFECT*> create_effect_queue_;
+	std::mutex die_lock_;
+	std::queue<PKT_PLAYER_DIE*> player_die_queue_;
 
 public:
 	Scene();
@@ -90,6 +92,8 @@ public:
 	PKT_PLAYER_LIFE* player_life_dequeue();
 	PKT_SCORE* score_dequeue();
 	PKT_CREATE_EFFECT* create_effect_dequeue();
+	PKT_PLAYER_DIE* player_die_dequeue();
+
 
 	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
 	inline void deleteObject(int index) { Objects_[index].Delete(); }

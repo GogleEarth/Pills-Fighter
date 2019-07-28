@@ -347,6 +347,16 @@ bool Scene::check_collision_player(int object)
 
 								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
 
+								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+								pkt_pd->id = Objects_[i].GetMaxHitPoint();
+								pkt_pd->id = i;
+
+								die_lock_.lock();
+								player_die_queue_.push(pkt_pd);
+								die_lock_.unlock();
+
 								score_lock.lock();
 								score_queue_.push(pkt_sco);
 								score_lock.unlock();
@@ -485,6 +495,20 @@ PKT_CREATE_EFFECT* Scene::create_effect_dequeue()
 	auto packet = create_effect_queue_.front();
 	create_effect_queue_.pop();
 	effect_lock_.unlock();
+	return packet;
+}
+
+PKT_PLAYER_DIE * Scene::player_die_dequeue()
+{
+	die_lock_.lock();
+	if (player_die_queue_.empty())
+	{
+		die_lock_.unlock();
+		return nullptr;
+	}
+	auto packet = player_die_queue_.front();
+	player_die_queue_.pop();
+	die_lock_.unlock();
 	return packet;
 }
 

@@ -138,6 +138,14 @@ int Framawork::thread_process()
 
 			while (true)
 			{
+				auto data = rooms_[key].player_die_dequeue();
+				if (data == nullptr) break;
+				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->id));
+				delete data;
+			}
+
+			while (true)
+			{
 				auto data = rooms_[key].score_dequeue();
 				if (data == nullptr) break;
 				send_packet_to_room_player(key, (char*)data);

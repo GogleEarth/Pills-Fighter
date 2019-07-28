@@ -1,6 +1,6 @@
 #pragma once
 
-#define ON_NETWORKING
+//#define ON_NETWORKING
 
 typedef enum PKT_ID
 {
@@ -33,7 +33,8 @@ typedef enum PKT_ID
 	PKT_ID_DELETE_ROOM,
 	PKT_ID_CHANGE_ROOM_INFO,
 	PKT_ID_MAP_EVENT,
-	PKT_ID_MOVE_TEAM
+	PKT_ID_MOVE_TEAM,
+	PKT_ID_PLAYER_DIE
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -367,6 +368,14 @@ struct PKT_MAP_EVENT
 	BYTE PktId;
 	MAP_EVENT_TYPE type;
 	float gravity;
+};
+
+struct PKT_PLAYER_DIE
+{
+	BYTE PktSize;
+	BYTE PktId;
+	int id;
+	DWORD hp;
 };
 
 #pragma pack(pop)
