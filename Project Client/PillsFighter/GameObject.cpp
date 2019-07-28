@@ -973,8 +973,10 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		gFmodSound.PauseFMODSound(m_pChannelBooster);
 	}
 
-	if (m_pRHWeapon) m_pRHWeapon->Animate(fTimeElapsed, pCamera);
-	if (m_pLHWeapon) m_pLHWeapon->Animate(fTimeElapsed, pCamera);
+	for (const auto& Weapon : m_vpWeapon)
+	{
+		Weapon->Animate(fTimeElapsed, pCamera);
+	}
 }
 
 void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)

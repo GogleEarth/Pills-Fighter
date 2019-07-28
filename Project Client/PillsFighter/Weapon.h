@@ -192,7 +192,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define MG_SHOT_COOLTIME	0.3f
+#define MG_SHOT_COOLTIME	0.1f
 #define MG_RELOAD_TIME		3.0f
 
 class CMachineGun : public CGun
@@ -240,5 +240,6 @@ public:
 
 	virtual int ShootNumber() { return 1; };
 	virtual void CheckShootable(float fElapsedTime);
-	virtual void Charge();
+
+	virtual void Animate(float fElapsedTime, CCamera *pCamera = NULL);
 };

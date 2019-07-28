@@ -422,7 +422,7 @@ void CBeamRifle::Shot()
 #endif
 
 	SetShotCoolTime();
-	pPlayer->SetReloadTime(m_fReloadTime);
+	SetReloadTime();
 
 	m_nShootCount++;
 	m_nReloadedAmmo = m_nReloadedAmmo - 10 < 0 ? 0 : m_nReloadedAmmo - 10;
@@ -440,11 +440,18 @@ void CBeamRifle::CheckShootable(float fElapsedTime)
 	}
 }
 
-void CBeamRifle::Charge()
-{ 
+void CBeamRifle::Animate(float fElapsedTime, CCamera *pCamera)
+{
+	CGun::Animate(fElapsedTime, pCamera);
+
 	if (m_nReloadedAmmo < m_nMaxReloadAmmo)
 	{
-		m_nReloadedAmmo++;
-		SetReloadTime();
+		m_fReloadTime -= fElapsedTime;
+
+		if (m_fReloadTime < 0.0f)
+		{
+			m_nReloadedAmmo++;
+			SetReloadTime();
+		}
 	}
 }

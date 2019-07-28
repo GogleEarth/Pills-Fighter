@@ -1061,7 +1061,7 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 		{
 			CGun *pGun = (CGun*)pWeapon;
 
-			if (m_bReloading || nType & WEAPON_TYPE_OF_BEAM_RIFLE)
+			if (m_bReloading)
 			{
 				m_fReloadTime -= fTimeElapsed;
 
@@ -1090,12 +1090,6 @@ void CPlayer::ProcessTime(CWeapon *pWeapon, float fTimeElapsed)
 							pGun->Reload(m_nMachineGunAmmo);
 							ChangeUIAmmo();
 						}
-					}
-					else if (nType & WEAPON_TYPE_OF_BEAM_RIFLE)
-					{
-						pGun->Charge();
-						ChangeUIAmmo();
-						m_fReloadTime = pGun->GetReloadTime();
 					}
 
 					m_bReloading = false;
