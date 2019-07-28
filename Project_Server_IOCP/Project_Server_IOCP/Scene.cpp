@@ -387,6 +387,10 @@ bool Scene::check_collision_player_to_vector(int object)
 						pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 						pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
+						life_lock.lock();
+						player_life_queue_.push(pkt_pl);
+						life_lock.unlock();
+
 						PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
 						pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
 						pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
@@ -419,10 +423,6 @@ bool Scene::check_collision_player_to_vector(int object)
 							score_queue_.push(pkt_sco);
 							score_lock.unlock();
 						}
-
-						life_lock.lock();
-						player_life_queue_.push(pkt_pl);
-						life_lock.unlock();
 					}
 					return true;
 				}

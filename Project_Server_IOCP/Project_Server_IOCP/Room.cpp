@@ -285,14 +285,14 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
 	if (weapon == WEAPON_TYPE_BEAM_RIFLE)
 	{
-		hp = 20;
+		hp = 21;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
 	}
 	else if (weapon == WEAPON_TYPE_GM_GUN)
 	{
-		hp = 10;
+		hp = 11;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
