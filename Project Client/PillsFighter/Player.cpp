@@ -314,12 +314,12 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 void CPlayer::Update(float fTimeElapsed)
 {
+	CRobotObject::Animate(fTimeElapsed);
+
 	ProcessBooster(fTimeElapsed);
 	ProcessHitPoint();
 	ProcessTime(m_pRHWeapon, fTimeElapsed);
 	ProcessAnimation();
-
-	CRobotObject::Animate(fTimeElapsed);
 
 	if (!IsZero(m_fVelocityY)) Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 
