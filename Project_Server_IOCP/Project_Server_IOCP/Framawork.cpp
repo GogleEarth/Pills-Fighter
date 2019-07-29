@@ -566,7 +566,6 @@ void Framawork::process_packet(int id, char* packet)
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
 		int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
-		//rooms_[room_num].player_info_inqueue(packet);
 		rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
 		send_packet_to_room_player(room_num, packet);
 		break;
@@ -596,7 +595,6 @@ void Framawork::process_packet(int id, char* packet)
 					pktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(i);
 					rooms_[room_num].set_player_is_play(i, true);
 					rooms_[room_num].set_object_id(i);
-					pktdata.IsShooting = false;
 					send_packet_to_player(players[i].get_serverid(), (char*)&pktdata);
 
 					PKT_CREATE_OBJECT anotherpktdata;
