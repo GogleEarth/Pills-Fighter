@@ -157,7 +157,6 @@ typedef struct PKT_PLAYER_INFO
 	BYTE			PktId;
 	BYTE			ID;
 	XMFLOAT4X4		WorldMatrix;
-	BOOL			IsShooting;
 	WEAPON_TYPE		Player_Weapon;
 	BOOL			isChangeWeapon;
 	ANIMATION_TYPE	Player_Up_Animation;

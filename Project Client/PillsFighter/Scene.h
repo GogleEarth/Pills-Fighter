@@ -239,7 +239,6 @@ public: // Network
 	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames) {}
 
 protected:
-	static int m_nMyIndex;
 	static int m_nMyTeam;
 };
 

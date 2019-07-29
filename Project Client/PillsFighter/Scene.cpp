@@ -23,7 +23,6 @@ D3D12_GPU_DESCRIPTOR_HANDLE		CScene::m_d3dDsvGPUDesciptorStartHandle;
 
 int								CScene::m_nPlayerRobotType = SELECT_CHARACTER_GM;
 
-int								CScene::m_nMyIndex = 0;
 int								CScene::m_nMyTeam = TEAM_TYPE::TEAM_TYPE_RED;
 
 extern CFMODSound gFmodSound;
@@ -1937,7 +1936,7 @@ void CLobbyRoomScene::ReleaseUploadBuffers()
 
 int CLobbyRoomScene::MouseClick()
 {
-	if (CScene::m_nMyIndex == 0)
+	if (gClientIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_StartButton))
 		{
@@ -1957,7 +1956,7 @@ int CLobbyRoomScene::MouseClick()
 		return LOBBY_MOUSE_CLICK_LEAVE;
 	}
 
-	if (CScene::m_nMyIndex == 0)
+	if (gClientIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_ColonyButton))
 		{
@@ -2017,7 +2016,7 @@ void CLobbyRoomScene::CheckCollision()
 	if (m_pCursor->CollisionCheck(m_LeaveButton)) m_bHLLeaveButton = true;
 	else m_bHLLeaveButton = false;
 
-	if (CScene::m_nMyIndex == 0)
+	if (gClientIndex == 0)
 	{
 		if (m_pCursor->CollisionCheck(m_ColonyButton)) m_bHLColonyButton = true;
 		else m_bHLColonyButton = false;
@@ -2052,7 +2051,7 @@ void CLobbyRoomScene::SetClientIndex(int nIndex, int nSlot)
 	wchar_t id[32];
 	wsprintfW(id, L"%d", nIndex);
 
-	CScene::m_nMyIndex = nIndex;
+	gClientIndex = nIndex;
 	JoinPlayer(nIndex, nSlot, id, SELECT_CHARACTER_GM);
 
 	CScene::m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
@@ -2087,7 +2086,7 @@ void CLobbyRoomScene::JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlaye
 	XMFLOAT2 xmf2Pos = GetPlayerTextPosition(nSlot);
 
 	XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	if (CScene::m_nMyIndex == nIndex)
+	if (gClientIndex == nIndex)
 	{
 		xmf4Color.x = 1.0f;
 		xmf4Color.z = 0.0f;
@@ -2104,7 +2103,7 @@ void CLobbyRoomScene::ChangeSlot(int nIndex, int nChangeSlot)
 	m_pPlayerInfos[nIndex].m_pTextObject->SetPosition(xmf2Pos);
 	m_pPlayerInfos[nIndex].m_nSlot = nChangeSlot;
 
-	if(CScene::m_nMyIndex == nIndex) CScene::m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
+	if(gClientIndex == nIndex) CScene::m_nMyTeam = (nChangeSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
 
 void CLobbyRoomScene::LeavePlayer(int nIndex)
@@ -2123,7 +2122,7 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_MAP_SPACE]->UpdateShaderVariables(pd3dCommandList);
 	m_MapRect->Render(pd3dCommandList, 0);
 
-	if (CScene::m_nMyIndex == 0)
+	if (gClientIndex == 0)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MANAGER]->UpdateShaderVariables(pd3dCommandList);
 	else
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_BASE_MEMBER]->UpdateShaderVariables(pd3dCommandList);
@@ -2146,7 +2145,7 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE]->UpdateShaderVariables(pd3dCommandList);
 	m_ppUIRects[LOBBY_ROOM_UI_RECT_TEAM_BLUE]->Render(pd3dCommandList, 0);
 
-	if (CScene::m_nMyIndex == 0)
+	if (gClientIndex == 0)
 	{
 		if (m_bHLStartButton)
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_START_HL]->UpdateShaderVariables(pd3dCommandList);
@@ -2233,7 +2232,7 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 	for (int i = 0; i < 8; i++)
 	{
 		if (!m_pPlayerInfos[i].m_bUsed) continue;
-		if (i == CScene::m_nMyIndex) continue;
+		if (i == gClientIndex) continue;
 
 		if (nTeam == TEAM_TYPE::TEAM_TYPE_RED)
 		{
@@ -2891,16 +2890,11 @@ void CBattleScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nW
 {
 	if (m_bMotionBlur)
 	{
-		XMFLOAT3 xmf3PrevPosition = XMFLOAT3(m_xmf4x4PrevViewProjection._41, m_xmf4x4PrevViewProjection._42, m_xmf4x4PrevViewProjection._43);
-		XMFLOAT3 xmf3Position = XMFLOAT3(m_xmf4x4CurrViewProjection._41, m_xmf4x4CurrViewProjection._42, m_xmf4x4CurrViewProjection._43);
-
-		float rotVel = Vector3::Length(Vector3::Subtract(xmf3Position, xmf3PrevPosition));
-
 		float moveVel = 0.0f;
 		if (m_pPlayer)
 			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
 
-		if ((rotVel > 35.0f) || (moveVel > 2.5f))
+		if (moveVel > 2.5f)
 		{
 			m_pComputeShader->SetMotionBlurPipelineState(pd3dCommandList);
 
@@ -3442,6 +3436,7 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	if (m_pObjects[pCreateObjectInfo->Object_Index])
 	{
+		std::cout << int(pCreateObjectInfo->Object_Index) << "\n";
 		m_pObjects[pCreateObjectInfo->Object_Index]->Delete();
 	}
 
@@ -3573,56 +3568,73 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	switch (pktID)
 	{
 	case PKT_ID_PLAYER_INFO:
-		if (!m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]) break;
+	{
+		PKT_PLAYER_INFO *pPacket = (PKT_PLAYER_INFO*)pktData;
+		if (!m_pObjects[pPacket->ID]) break;
 
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetWorldTransf(((PKT_PLAYER_INFO*)pktData)->WorldMatrix);
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
+		m_pObjects[pPacket->ID]->SetWorldTransf(pPacket->WorldMatrix);
+		m_pObjects[pPacket->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
 
 		if (m_pMinimapShader) {
-			m_pMinimapShader->UpdateMinimapRobotInfo(m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID], ((PKT_PLAYER_INFO*)pktData)->ID);
+			m_pMinimapShader->UpdateMinimapRobotInfo(m_pObjects[pPacket->ID], pPacket->ID);
 		}
 
-		if (((PKT_PLAYER_INFO*)pktData)->isUpChangeAnimation)
+		if (pPacket->isUpChangeAnimation)
 		{
-			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeAnimation(ANIMATION_UP, 0, ((PKT_PLAYER_INFO*)pktData)->Player_Up_Animation);
-			pObject->SetAnimationTrackPosition(ANIMATION_UP, ((PKT_PLAYER_INFO*)pktData)->UpAnimationPosition);
+			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[pPacket->ID];
+			pObject->ChangeAnimation(ANIMATION_UP, 0, pPacket->Player_Up_Animation);
+			pObject->SetAnimationTrackPosition(ANIMATION_UP, pPacket->UpAnimationPosition);
 		}
 
-		if (((PKT_PLAYER_INFO*)pktData)->isDownChangeAnimation)
+		if (pPacket->isDownChangeAnimation)
 		{
-			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeAnimation(ANIMATION_DOWN, 0, ((PKT_PLAYER_INFO*)pktData)->Player_Down_Animation);
-			pObject->SetAnimationTrackPosition(ANIMATION_DOWN, ((PKT_PLAYER_INFO*)pktData)->DownAnimationPosition);
+			CAnimationObject *pObject = (CAnimationObject*)m_pObjects[pPacket->ID];
+			pObject->ChangeAnimation(ANIMATION_DOWN, 0, pPacket->Player_Down_Animation);
+			pObject->SetAnimationTrackPosition(ANIMATION_DOWN, pPacket->DownAnimationPosition);
 		}
 
-		if (((PKT_PLAYER_INFO*)pktData)->isChangeWeapon)
+		if (pPacket->isChangeWeapon)
 		{
-			CRobotObject *pObject = (CRobotObject*)m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID];
-			pObject->ChangeWeaponByType((WEAPON_TYPE)((PKT_PLAYER_INFO*)pktData)->Player_Weapon);
+			CRobotObject *pObject = (CRobotObject*)m_pObjects[pPacket->ID];
+			pObject->ChangeWeaponByType((WEAPON_TYPE)pPacket->Player_Weapon);
 		}
-		m_pObjects[((PKT_PLAYER_INFO*)pktData)->ID]->SetState(((PKT_PLAYER_INFO*)pktData)->State);
+		m_pObjects[pPacket->ID]->SetState(pPacket->State);
 		break;
+	}
 	case PKT_ID_PLAYER_LIFE:
-		if (!m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]) break;
+	{
+		PKT_PLAYER_LIFE *pPacket = (PKT_PLAYER_LIFE*)pktData;
 
-		m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->SetHitPoint(m_pObjects[((PKT_PLAYER_LIFE*)pktData)->ID]->GetHitPoint() - ((PKT_PLAYER_LIFE*)pktData)->HP);
+		if (!m_pObjects[pPacket->ID]) break;
+
+		m_pObjects[pPacket->ID]->SetHitPoint(m_pObjects[pPacket->ID]->GetHitPoint() - pPacket->HP);
 		break;
+	}
 	case PKT_ID_CREATE_OBJECT:
+	{
 		break;
+	}
 	case PKT_ID_DELETE_OBJECT:
-		if (!m_pObjects[((PKT_DELETE_OBJECT*)pktData)->Object_Index]) break;
+	{
+		PKT_DELETE_OBJECT *pPacket = (PKT_DELETE_OBJECT*)pktData;
 
-		DeleteObject(((PKT_DELETE_OBJECT*)pktData)->Object_Index);
+		if (!m_pObjects[pPacket->Object_Index]) break;
+
+		DeleteObject(pPacket->Object_Index);
 		break;
+	}
 	case PKT_ID_TIME_INFO:
 		break;
 	case PKT_ID_UPDATE_OBJECT:
-		if (!m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]) break;
+	{
+		PKT_UPDATE_OBJECT *pPacket = (PKT_UPDATE_OBJECT*)pktData;
 
-		XMFLOAT3 position = ((PKT_UPDATE_OBJECT*)pktData)->Object_Position;
-		m_pObjects[((PKT_UPDATE_OBJECT*)pktData)->Object_Index]->SetPosition(position);
+		if (!m_pObjects[pPacket->Object_Index]) break;
+
+		XMFLOAT3 position = pPacket->Object_Position;
+		m_pObjects[pPacket->Object_Index]->SetPosition(position);
 		break;
+	}
 	case PKT_ID_CREATE_EFFECT:
 		break;
 	case PKT_ID_SCORE:
@@ -3643,7 +3655,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 
 		if (pPacket->Item_type == ITEM_TYPE_AMMO)
 		{
-			if (pPacket->ID == CScene::m_nMyIndex)
+			if (pPacket->ID == gClientIndex)
 			{
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, pPacket->AMMO);
 				m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, pPacket->AMMO);
@@ -3653,7 +3665,7 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		}
 		else if (pPacket->Item_type == ITEM_TYPE_HEALING)
 		{
-			if (pPacket->ID == CScene::m_nMyIndex)
+			if (pPacket->ID == gClientIndex)
 			{
 				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundPickHeal);
 			}
@@ -3665,6 +3677,8 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_PLAYER_DIE:
 	{
 		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)pktData;
+
+		std::cout << int(pPacket->id) << "\n";
 
 		if (m_pObjects[pPacket->id]) 
 			m_pObjects[pPacket->id]->SetHitPoint(pPacket->hp);
