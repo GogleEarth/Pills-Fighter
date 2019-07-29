@@ -350,7 +350,7 @@ bool Scene::check_collision_player(int object)
 								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
 								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-								pkt_pd->id = Objects_[i].GetMaxHitPoint();
+								pkt_pd->hp = Objects_[i].GetMaxHitPoint();
 								pkt_pd->id = i;
 
 								die_lock_.lock();
@@ -434,7 +434,7 @@ bool Scene::check_collision_player_to_vector(int object, float len)
 								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
 								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-								pkt_pd->id = Objects_[i].GetMaxHitPoint();
+								pkt_pd->hp = Objects_[i].GetMaxHitPoint();
 								pkt_pd->id = i;
 
 								die_lock_.lock();
