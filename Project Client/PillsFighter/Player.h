@@ -189,13 +189,9 @@ public:
 protected:
 	bool m_LButtonDown = false;
 	float m_fMouseUpTime = 0.0f;
-	bool m_bShooted = false;
 
 public:
 	void LButtonUp() { m_LButtonDown = false; m_fMouseUpTime = 0.0f;}
-	bool IsShooted() { return m_bShooted; }
-	void Shooted() { m_bShooted = false; }
-	void Shoot() { m_bShooted = true; }
 
 	void ProcessMouseUpTime(float fElapsedTime);
 
@@ -211,4 +207,7 @@ protected:
 protected:
 	CUserInterface *m_pUI = NULL;
 	int m_nEquipWeaponIndex = 0;
+
+public:
+	void SendShootPacket();
 };

@@ -57,11 +57,9 @@ public:
 	CGameFramework();
 	~CGameFramework();
 
-	//프레임워크를 초기화하는 함수이다(주 윈도우가 생성되면 호출된다).
-	bool OnCreate(HINSTANCE hInstance, HWND hMainWnd, SOCKET sock);
+	bool OnCreate(HINSTANCE hInstance, HWND hMainWnd);
 	void OnDestroy();
 
-	//스왑 체인, 디바이스, 서술자 힙, 명령 큐/할당자/리스트를 생성하는 함수이다. 
 	void CreateSwapChain();
 	void CreateDirect3DDevice();
 	void CreateRtvAndDsvDescriptorHeaps();
@@ -71,7 +69,6 @@ public:
 
 	void OnResizeBackBuffers();
 
-	//렌더링할 메쉬와 게임 객체를 생성하고 소멸하는 함수이다. 
 	void BuildObjects();
 	void BuildScene(int nSceneType = 0);
 	void BuildBattleScene(int nType);
@@ -79,16 +76,13 @@ public:
 	void BuildLobbyRoomScene();
 	void ReleaseObjects();
 
-	//프레임워크의 핵심(사용자 입력, 애니메이션, 렌더링)을 구성하는 함수이다. 
 	void ProcessInput();
 	void AnimateObjects(float fElapsedTime);
 	void FrameAdvance();
 
-	//CPU와 GPU를 동기화하는 함수이다. 
 	void WaitForGpuComplete();
 	void MoveToNextFrame();
 
-	//윈도우의 메시지(키보드, 마우스 입력)를 처리하는 함수이다.
 	void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
@@ -102,14 +96,11 @@ protected:
 	bool							m_bWireRender = false;
 
 protected: // for Network
-	SOCKET	m_Socket;
-
 	char	m_RecvBuf[MAX_BUFFER];
 
 	int		m_nPrevSize;
 	char	m_pPacketBuffer[MAX_PACKET];
 
-	int		m_nClinetIndex;
 	int		m_nClientSlot;
 	bool	m_bDrawScene;
 	bool	m_bSend_Complete;

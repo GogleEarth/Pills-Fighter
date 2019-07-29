@@ -34,13 +34,10 @@ CGameFramework::CGameFramework()
 
 	_tcscpy_s(m_pszCaption, _T(GAME_TITLE));
 
-	m_Socket = 0;
-
 	::ZeroMemory(m_RecvBuf, sizeof(m_RecvBuf));
 	m_nPrevSize = 0;
 	::ZeroMemory(m_pPacketBuffer, sizeof(m_pPacketBuffer));
 
-	m_nClinetIndex = -1;
 	m_bDrawScene = true;
 	m_bSend_Complete = true;
 
@@ -54,11 +51,10 @@ CGameFramework::~CGameFramework()
 {
 }
 
-bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd, SOCKET sock)
+bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 {
 	m_hInstance = hInstance;
 	m_hWnd = hMainWnd;
-	m_Socket = sock;
 
 	CreateDirect3DDevice();
 	CreateCommandQueueAndList();
@@ -89,8 +85,6 @@ void CGameFramework::OnDestroy()
 	m_Font.Destroy();
 
 	::CloseHandle(m_hFenceEvent);
-	::closesocket(m_Socket);
-	WSACleanup();
 
 #if defined(_DEBUG)
 	if (m_pd3dDebugController) m_pd3dDebugController->Release();
@@ -114,7 +108,6 @@ void CGameFramework::OnDestroy()
 	if (m_pdxgiFactory) m_pdxgiFactory->Release();
 
 	::ReleaseCapture();
-
 }
 
 void CGameFramework::CreateSwapChain()
@@ -776,7 +769,6 @@ void CGameFramework::FrameAdvance()
 
 			m_pScene->AfterRender(m_pd3dCommandList, m_pCamera);
 		}
-
 	}
 
 	hResult = m_pd3dCommandList->Close();
@@ -877,7 +869,7 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_PLAYER_INFO:
 	{
 		PKT_PLAYER_INFO *pPacket = (PKT_PLAYER_INFO*)m_pPacketBuffer;
-		if (pPacket->ID != m_nClinetIndex)
+		if (pPacket->ID != gClientIndex)
 			m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_INFO, (LPVOID)pPacket);
 
 		break;
@@ -893,7 +885,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_PLAYER_LIFE *pPacket = (PKT_PLAYER_LIFE*)m_pPacketBuffer;
 
-		if (pPacket->ID == m_nClinetIndex)
+		if (pPacket->ID == gClientIndex)
 		{
 			m_pPlayer->SetHitPoint(m_pPlayer->GetHitPoint() - pPacket->HP);
 		}
@@ -982,7 +974,7 @@ void CGameFramework::ProcessPacket()
 
 		m_pScene->ChangeSelectRobot(pPacket->id, pPacket->selected_robot);
 		m_pScene->ChangeSlot(pPacket->id, pPacket->slot);
-		if (pPacket->id == m_nClinetIndex)
+		if (pPacket->id == gClientIndex)
 			m_nClientSlot = pPacket->slot;
 		break;
 	}
@@ -1051,7 +1043,7 @@ void CGameFramework::ProcessPacket()
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetClientIndex(0, 0);
-		m_nClinetIndex = 0;
+		gClientIndex = 0;
 		m_nClientSlot = 0;
 		break;
 	}
@@ -1069,7 +1061,7 @@ void CGameFramework::ProcessPacket()
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetClientIndex(pPacket->index, pPacket->slot);
 		m_pScene->SetMap(pPacket->map);
-		m_nClinetIndex = pPacket->index;
+		gClientIndex = pPacket->index;
 		m_nClientSlot = pPacket->slot;
 		break;
 	}
@@ -1095,7 +1087,7 @@ void CGameFramework::ProcessPacket()
 
 void CGameFramework::recvn()
 {
-	int nRest = recv(m_Socket, m_RecvBuf, MAX_BUFFER, 0);
+	int nRest = recv(gSocket, m_RecvBuf, MAX_BUFFER, 0);
 
 	char *ptr = m_RecvBuf;
 	int nPacketsize = 0;
@@ -1163,38 +1155,10 @@ void CGameFramework::SendToServer()
 	pktPlayerInfo.PktId = (char)PKT_ID_PLAYER_INFO;
 	pktPlayerInfo.PktSize = sizeof(PKT_PLAYER_INFO);
 
-	pktPlayerInfo.ID = m_nClinetIndex;
+	pktPlayerInfo.ID = gClientIndex;
 
 	pktPlayerInfo.WorldMatrix = m_pPlayer->GetWorldTransf();
-
-	if (m_pPlayer->IsShooted())
-	{
-		pktPlayerInfo.IsShooting = TRUE;
-		m_pPlayer->Shooted();
-
-		//총알 생성 패킷 보내기
-		PKT_SHOOT pktShoot;
-		//PKT_ID id = PKT_ID_SHOOT;
-		pktShoot.PktId = (char)PKT_ID_SHOOT;
-		pktShoot.PktSize = sizeof(PKT_SHOOT);
-		pktShoot.ID = m_nClinetIndex;
-		pktShoot.Player_Weapon = m_pPlayer->GetWeaponType();
-
-		CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
-		pktShoot.BulletWorldMatrix = m_pPlayer->GetToTarget(pGun->GetMuzzlePos());
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
-		{
-			printf("Send Shoot Error\n");
-		}
-	}
-	else
-	{
-		pktPlayerInfo.IsShooting = FALSE;
-	}
-
 	pktPlayerInfo.Player_Weapon = m_pPlayer->GetWeaponType();
-
 	pktPlayerInfo.isChangeWeapon = m_pPlayer->GetWeaponChanged();
 
 	if (pktPlayerInfo.isChangeWeapon) m_pPlayer->SetWeaponChanged(FALSE);
@@ -1211,8 +1175,8 @@ void CGameFramework::SendToServer()
 
 	pktPlayerInfo.State = m_pPlayer->GetState();
 
-	//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-	if (retval = send(m_Socket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
+	//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+	if (retval = send(gSocket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
 		printf("Send Player Info Error\n");
 
 	m_bSend_Complete = false;
@@ -1229,8 +1193,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktID = (char)PKT_ID_GAME_START;
 		pktToServer.PktSize = sizeof(pktToServer);
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Game Start Error\n");
 
 		break;
@@ -1242,8 +1206,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktID = (char)PKT_ID_LOAD_COMPLETE;
 		pktToServer.PktSize = sizeof(pktToServer);
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
 		break;
@@ -1256,8 +1220,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.Room_num = m_pScene->GetSelectRoom();
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
 		break;
@@ -1269,8 +1233,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		packet.PktId = (char)PKT_ID_CREATE_ROOM;
 		packet.PktSize = sizeof(packet);
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&packet, sizeof(packet), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&packet, sizeof(packet), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 
 		break;
@@ -1279,14 +1243,14 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	{
 		PKT_LOBBY_PLAYER_INFO pktToServer;
 		PKT_ID id = PKT_ID_LOBBY_PLAYER_INFO;
-		pktToServer.id = m_nClinetIndex;
+		pktToServer.id = gClientIndex;
 		pktToServer.PktId = PKT_ID_LOBBY_PLAYER_INFO;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.selected_robot = m_pScene->GetPlayerRobotType();
 		pktToServer.slot = m_nClientSlot;
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send LOBBY Player Info Error\n");
 		break;
 	}
@@ -1297,8 +1261,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktId = PKT_ID_LEAVE_ROOM;
 		pktToServer.PktSize = sizeof(pktToServer);
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Leave Room Error\n");
 		break;
 	}
@@ -1310,8 +1274,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.map = m_pScene->GetSelectedMap();
 
-		//send(m_Socket, (char*)&id, sizeof(PKT_ID), 0);
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Change Map Error\n");
 		break;
 	}
@@ -1324,7 +1288,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.team = *p;
 
-		if (send(m_Socket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Change Map Error\n");
 		break;
 	}
