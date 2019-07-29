@@ -3436,7 +3436,6 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	if (m_pObjects[pCreateObjectInfo->Object_Index])
 	{
-		std::cout << int(pCreateObjectInfo->Object_Index) << "\n";
 		m_pObjects[pCreateObjectInfo->Object_Index]->Delete();
 	}
 
@@ -3677,11 +3676,11 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	case PKT_ID_PLAYER_DIE:
 	{
 		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)pktData;
-
-		std::cout << int(pPacket->id) << "\n";
-
-		if (m_pObjects[pPacket->id]) 
+		
+		if (m_pObjects[pPacket->id])
+		{
 			m_pObjects[pPacket->id]->SetHitPoint(pPacket->hp);
+		}
 		break;
 	}
 	}
