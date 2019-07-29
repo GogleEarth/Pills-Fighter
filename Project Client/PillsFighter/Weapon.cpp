@@ -167,7 +167,7 @@ void CGun::Shot()
 
 	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES);
 #else
-	pPlayer->SendShootPacket();
+	pPlayer->Shoot();
 #endif
 
 	SetShotCoolTime();
@@ -419,7 +419,7 @@ void CBeamRifle::Shot()
 	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(3.0f, fDistance), xmf3Look, 0, LASER_EFFECT_INDEX_LASER_BEAM_TEXTURE_COUNT);
 
 #else
-	pPlayer->SendShootPacket();
+	pPlayer->Shoot();
 #endif
 
 	SetShotCoolTime();

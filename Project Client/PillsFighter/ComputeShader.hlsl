@@ -123,7 +123,7 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 
 	prevPos /= prevPos.w;
 
-	float2 velocity = (currPos - prevPos).xy * 1.5f;
+	float2 velocity = (currPos - prevPos).xy;
 
 	float dt = T / fFPS;
 
@@ -133,7 +133,7 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 
 	float2 du = velocity / SAMPLES;
 
-	float2 texcoord = oriTex + du;
+	float2 texcoord = oriTex += du;
 
 	int nSamples = 0;
 	for (int i = 1; i < SAMPLES; ++i, texcoord -= du)

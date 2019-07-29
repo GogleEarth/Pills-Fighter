@@ -782,7 +782,7 @@ void CPlayer::ProcessShootAnimation()
 	{
 		CGun *pGun = (CGun*)m_pRHWeapon;
 
-		if (pGun->IsShootable())
+		if (pGun->IsShootable() && !IsShooted())
 		{
 			if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_DASH_ONCE, true);
 			else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
@@ -1201,23 +1201,4 @@ void CPlayer::GenerateViewMatrix()
 	m_xmf4x4View._41 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Right);
 	m_xmf4x4View._42 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Up);
 	m_xmf4x4View._43 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Look);
-}
-
-void CPlayer::SendShootPacket()
-{
-	//총알 생성 패킷 보내기
-	PKT_SHOOT pktShoot;
-	//PKT_ID id = PKT_ID_SHOOT;
-	pktShoot.PktId = (char)PKT_ID_SHOOT;
-	pktShoot.PktSize = sizeof(PKT_SHOOT);
-	pktShoot.ID = gClientIndex;
-	pktShoot.Player_Weapon = GetWeaponType();
-
-	CGun *pGun = (CGun*)GetRHWeapon();
-	pktShoot.BulletWorldMatrix = GetToTarget(pGun->GetMuzzlePos());
-
-	if (send(gSocket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
-	{
-		printf("Send Shoot Error\n");
-	}
 }
