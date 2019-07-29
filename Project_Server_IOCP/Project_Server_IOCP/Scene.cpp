@@ -375,7 +375,7 @@ bool Scene::check_collision_player(int object)
 	return false;
 }
 
-bool Scene::check_collision_player_to_vector(int object, float len)
+bool Scene::check_collision_player_to_vector(int object)
 {
 	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPosition());
 	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
@@ -390,64 +390,61 @@ bool Scene::check_collision_player_to_vector(int object, float len)
 				{
 					if (Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET)
 					{
-						if (distance <= len)
+						PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+						pkt_pl->ID = i;
+						Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+						pkt_pl->HP = Objects_[object].GetHitPoint();
+						pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+						pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+						life_lock.lock();
+						player_life_queue_.push(pkt_pl);
+						life_lock.unlock();
+
+						PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+						pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+						pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+						pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
+						pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+						auto position = Objects_[i].GetPosition();
+						position.y += 20.0f;
+						pkt_ce->xmf3Position = position;
+						pkt_ce->id = Objects_[object].get_owner_id();
+
+						effect_lock_.lock();
+						create_effect_queue_.push(pkt_ce);
+						effect_lock_.unlock();
+
+						if (Objects_[i].GetHitPoint() <= 0)
 						{
-							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
-							pkt_pl->ID = i;
-							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-							pkt_pl->HP = Objects_[object].GetHitPoint();
-							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
-							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+							if (Objects_[i].get_team() == 0)
+								red_score_ -= 5;
+							else
+								blue_score_ -= 5;
+							PKT_SCORE* pkt_sco = new PKT_SCORE;
+							pkt_sco->PktId = PKT_ID_SCORE;
+							pkt_sco->PktSize = sizeof(PKT_SCORE);
+							pkt_sco->RedScore = red_score_;
+							pkt_sco->BlueScore = blue_score_;
 
-							life_lock.lock();
-							player_life_queue_.push(pkt_pl);
-							life_lock.unlock();
+							Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
 
-							PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
-							pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
-							pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
-							pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
-							pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							auto position = Objects_[i].GetPosition();
-							position.y += 20.0f;
-							pkt_ce->xmf3Position = position;
-							pkt_ce->id = Objects_[object].get_owner_id();
+							PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+							pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+							pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+							pkt_pd->id = Objects_[i].GetMaxHitPoint();
+							pkt_pd->id = i;
 
-							effect_lock_.lock();
-							create_effect_queue_.push(pkt_ce);
-							effect_lock_.unlock();
+							die_lock_.lock();
+							player_die_queue_.push(pkt_pd);
+							die_lock_.unlock();
 
-							if (Objects_[i].GetHitPoint() <= 0)
-							{
-								if (Objects_[i].get_team() == 0)
-									red_score_ -= 5;
-								else
-									blue_score_ -= 5;
-								PKT_SCORE* pkt_sco = new PKT_SCORE;
-								pkt_sco->PktId = PKT_ID_SCORE;
-								pkt_sco->PktSize = sizeof(PKT_SCORE);
-								pkt_sco->RedScore = red_score_;
-								pkt_sco->BlueScore = blue_score_;
-
-								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
-
-								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
-								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
-								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-								pkt_pd->id = Objects_[i].GetMaxHitPoint();
-								pkt_pd->id = i;
-
-								die_lock_.lock();
-								player_die_queue_.push(pkt_pd);
-								die_lock_.unlock();
-
-								score_lock.lock();
-								score_queue_.push(pkt_sco);
-								score_lock.unlock();
-							}
-							return true;
+							score_lock.lock();
+							score_queue_.push(pkt_sco);
+							score_lock.unlock();
 						}
 					}
+					return true;
 				}
 			}
 		}

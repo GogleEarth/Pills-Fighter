@@ -108,7 +108,7 @@ public:
 
 	void check_collision_obstacles(int object);
 	void check_collision_player(int object);
-	void check_collision_player_to_vector(int object, float len);
+	void check_collision_player_to_vector(int object);
 
 	void player_info_inqueue(char* packet);
 	PKT_PLAYER_INFO* player_info_dequeue();
