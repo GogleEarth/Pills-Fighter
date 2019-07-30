@@ -497,7 +497,7 @@ protected:
 #define INDEX_SHADER_SKINND_OBJECTS 2
 
 // Standard Shader's Object Group
-#define STANDARD_OBJECT_GROUP 6
+#define STANDARD_OBJECT_GROUP 12
 
 #define STANDARD_OBJECT_INDEX_GG_BULLET 0
 #define STANDARD_OBJECT_INDEX_BZK_BULLET 1
@@ -505,6 +505,12 @@ protected:
 #define STANDARD_OBJECT_INDEX_REPAIR_ITEM 3
 #define STANDARD_OBJECT_INDEX_AMMO_ITEM 4
 #define STANDARD_OBJECT_INDEX_METEOR 5
+#define STANDARD_OBJECT_INDEX_GM_GUN 6
+#define STANDARD_OBJECT_INDEX_MACHINE_GUN 7
+#define STANDARD_OBJECT_INDEX_BZK 8
+#define STANDARD_OBJECT_INDEX_BEAM_RIFLE 9
+#define STANDARD_OBJECT_INDEX_SABER 10
+#define STANDARD_OBJECT_INDEX_TOMAHAWK 11
 
 // Standard Shader's Object Group
 #define SKINNED_OBJECT_GROUP 3
@@ -547,6 +553,7 @@ public:
 	virtual void ReleaseUploadBuffers();
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+	virtual void AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nType);
 
 	virtual void CheckCollision();
 	virtual void CheckCollisionPlayer();
@@ -554,7 +561,7 @@ public:
 
 	virtual void BuildLightsAndMaterials() {}
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables() {}
 
 	virtual void StartScene() {}

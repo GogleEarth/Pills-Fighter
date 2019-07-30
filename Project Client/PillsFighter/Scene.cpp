@@ -2525,23 +2525,39 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	switch (CScene::m_nPlayerRobotType)
 	{
 	case SELECT_CHARACTER_GM:
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GM_GUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
-
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_SABER);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_GM_GUN);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_MACHINEGUN);
+		break;
 	case SELECT_CHARACTER_GUNDAM: // 빔사벨, 빔라이플, 바주카
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER, NULL, NULL, NULL);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_SABER);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_BEAM_RIFLE);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_BAZOOKA);
 		break;
 	case SELECT_CHARACTER_ZAKU: // 토마호크, 머신건, 바주카
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pTomahawk, WEAPON_TYPE_OF_TOMAHAWK, NULL, NULL, NULL);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
-		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_TOMAHAWK);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_MACHINEGUN);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_BAZOOKA);
 		break;
 	}
 	
 #ifndef ON_NETWORKING
+	CRobotObject *pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
+
+	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS]->InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS]);
+
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
+
+	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS]->InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS]);
+
+	pObject = new CRobotObject();
+	pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));
+
+	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS]->InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS]);
+
+////
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_GM_GUN, 50);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_BAZOOKA, 20);
 	m_pPlayer->PickUpAmmo(WEAPON_TYPE_OF_MACHINEGUN, 300);
@@ -2559,7 +2575,6 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		pUserInterface->SetTeamInfo(&m_pObjects[m_vTeamIndex[i]], m_vwstrTeamName[i].c_str());
 	}
 	pUserInterface->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
 
 	m_pUserInterface = pUserInterface;
 
@@ -2584,6 +2599,51 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	CreateShadowMap(pd3dDevice, pd3dCommandList, 4096 * 2, 4096 * 2);
 
 	CreateNameTextures(pd3dDevice, pd3dCommandList);
+}
+
+void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nType)
+{
+	CWeapon *pWeapon = NULL;
+
+	switch (nType)
+	{
+	case WEAPON_TYPE_OF_GM_GUN:
+		pWeapon = new CGimGun();
+		pWeapon->SetModel(m_pGimGun);
+		((CGun*)pWeapon)->SetBullet(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	case WEAPON_TYPE_OF_BAZOOKA:
+		pWeapon = new CBazooka();
+		pWeapon->SetModel(m_pBazooka);
+		((CGun*)pWeapon)->SetBullet(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_BZK_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	case WEAPON_TYPE_OF_MACHINEGUN:
+		pWeapon = new CMachineGun();
+		pWeapon->SetModel(m_pMachineGun);
+		((CGun*)pWeapon)->SetBullet(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_MG_BULLET);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	case WEAPON_TYPE_OF_BEAM_RIFLE:
+		pWeapon = new CBeamRifle();
+		pWeapon->SetModel(m_pBeamRifle);
+		((CGun*)pWeapon)->SetBullet(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	case WEAPON_TYPE_OF_SABER:
+		pWeapon = new CSaber();
+		pWeapon->SetModel(m_pSaber);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	case WEAPON_TYPE_OF_TOMAHAWK:
+		pWeapon = new CTomahawk();
+		pWeapon->SetModel(m_pTomahawk);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	}
+
+	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CBattleScene::CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
@@ -2853,6 +2913,14 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 	}
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+}
+
+void CBattleScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	XMFLOAT4 xmf4Random = XMFLOAT4((rand() + 20)* 0.7f, (rand() + 200) * 0.6f, (rand() + 2000) * 0.5f, (rand() + 20000) * 0.4f);
+
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
+	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
 }
 
 void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -3452,7 +3520,7 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		pObjectsShader = (CObjectsShader*)m_ppShaders[INDEX_SHADER_SKINND_OBJECTS];
 
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, pCreateObjectInfo->Robot_Type, true, NULL);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, pCreateObjectInfo->Robot_Type, true, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS]);
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
@@ -3796,9 +3864,7 @@ void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandL
 {
 	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
 
-	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt) * 0.7f, dist1(mt) * 0.6f, dist1(mt) * 0.5f, dist1(mt) * 0.4f);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
+	CBattleScene::UpdateShaderVariables(pd3dCommandList);
 }
 
 void CColonyScene::ReleaseShaderVariables()
@@ -3982,9 +4048,7 @@ void CSpaceScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandLi
 {
 	::memcpy(m_pcbMappedLights, m_pLights, sizeof(LIGHTS));
 
-	XMFLOAT4 xmf4Random = XMFLOAT4(dist1(mt) * 0.7f, dist1(mt) * 0.6f, dist1(mt) * 0.5f, dist1(mt) * 0.4f);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
+	CBattleScene::UpdateShaderVariables(pd3dCommandList);
 }
 
 void CSpaceScene::ReleaseShaderVariables()

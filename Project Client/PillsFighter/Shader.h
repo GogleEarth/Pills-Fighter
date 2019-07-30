@@ -38,7 +38,9 @@ public:
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) { }
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera) { }
-	virtual void ReleaseObjects() { }
+	virtual void ReleaseObjects() { }	
+	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
+		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext) {}
 
 	virtual void ReleaseUploadBuffers() {};
 
@@ -284,16 +286,6 @@ public:
 		CRepository *pRepository, void *pContext = NULL);
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
 		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
-
-protected:
-	CModel		*m_pGimGun = NULL;
-	CModel		*m_pBazooka = NULL;
-	CModel		*m_pMachineGun = NULL;
-	CModel		*m_pSaber = NULL;
-	CModel		*m_pBeamRifle = NULL;
-	CModel		*m_pTomahawk = NULL;
-
-	ID3D12RootSignature *m_pd3dSceneRootSignature = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

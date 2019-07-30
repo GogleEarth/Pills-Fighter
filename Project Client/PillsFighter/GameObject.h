@@ -173,9 +173,12 @@ public:
 
 protected:
 	CShader							*m_pShader = NULL;
+	bool							m_bRender = true;
 
 public:
 	void SetShader(CShader *pShader) { m_pShader = pShader; }
+	void Show() { m_bRender = true; }
+	void Hide() { m_bRender = false; }
 
 public:
 	virtual void AfterAdvanceAnimationController();
@@ -327,7 +330,7 @@ public:
 	virtual void ChangeWeapon(int nIndex);
 	virtual void ChangeWeaponByType(WEAPON_TYPE nType);
 	virtual int GetWeaponIndex(int nType);
-	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType);
+	virtual void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CWeapon *pWeapon);
 	CWeapon* GetWeapon(int nIndex) { return m_vpWeapon[nIndex]; }
 	virtual void SetCallBackKeys(CModel *pModel);
 
@@ -353,12 +356,6 @@ public:
 
 	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
 	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }
-
-protected:
-	CShader *m_pWeaponShader = NULL;
-
-public:
-	void SetWeaponShader(CShader *pShader) { m_pWeaponShader = pShader; }
 
 protected:
 	FMOD::Channel *m_pChannelBooster = NULL;

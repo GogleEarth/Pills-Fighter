@@ -510,12 +510,10 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 		for (auto& Object : m_pvpObjects[i])
 		{
-			if(nIndex == 0)
+			if(nIndex++ == 0)
 				Object->Render(pd3dCommandList, pCamera, true, false, 1);
 			else
 				Object->Render(pd3dCommandList, pCamera, false, false, 1);
-
-			nIndex++;
 		}
 	}
 }
@@ -575,17 +573,27 @@ void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Item/AMMO_BOX.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/EventObject/Meteor.bin", NULL, NULL));
 
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL));
+
 #ifndef ON_NETWORKING
 	RotateObject *pObject = new RotateObject();
 	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 0.0f));
 	InsertObject(pd3dDevice, pd3dCommandList, pObject, STANDARD_OBJECT_INDEX_REPAIR_ITEM, true, pContext);
+
+	pObject = new RotateObject();
+	pObject->SetPosition(XMFLOAT3(0.0f, 20.0f, 20.0f));
+	InsertObject(pd3dDevice, pd3dCommandList, pObject, STANDARD_OBJECT_INDEX_AMMO_ITEM, true, pContext);
 
 	CGameObject *pMeteorObject = new Meteor();
 	pMeteorObject->SetPosition(XMFLOAT3(0.0f, 50.0f, 0.0f));
 	pMeteorObject->SetLook(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	pMeteorObject->SetUp(XMFLOAT3(0.0f, 0.0f, 1.0f));
 	InsertObject(pd3dDevice, pd3dCommandList, pMeteorObject, STANDARD_OBJECT_INDEX_METEOR, true, NULL);
-
 #endif
 }
 
@@ -1080,32 +1088,6 @@ void CRobotObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/GM.bin", "./Resource/Animation/UpperBody.bin", "./Resource/Animation/UnderBody.bin"));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Gundam.bin", "./Resource/Animation/gundam_UpperBody.bin", "./Resource/Animation/gundam_LowerBody.bin"));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Robot/Zaku.bin", "./Resource/Animation/Zaku_UpperBody.bin", "./Resource/Animation/UnderBody.bin"));
-
-	m_pGimGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/GIM_GUN.bin", NULL, NULL);
-	m_pBazooka = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BZK.bin", NULL, NULL);
-	m_pMachineGun = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/MACHINEGUN.bin", NULL, NULL);
-	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
-	m_pBeamRifle = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL);
-	m_pTomahawk = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL);
-
-	m_pd3dSceneRootSignature = (ID3D12RootSignature*)pContext;
-
-#ifndef ON_NETWORKING
-	CRobotObject *pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(0.0f, 0.0f, 50.0f));
-
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, pContext);
-
-	pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
-
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, pContext);
-
-	pObject = new CRobotObject();
-	pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));
-
-	InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GUNDAM, true, pContext);
-#endif
 }
 
 void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext)
@@ -1114,28 +1096,59 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CRobotObject *pRobot = (CRobotObject*)pObject;
 
+	CWeapon *pWeapon = NULL;
+	CObjectsShader *pObjectsShader = (CObjectsShader*)pContext;
 	pRobot->SetCallBackKeys(pRobot->GetModel());
-
-	CShader *pShader = new CShader();
-	pShader->CreateShader(pd3dDevice, m_pd3dSceneRootSignature);
-
-	pRobot->SetWeaponShader(pShader);
 
 	switch (nGroup)
 	{
 	case SKINNED_OBJECT_INDEX_GM:
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pGimGun, WEAPON_TYPE_OF_GM_GUN);
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN);
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_SABER);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_SABER, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_GM_GUN);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_GM_GUN, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_MACHINEGUN);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_MACHINE_GUN, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
 	case SKINNED_OBJECT_INDEX_GUNDAM: // 빔사벨, 빔라이플, 바주카
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pSaber, WEAPON_TYPE_OF_SABER);
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBeamRifle, WEAPON_TYPE_OF_BEAM_RIFLE);
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA);
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_SABER);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_SABER, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_BEAM_RIFLE);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BEAM_RIFLE, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_BAZOOKA);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BZK, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case SKINNED_OBJECT_INDEX_ZAKU: // 토마호크, 머신건, 바주카
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pTomahawk, WEAPON_TYPE_OF_TOMAHAWK);
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pMachineGun, WEAPON_TYPE_OF_MACHINEGUN);
-		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, m_pBazooka, WEAPON_TYPE_OF_BAZOOKA);
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_TOMAHAWK);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_TOMAHAWK, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_MACHINEGUN);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_MACHINE_GUN, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+
+		pWeapon = new CWeapon();
+		pWeapon->SetType(WEAPON_TYPE_OF_BAZOOKA);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BZK, false, NULL);
+		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	}
 }

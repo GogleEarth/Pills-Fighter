@@ -8,6 +8,7 @@ extern CFMODSound gFmodSound;
 
 CWeapon::CWeapon() : CGameObject()
 {
+	m_bRender = false;
 }
 
 CWeapon::~CWeapon()
@@ -25,34 +26,6 @@ void CWeapon::SetOwnerTransform(XMFLOAT4X4 xmf4x4World)
 	m_xmf3Up = XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23);
 	m_xmf3Look = XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33);
 	m_xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
-}
-
-void CWeapon::Animate(float fTimeElapsed, CCamera *pCamera)
-{
-	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
-
-	CGameObject::Animate(fTimeElapsed, pCamera);
-}
-
-void CWeapon::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
-{
-	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
-
-	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
-}
-
-void CWeapon::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
-{
-	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
-
-	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
-}
-
-void CWeapon::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
-{
-	if (m_pParentModel) SetOwnerTransform(m_pParentModel->GetWorldTransf());
-
-	CGameObject::RenderWire(pd3dCommandList, pCamera, nInstances);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -63,6 +63,8 @@ CPlayer::~CPlayer()
 
 	if (m_pCamera) delete m_pCamera;
 
+	for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
+	if (m_pWeaponShader) delete m_pWeaponShader;
 }
 
 bool CPlayer::IsPrepareDashAnimation()
@@ -302,19 +304,39 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 	m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
 }
 
-void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, int nInstances)
+void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
-	CGameObject::Render(pd3dCommandList, pCamera, nInstances);
+	CRobotObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 
 	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
-	if (m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
-	if (m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, bSetTexture);
+	if (m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+	if (m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+}
+
+void CPlayer::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
+{
+	CRobotObject::RenderToShadow(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
+
+	if (m_pWeaponShader) m_pWeaponShader->RenderToShadow(pd3dCommandList, pCamera);
+
+	if (m_pRHWeapon) m_pRHWeapon->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
+	if (m_pLHWeapon) m_pLHWeapon->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
+}
+
+void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
+{
+	CRobotObject::RenderWire(pd3dCommandList, pCamera, nInstances);
+
+	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
+	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
 }
 
 void CPlayer::Update(float fTimeElapsed)
 {
 	CRobotObject::Animate(fTimeElapsed);
+
+	for (const auto& Weapon : m_vpWeapon) Weapon->Animate(fTimeElapsed, NULL);
 
 	ProcessBooster(fTimeElapsed);
 	ProcessHitPoint();
@@ -1143,41 +1165,8 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 	return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
 }
 
-void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, CShader *pEffectShader, int nGroup)
+void CPlayer::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CWeapon *pWeapon)
 {
-	CWeapon *pWeapon = NULL;
-
-	switch (nType)
-	{
-	case WEAPON_TYPE_OF_GM_GUN:
-		pWeapon = new CGimGun();
-		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
-		break;
-	case WEAPON_TYPE_OF_BAZOOKA:
-		pWeapon = new CBazooka();
-		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
-		break;
-	case WEAPON_TYPE_OF_MACHINEGUN:
-		pWeapon = new CMachineGun();
-		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
-		break;
-	case WEAPON_TYPE_OF_BEAM_RIFLE:
-		pWeapon = new CBeamRifle();
-		if (pBulletShader) ((CGun*)pWeapon)->SetBullet(pBulletShader, pEffectShader, nGroup);
-		break;
-	case WEAPON_TYPE_OF_SABER:
-		pWeapon = new CSaber();
-		break;
-	case WEAPON_TYPE_OF_TOMAHAWK:
-		pWeapon = new CTomahawk();
-		break;
-	default:
-		exit(1);
-		break;
-	}
-
-	pWeapon->SetModel(pWeaponModel);
-	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 	pWeapon->Initialize();
 	pWeapon->SetForCreate(pd3dDevice, pd3dCommandList);
 	pWeapon->AddPrepareRotate(180.0f, 90.0f, -90.0f);

@@ -15,7 +15,6 @@ public:
 
 protected:
 	CGameObject	*m_pOwner = NULL;
-	CModel		*m_pParentModel = NULL;
 
 	int			m_nType = 0;
 
@@ -27,16 +26,10 @@ public:
 	void SetOwnerTransform(XMFLOAT4X4 xmf4x4World);
 
 	void SetOwner(CGameObject *pOwner) { m_pOwner = pOwner; }
-	void SetParentModel(CModel *pModel) { m_pParentModel = pModel; }
 	int GetType() { return m_nType; }
 
 	virtual void SetType() {};
 	virtual void SetType(int nType) { m_nType |= nType; };
-
-	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, bool bSetShader = true, int nInstances = 1);
-	virtual void RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, bool bSetShader = true, int nInstances = 1);
-	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances = 1);
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

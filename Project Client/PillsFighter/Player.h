@@ -42,7 +42,9 @@ public:
 
 	virtual void OnPlayerUpdateCallback(float fTimeElapsed);
 	void SetPlayerUpdatedContext(LPVOID pContext) { m_pPlayerUpdatedContext = pContext; }
-	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, int nInstances = 1);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, bool bSetShader = true, int nInstances = 1);
+	virtual void RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture = true, bool bSetShader = true, int nInstances = 1);
+	virtual void RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances = 1);
 
 	virtual void OnCameraUpdateCallback(float fTimeElapsed);
 	void SetCameraUpdatedContext(LPVOID pContext) { m_pCameraUpdatedContext = pContext; }
@@ -131,9 +133,11 @@ public:
 	WEAPON_TYPE GetWeaponType();
 
 	virtual void ChangeWeapon(int nIndex);
-	void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType, CShader *pBulletShader, CShader *pEffectShader, int nGroup);
+	virtual void AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CWeapon *pWeapon);
+	void SetWeaponShader(CShader *pShader) { m_pWeaponShader = pShader; }
 
 protected:
+	CShader		*m_pWeaponShader = NULL;
 	BOOL		m_bWeaponChanged = FALSE;
 	ULONG		m_nDashDirection = 0;
 	bool		m_bShiftDown = false;

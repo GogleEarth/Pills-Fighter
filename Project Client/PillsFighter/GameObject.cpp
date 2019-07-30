@@ -434,6 +434,8 @@ void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
 
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
+	if (!m_bRender) return;
+
 	if(nInstances > 1)
 	{ 
 		if (m_pModel)
@@ -463,6 +465,8 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
+	if (!m_bRender) return;
+
 	if (nInstances > 1)
 	{
 		if (m_pModel)
@@ -492,6 +496,8 @@ void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCa
 
 void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
 {
+	if (!m_bRender) return;
+
 	OnPrepareRender();
 
 	UpdateWorldTransform();
@@ -850,9 +856,7 @@ CRobotObject::CRobotObject() : CAnimationObject()
 
 CRobotObject::~CRobotObject()
 {
-	for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
-
-	if (m_pWeaponShader) delete m_pWeaponShader;
+	//for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
 }
 
 void CRobotObject::OnPrepareAnimate()
@@ -870,25 +874,26 @@ void CRobotObject::OnPrepareAnimate()
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
 {
+	if (m_pRHWeapon) m_pRHWeapon->Hide();
+
+	pWeapon->Show();
 	m_pRHWeapon = pWeapon;
 	m_pRHWeapon->SetOwner(this);
-	m_pRHWeapon->SetParentModel(m_pRightHand);
 }
 
 void CRobotObject::EquipOnLeftHand(CWeapon *pWeapon)
 {
+	if (m_pLHWeapon) m_pLHWeapon->Hide();
+
 	m_pLHWeapon = pWeapon;
 	m_pLHWeapon->SetOwner(this);
-	m_pLHWeapon->SetParentModel(m_pLeftHand);
+
+	if (m_pLHWeapon) m_pLHWeapon->Show();
 }
 
-void CRobotObject::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CModel *pWeaponModel, int nType)
+void CRobotObject::AddWeapon(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CWeapon *pWeapon)
 {
-	CWeapon *pWeapon = new CWeapon();
-
-	pWeapon->SetModel(pWeaponModel);
-	pWeapon->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pWeapon->SetType(nType);
+	pWeapon->Initialize();
 	pWeapon->AddPrepareRotate(180.0f, 90.0f, -90.0f);
 
 	if (!m_pRHWeapon) EquipOnRightHand(pWeapon);
@@ -973,38 +978,22 @@ void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)
 		gFmodSound.PauseFMODSound(m_pChannelBooster);
 	}
 
-	for (const auto& Weapon : m_vpWeapon)
-	{
-		Weapon->Animate(fTimeElapsed, pCamera);
-	}
+	if (m_pRHWeapon) m_pRHWeapon->SetOwnerTransform(m_pRightHand->GetWorldTransf());
 }
 
 void CRobotObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
 	CGameObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
-
-	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
-
-	if(m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
-	if(m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
 }
 
 void CRobotObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
 	CGameObject::RenderToShadow(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
-
-	if (m_pWeaponShader) m_pWeaponShader->RenderToShadow(pd3dCommandList, pCamera);
-
-	if (m_pRHWeapon) m_pRHWeapon->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
-	if (m_pLHWeapon) m_pLHWeapon->RenderToShadow(pd3dCommandList, pCamera, true, false, 1);
 }
 
 void CRobotObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
 	CGameObject::RenderWire(pd3dCommandList, pCamera, nInstances);
-
-	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
-	if (m_pLHWeapon) m_pLHWeapon->RenderWire(pd3dCommandList, pCamera);
 }
 
 bool CRobotObject::ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition)
