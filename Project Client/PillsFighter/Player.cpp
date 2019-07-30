@@ -988,7 +988,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 				
 				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
 
-				//m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
+				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 			}
 		}
 	}
