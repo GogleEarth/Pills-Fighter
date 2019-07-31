@@ -151,6 +151,108 @@ enum TEAM_TYPE
 
 #pragma pack(push, 1)
 
+/////////////////////////////////////////////////////////// Packet
+/////////////////////////////////////////////// Main Lobby
+struct PKT_CHANGE_ROOM_INFO
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+	BYTE map;
+	BYTE numpeople;
+};
+
+struct PKT_ROOM_DELETE
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+};
+
+struct PKT_ROOM_IN
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+};
+
+struct PKT_ROOM_IN_OK
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE index;
+	BYTE map;
+	BYTE slot;
+};
+
+struct PKT_CREATE_ROOM
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_CREATE_ROOM_OK
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_ADD_ROOM
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE Room_num;
+};
+
+/////////////////////////////////////////////// Room
+struct PKT_LEAVE_ROOM
+{
+	BYTE PktSize;
+	BYTE PktId;
+};
+
+struct PKT_CHANGE_MAP
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE map;
+};
+
+struct PKT_MOVE_TEAM
+{
+	BYTE PktSize;
+	BYTE PktId;
+	BYTE team;
+};
+
+typedef struct PKT_PLAYER_IN
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	int			id;
+	BYTE		Team;
+	int			robot;
+	BYTE		slot;
+}PKT_PLAYER_IN, PKT_PLAYER_OUT;
+
+struct PKT_LOBBY_PLAYER_INFO
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	int			id;
+	BYTE		selected_robot;
+	BYTE		Team;
+	BYTE		slot;
+};
+
+typedef struct PKT_GAME_START
+{
+	BYTE PktSize;
+	BYTE PktID;
+	BYTE map;
+}PKT_GAME_START, PKT_LOAD_COMPLETE, PKT_SEND_COMPLETE;
+
+/////////////////////////////////////////////// Battle
 typedef struct PKT_PLAYER_INFO
 {
 	BYTE			PktSize;
@@ -231,41 +333,6 @@ struct PKT_CREATE_EFFECT
 	int id;
 };
 
-struct PKT_GAME_STATE
-{
-	BYTE		PktSize;
-	BYTE		PktId;
-	GAME_STATE	game_state;
-	BYTE		num_player;
-};
-
-typedef struct PKT_PLAYER_IN
-{
-	BYTE		PktSize;
-	BYTE		PktId;
-	int			id;
-	BYTE		Team;
-	int			robot;
-	BYTE		slot;
-}PKT_PLAYER_IN, PKT_PLAYER_OUT;
-
-struct PKT_LOBBY_PLAYER_INFO
-{
-	BYTE		PktSize;
-	BYTE		PktId;
-	int			id;
-	BYTE		selected_robot;
-	BYTE		Team;
-	BYTE		slot;
-};
-
-typedef struct PKT_GAME_START
-{
-	BYTE PktSize;
-	BYTE PktID;
-	BYTE map;
-}PKT_GAME_START, PKT_LOAD_COMPLETE, PKT_SEND_COMPLETE;
-
 struct PKT_SHOOT
 {
 	BYTE			PktSize;
@@ -290,77 +357,6 @@ struct PKT_GAME_END
 	BYTE WinTeam;
 };
 
-struct PKT_CREATE_ROOM
-{
-	BYTE PktSize;
-	BYTE PktId;
-};
-
-struct PKT_CREATE_ROOM_OK
-{
-	BYTE PktSize;
-	BYTE PktId;
-};
-
-struct PKT_ADD_ROOM
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE Room_num;
-};
-
-struct PKT_ROOM_IN
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE Room_num;
-};
-
-struct PKT_ROOM_IN_OK
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE index;
-	BYTE map;
-	BYTE slot;
-};
-
-struct PKT_ROOM_DELETE
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE Room_num;
-};
-
-struct PKT_CHANGE_ROOM_INFO
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE Room_num;
-	BYTE map;
-	BYTE numpeople;
-};
-
-struct PKT_LEAVE_ROOM
-{
-	BYTE PktSize;
-	BYTE PktId;
-};
-
-struct PKT_CHANGE_MAP
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE map;
-};
-
-struct PKT_MOVE_TEAM
-{
-	BYTE PktSize;
-	BYTE PktId;
-	BYTE team;
-};
-
 struct PKT_MAP_EVENT
 {
 	BYTE PktSize;
@@ -376,6 +372,16 @@ struct PKT_PLAYER_DIE
 	int id;
 	DWORD hp;
 };
+
+struct PKT_GAME_STATE
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	GAME_STATE	game_state;
+	BYTE		num_player;
+};
+
+///////////////////////////////////////////////////////////
 
 #pragma pack(pop)
 
