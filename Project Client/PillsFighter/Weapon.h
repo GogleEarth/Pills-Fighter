@@ -85,7 +85,7 @@ public:
 	int		m_nReloadedAmmo = 0;
 	int		m_nMaxReloadAmmo = 0;
 	float	m_fReloadTime = 0.0f;
-	int		m_nShootCount = 0;
+	int		m_nShootedCount = 0;
 
 public:
 	float GetReloadTime() { return m_fReloadTime; }
@@ -110,16 +110,20 @@ public:
 
 protected:
 	bool m_bShootable = true;
+	bool m_bCoolDown = false;
 
 public:
 	bool IsShootable() { return m_bShootable; }
 	void SetShootable(bool b) { m_bShootable = b; }
 
 	virtual int ShootNumber() { return 0; };
-	virtual int ShootedCount() { return m_nShootCount; };
 
 	virtual void CheckShootable(float fElapsedTime);
-	virtual void SetShootCount();
+	virtual void ResetShootCount() { m_nShootedCount = 0; }
+
+	int ShootedCount() { return m_nShootedCount; }
+	bool IsCoolDown() { return m_bCoolDown; }
+	void PrepareShot() { m_bCoolDown = false; }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +157,7 @@ public:
 	virtual int ShootNumber() { return 3; };
 
 	virtual void CheckShootable(float fElapsedTime);
-	virtual void SetShootCount();
+	virtual void ResetShootCount();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -826,17 +826,17 @@ bool CAnimationObject::ChangeAnimation(int nController, int nTrack, int nAnimati
 {
 	if (m_ppAnimationControllers)
 	{
-		if (bResetPosition)
-		{
-			m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
-		}
-
 		if (nAnimation != m_pnAnimationState[nController])
 		{
 			m_pnAnimationState[nController] = nAnimation;
 			m_ppAnimationControllers[nController]->SetTrackAnimation(nTrack, nAnimation);
 
 			m_pbAnimationChanged[nController] = TRUE;
+
+			if (bResetPosition)
+			{
+				m_ppAnimationControllers[nController]->SetTrackPosition(nTrack, 0.0f);
+			}
 
 			return true;
 		}

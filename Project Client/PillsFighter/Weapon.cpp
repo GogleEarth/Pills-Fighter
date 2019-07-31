@@ -104,6 +104,15 @@ void CGun::Initialize()
 void CGun::SetShotCoolTime()
 {
 	SetShootable(false);
+
+	if (m_nShootedCount == ShootNumber())
+	{
+		ResetShootCount();
+		m_bCoolDown = true;
+	}
+	else
+		m_bCoolDown = false;
+
 }
 
 void CGun::Reload(int& nAmmo)
@@ -143,10 +152,10 @@ void CGun::Shot()
 	pPlayer->SendShootPacket();
 #endif
 
-	SetShotCoolTime();
-	
-	m_nShootCount++;
+	m_nShootedCount++;
 	m_nReloadedAmmo--;
+
+	SetShotCoolTime();
 }
 
 void CGun::CheckShootable(float fElapsedTime)
@@ -157,13 +166,10 @@ void CGun::CheckShootable(float fElapsedTime)
 	}
 }
 
-void CGun::SetShootCount()
-{
-	m_nShootCount = 0;
-}
-
 void CGun::Animate(float fElapsedTime, CCamera *pCamera)
 {
+	CWeapon::Animate(fElapsedTime, pCamera);
+
 	if (m_fShotCoolTime > 0.0f)
 	{
 		m_fShotCoolTime -= fElapsedTime;
@@ -171,11 +177,6 @@ void CGun::Animate(float fElapsedTime, CCamera *pCamera)
 	else
 	{
 		CheckShootable(fElapsedTime);
-	}
-
-	if (ShootedCount() == ShootNumber())
-	{
-		SetShootCount();
 	}
 }
 
@@ -236,10 +237,11 @@ void CGimGun::CheckShootable(float fElapsedTime)
 	}
 }
 
-void CGimGun::SetShootCount()
+void CGimGun::ResetShootCount()
 {
+	CGun::ResetShootCount();
+
 	SetBurstCoolTime();
-	m_nShootCount = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,7 +400,7 @@ void CBeamRifle::Shot()
 	SetShotCoolTime();
 	SetReloadTime();
 
-	m_nShootCount++;
+	m_nShootedCount++;
 	m_nReloadedAmmo = m_nReloadedAmmo - 10 < 0 ? 0 : m_nReloadedAmmo - 10;
 
 #ifndef ON_NETWORKING

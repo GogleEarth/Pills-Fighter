@@ -777,6 +777,22 @@ void CPlayer::ProcessAnimation()
 
 void CPlayer::ProcessShootAnimation()
 {
+	CGun *pGun = (CGun*)m_pRHWeapon;
+	
+	if (m_bShootable)
+	{
+		if (pGun->IsShootable())
+		{
+			if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_DASH_ONCE, true);
+			else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
+
+			pGun->Shot();
+			ChangeUIAmmo();
+
+			m_bShootable = false;
+		}
+	}
+
 	// Start 자세
 	if (AnimationIsShootStart())
 	{
@@ -784,7 +800,29 @@ void CPlayer::ProcessShootAnimation()
 
 		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
-			m_bChangeableOnceAniShoot = true;
+			if (pGun->IsCoolDown())
+			{
+				if (!m_LButtonDown)
+				{
+					if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_RETURN_ONCE, true);
+					else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
+
+					if (IsUnderBodyChangeable())
+					{
+						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
+					}
+
+					m_bShootable = false;
+				}
+				else
+				{
+					m_bShootable = true;
+				}
+			}
+			else
+			{
+				m_bShootable = true;
+			}
 		}
 	}
 
@@ -799,45 +837,14 @@ void CPlayer::ProcessShootAnimation()
 		}
 	}
 
-	// Start 자세 이후
-	if (m_bChangeableOnceAniShoot)
+	if (AnimationIsShootOnce())
 	{
-		CGun *pGun = (CGun*)m_pRHWeapon;
-
-		if (pGun->IsShootable())
+		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
-			if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_DASH_ONCE, true);
-			else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_SHOOT_ONCE, true);
+			if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_START_ONCE, true);
+			else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
-			pGun->Shot();
-			ChangeUIAmmo();
-		}
-
-		if (m_LButtonDown)
-		{
-			if (IsAnimationEnd(ANIMATION_UP, 0) && AnimationIsShootOnce())
-			{
-				if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_START_ONCE, true);
-				else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
-
-				m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
-			}
-		}
-
-		if (!m_LButtonDown)
-		{
-			if ((pGun->ShootNumber() == pGun->ShootedCount()) || (pGun->ShootedCount() == 0))
-			{
-				if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_RETURN_ONCE, true);
-				else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
-
-				if (IsUnderBodyChangeable())
-				{
-					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
-				}
-
-				m_bChangeableOnceAniShoot = false;
-			}
+			m_ppAnimationControllers[ANIMATION_UP]->SetTrackPosition(0, m_ppAnimationControllers[ANIMATION_UP]->GetTrackLength(0));
 		}
 	}
 }
@@ -970,6 +977,7 @@ void CPlayer::Attack(CWeapon *pWeapon)
 			{
 				if (!m_bReloading)
 				{
+					pGun->PrepareShot();
 					m_nState |= OBJECT_STATE_SHOOTING;
 
 					if(IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_START_ONCE, true);

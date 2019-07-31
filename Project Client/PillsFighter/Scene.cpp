@@ -3380,9 +3380,9 @@ void CBattleScene::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
 
 void CBattleScene::FindAimToTargetDistance()
 {
-	std::vector<CGameObject*> vGMs = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM);
-	std::vector<CGameObject*> vGundams = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GUNDAM);
-	std::vector<CGameObject*> vZakus = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_ZAKU);
+	CWeapon *pWeapon = m_pPlayer->GetRHWeapon();
+	int nType = pWeapon->GetType();
+	if (!(nType & WEAPON_TYPE_OF_GUN)) return;
 
 	float fDistance = 1000.0f;
 	float fTemp = 0.0f;
@@ -3391,58 +3391,29 @@ void CBattleScene::FindAimToTargetDistance()
 	XMVECTOR xmvCameraPos = XMLoadFloat3(&xmf3CameraPos);
 	XMVECTOR xmvLook = XMLoadFloat3(&(m_pPlayer->GetCamera()->GetLookVector()));
 
-	XMFLOAT3 xmf3PlayerPos = m_pPlayer->GetPosition();
+	CGun *pGun = (CGun*)pWeapon;
 
-	for (const auto& GM : vGMs)
+	pGun->UpdateWorldTransform();
+	XMFLOAT3 xmf3MuzzlePos = pGun->GetMuzzlePos();
+
+	for (int i = 0; i < SKINNED_OBJECT_GROUP; i++)
 	{
-		// 카메라 이동 X 단 목표가 되지 않음.
-		if (GM->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
+		std::vector<CGameObject*> vRobots = static_cast<CObjectsShader*>(m_ppShaders[INDEX_SHADER_SKINND_OBJECTS])->GetObjects(SKINNED_OBJECT_INDEX_GM + i);
+
+		for (const auto& Robot : vRobots)
 		{
-			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
-
-			if (fDistBetweenCnP < fTemp)
+			// 카메라 이동 X 단 목표가 되지 않음.
+			if (Robot->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{
-				if (fDistance > fTemp)
+				float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3MuzzlePos, xmf3CameraPos));
+
+				if (fDistBetweenCnP < fTemp)
 				{
-					fDistance = fTemp;
-					pTarget = GM;
-				}
-			}
-		}
-	}
-
-	for (const auto& Gundam : vGundams)
-	{
-		// 카메라 이동 X 단 목표가 되지 않음.
-		if (Gundam->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-		{
-			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
-
-			if (fDistBetweenCnP < fTemp)
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Gundam;
-				}
-			}
-		}
-	}
-	
-
-	for (const auto& Zaku : vZakus)
-	{
-		// 카메라 이동 X 단 목표가 되지 않음.
-		if (Zaku->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
-		{
-			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
-
-			if (fDistBetweenCnP < fTemp)
-			{
-				if (fDistance > fTemp)
-				{
-					fDistance = fTemp;
-					pTarget = Zaku;
+					if (fDistance > fTemp)
+					{
+						fDistance = fTemp;
+						pTarget = Robot;
+					}
 				}
 			}
 		}
@@ -3464,7 +3435,7 @@ void CBattleScene::FindAimToTargetDistance()
 				// 카메라 이동 O
 				if (Obstacle->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 				{
-					float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+					float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3MuzzlePos, xmf3CameraPos));
 
 					if (fDistBetweenCnP < fTemp)
 					{
@@ -3483,7 +3454,7 @@ void CBattleScene::FindAimToTargetDistance()
 	{
 		if (m_pTerrain->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 		{
-			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3PlayerPos, xmf3CameraPos));
+			float fDistBetweenCnP = Vector3::Length(Vector3::Subtract(xmf3MuzzlePos, xmf3CameraPos));
 
 			if (fDistBetweenCnP < fTemp)
 			{

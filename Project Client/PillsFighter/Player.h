@@ -165,7 +165,7 @@ public:
 	// For Animation	
 protected:
 	// Others
-	bool m_bChangeableOnceAniShoot = false;
+	bool m_bShootable = false;
 
 	int m_nAnimationList[3] = { ANIMATION_STATE_BEAM_SABER_1_ONCE , ANIMATION_STATE_BEAM_SABER_2_ONCE, ANIMATION_STATE_BEAM_SABER_3_ONCE };
 	int m_nSaberAnimationIndex = 0;
