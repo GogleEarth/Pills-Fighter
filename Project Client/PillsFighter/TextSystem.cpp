@@ -25,8 +25,8 @@ void CTextSystem::Destroy(HWND hWnd)
 
 void CTextSystem::SetText(wchar_t *pwstr)
 { 
-	::ZeroMemory(m_pwstrText, MAX_CHAT_TEXT); 
-	lstrcpynW(m_pwstrText, pwstr, MAX_CHAT_TEXT);
+	::ZeroMemory(m_pwstrText, 256); 
+	lstrcpynW(m_pwstrText, pwstr, 256);
 	m_nPos = lstrlenW(pwstr); 
 }
 
@@ -43,7 +43,7 @@ void CTextSystem::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 		m_bIme = false;
 		break;
 	case WM_IME_COMPOSITION:
-		if (MAX_CHAT_TEXT - 1 < m_nPos)
+		if (m_nTextLength - 1 < m_nPos)
 			break;
 
 		if(lParam & GCS_RESULTSTR)
@@ -70,7 +70,7 @@ void CTextSystem::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 			break;
 		default:
 		{
-			if (MAX_CHAT_TEXT - 1 < m_nPos)
+			if (m_nTextLength - 1 < m_nPos)
 				break;
 			
 			m_pwstrText[m_nPos++] = wParam;

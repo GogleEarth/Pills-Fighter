@@ -511,6 +511,11 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		SendToServer(PKT_ID_MOVE_TEAM, &nTeam);
 		break;
 	}
+	case LOBBY_KEYDOWN_CHANGE_NAME:
+	{
+		SendToServer(PKT_ID_CHANGE_NAME, NULL);
+		break;
+	}
 	}
 }
 
@@ -544,7 +549,9 @@ void CGameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM
 
 void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_pScene) m_pScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+	int rev = 0;
+	if (m_pScene) rev = m_pScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+	if (rev) ProcessSceneReturnVal(rev);
 
 	switch (nMessageID)
 	{
@@ -937,10 +944,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_PLAYER_IN *pPacket = (PKT_PLAYER_IN*)m_pPacketBuffer;
 
-		wchar_t pstrid[32];
-		wsprintfW(pstrid, L"%d", pPacket->id);
-
-		m_pScene->JoinPlayer(pPacket->id, pPacket->slot, pstrid, pPacket->robot);
+		m_pScene->JoinPlayer(pPacket->id, pPacket->slot, pPacket->name, pPacket->robot);
 		break;
 	}
 	case PKT_ID_PLAYER_OUT:
@@ -954,7 +958,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_GAME_START *pPacket = (PKT_GAME_START*)m_pPacketBuffer;
 
-		int nPlayerTeam = m_pScene->GetMyTeam();
+		int nPlayerTeam = CScene::GetMyTeam();
 
 		m_pScene->GetTeamsInfo(nPlayerTeam, m_vnIndices, m_vpwstrNames);
 
@@ -962,7 +966,7 @@ void CGameFramework::ProcessPacket()
 
 		BuildScene(pPacket->map);
 
-		m_pScene->SetMyTeam(nPlayerTeam);
+		CScene::SetMyTeam(nPlayerTeam);
 
 		m_bDrawScene = false;
 
@@ -1201,8 +1205,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_GAME_START:
 	{
 		PKT_GAME_START pktToServer;
-		PKT_ID id = PKT_ID_GAME_START;
-		pktToServer.PktID = (char)PKT_ID_GAME_START;
+		pktToServer.PktID = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 
 		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
@@ -1214,8 +1217,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_LOAD_COMPLETE:
 	{
 		PKT_LOAD_COMPLETE pktToServer;
-		PKT_ID id = PKT_ID_LOAD_COMPLETE;
-		pktToServer.PktID = (char)PKT_ID_LOAD_COMPLETE;
+		pktToServer.PktID = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 
 		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
@@ -1227,8 +1229,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_ROOM_IN:
 	{
 		PKT_ROOM_IN pktToServer;
-		PKT_ID id = PKT_ID_ROOM_IN;
-		pktToServer.PktId = (char)PKT_ID_ROOM_IN;
+		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.Room_num = m_pScene->GetSelectRoom();
 
@@ -1241,8 +1242,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_CREATE_ROOM:
 	{
 		PKT_CREATE_ROOM packet;
-		PKT_ID id = PKT_ID_CREATE_ROOM;
-		packet.PktId = (char)PKT_ID_CREATE_ROOM;
+		packet.PktId = pktID;
 		packet.PktSize = sizeof(packet);
 
 		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
@@ -1254,9 +1254,8 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
 		PKT_LOBBY_PLAYER_INFO pktToServer;
-		PKT_ID id = PKT_ID_LOBBY_PLAYER_INFO;
 		pktToServer.id = gClientIndex;
-		pktToServer.PktId = PKT_ID_LOBBY_PLAYER_INFO;
+		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.selected_robot = m_pScene->GetPlayerRobotType();
 		pktToServer.slot = m_nClientSlot;
@@ -1269,8 +1268,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_LEAVE_ROOM:
 	{
 		PKT_LEAVE_ROOM pktToServer;
-		PKT_ID id = PKT_ID_LEAVE_ROOM;
-		pktToServer.PktId = PKT_ID_LEAVE_ROOM;
+		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 
 		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
@@ -1281,8 +1279,7 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_CHANGE_MAP:
 	{
 		PKT_CHANGE_MAP pktToServer;
-		PKT_ID id = PKT_ID_CHANGE_MAP;
-		pktToServer.PktId = PKT_ID_CHANGE_MAP;
+		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.map = m_pScene->GetSelectedMap();
 
@@ -1296,9 +1293,20 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		int *p = (int*)pData;
 
 		PKT_MOVE_TEAM pktToServer;
-		pktToServer.PktId = PKT_ID_MOVE_TEAM;
+		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 		pktToServer.team = *p;
+
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Change Map Error\n");
+		break;
+	}
+	case PKT_ID_CHANGE_NAME:
+	{
+		PKT_CHANGE_NAME pktToServer;
+		pktToServer.PktId = pktID;
+		pktToServer.PktSize = sizeof(pktToServer);
+		lstrcpynW(pktToServer.name, CScene::GetMyName(), MAX_NAME_LENGTH);
 
 		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Change Map Error\n");

@@ -58,7 +58,7 @@ public:
 	virtual void ReleaseUploadBuffers();
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
-	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual int OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	virtual void ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime);
 
 	virtual void CheckCollision() {}
@@ -242,10 +242,12 @@ public: // Network
 	virtual void SetMap(int nMap) {}
 	virtual void ChangeSelectRobot(int nIndex, int nRobotType) {}
 	virtual void ChangeSlot(int nIndex, int nChangeSlot) {}
-	virtual void SetMyTeam(int nTeam) { CScene::m_nMyTeam = nTeam; }
-	virtual int GetMyTeam() { return m_nMyTeam; }
 	virtual void AddTeam(int nIndex, wchar_t *pstrName) {}
 	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames) {}
+
+	static void SetMyTeam(int nTeam) { CScene::m_nMyTeam = nTeam; }
+	static int GetMyTeam() { return CScene::m_nMyTeam; }
+	static wchar_t* GetMyName() { return CScene::m_pwstrMyName; }
 
 protected:
 	static int m_nMyTeam;
@@ -338,7 +340,7 @@ public:
 	CLobbyMainScene();
 	virtual ~CLobbyMainScene();
 
-	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual int OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
@@ -388,6 +390,7 @@ protected:
 
 struct ROOM_PLAYER_INFO
 {
+	wchar_t		m_pwstrName[10];
 	CTextObject	*m_pTextObject;
 	int			m_nRobotType;
 	int			m_nSlot;
@@ -569,7 +572,7 @@ public:
 	virtual ~CBattleScene();
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
-	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual int OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository) {}

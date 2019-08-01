@@ -283,7 +283,7 @@ int CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, 
 	return 0;
 }
 
-void CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+int CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 }
 
@@ -1190,7 +1190,7 @@ CLobbyMainScene::~CLobbyMainScene()
 
 }
 
-void CLobbyMainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+int CLobbyMainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 	if (m_bActNameChange)
 	{
@@ -1212,6 +1212,7 @@ void CLobbyMainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WP
 			case VK_RETURN:
 				m_bActNameChange = false;
 				lstrcpynW(CScene::m_pwstrMyName, m_pTextSystem->GetText(), sizeof(CScene::m_pwstrMyName));
+				return LOBBY_KEYDOWN_CHANGE_NAME;
 				break;
 			case VK_ESCAPE:
 				m_bActNameChange = false;
@@ -1387,6 +1388,7 @@ void CLobbyMainScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	lstrcpynW(CScene::m_pwstrMyName, gNameList[rand() % 20], sizeof(CScene::m_pwstrMyName));
 	m_NameTextObject = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, CScene::m_pwstrMyName, XMFLOAT2(-0.325f, 0.06f), XMFLOAT2(3.0f, 3.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 	m_pTextSystem->SetText(CScene::m_pwstrMyName);
+	m_pTextSystem->SetTextLength(MAX_NAME_LENGTH);
 }
 
 void CLobbyMainScene::ReleaseObjects()
@@ -2407,7 +2409,7 @@ int CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 	return 0;
 }
 
-void CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 	CScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 

@@ -1,6 +1,17 @@
 #pragma once
 
-#define ON_NETWORKING
+////////////////////////////////////////
+//#define ON_NETWORKING
+
+#define MAX_NUM_OBJECT 3000
+#define MAX_NAME_LENGTH 10
+
+//#define SERVERIP	"119.64.25.5"
+#define SERVERIP	"127.0.0.1"
+#define SERVERPORT	9000
+#define LOBBYSERVERIP	"127.0.0.1"
+#define LOBBYSERVERPORT	9001
+////////////////////////////////////////
 
 typedef enum PKT_ID
 {
@@ -34,7 +45,8 @@ typedef enum PKT_ID
 	PKT_ID_CHANGE_ROOM_INFO,
 	PKT_ID_MAP_EVENT,
 	PKT_ID_MOVE_TEAM,
-	PKT_ID_PLAYER_DIE
+	PKT_ID_PLAYER_DIE,
+	PKT_ID_CHANGE_NAME
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -204,6 +216,13 @@ struct PKT_ADD_ROOM
 	BYTE Room_num;
 };
 
+struct PKT_CHANGE_NAME
+{
+	BYTE PktSize;
+	BYTE PktId;
+	wchar_t name[MAX_NAME_LENGTH];
+};
+
 /////////////////////////////////////////////// Room
 struct PKT_LEAVE_ROOM
 {
@@ -233,6 +252,7 @@ typedef struct PKT_PLAYER_IN
 	BYTE		Team;
 	int			robot;
 	BYTE		slot;
+	wchar_t		name[MAX_NAME_LENGTH];
 }PKT_PLAYER_IN, PKT_PLAYER_OUT;
 
 struct PKT_LOBBY_PLAYER_INFO
@@ -384,11 +404,3 @@ struct PKT_GAME_STATE
 ///////////////////////////////////////////////////////////
 
 #pragma pack(pop)
-
-#define MAX_NUM_OBJECT 3000
-
-//#define SERVERIP	"119.64.25.5"
-#define SERVERIP	"127.0.0.1"
-#define SERVERPORT	9000
-#define LOBBYSERVERIP	"127.0.0.1"
-#define LOBBYSERVERPORT	9001
