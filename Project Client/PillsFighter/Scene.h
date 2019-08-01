@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Sound.h"
 #include "Font.h"
+#include "TextSystem.h"
 
 class CRepository;
 class CSound;
@@ -161,8 +162,9 @@ protected:
 	bool								m_bBloom = true;
 	bool								m_bMotionBlur = true;
 	bool								m_bMotionBlurred = false;
-
+	
 public:
+
 	virtual void StartScene() {};
 	virtual void MoveCursor(float x, float y) {}
 	virtual void SetCursorPosition(XMFLOAT2 xmf2Position) {}
@@ -222,6 +224,13 @@ protected:
 	CPostProcessingShader			*m_pPostProcessingShader = NULL;
 	CTestShader						*m_pTestShader = NULL;
 
+protected:
+	bool			m_bActiveChat = false;
+	CTextSystem		*m_pTextSystem = NULL;
+
+public:
+	void SetTextSystem(CTextSystem *pTextSystem) { m_pTextSystem = pTextSystem; }
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo) {}
 	virtual void DeleteObject(int nIndex) {}
@@ -240,6 +249,7 @@ public: // Network
 
 protected:
 	static int m_nMyTeam;
+	static wchar_t m_pwstrMyName[10];
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -280,7 +290,7 @@ protected:
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // UI Texture Index
-#define LOBBY_MAIN_UI_TEXTURE_COUNT 8
+#define LOBBY_MAIN_UI_TEXTURE_COUNT 11
 
 #define LOBBY_MAIN_UI_TEXTURE_BASE 0
 #define LOBBY_MAIN_UI_TEXTURE_CREATE_ROOM 1
@@ -290,22 +300,28 @@ protected:
 #define LOBBY_MAIN_UI_TEXTURE_DOWN 5
 #define LOBBY_MAIN_UI_TEXTURE_HL_DOWN 6
 #define LOBBY_MAIN_UI_TEXTURE_HL_ROOM 7
+#define LOBBY_MAIN_UI_TEXTURE_CHANGE_NAME 8
+#define LOBBY_MAIN_UI_TEXTURE_HL_CHANGE_NAME 9
+#define LOBBY_MAIN_UI_TEXTURE_INPUT_BOX 10
 
 // UI Rect Index
-#define LOBBY_MAIN_UI_RECT_COUNT 12
+#define LOBBY_MAIN_UI_RECT_COUNT 15
 
 #define LOBBY_MAIN_UI_RECT_BASE 0
 #define LOBBY_MAIN_UI_RECT_CREATE_ROOM_BUTTON 1
-#define LOBBY_MAIN_UI_RECT_UP_BUTTON 2
-#define LOBBY_MAIN_UI_RECT_DOWN_BUTTON 3
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_1 4
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_2 5
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_3 6
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_4 7
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_5 8
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_6 9
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_7 10
-#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_8 11
+#define LOBBY_MAIN_UI_RECT_CHANGE_NAME_BUTTON 2
+#define LOBBY_MAIN_UI_RECT_UP_BUTTON 3
+#define LOBBY_MAIN_UI_RECT_DOWN_BUTTON 4
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_1 5
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_2 6
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_3 7
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_4 8
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_5 9
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_6 10
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_7 11
+#define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_8 12
+#define LOBBY_MAIN_UI_RECT_INPUT_BOX 13
+#define LOBBY_ROOM_UI_RECT_SCREEN 14
 
 struct ROOM_INFO_TEXT
 {
@@ -321,6 +337,8 @@ class CLobbyMainScene : public CLobbyScene
 public:
 	CLobbyMainScene();
 	virtual ~CLobbyMainScene();
+
+	virtual void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
@@ -338,10 +356,14 @@ public:
 	virtual void DeleteRoom(int n);
 	virtual void ChangeRoomInfo(int index, int map, int people);
 	virtual int GetSelectRoom() { return m_Rooms[m_nSelectRoom].nRoom_num; }
+	void ChangeInputNameText();
 
 protected:
 	BoundingBox		m_CreateRoomButton;
 	bool			m_bHLCreateRoomButton = false;
+
+	BoundingBox		m_NameChangeButton;
+	bool			m_bHLNameChangeButton = false;
 
 	BoundingBox		m_UpButton;
 	bool			m_bHLUpButton = false;
@@ -356,6 +378,10 @@ protected:
 	std::vector<ROOM_INFO_TEXT> m_Rooms;
 
 	int				m_nSelectRoom = -1;
+
+	bool			m_bActNameChange = false;
+
+	CTextObject		*m_NameTextObject = NULL;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -55,6 +55,7 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 {
 	m_hInstance = hInstance;
 	m_hWnd = hMainWnd;
+	m_TextSystem.Initialize(m_hWnd);
 
 	CreateDirect3DDevice();
 	CreateCommandQueueAndList();
@@ -73,6 +74,7 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	::SetCapture(hMainWnd);
 	::GetCursorPos(&m_ptOldCursorPos);
 
+
 	return(true);
 }
 
@@ -85,6 +87,8 @@ void CGameFramework::OnDestroy()
 	m_Font.Destroy();
 
 	::CloseHandle(m_hFenceEvent);
+
+	m_TextSystem.Destroy(m_hWnd);
 
 #if defined(_DEBUG)
 	if (m_pd3dDebugController) m_pd3dDebugController->Release();
@@ -317,6 +321,7 @@ void CGameFramework::BuildScene(int nSceneType)
 	}
 	
 	m_pScene->SetFont(m_pd3dDevice, &m_Font);
+	m_pScene->SetTextSystem(&m_TextSystem);
 
 	for (int i = 0; i < m_vnIndices.size(); i++)
 	{
@@ -546,8 +551,9 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 	case WM_KEYUP:
 		switch (wParam)
 		{
+		case VK_F1:
+			break;
 		case VK_ESCAPE:
-			::PostQuitMessage(0);
 			break;
 		case VK_F8:
 			break;
@@ -567,9 +573,9 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 			m_pdxgiSwapChain->ResizeTarget(&dxgiTargetParameters);
 			OnResizeBackBuffers();
+			break;
 		}
-		break;
-		case VK_RETURN:
+		case VK_TAB:
 			if (::GetCapture() == m_hWnd)
 			{
 				::GetCursorPos(&m_ptOldCursorPos);
@@ -622,6 +628,12 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 		OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
 		break;
 	case WM_KEYDOWN:
+	case WM_IME_CHAR:
+	case WM_IME_COMPOSITION:
+	case WM_IME_STARTCOMPOSITION:
+	case WM_IME_SETCONTEXT:
+	case WM_IME_ENDCOMPOSITION:
+	case WM_CHAR:
 		OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 		break;
 	case WM_KEYUP:
@@ -731,10 +743,10 @@ void CGameFramework::FrameAdvance()
 		
 	if (m_bDrawScene)
 	{
-		CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
-
 		if (m_pScene)
 		{
+			CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
+
 			m_pScene->PrepareRender(m_pd3dCommandList);
 
 			m_pScene->Render(m_pd3dCommandList, m_pCamera);

@@ -118,8 +118,6 @@ CFont::CFont()
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
 
-	::ZeroMemory(m_pstrImageFile, sizeof(m_pstrImageFile));\
-
 	m_nCharacters = 0;
 	m_pCharacters = NULL;
 
@@ -145,17 +143,25 @@ void CFont::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3d
 		m_qpTempTextObjects.push(pTextObject);
 	}
 
-	char pstrFileWithPath[64] = "./Resource/Font/";
-	strcat_s(pstrFileWithPath, m_pstrImageFile);
+	int nType;
+	if (m_vTextureInfo.size() > 1) nType = RESOURCE_TEXTURE2D_ARRAY;
+	else nType = RESOURCE_TEXTURE2D;
 
-	INT nLen = (int)(strlen(pstrFileWithPath)) + 1;
-	WCHAR* pwstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
-	MultiByteToWideChar(949, 0, pstrFileWithPath, -1, pwstrFileName, nLen);
+	m_pFontTexture = new CTexture(m_vTextureInfo.size(), nType, 0);
 
-	m_pFontTexture = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_pFontTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, 0);
+	for (int i = 0; i < m_vTextureInfo.size(); i++)
+	{
+		char pstrFileWithPath[64] = "./Resource/Font/";
+		strcat_s(pstrFileWithPath, m_vTextureInfo[i].c_str());
 
-	delete pwstrFileName;
+		INT nLen = (int)(strlen(pstrFileWithPath)) + 1;
+		WCHAR* pwstrFileName = (LPWSTR)new WCHAR[sizeof(WCHAR)*nLen];
+		MultiByteToWideChar(949, 0, pstrFileWithPath, -1, pwstrFileName, nLen);
+
+		m_pFontTexture->LoadTextureFromFile(pd3dDevice, pd3dCommandList, pwstrFileName, i);
+
+		delete pwstrFileName;
+	}
 }
 
 void CFont::SetSrv(ID3D12Device *pd3dDevice)
@@ -336,13 +342,16 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 
 				if (!strncmp(pstrToken, "id=", 3)) // id=
 				{
-					// do nothing
+					// DO NOT ANYTHING
 				}
 				else if (!strncmp(pstrToken, "fil", 3)) // file="
 				{
 					char *pstr = &pstrToken[6];
 
-					memcpy(m_pstrImageFile, pstr, strlen(pstr) - 1);
+					char pstrFile[10] = "";
+					memcpy(pstrFile, pstr, strlen(pstr) - 1);
+
+					m_vTextureInfo.emplace_back(pstrFile);
 					break;
 				}
 			}
@@ -416,7 +425,9 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 					}
 					else if (!strncmp(pstrToken, "pa", 2)) // page=
 					{
-						// do nothing
+						char *pstr = &pstrToken[5];
+
+						m_pCharacters[i].nTexIndex = atoi(pstr);
 					}
 					else if (!strncmp(pstrToken, "ch", 2)) // chnl=
 					{
@@ -560,6 +571,7 @@ void CFont::CreateText(int nWidth, int nHeight, int nLength, CFontVertex* pFontV
 		pFontVertices[i].xmf2UVPos = xmf2UVPos;
 		pFontVertices[i].xmf2UVSize = xmf2UVSize;
 		pFontVertices[i].xmf4Color = xmf4Color;
+		pFontVertices[i].nTexIndex = pFontchar->nTexIndex;
 
 		if(nType == LEFT_ALIGN)
 			xmf2ChPosition.x += (pFontchar->xAdvance - fPaddingW) * xmf2Scale.x / float(nWidth);
@@ -662,6 +674,7 @@ XMINT2 CFont::Create3DText(int nLength, CFontVertex* pFontVertices, const wchar_
 		pFontVertices[i].xmf2UVPos = xmf2UVPos;
 		pFontVertices[i].xmf2UVSize = xmf2UVSize;
 		pFontVertices[i].xmf4Color = xmf4Color;
+		pFontVertices[i].nTexIndex = pFontchar->nTexIndex;
 
 		xmf2ChPosition.x += (pFontchar->xAdvance - fPaddingW) * xmf2Scale.x;
 

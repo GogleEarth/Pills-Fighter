@@ -5,12 +5,13 @@ class CFontShader;
 
 struct CFontCharacter
 {
-	int nId;
+	int nId, nTexIndex;
 
 	float u, v;
 	float tw, th;
 	float w, h;
 	float xOffset, yOffset, xAdvance;
+	
 };
 
 struct CFontKerning
@@ -26,6 +27,7 @@ struct CFontVertex
 	XMFLOAT2 xmf2UVPos;
 	XMFLOAT2 xmf2UVSize;
 	XMFLOAT4 xmf4Color;
+	UINT	 nTexIndex;
 };
 
 struct CB_FONT_INFO
@@ -130,8 +132,6 @@ protected:
 	int m_nTextureWidth;
 	int m_nTextureHeight;
 
-	char m_pstrImageFile[64];
-
 	int m_nCharacters;
 	CFontCharacter *m_pCharacters;
 
@@ -139,6 +139,8 @@ protected:
 	CFontKerning * m_pKernings;
 
 	CTexture *m_pFontTexture;
+
+	std::vector<std::string> m_vTextureInfo;
 
 #define MAX_TEXT_SIZE 200
 	std::queue<CTextObject*> m_qpTempTextObjects;

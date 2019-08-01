@@ -53,6 +53,8 @@ private:
 	ID3D12DescriptorHeap			*m_pd3dRtvDescriptorHeap;
 	ID3D12DescriptorHeap			*m_pd3dDsvDescriptorHeap;
 
+	CTextSystem						m_TextSystem;
+
 public:
 	CGameFramework();
 	~CGameFramework();

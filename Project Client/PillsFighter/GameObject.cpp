@@ -1644,10 +1644,7 @@ bool CCursor::CollisionCheck(BoundingBox& xmAABB)
 {
 	float sizex = 84.0f / FRAME_BUFFER_WIDTH * 0.25f;
 	float sizey = 128.0f / FRAME_BUFFER_HEIGHT * 0.25f;
-
-	m_xmf2ScreenPos.x = ((2.0f  * m_xmf2CursorPos.x) / gnWndClientWidth) - 1.0f;
-	m_xmf2ScreenPos.y = -((2.0f * m_xmf2CursorPos.y) / gnWndClientHeight) + 1.0f;
-
+	
 	return(xmAABB.Contains(Vector3::XMFloat3ToVector(XMFLOAT3(m_xmf2ScreenPos.x, m_xmf2ScreenPos.y, 1.0f))));
 }
 
@@ -1658,6 +1655,9 @@ void CCursor::MoveCursorPos(float x, float y)
 
 	m_xmf2CursorPos.x = (m_xmf2CursorPos.x + x) > gnWndClientWidth ? gnWndClientWidth : (m_xmf2CursorPos.x + x) > 0 ? (m_xmf2CursorPos.x + x) : 0;
 	m_xmf2CursorPos.y = (m_xmf2CursorPos.y + y) > gnWndClientHeight ? gnWndClientHeight : (m_xmf2CursorPos.y + y) > 0 ? (m_xmf2CursorPos.y + y) : 0;
+
+	m_xmf2ScreenPos.x = ((2.0f  * m_xmf2CursorPos.x) / gnWndClientWidth) - 1.0f;
+	m_xmf2ScreenPos.y = -((2.0f * m_xmf2CursorPos.y) / gnWndClientHeight) + 1.0f;
 }
 
 void CCursor::SetCursorPos(XMFLOAT2 xmf2Position)

@@ -9,13 +9,7 @@ struct VS_UI_INPUT
 	float2 size : SIZE;
 };
 
-struct VS_UI_OUTPUT
-{
-	float2 center : POSITION;
-	float2 size : SIZE;
-};
-
-VS_UI_OUTPUT VSUI(VS_UI_INPUT input)
+VS_UI_INPUT VSUI(VS_UI_INPUT input)
 {
 	return(input);
 }
@@ -27,7 +21,7 @@ struct GS_UI_OUT
 };
 
 [maxvertexcount(4)]
-void GSUI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GSUI(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
@@ -64,7 +58,7 @@ cbuffer cbUIInfo : register(UI_INFO)
 };
 
 [maxvertexcount(4)]
-void GSUIBar(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GSUIBar(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float yPos = float(giValue) / float(giMaxValue);
 	float2 vValueByUp = float2(0.0f, 1.0f - yPos);
@@ -100,6 +94,12 @@ float4 PSUI(GS_UI_OUT input) : SV_TARGET
 {
 	// 임시 텍스처 배열 인덱스는 0
 	return gtxtTexture[0].Sample(gssClamp, input.uv);
+}
+
+float4 PSUIScreen(GS_UI_OUT input) : SV_TARGET
+{
+	// 임시 텍스처 배열 인덱스는 0
+	return float4(0.0f, 0.0f, 0.0f, 0.5f);
 }
 
 float4 PSUIBullet(GS_UI_OUT input) : SV_TARGET
@@ -149,7 +149,7 @@ float4 PSUIColored(GS_UI_OUT input) : SV_TARGET
 }
 
 [maxvertexcount(4)]
-void GSUITeamHP(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GSUITeamHP(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float xPos = float(giValue) / float(giMaxValue);
 	float2 vValueByRight = float2(xPos, 0.0f);
@@ -203,6 +203,7 @@ struct VS_FONT_IN
 	float2 uvPos : UVPOSITION;
 	float2 uvSize : UVSIZE;
 	float4 color : COLOR;
+	uint   texindex : TEXINDEX;
 };
 
 VS_FONT_IN VSFont(VS_FONT_IN input)
@@ -215,6 +216,7 @@ struct GS_FONT_OUT
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD;
 	float4 color : COLOR;
+	uint   texindex : TEXINDEX;
 };
 
 [maxvertexcount(4)]
@@ -247,6 +249,7 @@ void GSFont(point VS_FONT_IN input[1], inout TriangleStream<GS_FONT_OUT> outStre
 		output.position = fVertices[i];
 		output.uv = fUvs[i];
 		output.color = input[0].color;
+		output.texindex = input[0].texindex;
 
 		outStream.Append(output);
 	}
@@ -254,7 +257,7 @@ void GSFont(point VS_FONT_IN input[1], inout TriangleStream<GS_FONT_OUT> outStre
 
 float4 PSFont(GS_FONT_OUT input) : SV_TARGET
 {
-	float4 fColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	float4 fColor = gtxtTexture[NonUniformResourceIndex(input.texindex)].Sample(gssWrap, input.uv);
 
 	return fColor * input.color * gf4FontColor;
 }
@@ -269,7 +272,7 @@ cbuffer cb3DUIInfo : register(UI_3D_INFO)
 }
 
 [maxvertexcount(4)]
-void GS3DUI(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GS3DUI(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float3 f3Position = gf33DUIWorldPosition + float3(input[0].center, 0.0f);
 
@@ -461,7 +464,7 @@ float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 /////////////////////////////////////////////////////////////////////////////////////////
 
 [maxvertexcount(4)]
-void GSMinimapSight(point VS_UI_OUTPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+void GSMinimapSight(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
 {
 	float2 vUp = float2(0.0f, 1.0f);
 	float2 vRight = float2(1.0f, 0.0f);
