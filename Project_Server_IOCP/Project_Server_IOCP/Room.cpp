@@ -132,7 +132,7 @@ void Room::init(CRepository* repository)
 {
 	in_use_ = false;
 	is_playing_ = false;
-	using_scene_ = 3;
+	using_scene_ = 4;
 	blue_score_ = 0;
 	red_score_ = 0;
 
@@ -153,7 +153,7 @@ void Room::init(CRepository* repository)
 void Room::init()
 {
 	is_playing_ = false;
-	using_scene_ = 3;
+	using_scene_ = 4;
 	blue_score_ = 0;
 	red_score_ = 0;
 
@@ -176,7 +176,7 @@ void Room::init()
 void Room::end_game()
 {
 	is_playing_ = false;
-	using_scene_ = 3;
+	using_scene_ = 4;
 	blue_score_ = 0;
 	red_score_ = 0;
 
@@ -384,9 +384,9 @@ void Room::start_game()
 	blue_score_ = MAX_SCORE;
 	red_score_ = MAX_SCORE;
 
-	if (get_map() == 3)
+	if (get_map() == 4)
 		using_scene_ = 0;
-	else if (get_map() == 4)
+	else if (get_map() == 5)
 		using_scene_ = 1;
 
 	for (int i = 0; i < MAX_CLIENT; ++i)

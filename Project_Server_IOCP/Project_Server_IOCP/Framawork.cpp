@@ -709,7 +709,7 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_player(id, (char*)&pkt_cro);
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id, clients_[id].socket, 0);
-			rooms_[room_num].set_map(3);
+			rooms_[room_num].set_map(4);
 			clients_[id].in_room = true;
 
 			PKT_ADD_ROOM pkt_ar;
@@ -763,7 +763,7 @@ void Framawork::process_packet(int id, char* packet)
 					pkt_pin.Team = player->get_team();
 					pkt_pin.robot = player->get_robot();
 					pkt_pin.slot = player->get_slot();
-					lstrcpynW(pkt_pin.name, clients_[i].name, MAX_NAME_LENGTH);
+					lstrcpynW(pkt_pin.name, clients_[player->get_serverid()].name, MAX_NAME_LENGTH);
 
 					send_packet_to_player(id, (char*)&pkt_pin);
 				}
