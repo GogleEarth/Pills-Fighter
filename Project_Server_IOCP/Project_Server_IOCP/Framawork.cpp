@@ -443,13 +443,16 @@ int Framawork::accept_process()
 			std::cout << "Error - Accept Failure\n";
 			return 1;
 		}
-#define MAX_USER 1000
+
+		accept_l.lock();
 		int new_id = -1;
 		for (int i = 0; i < MAX_USER; ++i)
 			if (false == clients_[i].in_use) {
 				new_id = i;
 				break;
 			}
+		accept_l.unlock();
+
 		if (-1 == new_id) {
 			std::cout << "MAX USER overflow\n";
 			continue;
@@ -466,6 +469,15 @@ int Framawork::accept_process()
 
 		CreateIoCompletionPort(reinterpret_cast<HANDLE>(clientSocket),
 			iocp_, new_id, 0);
+
+		PKT_CHANGE_NAME pkt_cn;
+		pkt_cn.PktId = PKT_ID_CHANGE_NAME;
+		pkt_cn.PktSize = sizeof(PKT_CHANGE_NAME);
+		lstrcpynW(pkt_cn.name, clients_[new_id].name, MAX_NAME_LENGTH);
+
+		std::wcout << pkt_cn.name << "\n";
+
+		send_packet_to_player(new_id, (char*)&pkt_cn);
 
 		for (int i = 0; i < 10; ++i)
 		{
@@ -733,9 +745,7 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_player(id, (char*)&pkt_rio);
 			clients_[id].in_room = true;
 
-			PKT_PLAYER_IN pkt_pin;
-			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
-			pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
+			
 
 			// 새로들어온 애한테 원래있던애들 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
@@ -744,18 +754,28 @@ void Framawork::process_packet(int id, char* packet)
 				auto player = rooms_[room_num].get_player(i);
 				if (player->get_use())
 				{
+					PKT_PLAYER_IN pkt_pin;
+					pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
+					pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 					pkt_pin.id = i;
 					pkt_pin.Team = player->get_team();
 					pkt_pin.robot = player->get_robot();
 					pkt_pin.slot = player->get_slot();
+					lstrcpynW(pkt_pin.name, clients_[i].name, MAX_NAME_LENGTH);
+
 					send_packet_to_player(id, (char*)&pkt_pin);
 				}
 			}
 
+			PKT_PLAYER_IN pkt_pin;
+			pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
+			pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 			pkt_pin.id = player_id;
 			pkt_pin.Team = pkt_rio.slot % 2;
 			pkt_pin.robot = ROBOT_TYPE_GM;
 			pkt_pin.slot = pkt_rio.slot;
+			lstrcpynW(pkt_pin.name, clients_[id].name, MAX_NAME_LENGTH);
+
 			// 원래있던애들한테 새로들어온애 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
 			{
@@ -938,7 +958,8 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_CHANGE_NAME:
 	{
 		PKT_CHANGE_NAME* pkt_cn = reinterpret_cast<PKT_CHANGE_NAME*>(packet);
-		std::cout << pkt_cn->name << "\n";
+		lstrcpynW(clients_[id].name, pkt_cn->name, MAX_NAME_LENGTH);
+		std::wcout << clients_[id].name << "\n";
 		break;
 	}
 	default:

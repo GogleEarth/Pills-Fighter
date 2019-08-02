@@ -13,6 +13,7 @@ enum EVENT_TYPE {
 };
 
 #define MAX_BUFFER 1024
+#define MAX_USER 1000
 
 struct OVER_EX {
 	WSAOVERLAPPED	over;
@@ -32,12 +33,14 @@ public:
 	char packet_buffer[MAX_BUFFER];
 	int	prev_size;
 	bool in_room;
+	wchar_t name[MAX_NAME_LENGTH];
 	Client() {
 		in_use = false;
 		over_ex.dataBuffer.len = MAX_BUFFER;
 		over_ex.dataBuffer.buf = over_ex.messageBuffer;
 		over_ex.event_t = EVENT_TYPE_RECV;
 		in_room = false;
+		lstrcpynW(name, L"¶ó¸¶¹Ù", MAX_NAME_LENGTH);
 	}
 };
 
@@ -57,7 +60,8 @@ class Framawork
 {
 	Room rooms_[10];
 	HANDLE iocp_;
-	Client clients_[1000];
+	std::mutex accept_l;
+	Client clients_[MAX_USER];
 	std::mutex timer_l;
 	std::priority_queue <EVENT_ST> timer_queue;
 
