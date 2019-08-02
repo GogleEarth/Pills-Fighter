@@ -308,6 +308,9 @@ void CGameFramework::BuildScene(int nSceneType)
 
 	switch (nSceneType)
 	{
+	case SCENE_TYPE_TITLE:
+		BuildTitleScene();
+		break;
 	case SCENE_TYPE_LOBBY_MAIN:
 		BuildLobbyMainScene();
 		break;
@@ -361,6 +364,13 @@ void CGameFramework::BuildBattleScene(int nType)
 	m_pCamera = m_pPlayer->GetCamera();
 }
 
+void CGameFramework::BuildTitleScene()
+{
+	m_pScene = new CTitleScene();
+
+	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
+}
+
 void CGameFramework::BuildLobbyMainScene()
 {
 	m_pScene = new CLobbyMainScene();
@@ -399,8 +409,7 @@ void CGameFramework::BuildObjects()
 	::pDevice = m_pd3dDevice;
 	::pCommandList = m_pd3dCommandList;
 
-	BuildScene(SCENE_TYPE_LOBBY_MAIN);
-	//BuildScene(SCENE_TYPE_COLONY);
+	BuildScene(SCENE_TYPE_TITLE);
 }
 
 void CGameFramework::ReleaseObjects()
@@ -453,7 +462,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 #endif
 		break;
 	}
-	case LOBBY_MOUSE_CLICK_START:
+	case LOBBY_MOUSE_CLICK_ROOM_START:
 	{
 #ifdef ON_NETWORKING
 		SendToServer(PKT_ID_GAME_START, NULL);
@@ -469,7 +478,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 #endif
 		break;
 	}
-	case LOBBY_MOUSE_CLICK_LEAVE:
+	case LOBBY_MOUSE_CLICK_ROOM_LEAVE:
 	{
 #ifdef ON_NETWORKING
 		SendToServer(PKT_ID_LEAVE_ROOM, NULL);
@@ -485,27 +494,27 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 
 		break;
 	}
-	case LOBBY_MOUSE_CLICK_SELECT_ROBOT:
+	case LOBBY_MOUSE_CLICK_ROOM_SELECT_ROBOT:
 	{
 #ifdef ON_NETWORKING
 		SendToServer(PKT_ID_LOBBY_PLAYER_INFO, NULL);
 #endif
 		break;
 	}
-	case LOBBY_MOUSE_CLICK_SELECT_MAP:
+	case LOBBY_MOUSE_CLICK_ROOM_SELECT_MAP:
 	{
 #ifdef ON_NETWORKING
 		SendToServer(PKT_ID_CHANGE_MAP, NULL);
 #endif
 		break;
 	}
-	case LOBBY_MOUSE_CLICK_CHANGE_TEAM_RED:
+	case LOBBY_MOUSE_CLICK_ROOM_CHANGE_TEAM_RED:
 	{
 		int nTeam = TEAM_TYPE::TEAM_TYPE_RED;
 		SendToServer(PKT_ID_MOVE_TEAM, &nTeam);
 		break;
 	}
-	case LOBBY_MOUSE_CLICK_CHANGE_TEAM_BLUE:
+	case LOBBY_MOUSE_CLICK_ROOM_CHANGE_TEAM_BLUE:
 	{
 		int nTeam = TEAM_TYPE::TEAM_TYPE_BLUE;
 		SendToServer(PKT_ID_MOVE_TEAM, &nTeam);
@@ -516,6 +525,22 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		SendToServer(PKT_ID_CHANGE_NAME, NULL);
 		break;
 	}
+	case LOBBY_MOUSE_CLICK_GAME_START:
+		WSAAsyncSelect(gSocket, m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE);
+
+		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
+
+		BuildScene(SCENE_TYPE_LOBBY_MAIN);
+		m_pScene->SetCursorPosition(xmf2Pos);
+
+		break;
+	case LOBBY_MOUSE_CLICK_GAME_EXIT:
+		::PostQuitMessage(0);
+		break;
 	}
 }
 

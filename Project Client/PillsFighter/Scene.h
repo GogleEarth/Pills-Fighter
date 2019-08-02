@@ -41,10 +41,11 @@ struct LIGHTS
 };
 
 // Scene Type
-#define SCENE_TYPE_LOBBY_MAIN 1
-#define SCENE_TYPE_LOBBY_ROOM 2
-#define SCENE_TYPE_COLONY 3
-#define SCENE_TYPE_SPACE 4
+#define SCENE_TYPE_TITLE 1
+#define SCENE_TYPE_LOBBY_MAIN 2
+#define SCENE_TYPE_LOBBY_ROOM 3
+#define SCENE_TYPE_COLONY 4
+#define SCENE_TYPE_SPACE 5
 
 class CScene
 {
@@ -256,11 +257,11 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CLobbyScene : public CScene
+class CUIScene : public CScene
 {
 public:
-	CLobbyScene();
-	virtual ~CLobbyScene();
+	CUIScene();
+	virtual ~CUIScene();
 
 	virtual void ReleaseObjects();
 	virtual void ReleaseUploadBuffers();
@@ -289,10 +290,63 @@ protected:
 	D3D12_VIEWPORT					m_d3dViewport;
 	D3D12_RECT						m_d3dScissorRect;
 };
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // UI Texture Index
-#define LOBBY_MAIN_UI_TEXTURE_COUNT 11
+#define TITLE_UI_TEXTURE_COUNT 6
+
+#define TITLE_UI_TEXTURE_BASE 0
+#define TITLE_UI_TEXTURE_START 1
+#define TITLE_UI_TEXTURE_HL_START 2
+#define TITLE_UI_TEXTURE_EXIT 3
+#define TITLE_UI_TEXTURE_HL_EXIT 4
+#define TITLE_UI_TEXTURE_NOTIFY 5
+
+// UI Rect Index
+#define TITLE_UI_RECT_COUNT 5
+
+#define TITLE_UI_RECT_BASE 0
+#define TITLE_UI_RECT_START 1
+#define TITLE_UI_RECT_EXIT 2
+#define TITLE_UI_RECT_NOTIFY 3
+#define TITLE_UI_RECT_SCREEN 4
+
+
+class CTitleScene : public CUIScene
+{
+public:
+	CTitleScene();
+	virtual ~CTitleScene();
+
+	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
+	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+
+	virtual void CheckCollision();
+	virtual void StartScene();
+	virtual int MouseClick();
+
+	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
+
+	void Notify();
+	void HideNotify();
+
+protected:
+	BoundingBox		m_StartButton;
+	bool			m_bHLStartButton = false;
+
+	BoundingBox		m_ExitButton;
+	bool			m_bHLExitButton = false;
+
+	bool			m_bShowNotify = false;
+	float			m_fShowTime = 0.0f;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// UI Texture Index
+#define LOBBY_MAIN_UI_TEXTURE_COUNT 13
 
 #define LOBBY_MAIN_UI_TEXTURE_BASE 0
 #define LOBBY_MAIN_UI_TEXTURE_CREATE_ROOM 1
@@ -305,9 +359,11 @@ protected:
 #define LOBBY_MAIN_UI_TEXTURE_CHANGE_NAME 8
 #define LOBBY_MAIN_UI_TEXTURE_HL_CHANGE_NAME 9
 #define LOBBY_MAIN_UI_TEXTURE_INPUT_BOX 10
+#define LOBBY_MAIN_UI_TEXTURE_EXIT 11
+#define LOBBY_MAIN_UI_TEXTURE_HL_EXIT 12
 
 // UI Rect Index
-#define LOBBY_MAIN_UI_RECT_COUNT 15
+#define LOBBY_MAIN_UI_RECT_COUNT 16
 
 #define LOBBY_MAIN_UI_RECT_BASE 0
 #define LOBBY_MAIN_UI_RECT_CREATE_ROOM_BUTTON 1
@@ -323,7 +379,8 @@ protected:
 #define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_7 11
 #define LOBBY_MAIN_UI_RECT_ROOM_BUTTON_8 12
 #define LOBBY_MAIN_UI_RECT_INPUT_BOX 13
-#define LOBBY_ROOM_UI_RECT_SCREEN 14
+#define LOBBY_MAIN_UI_RECT_SCREEN 14
+#define LOBBY_MAIN_UI_RECT_EXIT_BUTTON 15
 
 struct ROOM_INFO_TEXT
 {
@@ -334,7 +391,7 @@ struct ROOM_INFO_TEXT
 	CTextObject *pRoom_num_people;
 };
 
-class CLobbyMainScene : public CLobbyScene
+class CLobbyMainScene : public CUIScene
 {
 public:
 	CLobbyMainScene();
@@ -366,6 +423,9 @@ protected:
 
 	BoundingBox		m_NameChangeButton;
 	bool			m_bHLNameChangeButton = false;
+
+	BoundingBox		m_ExitButton;
+	bool			m_bHLExitButton = false;
 
 	BoundingBox		m_UpButton;
 	bool			m_bHLUpButton = false;
@@ -444,7 +504,7 @@ struct ROOM_PLAYER_INFO
 #define LOBBY_ROOM_UI_RECT_TEAM_RED 9
 #define LOBBY_ROOM_UI_RECT_TEAM_BLUE 10
 
-class CLobbyRoomScene : public CLobbyScene
+class CLobbyRoomScene : public CUIScene
 {
 public:
 	CLobbyRoomScene();

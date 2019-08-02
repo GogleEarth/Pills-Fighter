@@ -74,6 +74,7 @@ public:
 	void BuildObjects();
 	void BuildScene(int nSceneType = 0);
 	void BuildBattleScene(int nType);
+	void BuildTitleScene();
 	void BuildLobbyMainScene();
 	void BuildLobbyRoomScene();
 	void ReleaseObjects();
