@@ -170,7 +170,63 @@ int Framawork::thread_process()
 				delete data;
 			}
 
-			if (rooms_[key].get_num_player_in_room() > 0)
+			if (rooms_[key].get_blue_score() <= 0 || rooms_[key].get_red_score() <= 0)
+			{
+				PKT_GAME_END pkt_ge;
+				pkt_ge.PktId = PKT_ID_GAME_END;
+				pkt_ge.PktSize = sizeof(PKT_GAME_END);
+				if (rooms_[key].get_blue_score() <= 0)
+					pkt_ge.WinTeam = 0;
+				else
+					pkt_ge.WinTeam = 1;
+
+				send_packet_to_room_player(key, (char*)&pkt_ge);
+
+				rooms_[key].end_game();
+
+				for (int i = 0; i < MAX_CLIENT; ++i)
+				{
+					auto player = rooms_[key].get_player(i);
+					if (!player->get_use()) continue;
+
+					PKT_ROOM_IN_OK pkt_rio;
+					pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
+					pkt_rio.PktSize = sizeof(PKT_ROOM_IN_OK);
+					pkt_rio.index = i;
+					pkt_rio.map = rooms_[key].get_map();
+					pkt_rio.slot = player->get_slot();
+					send_packet_to_player(player->get_serverid(), (char*)&pkt_rio);
+					clients_[player->get_serverid()].in_room = true;
+
+					PKT_PLAYER_IN pkt_pin;
+					pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
+					pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
+
+					// 새로들어온 애한테 원래있던애들 알려주기
+					for (int j = 0; j < MAX_CLIENT; ++j)
+					{
+						if (j == i) continue;
+						auto other_player = rooms_[key].get_player(j);
+						if (other_player->get_use())
+						{
+							pkt_pin.id = j;
+							pkt_pin.Team = other_player->get_team();
+							pkt_pin.robot = other_player->get_robot();
+							pkt_pin.slot = other_player->get_slot();
+							send_packet_to_player(player->get_serverid(), (char*)&pkt_pin);
+						}
+					}
+				}
+
+				PKT_CHANGE_ROOM_INFO pkt_cmi;
+				pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+				pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+				pkt_cmi.Room_num = key;
+				pkt_cmi.numpeople = rooms_[key].get_num_player_in_room();
+				pkt_cmi.map = rooms_[key].get_map();
+				send_packet_to_all_player((char*)&pkt_cmi);
+			}
+			else if (rooms_[key].get_num_player_in_room() > 0)
 				add_timer(key, key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 			else
 				rooms_[key].init();
@@ -179,7 +235,7 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_OBJECT_MOVE == over_ex->event_t)
 		{
-			if (rooms_[over_ex->room_num].get_is_use())
+			if (rooms_[over_ex->room_num].get_playing())
 			{
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
@@ -238,7 +294,7 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_ITEM == over_ex->event_t)
 		{
-			if(rooms_[over_ex->room_num].get_is_use())
+			if(rooms_[over_ex->room_num].get_playing())
 			{
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
@@ -272,7 +328,7 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_BEAM_RIFLE == over_ex->event_t)
 		{
-			if (rooms_[over_ex->room_num].get_is_use())
+			if (rooms_[over_ex->room_num].get_playing())
 			{
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
@@ -300,7 +356,7 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_GM_GUN == over_ex->event_t)
 		{
-		if (rooms_[over_ex->room_num].get_is_use())
+		if (rooms_[over_ex->room_num].get_playing())
 		{
 			auto object = rooms_[over_ex->room_num].get_object(key);
 			float elapsed_time;
@@ -879,9 +935,15 @@ void Framawork::process_packet(int id, char* packet)
 		send_packet_to_room_player(room_num, (char*)&pkt_lpi);
 		break;
 	}
+	case PKT_ID_CHANGE_NAME:
+	{
+		PKT_CHANGE_NAME* pkt_cn = reinterpret_cast<PKT_CHANGE_NAME*>(packet);
+		std::cout << pkt_cn->name << "\n";
+		break;
+	}
 	default:
 		std::wcout << L"정의되지 않은 패킷 도착 오류!!\n";
-		while (true);
+		break;
 	}
 }
 

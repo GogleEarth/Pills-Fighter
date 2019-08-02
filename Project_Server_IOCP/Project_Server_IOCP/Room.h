@@ -62,9 +62,9 @@ public:
 	inline void set_map(int map) { using_scene_ = map; }
 	inline int get_map() { return using_scene_; }
 	inline void set_blue_score(char score) { blue_score_ = score; }
-	inline char get_blue_score() { return blue_score_; }
+	inline char get_blue_score() { return scenes_[using_scene_]->get_blue_score(); }
 	inline void set_red_score(char score) { red_score_ = score; }
-	inline char get_red_score() { return red_score_; }
+	inline char get_red_score() { return scenes_[using_scene_]->get_red_score(); }
 	inline Player* get_players() { return players_; }
 	inline bool get_playing() { return is_playing_; }
 	inline GameObject* get_object(int id) { return scenes_[using_scene_]->get_object(id); }
@@ -86,6 +86,7 @@ public:
 	int get_num_player_in_room();
 	void init(CRepository* repository);
 	void init();
+	void end_game();
 	bool search_client(SOCKET client);
 	void disconnect_client(SOCKET client);
 	int findindex();

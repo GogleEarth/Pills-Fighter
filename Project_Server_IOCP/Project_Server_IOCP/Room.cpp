@@ -157,8 +157,6 @@ void Room::init()
 	blue_score_ = 0;
 	red_score_ = 0;
 
-	while (player_info_queue_.size() > 0)
-		player_info_queue_.pop();
 	while (create_object_queue_.size() > 0)
 		create_object_queue_.pop();
 	while (map_event_queue_.size() > 0)
@@ -173,6 +171,24 @@ void Room::init()
 	std::cout << "방 준비 완료\n";
 
 	in_use_ = false;
+}
+
+void Room::end_game()
+{
+	is_playing_ = false;
+	using_scene_ = 3;
+	blue_score_ = 0;
+	red_score_ = 0;
+
+	while (create_object_queue_.size() > 0)
+		create_object_queue_.pop();
+	while (map_event_queue_.size() > 0)
+		map_event_queue_.pop();
+
+	scenes_[0]->init();
+	scenes_[1]->init();
+
+	std::cout << "방 준비 완료\n";
 }
 
 bool Room::search_client(SOCKET client)
