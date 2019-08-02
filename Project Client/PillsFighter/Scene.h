@@ -245,6 +245,7 @@ public: // Network
 	virtual void ChangeSlot(int nIndex, int nChangeSlot) {}
 	virtual void AddTeam(int nIndex, wchar_t *pstrName) {}
 	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames) {}
+	virtual void InitName(wchar_t *pwstrName) {}
 
 	static void SetMyTeam(int nTeam) { CScene::m_nMyTeam = nTeam; }
 	static int GetMyTeam() { return CScene::m_nMyTeam; }
@@ -346,7 +347,7 @@ protected:
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // UI Texture Index
-#define LOBBY_MAIN_UI_TEXTURE_COUNT 13
+#define LOBBY_MAIN_UI_TEXTURE_COUNT 14
 
 #define LOBBY_MAIN_UI_TEXTURE_BASE 0
 #define LOBBY_MAIN_UI_TEXTURE_CREATE_ROOM 1
@@ -361,9 +362,10 @@ protected:
 #define LOBBY_MAIN_UI_TEXTURE_INPUT_BOX 10
 #define LOBBY_MAIN_UI_TEXTURE_EXIT 11
 #define LOBBY_MAIN_UI_TEXTURE_HL_EXIT 12
+#define LOBBY_MAIN_UI_TEXTURE_NOTIFY 13
 
 // UI Rect Index
-#define LOBBY_MAIN_UI_RECT_COUNT 16
+#define LOBBY_MAIN_UI_RECT_COUNT 17
 
 #define LOBBY_MAIN_UI_RECT_BASE 0
 #define LOBBY_MAIN_UI_RECT_CREATE_ROOM_BUTTON 1
@@ -381,6 +383,7 @@ protected:
 #define LOBBY_MAIN_UI_RECT_INPUT_BOX 13
 #define LOBBY_MAIN_UI_RECT_SCREEN 14
 #define LOBBY_MAIN_UI_RECT_EXIT_BUTTON 15
+#define LOBBY_MAIN_UI_RECT_NOTIFY 16
 
 struct ROOM_INFO_TEXT
 {
@@ -416,6 +419,7 @@ public:
 	virtual void ChangeRoomInfo(int index, int map, int people);
 	virtual int GetSelectRoom() { return m_Rooms[m_nSelectRoom].nRoom_num; }
 	void ChangeInputNameText();
+	virtual void InitName(wchar_t *pwstrName);
 
 protected:
 	BoundingBox		m_CreateRoomButton;
@@ -444,6 +448,8 @@ protected:
 	bool			m_bActNameChange = false;
 
 	CTextObject		*m_NameTextObject = NULL;
+
+	bool			m_bInit = false;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

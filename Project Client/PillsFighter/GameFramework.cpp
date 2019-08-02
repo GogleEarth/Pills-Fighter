@@ -526,8 +526,9 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		break;
 	}
 	case LOBBY_MOUSE_CLICK_GAME_START:
+#ifdef ON_NETWORKING
 		WSAAsyncSelect(gSocket, m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE);
-
+#endif
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		m_pScene->ReleaseObjects();
 		delete m_pScene;
@@ -1116,6 +1117,12 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)m_pPacketBuffer;
 		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_DIE, (LPVOID)pPacket);
+		break;
+	}
+	case PKT_ID_CHANGE_NAME:
+	{
+		PKT_CHANGE_NAME *pPacket = (PKT_CHANGE_NAME*)m_pPacketBuffer;
+		m_pScene->InitName(pPacket->name);
 		break;
 	}
 	default:
