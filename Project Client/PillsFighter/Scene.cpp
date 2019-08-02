@@ -1412,16 +1412,19 @@ CLobbyMainScene::~CLobbyMainScene()
 
 int CLobbyMainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_bActNameChange)
+	if (m_bActNameChange || m_bActInputRoomName)
 	{
-		wchar_t *before = m_NameTextObject->GetText();
+		wchar_t *before = m_InputTextObject->GetText();
 
 		m_pTextSystem->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 
 		wchar_t *after = m_pTextSystem->GetText();
 
-		if(lstrcmpW(before, after))
-			ChangeInputNameText();
+		if (lstrcmpW(before, after))
+		{
+			if(m_bActNameChange) ChangeInputNameText();
+			else if(m_bActInputRoomName) ChangeInputRoomNameText();
+		}
 
 		switch (nMessageID)
 		{
@@ -1430,14 +1433,22 @@ int CLobbyMainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			switch (wParam)
 			{
 			case VK_RETURN:
-				m_bActNameChange = false;
-				lstrcpynW(CScene::m_pwstrMyName, m_pTextSystem->GetText(), sizeof(CScene::m_pwstrMyName));
-				return LOBBY_KEYDOWN_CHANGE_NAME;
+				if (m_bActNameChange)
+				{
+					m_bActNameChange = false;
+					lstrcpynW(CScene::m_pwstrMyName, m_pTextSystem->GetText(), sizeof(CScene::m_pwstrMyName));
+					return LOBBY_KEYDOWN_CHANGE_NAME;
+				}
+				else if(m_bActInputRoomName)
+				{
+					m_bActInputRoomName = false;
+					lstrcpynW(m_pwstrRoomName, m_pTextSystem->GetText(), sizeof(CScene::m_pwstrMyName));
+					return LOBBY_KEYDOWN_CREATE_ROOM;
+				}
 				break;
 			case VK_ESCAPE:
-				m_bActNameChange = false;
-				m_pTextSystem->SetText(CScene::m_pwstrMyName);
-				ChangeInputNameText();
+				if (m_bActNameChange) m_bActNameChange = false;
+				else if (m_bActInputRoomName) m_bActInputRoomName = false;
 				break;
 			default:
 				break;
@@ -1562,6 +1573,12 @@ void CLobbyMainScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 	xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
 	m_ppUIRects[LOBBY_MAIN_UI_RECT_INPUT_BOX] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+	width = 850.0f / FRAME_BUFFER_WIDTH;
+	height = 100.0f / FRAME_BUFFER_HEIGHT;
+	xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
+	xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
+	m_ppUIRects[LOBBY_MAIN_UI_RECT_INPUT_ROOM_NAME] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
 	width = 400.0f / FRAME_BUFFER_WIDTH;
 	height = 200.0f / FRAME_BUFFER_HEIGHT;
 	xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
@@ -1580,6 +1597,7 @@ void CLobbyMainScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 	}
 
 	::memset(m_bHLRoomButton, false, sizeof(m_bHLRoomButton));
+	::ZeroMemory(m_pwstrRoomName, sizeof(m_pwstrRoomName));
 }
 
 void CLobbyMainScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
@@ -1622,15 +1640,15 @@ void CLobbyMainScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	}
 
 #ifndef ON_NETWORKING
-	AddRoom(1);
-	AddRoom(2);
-	AddRoom(3);
-	AddRoom(4);
-	AddRoom(5);
-	AddRoom(6);
-	AddRoom(7);
-	AddRoom(8);
-	AddRoom(9);
+	AddRoom(1, L"ㄱㄱ");
+	AddRoom(2, L"ㄱㄱ");
+	AddRoom(3, L"ㄱㄱ");
+	AddRoom(4, L"ㄱㄱ");
+	AddRoom(5, L"ㄱㄱ");
+	AddRoom(6, L"ㄱㄱ");
+	AddRoom(7, L"ㄱㄱ");
+	AddRoom(8, L"ㄱㄱ");
+	AddRoom(9, L"ㄱㄱ");
 
 	InitName(L"오프라인");
 #endif
@@ -1646,19 +1664,53 @@ void CLobbyMainScene::ReleaseUploadBuffers()
 	CUIScene::ReleaseUploadBuffers();
 }
 
+wchar_t* GetRandomRoomName()
+{
+	switch (rand() % 10)
+	{
+	case 0:
+		return L"게임 같이 하실분";
+	case 1:
+		return L"4:4 초보만";
+	case 2:
+		return L"3:3 초보만";
+	case 3:
+		return L"2:2 초보만";
+	case 4:
+		return L"1:1 초보만";
+	case 5:
+		return L"아무나 들어오셈";
+	case 6:
+		return L"나보다 잘하는 사람만";
+	case 7:
+		return L"고수만";
+	case 8:
+		return L"ㅋㅋㅋ";
+	case 9:
+		return L"나를 눕혀봐";
+	}
+}
+
 int CLobbyMainScene::MouseClick()
 {
 	if (!CScene::m_bInitName) return 0;
 
-	if (!m_bActNameChange)
+	if (!m_bActNameChange && !m_bActInputRoomName)
 	{
 		if (m_pCursor->CollisionCheck(m_CreateRoomButton))
 		{
-			return LOBBY_MOUSE_CLICK_CREATE_ROOM;
+			lstrcpynW(m_pwstrRoomName, GetRandomRoomName(), sizeof(m_pwstrRoomName));
+			m_pTextSystem->SetText(m_pwstrRoomName);
+			m_pTextSystem->SetTextLength(MAX_ROOM_NAME_LENGTH);
+			ChangeInputRoomNameText();
+			m_bActInputRoomName = true;
 		}
 
 		if (m_pCursor->CollisionCheck(m_NameChangeButton))
 		{
+			m_pTextSystem->SetText(CScene::m_pwstrMyName);
+			m_pTextSystem->SetTextLength(MAX_NAME_LENGTH);
+			ChangeInputNameText();
 			m_bActNameChange = true;
 		}
 
@@ -1716,11 +1768,9 @@ int CLobbyMainScene::MouseClick()
 	}
 	else
 	{
-		m_bActNameChange = false;
-		m_pTextSystem->SetText(CScene::m_pwstrMyName);
-		ChangeInputNameText();
+		if (m_bActNameChange) m_bActNameChange = false;
+		else if (m_bActInputRoomName) m_bActInputRoomName = false;
 	}
-
 
 	return 0;
 }
@@ -1729,6 +1779,7 @@ void CLobbyMainScene::CheckCollision()
 {
 	if (!CScene::m_bInitName) return;
 	if (m_bActNameChange) return;
+	if (m_bActInputRoomName) return;
 
 	if (m_pCursor->CollisionCheck(m_CreateRoomButton)) m_bHLCreateRoomButton = true;
 	else m_bHLCreateRoomButton = false;
@@ -1756,15 +1807,19 @@ void CLobbyMainScene::CheckCollision()
 
 void CLobbyMainScene::ChangeInputNameText()
 {
-	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_NameTextObject, m_pTextSystem->GetText(), XMFLOAT2(-0.325f, 0.06f), XMFLOAT2(3.0f, 3.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_InputTextObject, m_pTextSystem->GetText(), XMFLOAT2(-0.325f, 0.06f), XMFLOAT2(3.0f, 3.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+}
+
+void CLobbyMainScene::ChangeInputRoomNameText()
+{
+	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_InputTextObject, m_pTextSystem->GetText(), XMFLOAT2(-0.625f, 0.06f), XMFLOAT2(3.0f, 3.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 }
 
 void CLobbyMainScene::InitName(wchar_t *pwstrName)
 {
 	lstrcpynW(CScene::m_pwstrMyName, pwstrName, MAX_NAME_LENGTH);
-	m_NameTextObject = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, CScene::m_pwstrMyName, XMFLOAT2(-0.325f, 0.06f), XMFLOAT2(3.0f, 3.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	m_InputTextObject = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, CScene::m_pwstrMyName, XMFLOAT2(-0.325f, 0.06f), XMFLOAT2(3.0f, 3.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 	m_pTextSystem->SetText(CScene::m_pwstrMyName);
-	m_pTextSystem->SetTextLength(MAX_NAME_LENGTH);
 
 	CScene::m_bInitName = true;
 }
@@ -1773,7 +1828,7 @@ void CLobbyMainScene::StartScene()
 {
 }
 
-void CLobbyMainScene::AddRoom(int n)
+void CLobbyMainScene::AddRoom(int n, wchar_t *name)
 {
 	ROOM_INFO_TEXT newRoom;
 
@@ -1782,7 +1837,7 @@ void CLobbyMainScene::AddRoom(int n)
 
 	newRoom.nRoom_num = n;
 	newRoom.pRoom_num = AddText(pstrNumber, XMFLOAT2(-0.943750f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
-	newRoom.pRoom_name = AddText(L"name", XMFLOAT2(-0.806250f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
+	newRoom.pRoom_name = AddText(name, XMFLOAT2(-0.806250f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 	newRoom.pRoom_map = AddText(L"콜로니", XMFLOAT2(0.389063f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 	newRoom.pRoom_num_people = AddText(L"1/8", XMFLOAT2(0.776562f, 0.0f), XMFLOAT2(2.0f, 2.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), LEFT_ALIGN);
 
@@ -1915,7 +1970,7 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		}
 	}
 
-	if (m_bActNameChange)
+	if (m_bActNameChange || m_bActInputRoomName)
 	{
 		if (m_pLobbyShader) m_pLobbyShader->SetScreenPipelineState(pd3dCommandList);
 		m_ppUIRects[LOBBY_MAIN_UI_RECT_SCREEN]->Render(pd3dCommandList, 0);
@@ -1923,11 +1978,13 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		if (m_pLobbyShader) m_pLobbyShader->Render(pd3dCommandList, NULL);
 
 		m_ppTextures[LOBBY_MAIN_UI_TEXTURE_INPUT_BOX]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[LOBBY_MAIN_UI_RECT_INPUT_BOX]->Render(pd3dCommandList, 0);
+
+		if(m_bActNameChange) m_ppUIRects[LOBBY_MAIN_UI_RECT_INPUT_BOX]->Render(pd3dCommandList, 0);
+		else if(m_bActInputRoomName) m_ppUIRects[LOBBY_MAIN_UI_RECT_INPUT_ROOM_NAME]->Render(pd3dCommandList, 0);
 
 		if (m_pFontShader) m_pFontShader->Render(pd3dCommandList, NULL);
 		m_pFont->OnPrepareRender(pd3dCommandList);
-		m_NameTextObject->Render(pd3dCommandList);
+		m_InputTextObject->Render(pd3dCommandList);
 	}
 
 	if (!CScene::m_bInitName)

@@ -170,9 +170,10 @@ public:
 	virtual void MoveCursor(float x, float y) {}
 	virtual void SetCursorPosition(XMFLOAT2 xmf2Position) {}
 	virtual XMFLOAT2 GetCursorPos() { return XMFLOAT2(0.0f, 0.0f); }
-	virtual void AddRoom(int n) {}
+	virtual void AddRoom(int n, wchar_t *name) {}
 	virtual void DeleteRoom(int n) {}
 	virtual void ChangeRoomInfo(int index, int map, int people) {}
+	virtual wchar_t* GetRoomName() { return NULL; }
 
 public:
 	void SetFont(ID3D12Device *pd3dDevice, CFont *pFont);
@@ -366,7 +367,7 @@ protected:
 #define LOBBY_MAIN_UI_TEXTURE_NOTIFY 13
 
 // UI Rect Index
-#define LOBBY_MAIN_UI_RECT_COUNT 17
+#define LOBBY_MAIN_UI_RECT_COUNT 18
 
 #define LOBBY_MAIN_UI_RECT_BASE 0
 #define LOBBY_MAIN_UI_RECT_CREATE_ROOM_BUTTON 1
@@ -385,6 +386,7 @@ protected:
 #define LOBBY_MAIN_UI_RECT_SCREEN 14
 #define LOBBY_MAIN_UI_RECT_EXIT_BUTTON 15
 #define LOBBY_MAIN_UI_RECT_NOTIFY 16
+#define LOBBY_MAIN_UI_RECT_INPUT_ROOM_NAME 17
 
 struct ROOM_INFO_TEXT
 {
@@ -415,12 +417,15 @@ public:
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void AddRoom(int n);
+	virtual void AddRoom(int n, wchar_t *name);
 	virtual void DeleteRoom(int n);
 	virtual void ChangeRoomInfo(int index, int map, int people);
 	virtual int GetSelectRoom() { return m_Rooms[m_nSelectRoom].nRoom_num; }
-	void ChangeInputNameText();
 	virtual void InitName(wchar_t *pwstrName);
+	virtual wchar_t* GetRoomName() { return m_pwstrRoomName; }
+
+	void ChangeInputNameText();
+	void ChangeInputRoomNameText();
 
 protected:
 	BoundingBox		m_CreateRoomButton;
@@ -447,8 +452,10 @@ protected:
 	int				m_nSelectRoom = -1;
 
 	bool			m_bActNameChange = false;
+	CTextObject		*m_InputTextObject = NULL;
 
-	CTextObject		*m_NameTextObject = NULL;
+	bool			m_bActInputRoomName = false;
+	wchar_t			m_pwstrRoomName[MAX_ROOM_NAME_LENGTH];
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

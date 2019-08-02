@@ -437,10 +437,10 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 {
 	switch (n)
 	{
-	case LOBBY_MOUSE_CLICK_CREATE_ROOM:
+	case LOBBY_KEYDOWN_CREATE_ROOM:
 	{
 #ifdef ON_NETWORKING
-		SendToServer(PKT_ID_CREATE_ROOM, NULL);
+		SendToServer(PKT_ID_CREATE_ROOM, m_pScene->GetRoomName());
 #else
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		m_pScene->ReleaseObjects();
@@ -527,6 +527,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		break;
 	}
 	case LOBBY_MOUSE_CLICK_GAME_START:
+	{
 #ifdef ON_NETWORKING
 		WSAAsyncSelect(gSocket, m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE);
 #endif
@@ -540,9 +541,12 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		m_pScene->SetCursorPosition(xmf2Pos);
 
 		break;
+	}
 	case LOBBY_MOUSE_CLICK_GAME_EXIT:
+	{		
 		::PostQuitMessage(0);
 		break;
+	}
 	}
 }
 
@@ -1058,7 +1062,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_ADD_ROOM *pPacket = (PKT_ADD_ROOM*)m_pPacketBuffer;
 
-		if (m_pScene) m_pScene->AddRoom(pPacket->Room_num);
+		if (m_pScene) m_pScene->AddRoom(pPacket->Room_num, pPacket->name);
 		break;
 	}
 	case PKT_ID_DELETE_ROOM:
@@ -1278,7 +1282,9 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		packet.PktId = pktID;
 		packet.PktSize = sizeof(packet);
 
-		//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
+		wchar_t *pwstrName = (wchar_t*)pData;
+		lstrcpynW(packet.name, pwstrName, lstrlenW(pwstrName) + 1);
+
 		if (send(gSocket, (char*)&packet, sizeof(packet), 0) == SOCKET_ERROR)
 			printf("Send Load Complete Error\n");
 

@@ -5,6 +5,7 @@
 
 #define MAX_NUM_OBJECT 3000
 #define MAX_NAME_LENGTH 10
+#define MAX_ROOM_NAME_LENGTH 20
 
 //#define SERVERIP	"119.64.25.5"
 #define SERVERIP	"127.0.0.1"
@@ -201,6 +202,7 @@ struct PKT_CREATE_ROOM
 {
 	BYTE PktSize;
 	BYTE PktId;
+	wchar_t name[MAX_ROOM_NAME_LENGTH];
 };
 
 struct PKT_CREATE_ROOM_OK
@@ -214,6 +216,7 @@ struct PKT_ADD_ROOM
 	BYTE PktSize;
 	BYTE PktId;
 	BYTE Room_num;
+	wchar_t name[MAX_ROOM_NAME_LENGTH];
 };
 
 struct PKT_CHANGE_NAME
