@@ -39,6 +39,7 @@ int Framawork::thread_process()
 			if (64 == err_no) {
 				disconnect_client(key);
 				clients_[key].in_room = false;
+				lstrcpynW(clients_[key].name, L"라마바", MAX_NAME_LENGTH);
 				std::cout << "플레이어 접속 종료\n";
 				continue;
 			}
@@ -48,6 +49,7 @@ int Framawork::thread_process()
 		if (0 == io_byte) {
 			disconnect_client(key);
 			clients_[key].in_room = false;
+			lstrcpynW(clients_[key].name, L"라마바", MAX_NAME_LENGTH);
 			std::cout << "플레이어 접속 종료\n";
 			continue;
 		}
