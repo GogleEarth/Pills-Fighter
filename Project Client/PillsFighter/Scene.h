@@ -390,7 +390,6 @@ protected:
 
 struct ROOM_PLAYER_INFO
 {
-	wchar_t		m_pwstrName[10];
 	CTextObject	*m_pTextObject;
 	int			m_nRobotType;
 	int			m_nSlot;

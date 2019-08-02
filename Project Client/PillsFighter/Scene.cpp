@@ -285,6 +285,7 @@ int CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, 
 
 int CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
+	return 0;
 }
 
 void CScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
@@ -1227,6 +1228,8 @@ int CLobbyMainScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			break;
 		}
 	}
+
+	return 0;
 }
 
 void CLobbyMainScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
@@ -2465,6 +2468,8 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 	default:
 		break;
 	}
+
+	return 0;
 }
 
 void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
