@@ -2435,11 +2435,8 @@ void CLobbyRoomScene::StartScene()
 
 void CLobbyRoomScene::SetClientIndex(int nIndex, int nSlot)
 {
-	wchar_t id[32];
-	wsprintfW(id, L"%d", nIndex);
-
 	gClientIndex = nIndex;
-	JoinPlayer(nIndex, nSlot, id, SELECT_CHARACTER_GM);
+	JoinPlayer(nIndex, nSlot, CScene::m_pwstrMyName, SELECT_CHARACTER_GM);
 
 	CScene::m_nMyTeam = (nSlot % 2) == 0 ? TEAM_TYPE::TEAM_TYPE_RED : TEAM_TYPE::TEAM_TYPE_BLUE;
 }
