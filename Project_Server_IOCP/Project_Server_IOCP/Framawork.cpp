@@ -489,6 +489,7 @@ int Framawork::accept_process()
 				pkt_ar.PktId = PKT_ID_ADD_ROOM;
 				pkt_ar.PktSize = sizeof(pkt_ar);
 				pkt_ar.Room_num = i;
+				lstrcpynW(pkt_ar.name, rooms_[i].get_name(), MAX_ROOM_NAME_LENGTH);
 				send_packet_to_player(new_id, (char*)&pkt_ar);
 
 				PKT_CHANGE_ROOM_INFO pkt_cmi;
@@ -710,12 +711,15 @@ void Framawork::process_packet(int id, char* packet)
 			rooms_[room_num].set_is_use(true);
 			rooms_[room_num].add_player(id, clients_[id].socket, 0);
 			rooms_[room_num].set_map(4);
+			rooms_[room_num].set_name(reinterpret_cast<PKT_CREATE_ROOM*>(packet)->name);
 			clients_[id].in_room = true;
 
 			PKT_ADD_ROOM pkt_ar;
 			pkt_ar.PktId = PKT_ID_ADD_ROOM;
 			pkt_ar.PktSize = sizeof(pkt_ar);
 			pkt_ar.Room_num = room_num;
+			lstrcpynW(pkt_ar.name, reinterpret_cast<PKT_CREATE_ROOM*>(packet)->name, MAX_ROOM_NAME_LENGTH);
+
 			send_packet_to_all_player((char*)&pkt_ar);
 
 			PKT_CHANGE_ROOM_INFO pkt_cmi;
@@ -925,6 +929,7 @@ void Framawork::process_packet(int id, char* packet)
 				pkt_ar.PktId = PKT_ID_ADD_ROOM;
 				pkt_ar.PktSize = sizeof(pkt_ar);
 				pkt_ar.Room_num = i;
+				lstrcpynW(pkt_ar.name, rooms_[i].get_name(), MAX_ROOM_NAME_LENGTH);
 				send_packet_to_player(id, (char*)&pkt_ar);
 
 				PKT_CHANGE_ROOM_INFO pkt_cmi;

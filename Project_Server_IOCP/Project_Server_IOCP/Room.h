@@ -53,6 +53,7 @@ class Room
 	char red_score_;
 	float item_cooltime_[3];
 	bool item_spawn_[3];
+	wchar_t name_[MAX_ROOM_NAME_LENGTH];
 public:
 	Room();
 	~Room();
@@ -71,6 +72,9 @@ public:
 	void set_player_slot(int id, char slot);
 	inline char get_player_slot(int id) { return players_[id].get_slot(); }
 	inline char get_player_team(int id) { return players_[id].get_team(); }
+
+	inline void set_name(wchar_t* name) { lstrcpynW(name_, name, MAX_ROOM_NAME_LENGTH); }
+	inline wchar_t* get_name() { return name_; }
 
 	int get_empty_slot();
 	int get_empty_slot_red_team();
