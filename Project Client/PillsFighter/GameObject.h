@@ -356,6 +356,7 @@ public:
 
 	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
 	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }
+	CModel* GetHeadFrame() { return m_pHead; }
 
 protected:
 	FMOD::Channel *m_pChannelBooster = NULL;
@@ -366,6 +367,7 @@ protected:
 	CModel *m_pBip = NULL;
 	CModel *m_pLThigh = NULL;
 	CModel *m_pRThigh = NULL;
+	CModel *m_pHead = NULL;
 	
 public:
 	virtual void AfterAdvanceAnimationController();

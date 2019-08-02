@@ -870,6 +870,7 @@ void CRobotObject::OnPrepareAnimate()
 	m_pLThigh = m_pModel->FindFrame("Bip001_L_Thigh");
 	m_pRThigh = m_pModel->FindFrame("Bip001_R_Thigh");
 	m_pBip = m_pModel->FindFrame("Bip001");
+	m_pHead = m_pModel->FindFrame("Bip001_Head");
 }
 
 void CRobotObject::EquipOnRightHand(CWeapon *pWeapon)
@@ -937,6 +938,9 @@ void CRobotObject::ChangeWeaponByType(WEAPON_TYPE nType)
 		break;
 	case WEAPON_TYPE::WEAPON_TYPE_TOMAHAWK:
 		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_TOMAHAWK);
+		break;
+	case WEAPON_TYPE::WEAPON_TYPE_BEAM_SNIPER:
+		nIndex = GetWeaponIndex(WEAPON_TYPE_OF_BEAM_SNIPER);
 		break;
 	}
 

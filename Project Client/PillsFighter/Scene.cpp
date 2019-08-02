@@ -351,7 +351,7 @@ void CScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera
 	if (m_bSelfIllumination)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE d3dCPUDescHandle[3] = { m_d3dRrvOffScreenCPUHandle , m_d3dRrvGlowScreenCPUHandle, m_d3dRrvMaskTextureCPUHandle };
-		pd3dCommandList->OMSetRenderTargets(_countof(d3dCPUDescHandle), d3dCPUDescHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
+		pd3dCommandList->OMSetRenderTargets(_countof(d3dCPUDescHandle), d3dCPUDescHandle, FALSE, &m_d3dDsvOffScreenCPUHandle);
 	}
 	else pd3dCommandList->OMSetRenderTargets(1, &m_d3dRrvOffScreenCPUHandle, TRUE, &m_d3dDsvOffScreenCPUHandle);
 
@@ -1687,6 +1687,7 @@ wchar_t* GetRandomRoomName()
 	case 8:
 		return L"¤»¤»¤»";
 	case 9:
+	default:
 		return L"³ª¸¦ ´¯ÇôºÁ";
 	}
 }
@@ -2735,6 +2736,14 @@ int CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 		m_pPlayer->LButtonUp();
 		break;
 	}
+	case WM_RBUTTONDOWN:
+		m_pPlayer->RButtonDown();
+		m_pPlayer->TakeAim();
+		//m_pPlayer->ZoomIn();
+		break;
+	case WM_RBUTTONUP:
+		m_pPlayer->RButtonUp();
+		break;
 	default:
 		break;
 	}
@@ -2877,6 +2886,7 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pSaber = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL);
 	m_pTomahawk = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL);
 	m_pBeamRifle = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL);
+	m_pBeamSniper = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamSniper.bin", NULL, NULL);
 }
 
 void CBattleScene::ReleaseObjects()
@@ -2971,7 +2981,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	case SELECT_CHARACTER_GM:
 		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_SABER);
 		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_GM_GUN);
-		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_MACHINEGUN);
+		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_BEAM_SNIPER);
 		break;
 	case SELECT_CHARACTER_GUNDAM: // ºö»çº§, ºö¶óÀÌÇÃ, ¹ÙÁÖÄ«
 		AddWeaponToPlayer(pd3dDevice, pd3dCommandList, WEAPON_TYPE_OF_SABER);
@@ -3072,7 +3082,13 @@ void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	case WEAPON_TYPE_OF_BEAM_RIFLE:
 		pWeapon = new CBeamRifle();
 		pWeapon->SetModel(m_pBeamRifle);
-		((CGun*)pWeapon)->SetBullet(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
+		((CGun*)pWeapon)->SetBullet(NULL, m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
+		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
+		break;
+	case WEAPON_TYPE_OF_BEAM_SNIPER:
+		pWeapon = new CBeamSniper();
+		pWeapon->SetModel(m_pBeamSniper);
+		((CGun*)pWeapon)->SetBullet(NULL, m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case WEAPON_TYPE_OF_SABER:

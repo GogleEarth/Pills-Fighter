@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Camera.h"
 #include "Player.h"
-
+#include "Weapon.h"
 
 CCamera::CCamera()
 {
@@ -72,6 +72,11 @@ void CCamera::SetScissorRect(int nLeft, int nBottom, int nRight, int nTop)
 
 void CCamera::GenerateProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fAspectRatio, float fFOVAngle)
 {
+	m_fNearPlaneDistance = fNearPlaneDistance;
+	m_fFarPlaneDistance = fFarPlaneDistance;
+	m_fAspectRatio = fAspectRatio;
+	m_fFOVAngle = fFOVAngle;
+
 	m_xmf4x4Projection = Matrix4x4::PerspectiveFovLH(XMConvertToRadians(fFOVAngle),	fAspectRatio, fNearPlaneDistance, fFarPlaneDistance);
 }
 
@@ -80,6 +85,17 @@ void CCamera::GenerateOrthogonalMatrix(float fWidth, float fHeight, float fNear,
 	m_xmf4x4Projection = Matrix4x4::OrthogonalFovLH(fWidth, fHeight, fNear, fFar);
 }
 
+void CCamera::ZoomIn(float fFOV)
+{
+	m_bZoomIn = true;
+	m_xmf4x4Projection = Matrix4x4::PerspectiveFovLH(XMConvertToRadians(fFOV), m_fAspectRatio, m_fNearPlaneDistance, m_fFarPlaneDistance);
+}
+
+void CCamera::ZoomOut()
+{
+	m_bZoomIn = false;
+	m_xmf4x4Projection = Matrix4x4::PerspectiveFovLH(XMConvertToRadians(m_fFOVAngle), m_fAspectRatio, m_fNearPlaneDistance, m_fFarPlaneDistance);
+}
 void CCamera::GenerateViewMatrix()
 {
 	//카메라의 z-축을 기준으로 카메라의 좌표축들이 직교하도록 카메라 변환 행렬을 갱신한다. 
@@ -95,9 +111,18 @@ void CCamera::GenerateViewMatrix()
 	m_xmf4x4View._11 = m_xmf3Right.x; m_xmf4x4View._12 = m_xmf3Up.x; m_xmf4x4View._13 =	m_xmf3Look.x;
 	m_xmf4x4View._21 = m_xmf3Right.y; m_xmf4x4View._22 = m_xmf3Up.y; m_xmf4x4View._23 =	m_xmf3Look.y;
 	m_xmf4x4View._31 = m_xmf3Right.z; m_xmf4x4View._32 = m_xmf3Up.z; m_xmf4x4View._33 =	m_xmf3Look.z;
-	m_xmf4x4View._41 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Right);
-	m_xmf4x4View._42 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Up);
-	m_xmf4x4View._43 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Look);
+
+	XMFLOAT3 xmf3Position;
+	if (m_bZoomIn)
+	{
+		CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
+		xmf3Position = pGun->GetScopePos();
+	}
+	else xmf3Position = m_xmf3Position;
+
+	m_xmf4x4View._41 = -Vector3::DotProduct(xmf3Position, m_xmf3Right);
+	m_xmf4x4View._42 = -Vector3::DotProduct(xmf3Position, m_xmf3Up);
+	m_xmf4x4View._43 = -Vector3::DotProduct(xmf3Position, m_xmf3Look);
 
 	m_xmf4x4ViewProjection = Matrix4x4::Multiply(m_xmf4x4View, m_xmf4x4Projection);
 }

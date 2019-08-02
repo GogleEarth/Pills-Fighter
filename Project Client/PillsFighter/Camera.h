@@ -38,6 +38,12 @@ protected:
 	D3D12_VIEWPORT					m_d3dViewport;
 	D3D12_RECT						m_d3dScissorRect;
 
+	bool							m_bZoomIn = false;
+	float							m_fNearPlaneDistance;
+	float							m_fFarPlaneDistance;
+	float							m_fAspectRatio;
+	float							m_fFOVAngle;
+
 public:
 	CCamera();
 	CCamera(CCamera *pCamera);
@@ -90,6 +96,9 @@ public:
 	virtual void UpdateForMinimap(XMFLOAT3& xmf3LookAt);
 
 	virtual void SetLookAt(XMFLOAT3& xmf3LookAt);
+
+	void ZoomIn(float fFOV);
+	void ZoomOut();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

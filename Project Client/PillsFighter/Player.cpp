@@ -306,7 +306,8 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
-	CRobotObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
+	if (!m_bZoomIn)
+		CRobotObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 
 	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
@@ -688,13 +689,7 @@ void CPlayer::ProcessMouseUpTime(float fTimeElapsed)
 	if (!m_LButtonDown)
 	{
 		m_fMouseUpTime += fTimeElapsed;
-
-		if (m_fMouseUpTime > 4.0f)
-		{
-			if (IsShooting()) m_nState &= ~OBJECT_STATE_SHOOTING;
-			if (IsSwording()) m_nState &= ~OBJECT_STATE_SWORDING;
-		}
-
+		
 		if (m_fMouseUpTime > 1.0f)
 		{
 			m_nSaberAnimationIndex = 0;
@@ -800,23 +795,35 @@ void CPlayer::ProcessShootAnimation()
 
 		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
-			if (pGun->IsCoolDown())
+			if (pGun->IsCoolDown() || !pGun->IsShootable())
 			{
-				if (!m_LButtonDown)
+				if (m_LButtonDown)
 				{
-					if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_RETURN_ONCE, true);
-					else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
-
-					if (IsUnderBodyChangeable())
-					{
-						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
-					}
-
-					m_bShootable = false;
+					m_bShootable = true;
 				}
 				else
 				{
-					m_bShootable = true;
+					if (m_bAim)
+					{
+						if (!m_bZoomIn && !m_RButtonDown)
+						{
+							ZoomIn();
+						}
+					}
+
+					if (!m_RButtonDown && !m_bZoomIn)
+					{
+						if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_RETURN_ONCE, true);
+						else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
+
+						if (IsUnderBodyChangeable())
+						{
+							ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_RETURN, true);
+						}
+					}
+
+					m_bAim = false;
+					m_bShootable = false;
 				}
 			}
 			else
@@ -1045,7 +1052,7 @@ void CPlayer::Reload(CWeapon *pWeapon)
 {
 	if (pWeapon)
 	{
-		if (pWeapon->GetType() & WEAPON_TYPE_OF_BEAM_RIFLE) return;
+		if (pWeapon->GetType() & WEAPON_TYPE_OF_BEAM_GUN) return;
 		if (pWeapon->GetType() & WEAPON_TYPE_OF_SWORD) return;
 
 		CGun *pGun = (CGun*)pWeapon;
@@ -1168,6 +1175,8 @@ WEAPON_TYPE CPlayer::GetWeaponType()
 			return WEAPON_TYPE::WEAPON_TYPE_TOMAHAWK;
 		else if (nType & WEAPON_TYPE_OF_BEAM_RIFLE)
 			return WEAPON_TYPE::WEAPON_TYPE_BEAM_RIFLE;
+		else if (nType & WEAPON_TYPE_OF_BEAM_SNIPER)
+			return WEAPON_TYPE::WEAPON_TYPE_BEAM_SNIPER;
 	}
 
 	return WEAPON_TYPE::WEAPON_TYPE_MACHINE_GUN;
@@ -1216,5 +1225,52 @@ void CPlayer::SendShootPacket()
 	if (send(gSocket, (char*)&pktShoot, pktShoot.PktSize, 0) == SOCKET_ERROR)
 	{
 		printf("Send Shoot Error\n");
+	}
+}
+
+void CPlayer::ZoomIn()
+{
+	if (!(m_pRHWeapon->GetType() & WEAPON_TYPE_OF_BEAM_SNIPER)) return;
+
+	if (AnimationIsShootStart())
+	{
+		if (IsAnimationEnd(ANIMATION_UP, 0))
+		{
+			m_bZoomIn = true;
+			m_pCamera->ZoomIn(20);
+		}
+	}
+}
+
+void CPlayer::ZoomOut()
+{
+	m_bZoomIn = false;
+	m_pCamera->ZoomOut();
+}
+
+void CPlayer::TakeAim()
+{
+	if (!(m_pRHWeapon->GetType() & WEAPON_TYPE_OF_GUN)) return;
+
+	if (m_bZoomIn)
+	{
+		ZoomOut();
+	}
+	else
+	{
+		if (!IsShooting())
+		{
+			if (!m_bReloading)
+			{
+				m_nState |= OBJECT_STATE_SHOOTING;
+				m_bAim = true;
+
+				if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_START_ONCE, true);
+				else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
+
+				if (IsUnderBodyChangeable())
+					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
+			}
+		}
 	}
 }

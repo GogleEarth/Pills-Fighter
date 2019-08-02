@@ -532,7 +532,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 16
+#define UI_TEXTURE_COUNT 17
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -546,10 +546,11 @@ protected:
 #define UI_TEXTURE_SMG 9
 #define UI_TEXTURE_BEAM_RIFLE 10
 #define UI_TEXTURE_TOMAHAWK 11
-#define UI_TEXTURE_SLOT 12
-#define UI_TEXTURE_TEAM_HP_BASE 13
-#define UI_TEXTURE_TEAM_HP 14
-#define UI_TEXTURE_BEAM_GAUGE 15
+#define UI_TEXTURE_BEAM_SNIPER 12
+#define UI_TEXTURE_SLOT 13
+#define UI_TEXTURE_TEAM_HP_BASE 14
+#define UI_TEXTURE_TEAM_HP 15
+#define UI_TEXTURE_BEAM_GAUGE 16
 
 #define UI_RECT_COUNT 15
 

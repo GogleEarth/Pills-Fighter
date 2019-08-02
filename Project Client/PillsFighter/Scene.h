@@ -597,7 +597,7 @@ protected:
 #define INDEX_SHADER_SKINND_OBJECTS 2
 
 // Standard Shader's Object Group
-#define STANDARD_OBJECT_GROUP 12
+#define STANDARD_OBJECT_GROUP 13
 
 #define STANDARD_OBJECT_INDEX_GG_BULLET 0
 #define STANDARD_OBJECT_INDEX_BZK_BULLET 1
@@ -611,6 +611,7 @@ protected:
 #define STANDARD_OBJECT_INDEX_BEAM_RIFLE 9
 #define STANDARD_OBJECT_INDEX_SABER 10
 #define STANDARD_OBJECT_INDEX_TOMAHAWK 11
+#define STANDARD_OBJECT_INDEX_BEAM_SNIPER 12
 
 // Standard Shader's Object Group
 #define SKINNED_OBJECT_GROUP 3
@@ -745,6 +746,7 @@ protected:
 	CModel		*m_pSaber = NULL;
 	CModel		*m_pTomahawk = NULL;
 	CModel		*m_pBeamRifle = NULL;
+	CModel		*m_pBeamSniper = NULL;
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);

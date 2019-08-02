@@ -101,6 +101,11 @@ void CGun::Initialize()
 	SetMaxReloadAmmo();
 }
 
+void CGun::OnPrepareAnimate()
+{
+	m_pMuzzle = m_pModel->FindFrame("Bone001");
+}
+
 void CGun::SetShotCoolTime()
 {
 	SetShootable(false);
@@ -212,11 +217,6 @@ void CGimGun::SetShotCoolTime()
 	m_fShotCoolTime = GG_SHOT_COOLTIME;
 }
 
-void CGimGun::OnPrepareAnimate()
-{
-	m_pMuzzle = m_pModel->FindFrame("Bone001");
-}
-
 void CGimGun::Shot()
 {
 	CGun::Shot();
@@ -276,11 +276,6 @@ void CBazooka::SetShotCoolTime()
 	m_fShotCoolTime = BZK_SHOT_COOLTIME;
 }
 
-void CBazooka::OnPrepareAnimate()
-{
-	m_pMuzzle = m_pModel->FindFrame("Bone001");
-}
-
 void CBazooka::Shot()
 {
 	CGun::Shot();
@@ -322,11 +317,6 @@ void CMachineGun::SetShotCoolTime()
 	m_fShotCoolTime = MG_SHOT_COOLTIME;
 }
 
-void CMachineGun::OnPrepareAnimate()
-{
-	m_pMuzzle = m_pModel->FindFrame("Bone001");
-}
-
 void CMachineGun::Shot()
 {
 	CGun::Shot();
@@ -339,41 +329,30 @@ void CMachineGun::Shot()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CBeamRifle::CBeamRifle() : CGun()
+CBeamGun::CBeamGun() : CGun()
 {
 }
 
-CBeamRifle::~CBeamRifle()
+CBeamGun::~CBeamGun()
 {
 }
 
-void CBeamRifle::Initialize()
+void CBeamGun::Initialize()
 {
 	CGun::Initialize();
 
 	m_nReloadedAmmo = 100;
+	SetShootEnergy();
 }
 
-void CBeamRifle::SetType()
+void CBeamGun::SetType()
 {
-	m_nType |= WEAPON_TYPE_OF_BEAM_RIFLE;
+	m_nType |= WEAPON_TYPE_OF_BEAM_GUN;
 
 	CGun::SetType();
 }
 
-void CBeamRifle::SetShotCoolTime()
-{
-	CGun::SetShotCoolTime();
-
-	m_fShotCoolTime = BR_SHOT_COOLTIME;
-}
-
-void CBeamRifle::OnPrepareAnimate()
-{
-	m_pMuzzle = m_pModel->FindFrame("Bone001");
-}
-
-void CBeamRifle::Shot()
+void CBeamGun::Shot()
 {
 	CPlayer *pPlayer = (CPlayer*)m_pOwner;
 
@@ -397,29 +376,26 @@ void CBeamRifle::Shot()
 	pPlayer->SendShootPacket();
 #endif
 
-	SetShotCoolTime();
-	SetReloadTime();
-
 	m_nShootedCount++;
-	m_nReloadedAmmo = m_nReloadedAmmo - 10 < 0 ? 0 : m_nReloadedAmmo - 10;
+	m_nReloadedAmmo = m_nReloadedAmmo - m_nShootEnergy < 0 ? 0 : m_nReloadedAmmo - m_nShootEnergy;
+
+	SetShotCoolTime();
 
 #ifndef ON_NETWORKING
 	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
 #endif
 }
 
-void CBeamRifle::CheckShootable(float fElapsedTime)
+void CBeamGun::CheckShootable(float fElapsedTime)
 {
-	if (m_nReloadedAmmo >= 10)
+	if (m_nReloadedAmmo >= m_nShootEnergy)
 	{
 		m_bShootable = true;
 	}
 }
 
-void CBeamRifle::Animate(float fElapsedTime, CCamera *pCamera)
+void CBeamGun::Animate(float fElapsedTime, CCamera *pCamera)
 {
-	CGun::Animate(fElapsedTime, pCamera);
-
 	if (m_nReloadedAmmo < m_nMaxReloadAmmo)
 	{
 		m_fReloadTime -= fElapsedTime;
@@ -431,4 +407,67 @@ void CBeamRifle::Animate(float fElapsedTime, CCamera *pCamera)
 			((CPlayer*)m_pOwner)->ChangeUIAmmo();
 		}
 	}
+
+	CGun::Animate(fElapsedTime, pCamera);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CBeamRifle::CBeamRifle()
+{
+
+}
+
+CBeamRifle::~CBeamRifle()
+{
+
+}
+
+void CBeamRifle::SetType()
+{
+	m_nType |= WEAPON_TYPE_OF_BEAM_RIFLE;
+
+	CBeamGun::SetType();
+}
+
+void CBeamRifle::SetShotCoolTime()
+{
+	CGun::SetShotCoolTime();
+
+	m_fShotCoolTime = BR_SHOT_COOLTIME;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+CBeamSniper::CBeamSniper()
+{
+
+}
+
+CBeamSniper::~CBeamSniper()
+{
+
+}
+
+void CBeamSniper::SetType()
+{
+	m_nType |= WEAPON_TYPE_OF_BEAM_SNIPER;
+
+	CBeamGun::SetType();
+}
+
+void CBeamSniper::SetShotCoolTime()
+{
+	CGun::SetShotCoolTime();
+
+	m_fShotCoolTime = BS_SHOT_COOLTIME;
+}
+
+void CBeamSniper::OnPrepareAnimate()
+{
+	CBeamGun::OnPrepareAnimate();
+
+	m_pScope = m_pModel->FindFrame("Bone002");
 }

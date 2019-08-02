@@ -579,6 +579,7 @@ void CStandardObjectsShader::Initialize(ID3D12Device* pd3dDevice, ID3D12Graphics
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Saber.bin", NULL, NULL));
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL));
+	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamSniper.bin", NULL, NULL));
 
 #ifndef ON_NETWORKING
 	RotateObject *pObject = new RotateObject();
@@ -1114,8 +1115,8 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
-		pWeapon->SetType(WEAPON_TYPE_OF_MACHINEGUN);
-		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_MACHINE_GUN, false, NULL);
+		pWeapon->SetType(WEAPON_TYPE_OF_BEAM_SNIPER);
+		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BEAM_SNIPER, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case SKINNED_OBJECT_INDEX_GUNDAM: // ºö»çº§, ºö¶óÀÌÇÃ, ¹ÙÁÖÄ«
@@ -2590,6 +2591,8 @@ void CUserInterface::SetPlayer(CPlayer *pPlayer)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_SABER];
 		if (nWeaponType & WEAPON_TYPE_OF_TOMAHAWK)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_TOMAHAWK];
+		if (nWeaponType & WEAPON_TYPE_OF_BEAM_SNIPER)
+			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_BEAM_SNIPER];
 	}
 }
 
@@ -2660,7 +2663,7 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 
 	if (nType & WEAPON_TYPE_OF_GUN)
 	{
-		if(nType & WEAPON_TYPE_OF_BEAM_RIFLE)
+		if(nType & WEAPON_TYPE_OF_BEAM_GUN)
 			wsprintfW(wpstrNumber, L"-", nAmmo);
 		else
 			wsprintfW(wpstrNumber, L"%d", nAmmo);
@@ -2739,6 +2742,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BEAM_RIFLE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_BEAM_RIFLE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamRifle.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_RIFLE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_BEAM_SNIPER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_BEAM_SNIPER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamSniper.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_SNIPER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_TOMAHAWK] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_TOMAHAWK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Tomahawk.dds", 0);
@@ -2937,7 +2944,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 			UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerAmmo, m_pcbMappedPlayerAmmo, nMaxReloadAmmo, nReloadedAmmo);
 
-			if (nWeaponType & WEAPON_TYPE_OF_BEAM_RIFLE)
+			if (nWeaponType & WEAPON_TYPE_OF_BEAM_GUN)
 			{
 				if (m_pd3dPipelineStateBar) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBar);
 

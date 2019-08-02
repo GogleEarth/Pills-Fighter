@@ -192,12 +192,21 @@ public:
 	// For Attack
 protected:
 	bool m_LButtonDown = false;
+	bool m_RButtonDown = false;
 	float m_fMouseUpTime = 0.0f;
+
+	bool m_bZoomIn = false;
+	bool m_bAim = false;
 
 public:
 	void LButtonUp() { m_LButtonDown = false; m_fMouseUpTime = 0.0f;}
-
+	void RButtonUp() { m_RButtonDown = false; }
+	void RButtonDown() { m_RButtonDown = true; }
 	void ProcessMouseUpTime(float fElapsedTime);
+
+	void ZoomIn();
+	void ZoomOut();
+	void TakeAim();
 
 public:
 	void GenerateViewMatrix();
