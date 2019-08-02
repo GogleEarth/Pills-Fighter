@@ -491,6 +491,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->SetCursorPosition(xmf2Pos);
+		m_pScene->InitName(CScene::GetMyName());
 
 		break;
 	}

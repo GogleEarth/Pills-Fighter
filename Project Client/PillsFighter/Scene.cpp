@@ -25,6 +25,7 @@ int								CScene::m_nPlayerRobotType = SELECT_CHARACTER_GM;
 
 int								CScene::m_nMyTeam = TEAM_TYPE::TEAM_TYPE_RED;
 wchar_t							CScene::m_pwstrMyName[10] = L"";
+bool							CScene::m_bInitName = false;
 
 extern CFMODSound gFmodSound;
 
@@ -1647,7 +1648,7 @@ void CLobbyMainScene::ReleaseUploadBuffers()
 
 int CLobbyMainScene::MouseClick()
 {
-	if (!m_bInit) return 0;
+	if (!CScene::m_bInitName) return 0;
 
 	if (!m_bActNameChange)
 	{
@@ -1726,7 +1727,7 @@ int CLobbyMainScene::MouseClick()
 
 void CLobbyMainScene::CheckCollision()
 {
-	if (!m_bInit) return;
+	if (!CScene::m_bInitName) return;
 	if (m_bActNameChange) return;
 
 	if (m_pCursor->CollisionCheck(m_CreateRoomButton)) m_bHLCreateRoomButton = true;
@@ -1765,7 +1766,7 @@ void CLobbyMainScene::InitName(wchar_t *pwstrName)
 	m_pTextSystem->SetText(CScene::m_pwstrMyName);
 	m_pTextSystem->SetTextLength(MAX_NAME_LENGTH);
 
-	m_bInit = true;
+	CScene::m_bInitName = true;
 }
 
 void CLobbyMainScene::StartScene()
@@ -1929,7 +1930,7 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_NameTextObject->Render(pd3dCommandList);
 	}
 
-	if (!m_bInit)
+	if (!CScene::m_bInitName)
 	{
 		if (m_pLobbyShader) m_pLobbyShader->SetScreenPipelineState(pd3dCommandList);
 		m_ppUIRects[LOBBY_MAIN_UI_RECT_SCREEN]->Render(pd3dCommandList, 0);
