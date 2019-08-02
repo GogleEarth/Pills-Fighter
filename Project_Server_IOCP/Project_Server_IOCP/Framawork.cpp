@@ -245,7 +245,7 @@ int Framawork::thread_process()
 				else
 					elapsed_time = over_ex->elapsed_time;
 
-				object->Animate(elapsed_time);
+				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
 				rooms_[over_ex->room_num].check_collision_obstacles(key);
 				rooms_[over_ex->room_num].check_collision_player(key);
 
@@ -304,7 +304,7 @@ int Framawork::thread_process()
 				else
 					elapsed_time = over_ex->elapsed_time;
 
-				object->Animate(elapsed_time);
+				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
 				rooms_[over_ex->room_num].check_collision_player(key);
 
 				if (object->IsDelete())
@@ -338,7 +338,7 @@ int Framawork::thread_process()
 				else
 					elapsed_time = over_ex->elapsed_time;
 
-				object->Animate(elapsed_time);
+				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
 				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 1000.0f);
 
 				if (object->IsDelete())
@@ -366,7 +366,7 @@ int Framawork::thread_process()
 			else
 				elapsed_time = over_ex->elapsed_time;
 
-			object->Animate(elapsed_time);
+			object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
 			rooms_[over_ex->room_num].check_collision_player_to_vector(key, 600.0f);
 
 			if (object->IsDelete())

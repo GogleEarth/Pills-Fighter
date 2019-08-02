@@ -18,7 +18,7 @@ void Scene::AnimateObjects(float fTimeElapsed)
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		Objects_[i].Animate(fTimeElapsed);
+		Objects_[i].Animate(fTimeElapsed, 0);
 	}
 }
 
@@ -142,7 +142,7 @@ void Scene::init(CRepository * pRepository)
 	}
 
 	for (auto obstacle : Obstacles_)
-		obstacle->Animate(0.016f);
+		obstacle->Animate(0.016f, 0);
 
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;

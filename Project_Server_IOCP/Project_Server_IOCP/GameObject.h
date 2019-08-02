@@ -56,7 +56,7 @@ public:
 	void SetModel(CModel *pModel);
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
 
-	void Animate(float fTimeElapsed);
+	void Animate(float fTimeElapsed, char map);
 	void OnPrepareRender();
 
 	bool CollisionCheck(GameObject* object);

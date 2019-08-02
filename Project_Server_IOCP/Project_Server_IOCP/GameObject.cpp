@@ -53,13 +53,13 @@ void GameObject::SetMesh(CMesh * pMesh, CCubeMesh * pCubeMesh)
 		model_->SetMesh(pMesh, pCubeMesh, false);
 }
 
-void GameObject::Animate(float fTimeElapsed)
+void GameObject::Animate(float fTimeElapsed, char map)
 {
 	if (Object_Type_ == OBJECT_TYPE_MACHINE_BULLET
 		|| Object_Type_ == OBJECT_TYPE_BZK_BULLET
 		|| Object_Type_ == OBJECT_TYPE_BEAM_BULLET)
 	{
-		if (m_xmf3Position.y <= 0.0f)
+		if (m_xmf3Position.y <= 0.0f && map == 0)
 		{
 			Delete();
 		}
