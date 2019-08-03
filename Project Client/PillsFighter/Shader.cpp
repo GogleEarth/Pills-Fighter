@@ -249,8 +249,8 @@ void CShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGr
 	d3dPipelineStateDesc.InputLayout = CreateInputLayout();
 	d3dPipelineStateDesc.SampleMask = UINT_MAX;
 	d3dPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	d3dPipelineStateDesc.NumRenderTargets = 3;
-	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dPipelineStateDesc.NumRenderTargets = 4;
+	d3dPipelineStateDesc.RTVFormats[0] = d3dPipelineStateDesc.RTVFormats[1] = d3dPipelineStateDesc.RTVFormats[2] = d3dPipelineStateDesc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	d3dPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3dPipelineStateDesc.SampleDesc.Count = 1;
 	d3dPipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -3429,7 +3429,7 @@ D3D12_SHADER_BYTECODE CPostProcessingShader::CreateVertexShader(ID3DBlob **ppd3d
 
 D3D12_SHADER_BYTECODE CPostProcessingShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSPostProcessing", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSPostProcessingByLaplacianEdge", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_INPUT_LAYOUT_DESC CPostProcessingShader::CreateInputLayout()

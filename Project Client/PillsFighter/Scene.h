@@ -210,6 +210,10 @@ protected:
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvGlowScreenGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavGlowScreenGPUHandle;
 
+	ID3D12Resource					*m_pd3dScreenNormalTexture = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvScreenNormalCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvScreenNormalGPUHandle;
+
 	ID3D12Resource					*m_pd3dMotionBlurScreenTexture = NULL;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvMotionBlurScreenGPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dUavMotionBlurScreenGPUHandle;

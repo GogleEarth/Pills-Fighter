@@ -41,6 +41,7 @@ struct PS_OUTPUT
 {
 	float4 color : SV_Target0;
 	float4 glow : SV_Target1;
+	float4 normal : SV_Target2;
 };
 
 VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input)
@@ -89,6 +90,7 @@ PS_OUTPUT PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
 	float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.5);
 
 	float3 normalW = normalize(input.normalW);
+	output.normal = float4(normalW, 1.0f);
 
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
 	{
@@ -149,7 +151,8 @@ struct PS_PLAYER
 {
 	float4 color : SV_Target0;
 	float4 glow : SV_Target1;
-	float4 mask : SV_Target2;
+	float4 normal : SV_Target2;
+	float4 mask : SV_Target3;
 };
 
 PS_PLAYER PSPlayer(VS_STANDARD_OUTPUT input) : SV_TARGET
@@ -182,6 +185,7 @@ PS_PLAYER PSPlayer(VS_STANDARD_OUTPUT input) : SV_TARGET
 	float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.5);
 
 	float3 normalW = normalize(input.normalW);
+	output.normal = float4(normalW, 1.0f);
 
 	if (gnTexturesMask & MATERIAL_NORMAL_MAP)
 	{
@@ -271,44 +275,48 @@ VS_INSTANCING_OUTPUT VSInsTextured(VS_STANDARD_INPUT input, uint nInsID : SV_Ins
 	return(output);
 }
 
-float4 PSInsTextured(VS_INSTANCING_OUTPUT input) : SV_TARGET
+PS_OUTPUT PSInsTextured(VS_INSTANCING_OUTPUT input) : SV_TARGET
 {
-	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
+	PS_OUTPUT output;
+//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
 
-	// 임시 텍스처 배열 인덱스는 0
-	float4 f4AlbedoColor = float4(1.0f, 0.0f, 0.0f, 1.0f);
-	uint nTexMask = gGameObjectsInfo[input.instanceID].m_nTexturesMask;
+// 임시 텍스처 배열 인덱스는 0
+float4 f4AlbedoColor = float4(1.0f, 0.0f, 0.0f, 1.0f);
+uint nTexMask = gGameObjectsInfo[input.instanceID].m_nTexturesMask;
 
-	if (nTexMask & MATERIAL_ALBEDO_MAP)
-		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+if (nTexMask & MATERIAL_ALBEDO_MAP)
+	f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	float4 f4NormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-	if (nTexMask & MATERIAL_NORMAL_MAP)
-		f4NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
+float4 f4NormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+if (nTexMask & MATERIAL_NORMAL_MAP)
+	f4NormalColor = gtxtNormalTexture.Sample(gssWrap, input.uv);
 
-	float fSpecularFactor = 0.0f;
-	if (nTexMask & MATERIAL_SPECULAR_FACTOR_MAP)
-		fSpecularFactor = gtxtSpecularTexture.Sample(gssWrap, input.uv).x;
+float fSpecularFactor = 0.0f;
+if (nTexMask & MATERIAL_SPECULAR_FACTOR_MAP)
+	fSpecularFactor = gtxtSpecularTexture.Sample(gssWrap, input.uv).x;
 
-	float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	float4 cColor = f4AlbedoColor;
-	//float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.7);
+float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
+float4 cColor = f4AlbedoColor;
+//float4 cColor = lerp(f4AlbedoColor, cCubeColor, 0.7);
 
-	float3 normalW = normalize(input.normalW);
+float3 normalW = normalize(input.normalW);
+output.normal = float4(normalW, 1.0f);
 
-	if (nTexMask & MATERIAL_NORMAL_MAP)
-	{
-		float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.binormalW), normalW);
-		float3 vNormal = normalize(f4NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
-		normalW = normalize(mul(vNormal, TBN));
-	}
+if (nTexMask & MATERIAL_NORMAL_MAP)
+{
+	float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.binormalW), normalW);
+	float3 vNormal = normalize(f4NormalColor.rgb * 2.0f - 1.0f); //[0, 1] (Color) → [-1, 1]
+	normalW = normalize(mul(vNormal, TBN));
+}
 
-	float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
-	shadowFactor = CalcShadowFactor(input.shadowPosH);
+float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
+shadowFactor = CalcShadowFactor(input.shadowPosH);
 
-	cIllumination = Lighting(input.positionW, normalW, gGameObjectsInfo[input.instanceID].m_Material, fSpecularFactor, shadowFactor);
+cIllumination = Lighting(input.positionW, normalW, gGameObjectsInfo[input.instanceID].m_Material, fSpecularFactor, shadowFactor);
 
-	return(cColor * cIllumination);
+output.color = cColor * cIllumination;
+
+return output;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -27,6 +27,7 @@
 #define ENVIRCUBE_TEXTURE				t13
 #define EMISSIVE_TEXTURE				t14
 #define SHADOW_MAP						t15
+#define NORMAL_MAP						t16
 
 #define WRAP_SAMPLERSTATE				s0
 #define CLAMP_SAMPLERSTATE				s1
@@ -50,6 +51,7 @@ Texture2D gtxtNormalTexture : register(NORMAL_TEXTURE);
 Texture2D gtxtEmissiveTexture : register(EMISSIVE_TEXTURE);
 TextureCube gtxtEnvirCubeTexture : register(ENVIRCUBE_TEXTURE);
 Texture2D<float> gtxtShadowMap : register(SHADOW_MAP);
+Texture2D<float4> gtxtScreenNormalTexture : register(NORMAL_MAP);
 
 struct MATERIAL
 {
