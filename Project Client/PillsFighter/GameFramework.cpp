@@ -711,8 +711,16 @@ void CGameFramework::ProcessInput()
 
 		::GetCursorPos(&ptCursorPos);
 
-		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / MOUSE_SENSITIVITY;
-		cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / MOUSE_SENSITIVITY;
+		float fSensitivity = MOUSE_SENSITIVITY;
+
+		if (m_pPlayer)
+		{
+			if (m_pPlayer->IsZoomIn())
+				fSensitivity *= 4.0f;
+		}
+
+		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / fSensitivity;
+		cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / fSensitivity;
 
 		if (m_pPlayer)
 		{

@@ -207,6 +207,7 @@ public:
 	void ZoomIn();
 	void ZoomOut();
 	void TakeAim();
+	bool IsZoomIn() { return m_bZoomIn; }
 
 public:
 	void GenerateViewMatrix();
