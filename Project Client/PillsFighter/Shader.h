@@ -348,8 +348,8 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
-	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nTextures = 1);
-	virtual void AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, int nTextures = 1);
+	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
+	virtual void AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType);
 
 protected:
 	// Effect Count = Texture Count
@@ -367,7 +367,6 @@ protected:
 
 #define TIMED_EFFECT_INDEX_MUZZLE_FIRE 0
 
-#define TIMED_EFFECT_INDEX_MUZZLE_FIRE_TEXTURES 1
 class CTimedEffectShader : public CEffectShader
 {
 public:
@@ -417,8 +416,6 @@ protected:
 
 #define LASER_EFFECT_INDEX_LASER_BEAM 0
 
-#define LASER_EFFECT_INDEX_LASER_BEAM_TEXTURE_COUNT 1
-
 class CLaserEffectShader : public CEffectShader
 {
 public:
@@ -441,14 +438,12 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define SPRITE_EFFECT_COUNT 2
+#define SPRITE_EFFECT_COUNT 3
 
-#define SPRITE_EFFECT_INDEX_HIT 0
-#define SPRITE_EFFECT_INDEX_EXPLOSION 1
+#define SPRITE_EFFECT_INDEX_HIT_1 0
+#define SPRITE_EFFECT_INDEX_HIT_2 1
+#define SPRITE_EFFECT_INDEX_EXPLOSION 2
 
-
-#define SPRITE_EFFECT_INDEX_HIT_TEXTURES 2
-#define SPRITE_EFFECT_INDEX_EXPLOSION_TEXTURES 1
 class CSpriteShader : public CEffectShader
 {
 public:
@@ -480,11 +475,6 @@ public:
 #define PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE 0
 #define PARTICLE_TEXTURE_INDEX_BOOSTER_FOG 1
 #define PARTICLE_TEXTURE_INDEX_HIT 2
-
-
-#define PARTICLE_INDEX_BOOSTER_FLARE_TEXTURES 1
-#define PARTICLE_INDEX_BOOSTER_FOG_TEXTURES 1
-#define PARTICLE_HIT_TEXTURES 1
 
 class CParticleShader : public CShader
 {

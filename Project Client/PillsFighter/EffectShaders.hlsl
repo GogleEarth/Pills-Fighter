@@ -29,13 +29,11 @@ struct VS_EFFECT_INPUT
 	float3 position : POSITION;
 	float age : AGE;
 	float2 size : SIZE;
-	uint texindex : TEXINDEX;
 };
 
 struct VS_EFFECT_OUTPUT
 {
 	float3 position : POSITION;
-	uint texindex : TEXINDEX;
 	float4 color : COLOR;
 	float2 size : SIZE;
 };
@@ -49,7 +47,6 @@ VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
 
 	output.size = input.size;
 	output.position = input.position;
-	output.texindex = input.texindex;
 
 	return output;
 }
@@ -59,7 +56,6 @@ struct GS_EFFECT_OUTPUT
 	float4 position : SV_POSITION;
 	float4 color : COLOR;
 	float2 uv : TEXCOORD;
-	uint texindex : TEXINDEX;
 };
 
 [maxvertexcount(4)]
@@ -85,7 +81,6 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_EFFECT_OUTPUT output;
-	output.texindex = input[0].texindex;
 	output.color = input[0].color;
 
 	for (int i = 0; i < 4; i++)
@@ -99,7 +94,7 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 
 float4 PSEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture[NonUniformResourceIndex(input.texindex)].Sample(gssWrap, input.uv);
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	return(cColor *input.color);
 }
@@ -245,7 +240,6 @@ void GSTextEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_E
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_EFFECT_OUTPUT output;
-	output.texindex = input[0].texindex;
 	output.color = input[0].color;
 
 	for (int i = 0; i < 4; i++)
@@ -279,7 +273,6 @@ struct VS_SPRITE_INPUT
 	float2 size : SIZE;
 	uint2 spritepos : SPRITEPOS;
 	float age : AGE;
-	uint texindex : TEXINDEX;
 	uint type : TYPE;
 };
 
@@ -288,14 +281,12 @@ struct VS_SPRITE_OUTPUT
 	float3 position : POSITION;
 	float2 size : SIZE;
 	uint2 spritepos : SPRITEPOS;
-	uint texindex : TEXINDEX;
 };
 
 struct GS_SPRITE_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD;
-	uint texindex : TEXINDEX;
 };
 
 VS_SPRITE_OUTPUT VSSpriteDraw(VS_SPRITE_INPUT input)
@@ -305,7 +296,6 @@ VS_SPRITE_OUTPUT VSSpriteDraw(VS_SPRITE_INPUT input)
 	output.position = input.position;
 	output.size = input.size;
 	output.spritepos = input.spritepos;
-	output.texindex = input.texindex;
 
 	return output;
 }
@@ -333,7 +323,6 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_SPRITE_OUTPUT output;
-	output.texindex = input[0].texindex;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -348,7 +337,7 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 
 float4 PSSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture[NonUniformResourceIndex(input.texindex)].Sample(gssWrap, input.uv);
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
 	return(cColor);
 }

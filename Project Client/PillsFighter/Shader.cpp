@@ -1349,24 +1349,14 @@ void CEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 		if (m_ppEffects[i]) m_ppEffects[i]->AfterRender(pd3dCommandList);
 }
 
-void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nTextures)
+void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
 {
-	int nTextureIndex = 0;
-
-	if (nTextures > 1)
-		nTextureIndex = rand() % nTextures;
-
-	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nTextureIndex, nEffectAniType);
+	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nEffectAniType);
 }
 
-void CEffectShader::AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, int nTextures)
+void CEffectShader::AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType)
 {
-	int nTextureIndex = 0;
-
-	if (nTextures > 1)
-		nTextureIndex = rand() % nTextures;
-
-	if (m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertexWithLookV(xmf3Position, xmf2Size, xmf3Look, nTextureIndex, nEffectAniType);
+	if (m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertexWithLookV(xmf3Position, xmf2Size, xmf3Look, nEffectAniType);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1381,13 +1371,12 @@ CTimedEffectShader::~CTimedEffectShader()
 
 D3D12_INPUT_LAYOUT_DESC CTimedEffectShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 4;
+	UINT nInputElementDescs = 3;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[3] = { "TEXINDEX", 0, DXGI_FORMAT_R32_UINT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1398,13 +1387,12 @@ D3D12_INPUT_LAYOUT_DESC CTimedEffectShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CTimedEffectShader::CreateStreamOutput()
 {
-	UINT nSODecls = 4;
+	UINT nSODecls = 3;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
 	pd3dStreamOutputDeclarations[1] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
-	pd3dStreamOutputDeclarations[3] = { 0, "TEXINDEX", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1647,15 +1635,14 @@ CSpriteShader::~CSpriteShader()
 
 D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 6;
+	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "SPRITEPOS", 0, DXGI_FORMAT_R32G32_UINT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[4] = { "TEXINDEX", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[5] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1666,15 +1653,14 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 {
-	UINT nSODecls = 6;
+	UINT nSODecls = 5;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
 	pd3dStreamOutputDeclarations[1] = { 0, "SIZE", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[2] = { 0, "SPRITEPOS", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "AGE", 0, 0, 1, 0 };
-	pd3dStreamOutputDeclarations[4] = { 0, "TEXINDEX", 0, 0, 1, 0 };
-	pd3dStreamOutputDeclarations[5] = { 0, "TYPE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[4] = { 0, "TYPE", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1722,14 +1708,20 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppEffects = new CEffect*[m_nEffects];;
 
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT] = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Attack1.dds", 0);
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Attack2.dds", 1);
+	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Attack1.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f);
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	//
+	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Attack2.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 7, 0.2f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
 	m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);

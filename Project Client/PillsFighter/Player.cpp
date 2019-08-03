@@ -130,6 +130,15 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 
 		float fSpeed = fDistance;
 
+		float fKeyDownCount = 0.0f;
+
+		if (dwDirection & DIR_FORWARD) fKeyDownCount +=1.0f;
+		if (dwDirection & DIR_BACKWARD) fKeyDownCount +=2.0f;
+		if (dwDirection & DIR_RIGHT) fKeyDownCount +=1.5f;
+		if (dwDirection & DIR_LEFT) fKeyDownCount +=1.5f;
+
+		fSpeed /= fKeyDownCount;
+
 		if (dwDirection & DIR_FORWARD)
 		{
 			if (IsOnGround())
@@ -147,8 +156,6 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		}
 		if (dwDirection & DIR_BACKWARD)
 		{
-			fSpeed = fDistance * 0.7f;
-
 			if (IsOnGround())
 			{
 				if (!IsBoostering() && !IsDash())
@@ -164,8 +171,6 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			fSpeed = fDistance * 0.85f;
-
 			if (IsOnGround())
 			{
 				if (!IsBoostering() && !IsDash())
@@ -181,8 +186,6 @@ void CPlayer::Move(ULONG dwDirection, float fDistance)
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			fSpeed = fDistance * 0.85f;
-
 			if (IsOnGround())
 			{
 				if (!IsBoostering() && !IsDash())
