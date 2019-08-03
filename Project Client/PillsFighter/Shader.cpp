@@ -2767,6 +2767,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BEAM_GAUGE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamGuage.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_GAUGE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+	m_ppTextures[UI_TEXTURE_SCOPE_MASK] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SCOPE_MASK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScopeMask.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SCOPE_MASK], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
@@ -2774,6 +2778,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	XMFLOAT2 xmf2Center = ::CalculateCenter(-1.0f, 1.0f, 1.0f, -1.0f);
 	XMFLOAT2 xmf2Size = ::CalculateSize(-1.0f, 1.0f, 1.0f, -1.0f);
 	m_ppUIRects[UI_RECT_BASE] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+	m_ppUIRects[UI_RECT_SCOPE] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	xmf2Center = ::CalculateCenter(-0.375000f, -0.332812f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(-0.375000f, -0.332812f, 0.257778f, -0.257778f);

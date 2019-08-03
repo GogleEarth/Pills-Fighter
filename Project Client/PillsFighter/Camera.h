@@ -24,7 +24,6 @@ protected:
 	float 							m_fYaw;
 
 	XMFLOAT3 						m_xmf3Offset;
-	float 							m_fTimeLag;
 
 	XMFLOAT4X4 						m_xmf4x4View;
 	XMFLOAT4X4 						m_xmf4x4Projection;
@@ -80,9 +79,6 @@ public:
 
 	void SetOffset(XMFLOAT3 xmf3Offset) { m_xmf3Offset = xmf3Offset; }
 	XMFLOAT3& GetOffset() { return(m_xmf3Offset); }
-
-	void SetTimeLag(float fTimeLag) { m_fTimeLag = fTimeLag; }
-	float GetTimeLag() { return(m_fTimeLag); }
 
 	XMFLOAT4X4 GetViewMatrix() { return(m_xmf4x4View); }
 	XMFLOAT4X4 GetProjectionMatrix() { return(m_xmf4x4Projection); }
