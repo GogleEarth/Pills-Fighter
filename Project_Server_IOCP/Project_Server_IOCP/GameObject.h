@@ -67,6 +67,7 @@ public:
 	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
 	void SetWorldTransf(XMFLOAT4X4& xmf4x4World);
 	XMFLOAT3 GetPosition() { return m_xmf3Position; }
+	XMFLOAT3 GetPrevPosition() { return m_xmf3PrevPosition; }
 	XMFLOAT3 GetLook() { return m_xmf3Look; }
 	XMFLOAT3 GetUp() { return m_xmf3Up; }
 	XMFLOAT3 GetRight() { return m_xmf3Right; }
@@ -75,6 +76,7 @@ public:
 	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3& xmf3Position);
+	void SetPrevPosition(XMFLOAT3& xmf3Position);
 
 	void SetPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch = Pitch; m_fPrepareYaw = Yaw; m_fPrepareRoll = Roll; }
 	void AddPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch += Pitch; m_fPrepareYaw += Yaw; m_fPrepareRoll += Roll; }
