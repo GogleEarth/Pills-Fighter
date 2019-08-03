@@ -218,7 +218,6 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			Objects_[index].SetModel(bullet_mesh_);
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
-			Objects_[index].set_owner_id(id);
 		}
 		else if (type == OBJECT_TYPE_ITEM_HEALING
 			|| type == OBJECT_TYPE_ITEM_AMMO
@@ -234,7 +233,9 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			Objects_[index].set_speed(speed);
 		}
 	}
+	Objects_[index].set_owner_id(id);
 	Objects_[index].SetWorldTransf(matrix);
+	Objects_[index].SetPrevPosition(XMFLOAT3{ matrix._41, matrix._42, matrix._43 });
 	Objects_[index].SetUse(true);
 	obj_lock.unlock();
 	return index;
@@ -267,104 +268,115 @@ bool Scene::check_collision_obstacles(int object)
 
 bool Scene::check_collision_player(int object)
 {
+	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
+	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
+	float distance;
+
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
 		if (Objects_[i].GetPlay())
 		{
-			for (auto objaabb : Objects_[object].GetAABB())
+			for (auto playeraabb : Objects_[i].GetAABB())
 			{
-				for (auto playeraabb : Objects_[i].GetAABB())
+				if (playeraabb.Intersects(origin, direction, distance))
 				{
-					if (objaabb.Intersects(playeraabb))
+					XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
+					float len = Vector3::Length(length);
+					std::cout << "dis : " << distance << ", len : " << len << "\n";
+					if (distance <= len)
 					{
-						if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
-							Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
+						if (i != Objects_[object].get_owner_id())
 						{
-							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
-							pkt_pi->PktId = PKT_ID_PICK_ITEM;
-							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
-							pkt_pi->ID = i;
-							pkt_pi->AMMO = Objects_[object].GetHitPoint();
-							if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1)
-								pkt_pi->Item_type = ITEM_TYPE_AMMO1;
-							else
-								pkt_pi->Item_type = ITEM_TYPE_AMMO2;
-							item_lock.lock();
-							item_queue_.push(pkt_pi);
-							item_lock.unlock();
-						}
-						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
-						{
-							PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
-							pkt_pi->PktId = PKT_ID_PICK_ITEM;
-							pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
-							pkt_pi->ID = i;
-							pkt_pi->HP = Objects_[object].GetHitPoint();
-							pkt_pi->Item_type = ITEM_TYPE_HEALING;
-
-							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
-
-							item_lock.lock();
-							item_queue_.push(pkt_pi);
-							item_lock.unlock();
-						}
-						else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
-							Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
-							Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
-						{
-							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
-							pkt_pl->ID = i;
-							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-							pkt_pl->HP = Objects_[object].GetHitPoint();
-							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
-							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
-
-							PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
-							pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
-							pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
-							pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
-							pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							auto position = Objects_[i].GetPosition();
-							position.y += 20.0f;
-							pkt_ce->xmf3Position = position;
-							pkt_ce->id = Objects_[object].get_owner_id();
-
-							effect_lock_.lock();
-							create_effect_queue_.push(pkt_ce);
-							effect_lock_.unlock();
-
-							if (Objects_[i].GetHitPoint() <= 0)
+							if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
+								Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
 							{
-								if (Objects_[i].get_team() == 0)
-									red_score_ -= 5;
+								PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
+								pkt_pi->PktId = PKT_ID_PICK_ITEM;
+								pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
+								pkt_pi->ID = i;
+								pkt_pi->AMMO = Objects_[object].GetHitPoint();
+								if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1)
+									pkt_pi->Item_type = ITEM_TYPE_AMMO1;
 								else
-									blue_score_ -= 5;
-								PKT_SCORE* pkt_sco = new PKT_SCORE;
-								pkt_sco->PktId = PKT_ID_SCORE;
-								pkt_sco->PktSize = sizeof(PKT_SCORE);
-								pkt_sco->RedScore = red_score_;
-								pkt_sco->BlueScore = blue_score_;
-
-								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
-
-								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
-								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
-								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-								pkt_pd->hp = Objects_[i].GetMaxHitPoint();
-								pkt_pd->id = i;
-
-								die_lock_.lock();
-								player_die_queue_.push(pkt_pd);
-								die_lock_.unlock();
-
-								score_lock.lock();
-								score_queue_.push(pkt_sco);
-								score_lock.unlock();
+									pkt_pi->Item_type = ITEM_TYPE_AMMO2;
+								item_lock.lock();
+								item_queue_.push(pkt_pi);
+								item_lock.unlock();
 							}
+							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
+							{
+								PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
+								pkt_pi->PktId = PKT_ID_PICK_ITEM;
+								pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
+								pkt_pi->ID = i;
+								pkt_pi->HP = Objects_[object].GetHitPoint();
+								pkt_pi->Item_type = ITEM_TYPE_HEALING;
 
-							life_lock.lock();
-							player_life_queue_.push(pkt_pl);
-							life_lock.unlock();
+								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
+
+								item_lock.lock();
+								item_queue_.push(pkt_pi);
+								item_lock.unlock();
+							}
+							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
+								Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
+								Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
+							{
+								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+								pkt_pl->ID = i;
+								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+								pkt_pl->HP = Objects_[object].GetHitPoint();
+								pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+								pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+								PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+								pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+								pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+								pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
+								pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+								auto position = Objects_[i].GetPosition();
+								position.y += 20.0f;
+								pkt_ce->xmf3Position = position;
+								pkt_ce->id = Objects_[object].get_owner_id();
+
+								effect_lock_.lock();
+								create_effect_queue_.push(pkt_ce);
+								effect_lock_.unlock();
+
+								if (Objects_[i].GetHitPoint() <= 0)
+								{
+									if (Objects_[i].get_team() == 0)
+										red_score_ -= 5;
+									else
+										blue_score_ -= 5;
+									PKT_SCORE* pkt_sco = new PKT_SCORE;
+									pkt_sco->PktId = PKT_ID_SCORE;
+									pkt_sco->PktSize = sizeof(PKT_SCORE);
+									pkt_sco->RedScore = red_score_;
+									pkt_sco->BlueScore = blue_score_;
+
+									Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+									pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+									pkt_pd->hp = Objects_[i].GetMaxHitPoint();
+									pkt_pd->id = i;
+
+									die_lock_.lock();
+									player_die_queue_.push(pkt_pd);
+									die_lock_.unlock();
+
+									score_lock.lock();
+									score_queue_.push(pkt_sco);
+									score_lock.unlock();
+								}
+
+								life_lock.lock();
+								player_life_queue_.push(pkt_pl);
+								life_lock.unlock();
+
+							}
 						}
 						return true;
 					}

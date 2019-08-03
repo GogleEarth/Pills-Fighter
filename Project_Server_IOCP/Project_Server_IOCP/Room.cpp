@@ -245,7 +245,7 @@ int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix)
 	{
 		hp = 10;
 		lifetime = 30.0f;
-		speed = 800.0f;
+		speed = 300.0f;
 	}
 	return scenes_[using_scene_]->AddObject(type,hp,lifetime,speed,matrix);
 }
@@ -269,14 +269,14 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	{
 		hp = 3;
 		life_time = 1.5f;
-		speed = 500.0f;
+		speed = 1200.0f;
 		type = OBJECT_TYPE_MACHINE_BULLET;
 	}
 	else if (weapon == WEAPON_TYPE_BAZOOKA)
 	{
 		hp = 15;
 		life_time = 2.5f;
-		speed = 400.0f;
+		speed = 800.0f;
 		type = OBJECT_TYPE_BZK_BULLET;
 	}
 

@@ -101,7 +101,6 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 	m_pCamera->SetPlayer(this);
 
-	m_pCamera->SetTimeLag(0.0f);
 	m_pCamera->SetOffset(CAMERA_POSITION);
 	m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 	m_pCamera->SetViewPort(0.0f, 0.0f, float(FRAME_BUFFER_WIDTH), float(FRAME_BUFFER_HEIGHT));
@@ -306,13 +305,23 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
-	if (!m_bZoomIn)
-		CRobotObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
+	if (m_bZoomIn) return;
+
+	CRobotObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 
 	if (m_pWeaponShader) m_pWeaponShader->Render(pd3dCommandList, pCamera);
 
-	if (m_pRHWeapon) m_pRHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
-	if (m_pLHWeapon) m_pLHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+	if (m_pRHWeapon)
+	{
+		m_pRHWeapon->SetOwnerTransform(m_pRightHand->GetWorldTransf());
+		m_pRHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+	}
+
+	if (m_pLHWeapon)
+	{
+		m_pLHWeapon->SetOwnerTransform(m_pLHWeapon->GetWorldTransf());
+		m_pLHWeapon->Render(pd3dCommandList, pCamera, true, false, 1);
+	}
 }
 
 void CPlayer::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
@@ -1237,7 +1246,8 @@ void CPlayer::ZoomIn()
 		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
 			m_bZoomIn = true;
-			m_pCamera->ZoomIn(20);
+			m_pUI->ZoomIn();
+			m_pCamera->ZoomIn(10);
 		}
 	}
 }
@@ -1246,6 +1256,7 @@ void CPlayer::ZoomOut()
 {
 	m_bZoomIn = false;
 	m_pCamera->ZoomOut();
+	m_pUI->ZoomOut();
 }
 
 void CPlayer::TakeAim()

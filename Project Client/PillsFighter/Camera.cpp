@@ -15,7 +15,6 @@ CCamera::CCamera()
 	m_fYaw = 0.0f;
 
 	m_xmf3Offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	m_fTimeLag = 0.0f;
 
 	m_xmf4x4View = Matrix4x4::Identity();
 	m_xmf4x4Projection = Matrix4x4::Identity();
@@ -44,7 +43,6 @@ CCamera::CCamera(CCamera *pCamera)
 		m_fYaw = 0.0f;
 
 		m_xmf3Offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		m_fTimeLag = 0.0f;
 
 		m_xmf4x4View = Matrix4x4::Identity();
 		m_xmf4x4Projection = Matrix4x4::Identity();
@@ -112,17 +110,10 @@ void CCamera::GenerateViewMatrix()
 	m_xmf4x4View._21 = m_xmf3Right.y; m_xmf4x4View._22 = m_xmf3Up.y; m_xmf4x4View._23 =	m_xmf3Look.y;
 	m_xmf4x4View._31 = m_xmf3Right.z; m_xmf4x4View._32 = m_xmf3Up.z; m_xmf4x4View._33 =	m_xmf3Look.z;
 
-	XMFLOAT3 xmf3Position;
-	if (m_bZoomIn)
-	{
-		CGun *pGun = (CGun*)m_pPlayer->GetRHWeapon();
-		xmf3Position = pGun->GetScopePos();
-	}
-	else xmf3Position = m_xmf3Position;
 
-	m_xmf4x4View._41 = -Vector3::DotProduct(xmf3Position, m_xmf3Right);
-	m_xmf4x4View._42 = -Vector3::DotProduct(xmf3Position, m_xmf3Up);
-	m_xmf4x4View._43 = -Vector3::DotProduct(xmf3Position, m_xmf3Look);
+	m_xmf4x4View._41 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Right);
+	m_xmf4x4View._42 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Up);
+	m_xmf4x4View._43 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Look);
 
 	m_xmf4x4ViewProjection = Matrix4x4::Multiply(m_xmf4x4View, m_xmf4x4Projection);
 }
@@ -194,6 +185,7 @@ void CCamera::Update(float fTimeElapsed)
 		xmf4x4Rotate = Matrix4x4::Multiply(xmf4x4Rotate, xmf4x4Rotate2);
 
 		XMFLOAT4X4 xmf4x4Position = Matrix4x4::Identity();
+
 		xmf4x4Position._41 = m_xmf3Offset.x;
 		xmf4x4Position._42 = m_xmf3Offset.y;
 		xmf4x4Position._43 = m_xmf3Offset.z;

@@ -532,7 +532,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 17
+#define UI_TEXTURE_COUNT 18
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -551,8 +551,9 @@ protected:
 #define UI_TEXTURE_TEAM_HP_BASE 14
 #define UI_TEXTURE_TEAM_HP 15
 #define UI_TEXTURE_BEAM_GAUGE 16
+#define UI_TEXTURE_SCOPE_MASK 17
 
-#define UI_RECT_COUNT 15
+#define UI_RECT_COUNT 16
 
 #define UI_RECT_BASE 0
 #define UI_RECT_HP 1
@@ -569,6 +570,7 @@ protected:
 #define UI_RECT_TEAM_HP_1 12
 #define UI_RECT_TEAM_HP_2 13
 #define UI_RECT_TEAM_HP_3 14
+#define UI_RECT_SCOPE 15
 
 struct CB_PLAYER_VALUE
 {
@@ -663,7 +665,6 @@ protected:
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE>	m_vd3dTeamNameTextureSRVGPUHandle;
 	std::vector<CRect*>							m_vpTeamNameRect;
 
-
 public:
 	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect);
 
@@ -674,6 +675,14 @@ public:
 	void ChangeAmmoText(int nWeaponIndex);
 	void GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex);
 	void SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName);
+
+protected:
+// Zoom
+	bool			m_bZoomIn = false;
+
+public:
+	void ZoomIn() { m_bZoomIn = true; }
+	void ZoomOut() { m_bZoomIn = false; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////

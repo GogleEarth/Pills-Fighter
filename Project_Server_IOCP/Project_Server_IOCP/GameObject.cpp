@@ -164,6 +164,13 @@ void GameObject::SetPosition(XMFLOAT3 & xmf3Position)
 	SetPosition(xmf3Position.x, xmf3Position.y, xmf3Position.z);
 }
 
+void GameObject::SetPrevPosition(XMFLOAT3 & xmf3Position)
+{
+	m_xmf3PrevPosition.x = xmf3Position.x;
+	m_xmf3PrevPosition.y = xmf3Position.y;
+	m_xmf3PrevPosition.z = xmf3Position.z;
+}
+
 void GameObject::MoveStrafe(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
