@@ -752,6 +752,8 @@ protected:
 	CModel		*m_pBeamRifle = NULL;
 	CModel		*m_pBeamSniper = NULL;
 
+	bool		m_bRenderEdge = false;
+
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);
 	virtual void DeleteObject(int nIndex);

@@ -2818,7 +2818,7 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 			m_pPlayer->ActivationDash();
 			break;
 		case VK_F1:
-			Alert();
+			m_bRenderEdge = !m_bRenderEdge;
 			break;
 		default:
 			break;
@@ -3421,7 +3421,6 @@ void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *p
 	if (m_pd3dShadowMap) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_SHADOW_MAP, m_d3dSrvShadowMapGPUHandle);
 
 	CScene::Render(pd3dCommandList, pCamera);
-	if (m_pd3dScreenNormalTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_NORMAL_MAP, m_d3dSrvScreenNormalGPUHandle);
 }
 
 void CBattleScene::PostProcessing(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -3557,9 +3556,16 @@ void CBattleScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 void CBattleScene::RenderOffScreen(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	if (m_pd3dOffScreenTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_d3dSrvOffScreenGPUHandle);
+
 	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCREEN_EFFECT, 4, &m_xmf4ScreenColor, 0);
 
-	m_pPostProcessingShader->Render(pd3dCommandList, NULL);
+	if (m_bRenderEdge)
+	{
+		if (m_pd3dScreenNormalTexture) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_NORMAL_MAP, m_d3dSrvScreenNormalGPUHandle);
+		m_pPostProcessingShader->RenderEdge(pd3dCommandList, NULL);
+	}
+	else
+		m_pPostProcessingShader->Render(pd3dCommandList, NULL);
 }
 
 void CBattleScene::ReleaseUploadBuffers()

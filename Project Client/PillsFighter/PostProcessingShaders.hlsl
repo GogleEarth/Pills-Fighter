@@ -64,11 +64,11 @@ float4 PSPostProcessing(VS input) : SV_Target
 
 
 //
-#define FILTER_SAMPLE 9
-//static float gfLaplacians[FILTER_SAMPLE] = { -1.0f, -1.0f, 4.0f, -1.0f, -1.0f };
-//static int2 gnOffsets[FILTER_SAMPLE] = { { 0,-1 },{ -1,0 },{ 0,0 },{ 1,0 },{ 0,1 } };
-static float gfLaplacians[FILTER_SAMPLE] = { -1.0f, -1.0f, -1.0f, -1.0f, 8.0f, -1.0f, -1.0f, -1.0f, -1.0f };
-static int2 gnOffsets[FILTER_SAMPLE] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ -1,0 },{ 0,0 },{ 1,0 },{ -1,1 },{ 0,1 },{ 1,1 } };
+#define FILTER_SAMPLE 5
+static float gfLaplacians[FILTER_SAMPLE] = { -1.0f, -1.0f, 4.0f, -1.0f, -1.0f };
+static int2 gnOffsets[FILTER_SAMPLE] = { { 0,-1 },{ -1,0 },{ 0,0 },{ 1,0 },{ 0,1 } };
+//static float gfLaplacians[FILTER_SAMPLE] = { -1.0f, -1.0f, -1.0f, -1.0f, 8.0f, -1.0f, -1.0f, -1.0f, -1.0f };
+//static int2 gnOffsets[FILTER_SAMPLE] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ -1,0 },{ 0,0 },{ 1,0 },{ -1,1 },{ 0,1 },{ 1,1 } };
 
 float4 PSPostProcessingByLaplacianEdge(VS input) : SV_Target
 {

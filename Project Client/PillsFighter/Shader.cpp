@@ -3420,6 +3420,7 @@ CPostProcessingShader::CPostProcessingShader()
 
 CPostProcessingShader::~CPostProcessingShader()
 {
+	if (m_pd3dEdgePipelineState) m_pd3dEdgePipelineState->Release();
 }
 
 D3D12_SHADER_BYTECODE CPostProcessingShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -3428,6 +3429,11 @@ D3D12_SHADER_BYTECODE CPostProcessingShader::CreateVertexShader(ID3DBlob **ppd3d
 }
 
 D3D12_SHADER_BYTECODE CPostProcessingShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSPostProcessing", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CPostProcessingShader::CreateEdgePixelShader(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"PostProcessingShaders.hlsl", "PSPostProcessingByLaplacianEdge", "ps_5_1", ppd3dShaderBlob));
 }
@@ -3464,6 +3470,10 @@ void CPostProcessingShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSig
 
 	HRESULT hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineState);
 
+	d3dPipelineStateDesc.PS = CreateEdgePixelShader(&pd3dPixelShaderBlob);
+
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dEdgePipelineState);
+
 	if (pd3dVertexShaderBlob) pd3dVertexShaderBlob->Release();
 	if (pd3dPixelShaderBlob) pd3dPixelShaderBlob->Release();
 
@@ -3472,7 +3482,15 @@ void CPostProcessingShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSig
 
 void CPostProcessingShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	CShader::Render(pd3dCommandList, pCamera);
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+
+	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pd3dCommandList->DrawInstanced(6, 1, 0, 0);
+}
+
+void CPostProcessingShader::RenderEdge(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	if (m_pd3dEdgePipelineState) pd3dCommandList->SetPipelineState(m_pd3dEdgePipelineState);
 
 	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	pd3dCommandList->DrawInstanced(6, 1, 0, 0);
