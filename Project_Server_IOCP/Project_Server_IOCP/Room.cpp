@@ -95,9 +95,9 @@ XMFLOAT4X4 Room::make_matrix()
 
 	up = Vector3::CrossProduct(look, right, true);
 
-	matrix._11 = look.x; matrix._12 = look.y; matrix._13 = look.z; matrix._14 = 0.0f;
+	matrix._11 = right.x; matrix._12 = right.y; matrix._13 = right.z; matrix._34 = 0.0f;
 	matrix._21 = up.x; matrix._22 = up.y; matrix._23 = up.z; matrix._24 = 0.0f;
-	matrix._31 = right.x; matrix._32 = right.y; matrix._33 = right.z; matrix._34 = 0.0f;
+	matrix._31 = look.x; matrix._32 = look.y; matrix._33 = look.z; matrix._14 = 0.0f;
 	matrix._41 = position.x; matrix._42 = position.y; matrix._43 = position.z; matrix._44 = 1.0f;
 	return matrix;
 }
