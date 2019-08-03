@@ -751,8 +751,6 @@ void Framawork::process_packet(int id, char* packet)
 			send_packet_to_player(id, (char*)&pkt_rio);
 			clients_[id].in_room = true;
 
-			
-
 			// 새로들어온 애한테 원래있던애들 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
 			{
@@ -826,6 +824,16 @@ void Framawork::process_packet(int id, char* packet)
 			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
+			send_packet_to_room_player(room_num, (char*)pkt_ce);
+			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+			delete pkt_ce;
+		}
+		else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_SNIPER)
+		{
+			int index;
+			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 2000.0f, &index);
 			send_packet_to_room_player(room_num, (char*)pkt_ce);
 			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
 			delete pkt_ce;

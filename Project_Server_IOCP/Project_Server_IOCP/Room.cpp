@@ -310,11 +310,19 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	}
 	else if (weapon == WEAPON_TYPE_GM_GUN)
 	{
-		hp = 11;
+		hp = 5;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
 		length = 600.0f;
+	}
+	else if (weapon == WEAPON_TYPE_BEAM_SNIPER)
+	{
+		hp = 50;
+		life_time = 0.001f;
+		speed = 600.0;
+		type = OBJECT_TYPE_BEAM_BULLET;
+		length = 2000.0f;
 	}
 
 	PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
