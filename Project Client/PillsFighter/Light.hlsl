@@ -162,5 +162,10 @@ float4 Lighting(float3 vPosition, float3 vNormal, MATERIAL material, float fSpec
 	cColor += (gcGlobalAmbientLight * material.m_cAmbient);
 	cColor.a = material.m_cDiffuse.a;
 
+	//float3 diffuse = saturate(cColor);
+	//diffuse = ceil(diffuse * 3) / 3.0f;
+	//cColor = cColor * float4(diffuse, 1.0f);
+
+	//return(float4(diffuse, 1.0f));
 	return(cColor);
 }
