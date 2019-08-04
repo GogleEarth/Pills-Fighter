@@ -277,6 +277,7 @@ bool Scene::check_saber_collision_player(int object)
 					{
 						if (Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
 						{
+							if (i == Objects_[object].get_owner_id()) continue;
 							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 							pkt_pl->ID = i;
 							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
