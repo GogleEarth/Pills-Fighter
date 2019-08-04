@@ -3439,9 +3439,9 @@ void CBattleScene::MotionBlur(ID3D12GraphicsCommandList *pd3dCommandList, int nW
 {
 	if (m_bMotionBlur)
 	{
-		float moveVel = 0.0f;
-		if (m_pPlayer)
-			moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
+		float moveVel = Vector3::Length(Vector3::Subtract(m_pPlayer->GetPosition(), m_xmf3PrevPlayerPosition));
+
+		moveVel *= FPS / m_fFPS;
 
 		if (moveVel > 3.0f)
 		{
