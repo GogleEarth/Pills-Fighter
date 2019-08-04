@@ -1,7 +1,7 @@
 #pragma once
 
 ////////////////////////////////////////
-//#define ON_NETWORKING
+#define ON_NETWORKING
 
 #define MAX_NUM_OBJECT 3000
 #define MAX_NAME_LENGTH 10
@@ -61,7 +61,8 @@ typedef enum OBJECT_TYPE
 	OBJECT_TYPE_ITEM_AMMO,
 	OBJECT_TYPE_METEOR,
 	OBJECT_TYPE_ITEM_AMMO_1,
-	OBJECT_TYPE_ITEM_AMMO_2
+	OBJECT_TYPE_ITEM_AMMO_2,
+	OBJECT_TYPE_SABER
 }OBJECT_TYPE;
 
 typedef enum ROBOT_TYPE

@@ -132,15 +132,6 @@ void Scene::init(CRepository * pRepository)
 	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
 	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
 
-	for (int i = 0; i < 24; ++i)
-	{
-		BeamsaberCollisionmesh_[i].SetUse(false);
-		BeamsaberCollisionmesh_[i].SetModel(robot_mesh_);
-		BeamsaberCollisionmesh_[i].SetIndex(i);
-		BeamsaberCollisionmesh_[i].SetMaxHitPoint(3);
-		BeamsaberCollisionmesh_[i].SetHitPoint(3);
-	}
-
 	for (auto obstacle : Obstacles_)
 		obstacle->Animate(0.016f, 0);
 
@@ -172,12 +163,6 @@ void Scene::init()
 	Objects_[5].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
 	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
 	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
-
-	for (int i = 0; i < 24; ++i)
-	{
-		BeamsaberCollisionmesh_[i].SetUse(false);
-		BeamsaberCollisionmesh_[i].SetHitPoint(3);
-	}
 
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
@@ -232,6 +217,18 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
 		}
+		else if (type == OBJECT_TYPE_SABER)
+		{
+			Objects_[index].SetModel(robot_mesh_);
+			Objects_[index].set_life(life_time);
+			Objects_[index].set_speed(speed);
+			XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
+			XMFLOAT3 look = XMFLOAT3{ matrix._31, matrix._32, matrix._33 };
+			position = Vector3::Add(position, Vector3::ScalarProduct(look, 10.0f, false));
+			matrix._41 = position.x;
+			matrix._42 = position.y;
+			matrix._43 = position.z;
+		}
 	}
 	Objects_[index].set_owner_id(id);
 	Objects_[index].SetWorldTransf(matrix);
@@ -266,6 +263,85 @@ bool Scene::check_collision_obstacles(int object)
 	return false;
 }
 
+bool Scene::check_saber_collision_player(int object)
+{
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		if (Objects_[i].GetPlay())
+		{
+			for (auto objaabb : Objects_[object].GetAABB())
+			{
+				for (auto playeraabb : Objects_[i].GetAABB())
+				{
+					if (objaabb.Intersects(playeraabb))
+					{
+						if (Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
+						{
+							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+							pkt_pl->ID = i;
+							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+							pkt_pl->HP = Objects_[object].GetHitPoint();
+							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+							PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+							pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+							pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+							pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
+							pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+							auto position = Objects_[i].GetPosition();
+							position.y += 20.0f;
+							pkt_ce->xmf3Position = position;
+							pkt_ce->id = Objects_[object].get_owner_id();
+
+							effect_lock_.lock();
+							create_effect_queue_.push(pkt_ce);
+							effect_lock_.unlock();
+
+							if (Objects_[i].GetHitPoint() <= 0)
+							{
+								if (Objects_[i].get_team() == 0)
+									red_score_ -= 5;
+								else
+									blue_score_ -= 5;
+								PKT_SCORE* pkt_sco = new PKT_SCORE;
+								pkt_sco->PktId = PKT_ID_SCORE;
+								pkt_sco->PktSize = sizeof(PKT_SCORE);
+								pkt_sco->RedScore = red_score_;
+								pkt_sco->BlueScore = blue_score_;
+
+								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+								pkt_pd->hp = Objects_[i].GetMaxHitPoint();
+								pkt_pd->id = i;
+
+								die_lock_.lock();
+								player_die_queue_.push(pkt_pd);
+								die_lock_.unlock();
+
+								score_lock.lock();
+								score_queue_.push(pkt_sco);
+								score_lock.unlock();
+							}
+
+							life_lock.lock();
+							player_life_queue_.push(pkt_pl);
+							life_lock.unlock();
+
+						}
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 bool Scene::check_collision_player(int object)
 {
 	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
@@ -282,7 +358,6 @@ bool Scene::check_collision_player(int object)
 				{
 					XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
 					float len = Vector3::Length(length);
-					std::cout << "dis : " << distance << ", len : " << len << "\n";
 					if (distance <= len)
 					{
 						if (i != Objects_[object].get_owner_id())
@@ -320,7 +395,8 @@ bool Scene::check_collision_player(int object)
 							}
 							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
 								Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
-								Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
+								Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET ||
+								Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
 							{
 								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 								pkt_pl->ID = i;
@@ -377,8 +453,8 @@ bool Scene::check_collision_player(int object)
 								life_lock.unlock();
 
 							}
+							return true;
 						}
-						return true;
 					}
 				}
 			}

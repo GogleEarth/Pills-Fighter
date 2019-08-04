@@ -236,18 +236,24 @@ void Room::add_player(int id, SOCKET socket, char slot)
 	slots_[slot] = true;
 }
 
-int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix)
+int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix, int id)
 {
 	int hp;
 	float lifetime;
 	float speed;
 	if (type == OBJECT_TYPE_METEOR)
 	{
-		hp = 10;
+		hp = 30;
 		lifetime = 30.0f;
 		speed = 300.0f;
 	}
-	return scenes_[using_scene_]->AddObject(type,hp,lifetime,speed,matrix);
+	if (type == OBJECT_TYPE_SABER)
+	{
+		hp = 15;
+		lifetime = 0.001f;
+		speed = 0.0f;
+	}
+	return scenes_[using_scene_]->AddObject(type, hp, lifetime, speed, matrix, id);
 }
 
 void Room::set_player_lobby_info(int id, char selectedrobot, char team, char slot)
@@ -605,6 +611,14 @@ void Room::check_collision_obstacles(int object)
 void Room::check_collision_player(int object)
 {
 	if (scenes_[using_scene_]->check_collision_player(object))
+	{
+		scenes_[using_scene_]->deleteObject(object);
+	}
+}
+
+void Room::check_saber_collision_player(int object)
+{
+	if (scenes_[using_scene_]->check_saber_collision_player(object))
 	{
 		scenes_[using_scene_]->deleteObject(object);
 	}

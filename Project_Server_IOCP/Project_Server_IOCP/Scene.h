@@ -20,7 +20,6 @@ protected:
 	GameObject Objects_[MAX_NUM_OBJECT];
 
 	std::vector<GameObject*> Obstacles_;
-	GameObject BeamsaberCollisionmesh_[24];
 	float elapsed_game_time_;
 	float event_time_;
 	bool is_being_event_;
@@ -85,6 +84,7 @@ public:
 	void set_player_team(int id, char team);
 
 	bool check_collision_obstacles(int object);
+	bool check_saber_collision_player(int object);
 	bool check_collision_player(int object);
 	bool check_collision_player_to_vector(int object, float len);
 

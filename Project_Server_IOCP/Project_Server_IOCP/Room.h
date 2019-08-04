@@ -95,7 +95,7 @@ public:
 	void disconnect_client(SOCKET client);
 	int findindex();
 	void add_player(int id, SOCKET socket, char slot);
-	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix);
+	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix, int id = -1);
 	void set_player_lobby_info(int id, char selectedrobot, char team, char slot);
 	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
 	PKT_CREATE_EFFECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, float len, int* index);
@@ -112,6 +112,7 @@ public:
 	void change_team(int id, char team);
 
 	void check_collision_obstacles(int object);
+	void check_saber_collision_player(int object);
 	void check_collision_player(int object);
 	void check_collision_player_to_vector(int object, float len);
 

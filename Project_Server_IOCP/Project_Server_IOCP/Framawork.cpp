@@ -204,7 +204,6 @@ int Framawork::thread_process()
 					pkt_pin.PktId = (char)PKT_ID_PLAYER_IN;
 					pkt_pin.PktSize = (char)sizeof(PKT_PLAYER_IN);
 
-					// 새로들어온 애한테 원래있던애들 알려주기
 					for (int j = 0; j < MAX_CLIENT; ++j)
 					{
 						if (j == i) continue;
@@ -215,6 +214,7 @@ int Framawork::thread_process()
 							pkt_pin.Team = other_player->get_team();
 							pkt_pin.robot = other_player->get_robot();
 							pkt_pin.slot = other_player->get_slot();
+							lstrcpynW(pkt_pin.name, clients_[other_player->get_serverid()].name, MAX_NAME_LENGTH);
 							send_packet_to_player(player->get_serverid(), (char*)&pkt_pin);
 						}
 					}
@@ -358,31 +358,59 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_GM_GUN == over_ex->event_t)
 		{
-		if (rooms_[over_ex->room_num].get_playing())
-		{
-			auto object = rooms_[over_ex->room_num].get_object(key);
-			float elapsed_time;
-
-			if (over_ex->elapsed_time <= 0.001f)
-				elapsed_time = 0.016f;
-			else
-				elapsed_time = over_ex->elapsed_time;
-
-			object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
-			rooms_[over_ex->room_num].check_collision_player_to_vector(key, 600.0f);
-
-			if (object->IsDelete())
+			if (rooms_[over_ex->room_num].get_playing())
 			{
-				object->SetUse(false);
+				auto object = rooms_[over_ex->room_num].get_object(key);
+				float elapsed_time;
+
+				if (over_ex->elapsed_time <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = over_ex->elapsed_time;
+
+				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 600.0f);
+
+				if (object->IsDelete())
+				{
+					object->SetUse(false);
+				}
+				else
+				{
+					using namespace std;
+					using namespace chrono;
+					add_timer(key, over_ex->room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+				}
 			}
-			else
-			{
-				using namespace std;
-				using namespace chrono;
-				add_timer(key, over_ex->room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
-			}
+			delete over_ex;
 		}
-		delete over_ex;
+		else if (EVENT_TYPE_SABER == over_ex->event_t)
+		{
+			if (rooms_[over_ex->room_num].get_playing())
+			{
+				auto object = rooms_[over_ex->room_num].get_object(key);
+				float elapsed_time;
+
+				if (over_ex->elapsed_time <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = over_ex->elapsed_time;
+
+				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+				rooms_[over_ex->room_num].check_saber_collision_player(key);
+
+				if (object->IsDelete())
+				{
+					object->SetUse(false);
+				}
+				else
+				{
+					using namespace std;
+					using namespace chrono;
+					add_timer(key, over_ex->room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+				}
+			}
+			delete over_ex;
 		}
 		else
 		{
@@ -638,6 +666,39 @@ void Framawork::process_packet(int id, char* packet)
 		int room_num = search_client_in_room(clients_[id].socket);
 		int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
 		rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
+		if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
+			((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE ||
+			((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+		{
+			std::cout << "Ani : " << ((PKT_PLAYER_INFO*)packet)->Player_Up_Animation << " : " << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+			if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
+				if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f)
+				{
+					std::cout << "add beam_saber_object\n";
+					int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+					using namespace std;
+					using namespace chrono;
+					add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+				}
+			if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
+				if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f)
+				{
+					std::cout << "add beam_saber_object\n";
+					int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+					using namespace std;
+					using namespace chrono;
+					add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+				}
+			if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+				if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f)
+				{
+					std::cout << "add beam_saber_object\n";
+					int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+					using namespace std;
+					using namespace chrono;
+					add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+				}
+		}
 		send_packet_to_room_player(room_num, packet);
 		break;
 	}
