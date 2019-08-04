@@ -740,6 +740,7 @@ public:
 	float GetToTargetDistance() { return m_fCameraToTarget; }
 
 	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
+	void AddEffect(int nEffect, XMFLOAT3 xmf3Position, int nType);
 
 protected:
 	CMinimapShader						*m_pMinimapShader = NULL;
@@ -817,7 +818,6 @@ public:
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void CheckCollision();
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
 
 };

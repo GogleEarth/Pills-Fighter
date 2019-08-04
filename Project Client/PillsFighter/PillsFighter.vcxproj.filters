@@ -53,6 +53,7 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TextSystem.cpp" />
+    <ClCompile Include="Effect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -116,6 +117,7 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="TextSystem.h" />
+    <ClInclude Include="Effect.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="small.ico">

@@ -18,8 +18,10 @@ cbuffer cbSceneInfo : register(SCENE_INFO)
 
 struct EFFECT
 {
+	float3	m_vColor;
 	float	m_fElapsedTime;
 	float	m_fDuration;
+	
 };
 
 ConstantBuffer<EFFECT> gEffect : register(EFFECT_INFO);
@@ -65,6 +67,11 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
 	float3 vRight = normalize(cross(vUp, vLook));
 
+	float3x3 f3x3Rotate = float3x3(vRight, vUp, vLook) * RotateAxis(vLook, 45);
+	vUp = mul(vUp, f3x3Rotate);
+	vLook = mul(vLook, f3x3Rotate);
+	vRight = mul(vRight, f3x3Rotate);
+
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
 
@@ -96,7 +103,7 @@ float4 PSEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return(cColor *input.color);
+	return(cColor * input.color * float4(gEffect.m_vColor, 1.0f));
 }
 
 VS_EFFECT_INPUT VSEffectStreamOut(VS_EFFECT_INPUT input)
@@ -305,6 +312,9 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 {
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
+	float3x3 f3x3Rotate = RotateAxis(vLook, 360);
+	vUp = mul(vUp, f3x3Rotate);
+
 	float3 vRight = normalize(cross(vUp, vLook));
 
 	float fHalfW = input[0].size.x;
@@ -339,7 +349,7 @@ float4 PSSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return(cColor);
+	return(cColor * float4(gEffect.m_vColor, 1.0f));
 }
 
 VS_SPRITE_INPUT VSSpriteStreamOut(VS_SPRITE_INPUT input)
@@ -403,6 +413,7 @@ struct PARTICLE
 	bool	m_bEmit;
 	float3	m_vAngles;
 	bool	m_bScaling;
+	float3	m_vColor;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(PARTICLE_INFO);
@@ -560,5 +571,5 @@ float4 PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
 
-	return(cColor);
+	return cColor * float4(gParticle.m_vColor, 1.0f);
 }

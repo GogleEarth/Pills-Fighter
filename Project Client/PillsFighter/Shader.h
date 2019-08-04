@@ -7,6 +7,8 @@
 class CFont;
 class CTextObject;
 class CRepository;
+class CEffect;
+class CParticle;
 
 class CShader
 {
@@ -328,9 +330,13 @@ public:
 	CEffectShader();
 	virtual ~CEffectShader();
 
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();
 
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+
 	virtual D3D12_SHADER_BYTECODE CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
@@ -372,17 +378,7 @@ class CTimedEffectShader : public CEffectShader
 public:
 	CTimedEffectShader();
 	virtual ~CTimedEffectShader();
-
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
-	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();
-
-	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
-
-	virtual D3D12_SHADER_BYTECODE CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
-
+	
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 };
 
@@ -393,7 +389,7 @@ public:
 
 #define TEXT_EFFECT_INDEX_HIT_TEXT 0
 
-class CTextEffectShader : public CTimedEffectShader
+class CTextEffectShader : public CEffectShader
 {
 public:
 	CTextEffectShader();
@@ -443,6 +439,10 @@ public:
 #define SPRITE_EFFECT_INDEX_HIT_1 0
 #define SPRITE_EFFECT_INDEX_HIT_2 1
 #define SPRITE_EFFECT_INDEX_EXPLOSION 2
+
+#define SPRITE_EFFECT_HIT_1_SIZE 15.0f
+#define SPRITE_EFFECT_HIT_2_SIZE 17.5f
+#define SPRITE_EFFECT_EXPLOSION_SIZE 30.0f
 
 class CSpriteShader : public CEffectShader
 {

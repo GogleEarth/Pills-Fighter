@@ -41,6 +41,11 @@ public:
 	virtual ~CSword();
 
 	virtual void SetType() { m_nType |= WEAPON_TYPE_OF_SWORD; };
+	virtual void OnPrepareAnimate();
+	XMFLOAT3 GetBladePos() { return m_pBlade->GetPosition(); }
+
+protected:
+	CModel	*m_pBlade = NULL;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

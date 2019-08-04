@@ -6,6 +6,7 @@
 #include "Animation.h"
 #include "Weapon.h"
 #include "Font.h"
+#include "Effect.h"
 
 CShader::CShader()
 {
@@ -1165,13 +1166,40 @@ CEffectShader::~CEffectShader()
 	if (m_pd3dSOPipelineState) m_pd3dSOPipelineState->Release();
 }
 
+D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
+{
+	UINT nInputElementDescs = 3;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
+}
+
 D3D12_STREAM_OUTPUT_DESC CEffectShader::CreateStreamOutput()
 {
+	UINT nSODecls = 3;
+	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
+
+	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
+	pd3dStreamOutputDeclarations[1] = { 0, "AGE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
+
+	UINT nStrides = 1;
+	UINT *pnStride = new UINT[nStrides];
+	pnStride[0] = sizeof(CFadeOutVertex);
+
 	D3D12_STREAM_OUTPUT_DESC d3dStreamOutputDesc;
-	d3dStreamOutputDesc.pSODeclaration = NULL;
-	d3dStreamOutputDesc.NumEntries = 0;
-	d3dStreamOutputDesc.pBufferStrides = NULL;
-	d3dStreamOutputDesc.NumStrides = 0;
+	d3dStreamOutputDesc.pSODeclaration = pd3dStreamOutputDeclarations;
+	d3dStreamOutputDesc.NumEntries = nSODecls;
+	d3dStreamOutputDesc.pBufferStrides = pnStride;
+	d3dStreamOutputDesc.NumStrides = nStrides;
 	d3dStreamOutputDesc.RasterizedStream = 0;
 
 	return(d3dStreamOutputDesc);
@@ -1179,29 +1207,27 @@ D3D12_STREAM_OUTPUT_DESC CEffectShader::CreateStreamOutput()
 
 D3D12_SHADER_BYTECODE CEffectShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	D3D12_SHADER_BYTECODE d3dShaderBytecode;
-	d3dShaderBytecode.BytecodeLength = 0;
-	d3dShaderBytecode.pShaderBytecode = NULL;
-
-	return(d3dShaderBytecode);
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSEffectStreamOut", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	D3D12_SHADER_BYTECODE d3dShaderBytecode;
-	d3dShaderBytecode.BytecodeLength = 0;
-	d3dShaderBytecode.pShaderBytecode = NULL;
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
+}
 
-	return(d3dShaderBytecode);
+D3D12_SHADER_BYTECODE CEffectShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSEffectDraw", "vs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	D3D12_SHADER_BYTECODE d3dShaderBytecode;
-	d3dShaderBytecode.BytecodeLength = 0;
-	d3dShaderBytecode.pShaderBytecode = NULL;
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSEffectDraw", "gs_5_1", ppd3dShaderBlob));
+}
 
-	return(d3dShaderBytecode);
+D3D12_SHADER_BYTECODE CEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSEffectDraw", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_RASTERIZER_DESC CEffectShader::CreateRasterizerState()
@@ -1369,70 +1395,6 @@ CTimedEffectShader::~CTimedEffectShader()
 {
 }
 
-D3D12_INPUT_LAYOUT_DESC CTimedEffectShader::CreateInputLayout()
-{
-	UINT nInputElementDescs = 3;
-	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
-
-	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[1] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-
-	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
-	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
-	d3dInputLayoutDesc.NumElements = nInputElementDescs;
-
-	return(d3dInputLayoutDesc);
-}
-
-D3D12_STREAM_OUTPUT_DESC CTimedEffectShader::CreateStreamOutput()
-{
-	UINT nSODecls = 3;
-	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
-
-	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
-	pd3dStreamOutputDeclarations[1] = { 0, "AGE", 0, 0, 1, 0 };
-	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
-
-	UINT nStrides = 1;
-	UINT *pnStride = new UINT[nStrides];
-	pnStride[0] = sizeof(CFadeOutVertex);
-
-	D3D12_STREAM_OUTPUT_DESC d3dStreamOutputDesc;
-	d3dStreamOutputDesc.pSODeclaration = pd3dStreamOutputDeclarations;
-	d3dStreamOutputDesc.NumEntries = nSODecls;
-	d3dStreamOutputDesc.pBufferStrides = pnStride;
-	d3dStreamOutputDesc.NumStrides = nStrides;
-	d3dStreamOutputDesc.RasterizedStream = 0;
-
-	return(d3dStreamOutputDesc);
-}
-
-D3D12_SHADER_BYTECODE CTimedEffectShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSEffectStreamOut", "vs_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CTimedEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CTimedEffectShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSEffectDraw", "vs_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CTimedEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSEffectDraw", "gs_5_1", ppd3dShaderBlob));
-}
-
-D3D12_SHADER_BYTECODE CTimedEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSEffectDraw", "ps_5_1", ppd3dShaderBlob));
-}
-
 void CTimedEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	m_nEffects = TIMED_EFFECT_COUNT;
@@ -1444,7 +1406,7 @@ void CTimedEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TIMED_EFFECT_INDEX_MUZZLE_FIRE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CFadeOut(pd3dDevice, pd3dCommandList, 0.1f);
+	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 0.1f);
 	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1467,7 +1429,7 @@ D3D12_SHADER_BYTECODE CTextEffectShader::CreateGeometryShader(ID3DBlob **ppd3dSh
 
 void CTextEffectShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
-	CTimedEffectShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	CEffectShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineStateDesc;
 
@@ -1510,7 +1472,7 @@ void CTextEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TEXT_EFFECT_INDEX_HIT_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CFadeOut(pd3dDevice, pd3dCommandList, 2.0f);
+	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 2.0f);
 	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1617,7 +1579,7 @@ void CLaserEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, 2.0f);
+	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 2.0f);
 	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1709,18 +1671,18 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	//
 	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Attack1.dds", 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Hit1.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
 	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Attack2.dds", 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Hit2.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 7, 0.2f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
@@ -1729,7 +1691,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, 5, 3, 12, 1.0f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 5, 3, 12, 1.0f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1942,7 +1904,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 1.0f, false, 2.0f,
-			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		CParticleVertex *pParticleVertex = new CParticleVertex();
@@ -1959,7 +1921,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 5.0f, 4.0f, true, 0.1f,
-			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));		
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		pParticleVertex = new CParticleVertex();
@@ -1990,7 +1952,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
 	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 30.0f, 0.5f, false, 20.0,
-		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f));
+		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
 	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
