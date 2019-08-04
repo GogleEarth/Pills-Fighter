@@ -61,7 +61,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType) {}
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle) {}
 	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType) {}
 };
 
@@ -72,6 +72,7 @@ struct CFadeOutVertex
 	XMFLOAT3	m_xmf3Position;
 	float		m_fAge;
 	XMFLOAT2	m_xmf2Size;
+	int			m_nAngle;
 };
 
 class CFadeOut : public CEffect
@@ -80,7 +81,7 @@ public:
 	CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, float fDuration);
 	virtual ~CFadeOut();
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
 };
 
 /////////////////////////////////////////////////////////
@@ -120,6 +121,7 @@ struct CSpriteVertex
 	XMUINT2		m_xmn2SpritePos;
 	float		m_fAge;
 	UINT		m_nType;
+	int			m_nAngle;
 };
 
 class CSprite : public CEffect
@@ -132,7 +134,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
 
 protected:
 	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
@@ -163,6 +165,7 @@ struct CParticleVertex
 	XMFLOAT2	m_xmf2Size;
 	int			m_nType;
 	float		m_fAge;
+	int			m_nAngle;
 };
 
 struct CB_PARTICLE_INFO

@@ -31,6 +31,7 @@ struct VS_EFFECT_INPUT
 	float3 position : POSITION;
 	float age : AGE;
 	float2 size : SIZE;
+	int angle : ANGLE;
 };
 
 struct VS_EFFECT_OUTPUT
@@ -38,6 +39,7 @@ struct VS_EFFECT_OUTPUT
 	float3 position : POSITION;
 	float4 color : COLOR;
 	float2 size : SIZE;
+	int angle : ANGLE;
 };
 
 VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
@@ -49,6 +51,7 @@ VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
 
 	output.size = input.size;
 	output.position = input.position;
+	output.angle = input.angle;
 
 	return output;
 }
@@ -65,12 +68,9 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 {
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
-	float3 vRight = normalize(cross(vUp, vLook));
-
-	float3x3 f3x3Rotate = float3x3(vRight, vUp, vLook) * RotateAxis(vLook, 45);
+	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
 	vUp = mul(vUp, f3x3Rotate);
-	vLook = mul(vLook, f3x3Rotate);
-	vRight = mul(vRight, f3x3Rotate);
+	float3 vRight = normalize(cross(vUp, vLook));
 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
@@ -281,6 +281,7 @@ struct VS_SPRITE_INPUT
 	uint2 spritepos : SPRITEPOS;
 	float age : AGE;
 	uint type : TYPE;
+	int angle : ANGLE;
 };
 
 struct VS_SPRITE_OUTPUT
@@ -288,6 +289,7 @@ struct VS_SPRITE_OUTPUT
 	float3 position : POSITION;
 	float2 size : SIZE;
 	uint2 spritepos : SPRITEPOS;
+	int angle : ANGLE;
 };
 
 struct GS_SPRITE_OUTPUT
@@ -303,6 +305,7 @@ VS_SPRITE_OUTPUT VSSpriteDraw(VS_SPRITE_INPUT input)
 	output.position = input.position;
 	output.size = input.size;
 	output.spritepos = input.spritepos;
+	output.angle = input.angle;
 
 	return output;
 }
@@ -312,9 +315,8 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 {
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
-	float3x3 f3x3Rotate = RotateAxis(vLook, 360);
+	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
 	vUp = mul(vUp, f3x3Rotate);
-
 	float3 vRight = normalize(cross(vUp, vLook));
 
 	float fHalfW = input[0].size.x;
@@ -425,6 +427,7 @@ struct VS_PARTICLE_INPUT
 	float2	size : SIZE;
 	int		type : TYPE;
 	float	age : AGE;
+	int		angle : ANGLE;
 };
 
 struct VS_PARTICLE_SO_OUTPUT
@@ -435,6 +438,7 @@ struct VS_PARTICLE_SO_OUTPUT
 	int		type : TYPE;
 	float	age : AGE;
 	float	verid : VERTEXID;
+	int		angle : ANGLE;
 };
 
 VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID : SV_VertexID)
@@ -446,6 +450,7 @@ VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID :
 	output.type = input.type;
 	output.age = input.age;
 	output.verid = float(nVerID);
+	output.angle = input.angle;
 
 	return output;
 }
@@ -459,6 +464,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 	output.size = input[0].size;
 	output.type = input[0].type;
 	output.age = input[0].age + gParticle.m_fElapsedTime;
+	output.angle = input[0].angle;
 
 	if ((input[0].type == PARTICLE_TYPE_EMITTER) || (input[0].type == PARTICLE_TYPE_ONE_EMITTER))
 	{
@@ -482,6 +488,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 			particle.size = output.size * f;
 			particle.type = PARTICLE_TYPE_COMMON;
 			particle.age = 0.0f;
+			particle.angle = vRandom.w / 360.0f;
 
 			pointStream.Append(particle);
 
@@ -505,6 +512,7 @@ struct VS_PARTICLE_OUTPUT
 	float2 size : SIZE;
 	float4 color : COLOR;
 	uint type : TYPE;
+	int angle : ANGLE;
 };
 
 struct GS_PARTICLE_OUTPUT
@@ -531,6 +539,7 @@ VS_PARTICLE_OUTPUT VSParticleDraw(VS_PARTICLE_INPUT input)
 		output.size *= input.age;
 
 	output.type = input.type;
+	output.angle = input.angle;
 
 	return output;
 }
@@ -543,9 +552,9 @@ void GSParticleDraw(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_P
 	if (input[0].type == PARTICLE_TYPE_EMITTER) return;
 
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
-	float3 vLook = gvCameraPosition.xyz - input[0].position;
-	vLook = normalize(vLook);
-	vLook.y = 0.0f;
+	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
+	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
+	vUp = mul(vUp, f3x3Rotate);
 	float3 vRight = normalize(cross(vUp, vLook));
 
 	float fHalfWidth = 0.5f * input[0].size.x;

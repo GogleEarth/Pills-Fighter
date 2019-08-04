@@ -157,7 +157,7 @@ void CGun::Shot()
 
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 
-	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0);
+	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360);
 #else
 	pPlayer->SendShootPacket();
 #endif

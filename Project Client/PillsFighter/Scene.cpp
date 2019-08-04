@@ -3694,7 +3694,7 @@ void CBattleScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0);
 
 					AddEffect(SPRITE_EFFECT_INDEX_HIT_1 + (rand() % 2), pBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE);
 
@@ -3714,7 +3714,7 @@ void CBattleScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0);
 
 					AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE);
 
@@ -3733,7 +3733,7 @@ void CBattleScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0);
 
 					AddEffect(SPRITE_EFFECT_INDEX_HIT_1 + (rand() % 2), pMGBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE);
 
@@ -3754,7 +3754,7 @@ void CBattleScene::CheckCollision()
 				{
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMeteor->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE);
+					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMeteor->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0);
 
 					AddEffect(SPRITE_EFFECT_INDEX_HIT_1 + (rand() % 2), pMeteor->GetPosition(), EFFECT_ANIMATION_TYPE_ONE);
 
@@ -3864,7 +3864,7 @@ void CBattleScene::AddEffect(int nEffect, XMFLOAT3 xmf3Position, int nType)
 		break;
 	}
 
-	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(nEffect, xmf3Position, XMFLOAT2(fSize, fSize), nType);
+	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(nEffect, xmf3Position, XMFLOAT2(fSize, fSize), nType, rand() % 360);
 }
 
 void CBattleScene::FindAimToTargetDistance()
@@ -4005,7 +4005,7 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_MG_BULLET, true, NULL);
 
 		pEffectShader = (CEffectShader*)m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS];
-		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(2.5f, 2.5f), 0);
+		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360);
 		break;
 	case OBJECT_TYPE_BZK_BULLET:
 		pGameObject = new Bullet();
@@ -4016,7 +4016,7 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_BZK_BULLET, true, NULL);
 
 		pEffectShader = (CEffectShader*)m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS];
-		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(2.5f, 2.5f), 0);
+		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360);
 		break;
 	case OBJECT_TYPE_BEAM_BULLET:
 		pGameObject = new Bullet();
@@ -4027,7 +4027,7 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pGameObject, STANDARD_OBJECT_INDEX_GG_BULLET, true, NULL);
 
 		pEffectShader = (CEffectShader*)m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS];
-		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(2.5f, 2.5f), 0);
+		pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3Position, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360);
 		break;
 	case OBJECT_TYPE_ITEM_AMMO:
 		pGameObject = new RotateObject();
@@ -4073,7 +4073,7 @@ void CBattleScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	switch (nEffectType)
 	{
 	case EFFECT_TYPE::EFFECT_TYPE_HIT_FONT:
-		m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0);
+		m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pCreateEffectInfo->xmf3Position, XMFLOAT2(0.04f, 0.02f), 0, 0);
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);

@@ -192,10 +192,11 @@ CFadeOut::~CFadeOut()
 {
 }
 
-void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
+void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
 {
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
+	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_nAngle = nAngle;
 	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_fAge = 0.0f;
 }
 
@@ -269,12 +270,13 @@ void CSprite::ReleaseShaderVariables()
 	}
 }
 
-void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
+void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
 {
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmn2SpritePos = XMUINT2(0, 0);
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_fAge = 0.0f;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_nAngle = nAngle;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_nType = nEffectAniType;
 }
 

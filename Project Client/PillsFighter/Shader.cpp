@@ -1168,12 +1168,13 @@ CEffectShader::~CEffectShader()
 
 D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 3;
+	UINT nInputElementDescs = 4;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1184,12 +1185,13 @@ D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CEffectShader::CreateStreamOutput()
 {
-	UINT nSODecls = 3;
+	UINT nSODecls = 4;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
 	pd3dStreamOutputDeclarations[1] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
+	pd3dStreamOutputDeclarations[3] = { 0, "ANGLE", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1375,9 +1377,9 @@ void CEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 		if (m_ppEffects[i]) m_ppEffects[i]->AfterRender(pd3dCommandList);
 }
 
-void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType)
+void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
 {
-	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nEffectAniType);
+	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nEffectAniType, nAngle);
 }
 
 void CEffectShader::AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType)
@@ -1597,7 +1599,7 @@ CSpriteShader::~CSpriteShader()
 
 D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 5;
+	UINT nInputElementDescs = 6;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -1605,6 +1607,7 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 	pd3dInputElementDescs[2] = { "SPRITEPOS", 0, DXGI_FORMAT_R32G32_UINT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[5] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1615,7 +1618,7 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 {
-	UINT nSODecls = 5;
+	UINT nSODecls = 6;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
@@ -1623,6 +1626,7 @@ D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[2] = { 0, "SPRITEPOS", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "TYPE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[5] = { 0, "ANGLE", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1756,7 +1760,7 @@ CParticleShader::~CParticleShader()
 
 D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 5;
+	UINT nInputElementDescs = 6;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -1764,6 +1768,7 @@ D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "TYPE", 0, DXGI_FORMAT_R32_SINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[5] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1774,7 +1779,7 @@ D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CParticleShader::CreateStreamOutput()
 {
-	UINT nSODecls = 5;
+	UINT nSODecls = 6;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
@@ -1782,6 +1787,7 @@ D3D12_STREAM_OUTPUT_DESC CParticleShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "TYPE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "AGE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[5] = { 0, "ANGLE", 0, 0, 1, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -2581,7 +2587,7 @@ void CUserInterface::SetAmmoText(int nWeaponIndex)
 
 	wchar_t wpstrNumber[5];
 
-	float fCenterX = 0.745f;
+	float fCenterX = 0.715f;
 	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 
 	if (nWeaponIndex != 0) 
@@ -2609,7 +2615,7 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 
 	wchar_t wpstrNumber[5];
 
-	float fCenterX = 0.745f;
+	float fCenterX = 0.715f;
 	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 
 	CGun *pGun = (CGun*)m_pPlayer->GetWeapon(nWeaponIndex);
@@ -2748,7 +2754,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 	float fCenterX = 0.87f;
 	float fCenterY = -0.875f;
-	float fSizeX = 116.0f / FRAME_BUFFER_WIDTH;
+	float fSizeX = 151.0f / FRAME_BUFFER_WIDTH;
 	float fSizeY = 58.0f / FRAME_BUFFER_HEIGHT;
 	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
@@ -2770,9 +2776,9 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppUIRects[UI_RECT_SLOT_4] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 	float f = (116.0f - 178.0f) / FRAME_BUFFER_WIDTH;
-	fCenterX = 0.87f;
+	fCenterX = 0.8625f;
 	fCenterY = -0.875f;
-	fSizeX = 180.0f / FRAME_BUFFER_WIDTH;
+	fSizeX = 230.0f / FRAME_BUFFER_WIDTH;
 	fSizeY = 58.0f / FRAME_BUFFER_HEIGHT;
 	xmf2Center = ::CalculateCenter(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX + f, fCenterX + fSizeX + f, fCenterY + fSizeY, fCenterY - fSizeY);
