@@ -209,7 +209,7 @@ void CLaserBeam::AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XM
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CFollowEffect::CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, 0.0f, sizeof(CEffectVertex))
+CFollowEffect::CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration, UINT nBytes) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, nBytes)
 {
 }
 
@@ -224,6 +224,8 @@ void CFollowEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphi
 	m_pd3dcbFollowEffect = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
 
 	m_pd3dcbFollowEffect->Map(0, NULL, (void**)&m_pcbMappedFollowEffect);
+
+	CEffect::CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CFollowEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -231,8 +233,11 @@ void CFollowEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommand
 	m_pcbMappedFollowEffect->xmf3Position = m_xmf3Position;
 	m_pcbMappedFollowEffect->m_fElapsedTime = m_fElapsedTime;
 	m_pcbMappedFollowEffect->m_xmf4Color = m_xmf4Color;
+	m_pcbMappedFollowEffect->m_fDuration = m_fDuration;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_FOLLOW_EFFECT_INFO, m_pd3dcbFollowEffect->GetGPUVirtualAddress());
+
+	CEffect::UpdateShaderVariables(pd3dCommandList);
 }
 
 void CFollowEffect::ReleaseShaderVariables()
@@ -244,6 +249,8 @@ void CFollowEffect::ReleaseShaderVariables()
 
 		m_pd3dcbFollowEffect = NULL;
 	}
+
+	CEffect::ReleaseShaderVariables();
 }
 
 void CFollowEffect::SetFollowObject(CGameObject *pObject, CModel *pModel)
@@ -335,9 +342,74 @@ void CSprite::ReleaseShaderVariables()
 
 		m_pd3dcbSprite = NULL;
 	}
+
+	CEffect::ReleaseShaderVariables();
 }
 
 void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
+{
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmn2SpritePos = XMUINT2(0, 0);
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_fAge = 0.0f;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_nAngle = nAngle;
+	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_nType = nEffectAniType;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CFollowSprite::CFollowSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CFollowEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, sizeof(CSpriteVertex))
+{
+	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
+	m_nMaxSpriteX = nMaxX;
+	m_nMaxSpriteY = nMaxY;
+	m_nMaxSprite = nMax;
+	m_fDurationPerSprite = fDuration / (float)nMax;
+}
+
+CFollowSprite::~CFollowSprite()
+{
+	ReleaseShaderVariables();
+}
+
+void CFollowSprite::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_SPRITE_INFO) + 255) & ~255);
+
+	m_pd3dcbSprite = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
+
+	m_pd3dcbSprite->Map(0, NULL, (void**)&m_pcbMappedSprite);
+
+	CFollowEffect::CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+void CFollowSprite::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pcbMappedSprite->m_xmf2SpriteSize = m_xmf2SpriteSize;
+	m_pcbMappedSprite->m_nMaxSpriteX = m_nMaxSpriteX;
+	m_pcbMappedSprite->m_nMaxSpriteY = m_nMaxSpriteY;
+	m_pcbMappedSprite->m_nMaxSprite = m_nMaxSprite;
+	m_pcbMappedSprite->m_fDurationPerSprite = m_fDurationPerSprite;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_SPRITE, m_pd3dcbSprite->GetGPUVirtualAddress());
+
+	CFollowEffect::UpdateShaderVariables(pd3dCommandList);
+}
+
+void CFollowSprite::ReleaseShaderVariables()
+{
+	if (m_pd3dcbSprite)
+	{
+		m_pd3dcbSprite->Unmap(0, NULL);
+		m_pd3dcbSprite->Release();
+
+		m_pd3dcbSprite = NULL;
+	}
+
+	CFollowEffect::ReleaseShaderVariables();
+}
+
+void CFollowSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
 {
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
 	((CSpriteVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;

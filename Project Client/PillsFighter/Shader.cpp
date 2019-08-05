@@ -1284,59 +1284,6 @@ D3D12_RASTERIZER_DESC CEffectShader::CreateRasterizerState()
 	return(d3dRasterizerDesc);
 }
 
-D3D12_BLEND_DESC CEffectShader::CreateBlendState()
-{
-	D3D12_BLEND_DESC d3dBlendDesc;
-	::ZeroMemory(&d3dBlendDesc, sizeof(D3D12_BLEND_DESC));
-	d3dBlendDesc.AlphaToCoverageEnable = FALSE;
-	d3dBlendDesc.IndependentBlendEnable = TRUE;
-	d3dBlendDesc.RenderTarget[0].BlendEnable = TRUE;
-	d3dBlendDesc.RenderTarget[0].LogicOpEnable = FALSE;
-	d3dBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	d3dBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-	d3dBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
-	d3dBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	d3dBlendDesc.RenderTarget[1].BlendEnable = TRUE;
-	d3dBlendDesc.RenderTarget[1].LogicOpEnable = FALSE;
-	d3dBlendDesc.RenderTarget[1].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[1].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[1].BlendOp = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[1].SrcBlendAlpha = D3D12_BLEND_ONE;
-	d3dBlendDesc.RenderTarget[1].DestBlendAlpha = D3D12_BLEND_ZERO;
-	d3dBlendDesc.RenderTarget[1].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[1].LogicOp = D3D12_LOGIC_OP_NOOP;
-	d3dBlendDesc.RenderTarget[1].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_RED | D3D12_COLOR_WRITE_ENABLE_BLUE | D3D12_COLOR_WRITE_ENABLE_GREEN;
-
-	d3dBlendDesc.RenderTarget[2].BlendEnable = TRUE;
-	d3dBlendDesc.RenderTarget[2].LogicOpEnable = FALSE;
-	d3dBlendDesc.RenderTarget[2].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[2].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[2].BlendOp = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[2].SrcBlendAlpha = D3D12_BLEND_ONE;
-	d3dBlendDesc.RenderTarget[2].DestBlendAlpha = D3D12_BLEND_ZERO;
-	d3dBlendDesc.RenderTarget[2].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[2].LogicOp = D3D12_LOGIC_OP_NOOP;
-	d3dBlendDesc.RenderTarget[2].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	d3dBlendDesc.RenderTarget[3].BlendEnable = TRUE;
-	d3dBlendDesc.RenderTarget[3].LogicOpEnable = FALSE;
-	d3dBlendDesc.RenderTarget[3].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[3].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	d3dBlendDesc.RenderTarget[3].BlendOp = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[3].SrcBlendAlpha = D3D12_BLEND_ONE;
-	d3dBlendDesc.RenderTarget[3].DestBlendAlpha = D3D12_BLEND_ZERO;
-	d3dBlendDesc.RenderTarget[3].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	d3dBlendDesc.RenderTarget[3].LogicOp = D3D12_LOGIC_OP_NOOP;
-	d3dBlendDesc.RenderTarget[3].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	return(d3dBlendDesc);
-}
-
 void CEffectShader::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineStateDesc;
@@ -1658,6 +1605,167 @@ void CLaserEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CFollowEffectShader::CFollowEffectShader()
+{
+
+}
+
+CFollowEffectShader::~CFollowEffectShader()
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (CEffect* pEffect : m_pvpEffects[i])
+			{
+				pEffect->ReleaseShaderVariables();
+				delete pEffect;
+			}
+		}
+
+		delete[] m_pvpEffects;
+	}
+
+	if (m_pvpTempEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			while (!m_pvpTempEffects[i].empty())
+			{
+				CEffect *pEffect = m_pvpTempEffects[i].front();
+				m_pvpTempEffects[i].pop();
+
+				pEffect->ReleaseShaderVariables();
+				delete pEffect;
+			}
+		}
+
+		delete[] m_pvpTempEffects;
+	}
+}
+
+D3D12_SHADER_BYTECODE CFollowEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSFollowEffectDraw", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowEffectDraw", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
+}
+
+void CFollowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	m_nEffects = FOLLOW_EFFECT_COUNT;
+	m_pvpEffects = new std::vector<CEffect*>[FOLLOW_EFFECT_COUNT];
+	m_pvpTempEffects = new std::queue<CEffect*>[FOLLOW_EFFECT_COUNT];
+
+	for (int i = 0; i < 16; i++)
+	{
+		CFollowEffect *pEffect = NULL;
+
+		pEffect = new CFollowEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+		pEffect->AddVertex(XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), 0, 0);
+
+		m_pvpTempEffects[FOLLOW_EFFECT_INDEX_BOOSTER].push(pEffect);
+	}
+
+	m_ppTextures = new CTexture*[m_nEffects];
+
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare2.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+}
+
+void CFollowEffectShader::SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame)
+{
+	CEffect *pEffect = m_pvpTempEffects[nIndex].front();
+	m_pvpTempEffects[nIndex].pop();
+
+	pEffect->SetFollowObject(pObject, pFrame);
+	m_pvpEffects[nIndex].emplace_back(pEffect);
+}
+
+void CFollowEffectShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->Animate(fTimeElapsed);
+			}
+		}
+	}
+}
+
+void CFollowEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::OnPrepareRender(pd3dCommandList);
+
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			m_ppTextures[i]->UpdateShaderVariables(pd3dCommandList);
+
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->Render(pd3dCommandList);
+			}
+		}
+	}
+}
+
+void CFollowEffectShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->ReadVertexCount(pd3dCommandList);
+			}
+		}
+
+		if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
+
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->SORender(pd3dCommandList);
+			}
+		}
+	}
+}
+
+void CFollowEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->AfterRender(pd3dCommandList);
+			}
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 
 CSpriteShader::CSpriteShader()
@@ -1740,7 +1848,7 @@ D3D12_SHADER_BYTECODE CSpriteShader::CreateSOGeometryShader(ID3DBlob **ppd3dShad
 	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSSpriteStreamOut", "gs_5_1", ppd3dShaderBlob));
 }
 
-void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	m_nEffects = SPRITE_EFFECT_COUNT;
 	m_ppTextures = new CTexture*[m_nEffects];
@@ -1774,163 +1882,109 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CFollowEffectShader::CFollowEffectShader()
+CFollowSpriteShader::CFollowSpriteShader()
 {
 
 }
 
-CFollowEffectShader::~CFollowEffectShader()
+CFollowSpriteShader::~CFollowSpriteShader()
 {
-	if (m_pvpEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			for (CEffect* pEffect : m_pvpEffects[i])
-			{
-				pEffect->ReleaseShaderVariables();
-				delete pEffect;
-			}
-		}
-
-		delete[] m_pvpEffects;
-	}
-
-	if (m_pvpTempEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			while (!m_pvpTempEffects[i].empty())
-			{
-				CEffect *pEffect = m_pvpTempEffects[i].front();
-				m_pvpTempEffects[i].pop();
-
-				pEffect->ReleaseShaderVariables();
-				delete pEffect;
-			}
-		}
-
-		delete[] m_pvpTempEffects;
-	}
 }
 
-D3D12_SHADER_BYTECODE CFollowEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_INPUT_LAYOUT_DESC CFollowSpriteShader::CreateInputLayout()
 {
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSFollowEffectDraw", "ps_5_1", ppd3dShaderBlob));
+	UINT nInputElementDescs = 6;
+	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[1] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[2] = { "SPRITEPOS", 0, DXGI_FORMAT_R32G32_UINT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[3] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[5] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nInputElementDescs;
+
+	return(d3dInputLayoutDesc);
 }
 
-D3D12_SHADER_BYTECODE CFollowEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_STREAM_OUTPUT_DESC CFollowSpriteShader::CreateStreamOutput()
 {
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowEffectDraw", "gs_5_1", ppd3dShaderBlob));
+	UINT nSODecls = 6;
+	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
+
+	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
+	pd3dStreamOutputDeclarations[1] = { 0, "SIZE", 0, 0, 2, 0 };
+	pd3dStreamOutputDeclarations[2] = { 0, "SPRITEPOS", 0, 0, 2, 0 };
+	pd3dStreamOutputDeclarations[3] = { 0, "AGE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[4] = { 0, "TYPE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[5] = { 0, "ANGLE", 0, 0, 1, 0 };
+
+	UINT nStrides = 1;
+	UINT *pnStride = new UINT[nStrides];
+	pnStride[0] = sizeof(CSpriteVertex);
+
+	D3D12_STREAM_OUTPUT_DESC d3dStreamOutputDesc;
+	d3dStreamOutputDesc.pSODeclaration = pd3dStreamOutputDeclarations;
+	d3dStreamOutputDesc.NumEntries = nSODecls;
+	d3dStreamOutputDesc.pBufferStrides = pnStride;
+	d3dStreamOutputDesc.NumStrides = nStrides;
+	d3dStreamOutputDesc.RasterizedStream = 0;
+
+	return(d3dStreamOutputDesc);
 }
 
-D3D12_SHADER_BYTECODE CFollowEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CFollowSpriteShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSSpriteDraw", "vs_5_1", ppd3dShaderBlob));
 }
 
-void CFollowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+D3D12_SHADER_BYTECODE CFollowSpriteShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
 {
-	m_nEffects = FOLLOW_EFFECT_COUNT;
-	m_pvpEffects = new std::vector<CEffect*>[FOLLOW_EFFECT_COUNT];
-	m_pvpTempEffects = new std::queue<CEffect*>[FOLLOW_EFFECT_COUNT];
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowSpriteDraw", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowSpriteShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSFollowSpriteDraw", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowSpriteShader::CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "VSSpriteStreamOut", "vs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowSpriteShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSSpriteStreamOut", "gs_5_1", ppd3dShaderBlob));
+}
+
+void CFollowSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	m_nEffects = FOLLOW_SPRITE_EFFECT_COUNT;
+	m_pvpEffects = new std::vector<CEffect*>[m_nEffects];
+	m_pvpTempEffects = new std::queue<CEffect*>[m_nEffects];
 
 	for (int i = 0; i < 16; i++)
 	{
-		CFollowEffect *pEffect = NULL;
+		CFollowSprite *pEffect = NULL;
 
-		pEffect = new CFollowEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		pEffect = new CFollowSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 4, 20, 0.5f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-		pEffect->AddVertex(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), 0, 0);
+		pEffect->AddVertex(XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), EFFECT_SPRITE_TYPE_LOOP, 0);
 
-		m_pvpTempEffects[FOLLOW_EFFECT_INDEX_BOOSTER].push(pEffect);
+		m_pvpTempEffects[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER].push(pEffect);
 	}
 
 	m_ppTextures = new CTexture*[m_nEffects];
 
-	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare2.dds", 0);
+	m_ppTextures[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Light7.dds", 0);
 
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
-}
-
-void CFollowEffectShader::SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame)
-{
-	CEffect *pEffect = m_pvpTempEffects[nIndex].front();
-	m_pvpTempEffects[nIndex].pop();
-
-	pEffect->SetFollowObject(pObject, pFrame);
-	m_pvpEffects[nIndex].emplace_back(pEffect);
-}
-
-void CFollowEffectShader::AnimateObjects(float fTimeElapsed)
-{
-	if (m_pvpEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			for (const auto& pEffect : m_pvpEffects[i])
-			{
-				pEffect->Animate(fTimeElapsed);
-			}
-		}
-	}
-}
-
-void CFollowEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
-{
-	CShader::OnPrepareRender(pd3dCommandList);
-
-	if (m_pvpEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			m_ppTextures[i]->UpdateShaderVariables(pd3dCommandList);
-
-			for (const auto& pEffect : m_pvpEffects[i])
-			{
-				pEffect->Render(pd3dCommandList);
-			}
-		}
-	}
-}
-
-void CFollowEffectShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_pvpEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			for (const auto& pEffect : m_pvpEffects[i])
-			{
-				pEffect->ReadVertexCount(pd3dCommandList);
-			}
-		}
-
-		if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
-
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			for (const auto& pEffect : m_pvpEffects[i])
-			{
-				pEffect->SORender(pd3dCommandList);
-			}
-		}
-	}
-}
-
-void CFollowEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
-{
-	if (m_pvpEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			for (const auto& pEffect : m_pvpEffects[i])
-			{
-				pEffect->AfterRender(pd3dCommandList);
-			}
-		}
-	}
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -2127,7 +2181,7 @@ void CParticleShader::ReleaseUploadBuffers()
 	}
 }
 
-void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
+void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	m_pvpParticles = new std::vector<CParticle*>[PARTICLE_COUNT];
 	m_pvpTempParticles = new std::queue<CParticle*>[PARTICLE_COUNT];

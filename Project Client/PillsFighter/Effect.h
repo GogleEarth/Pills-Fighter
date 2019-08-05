@@ -102,12 +102,13 @@ struct CB_FOLLOW_EFFECT
 	XMFLOAT3 xmf3Position;
 	float m_fElapsedTime;
 	XMFLOAT4 m_xmf4Color;
+	float m_fDuration;
 };
 
 class CFollowEffect : public CEffect
 {
 public:
-	CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
+	CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration, UINT nBytes = sizeof(CEffectVertex));
 	virtual ~CFollowEffect();
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
@@ -133,6 +134,9 @@ protected:
 
 /////////////////////////////////////////////////////////
 
+#define EFFECT_SPRITE_TYPE_ONE 0
+#define EFFECT_SPRITE_TYPE_LOOP 1
+
 struct CB_SPRITE_INFO
 {
 	XMFLOAT2 m_xmf2SpriteSize;
@@ -157,6 +161,33 @@ class CSprite : public CEffect
 public:
 	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration);
 	virtual ~CSprite();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+	
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
+
+protected:
+	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
+	UINT				m_nMaxSpriteX = 0;
+	UINT				m_nMaxSpriteY = 0;
+	UINT				m_nMaxSprite = 0;
+
+	float				m_fDurationPerSprite = 0.0f;
+
+	ID3D12Resource		*m_pd3dcbSprite = NULL;
+	CB_SPRITE_INFO		*m_pcbMappedSprite = NULL;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+class CFollowSprite : public CFollowEffect
+{
+public:
+	CFollowSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration);
+	virtual ~CFollowSprite();
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);

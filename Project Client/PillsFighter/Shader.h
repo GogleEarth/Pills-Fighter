@@ -341,7 +341,6 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
-	virtual D3D12_BLEND_DESC CreateBlendState();
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
@@ -449,14 +448,14 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
-	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+	virtual void SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame);
 
 	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle) {}
-	virtual void SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 
 protected:
 	std::vector<CEffect*>			*m_pvpEffects = NULL;
@@ -492,7 +491,34 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define FOLLOW_SPRITE_EFFECT_COUNT 1
+
+#define FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER 0
+
+#define FOLLOW_SPRITE_EFFECT_BOOSTER_SIZE 3.0f
+
+class CFollowSpriteShader : public CFollowEffectShader
+{
+public:
+	CFollowSpriteShader();
+	virtual ~CFollowSpriteShader();
+
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
+	virtual D3D12_STREAM_OUTPUT_DESC CreateStreamOutput();
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual D3D12_SHADER_BYTECODE CreateSOVertexShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -534,7 +560,7 @@ public:
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext = NULL);
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
 	virtual void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
 
 	void SetFollowObject(CGameObject *pObject, CModel *pFrame);

@@ -2889,10 +2889,10 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS] = pLaserEffectShader;
 
 	// ±×·ì 5 [ Follow Effect Shader ]
-	CFollowEffectShader *pFollowEffectShader = new CFollowEffectShader();
-	pFollowEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pFollowEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_SHADER_FOLLOW_EFFECTS] = pFollowEffectShader;
+	CFollowSpriteShader *pFollowSpriteShader = new CFollowSpriteShader();
+	pFollowSpriteShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pFollowSpriteShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS] = pFollowSpriteShader;
 
 	// Particle
 	m_pParticleShader = new CParticleShader();
@@ -3012,8 +3012,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
 
-	m_ppEffectShaders[INDEX_SHADER_FOLLOW_EFFECTS]->SetFollowObject(FOLLOW_EFFECT_INDEX_BOOSTER, m_pPlayer, m_pPlayer->GetRightNozzleFrame());
-	m_ppEffectShaders[INDEX_SHADER_FOLLOW_EFFECTS]->SetFollowObject(FOLLOW_EFFECT_INDEX_BOOSTER, m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
+	m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS]->SetFollowObject(FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER, m_pPlayer, m_pPlayer->GetRightNozzleFrame());
+	m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS]->SetFollowObject(FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER, m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
 
 	if (m_pPlayer)
 	{
@@ -4007,6 +4007,10 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		if (m_pParticleShader) m_pParticleShader->SetFollowObject(pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
+
+		m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS]->SetFollowObject(FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER, pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
+		m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS]->SetFollowObject(FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER, pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
+
 		break;
 	case OBJECT_TYPE_OBSTACLE:
 		printf("Do not Apply Insert Obstacle\n");

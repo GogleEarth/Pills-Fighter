@@ -225,7 +225,10 @@ void GSLaserEffectStreamOut(point VS_LASER_EFFECT_INPUT input[1], inout PointStr
 
 struct FOLLOW_EFFECT
 {
-	float3 m_f3Position;
+	float3	m_f3Position;
+	float	m_fElapsedTime;
+	float4	m_f4Color;
+	float	m_fDuration;
 };
 
 ConstantBuffer<FOLLOW_EFFECT> gFollowEffect : register(FOLLOW_EFFECT_INFO);
@@ -233,12 +236,11 @@ ConstantBuffer<FOLLOW_EFFECT> gFollowEffect : register(FOLLOW_EFFECT_INFO);
 [maxvertexcount(4)]
 void GSFollowEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFECT_OUTPUT> outStream)
 {
-	float3 vUp = float3(0.0f, 1.0f, 0.0f);
-	float3 vLook = normalize(gvCameraPosition.xyz - input[0].position);
-	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
-	vUp = mul(vUp, f3x3Rotate);
-	float3 vRight = normalize(cross(vUp, vLook));
 	float3 pos = gFollowEffect.m_f3Position + input[0].position;
+
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(gvCameraPosition.xyz - pos);
+	float3 vRight = normalize(cross(vUp, vLook));
 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
@@ -452,6 +454,62 @@ void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRI
 	}
 
 	outStream.Append(input[0]);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+[maxvertexcount(4)]
+void GSFollowSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRITE_OUTPUT> outStream)
+{
+	float3 pos = gFollowEffect.m_f3Position + input[0].position;
+
+	float3 vUp = float3(0.0f, 1.0f, 0.0f);
+	float3 vLook = normalize(gvCameraPosition.xyz - pos);
+	float3 vRight = normalize(cross(vUp, vLook));
+
+	float fHalfW = input[0].size.x;
+	float fHalfH = input[0].size.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(pos + fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[1] = float4(pos + fHalfW * vRight + fHalfH * vUp, 1.0f);
+	fVertices[2] = float4(pos - fHalfW * vRight - fHalfH * vUp, 1.0f);
+	fVertices[3] = float4(pos - fHalfW * vRight + fHalfH * vUp, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_SPRITE_OUTPUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.position = mul(fVertices[i], gmtxViewProjection);
+		float3x3 f3x3Sprite = float3x3(gSprite.m_f2SpriteSize.x, 0.0f, 0.0f, 0.0f, gSprite.m_f2SpriteSize.y, 0.0f, fUVs[i].x * gSprite.m_f2SpriteSize.x, fUVs[i].y * gSprite.m_f2SpriteSize.y, 1.0f);
+		float3 f3Sprite = float3(input[0].spritepos, 1.0f);
+		output.uv = (float2)mul(f3Sprite, f3x3Sprite);
+
+		outStream.Append(output);
+	}
+}
+
+struct PS_FOLLOW_SPRITE_OUTPUT
+{
+	float4 color : SV_TARGET0;
+	float4 glow : SV_TARGET1;
+};
+
+PS_FOLLOW_SPRITE_OUTPUT PSFollowSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
+{
+	PS_FOLLOW_SPRITE_OUTPUT output;
+
+	output.color = gtxtTexture[0].Sample(gssWrap, input.uv);
+	output.glow = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	return output;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
