@@ -11,6 +11,7 @@ class CShader;
 class CAnimationController;
 class CWeapon;
 class CParticle;
+class CFollowEffect;
 
 struct MATERIAL
 {
@@ -154,10 +155,18 @@ public:
 public:
 	void AddParticle(CParticle *pParticle) { m_vpParticles.emplace_back(pParticle); };
 	virtual void ApplyToParticle(CParticle *pParticle);
+	std::vector<CParticle*>& GetParticles() { return m_vpParticles; }
+
+	void AddEffect(CFollowEffect *pEffect) { m_vpFollowEffects.emplace_back(pEffect); };
+	virtual void ApplyToEffect(CFollowEffect *pEffect);
+	std::vector<CFollowEffect*>& GetEffects() { return m_vpFollowEffects; }
 
 protected:
 	std::vector<CParticle*>		m_vpParticles;
+	std::vector<CFollowEffect*>	m_vpFollowEffects;
 
+
+protected:
 	int							m_nState = 0x000;
 	int							m_nType = 0x00;
 
@@ -166,7 +175,6 @@ public:
 	void SetState(int nState) { m_nState = nState; }
 
 	int GetType() { return m_nType; }
-	std::vector<CParticle*>& GetParticles() { return m_vpParticles; }
 
 public:
 	void UpdateInstanceShaderVariables(VS_VB_INSTANCE *pcbMappedGameObjects, int *pnIndex);
@@ -353,6 +361,7 @@ protected:
 
 public:
 	virtual void ApplyToParticle(CParticle *pParticle);
+	virtual void ApplyToEffect(CFollowEffect *pEffect);
 
 	CModel* GetLeftNozzleFrame() { return m_pLeftNozzle; }
 	CModel* GetRightNozzleFrame() { return m_pRightNozzle; }

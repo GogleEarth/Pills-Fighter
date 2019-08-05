@@ -388,7 +388,15 @@ void CGameObject::ApplyToParticle(CParticle *pParticle)
 {
 	if (pParticle)
 	{
-		pParticle->SetToFollowFramePositions();
+		pParticle->SetToFollowFramePosition();
+	}
+}
+
+void CGameObject::ApplyToEffect(CFollowEffect *pEffect)
+{
+	if (pEffect)
+	{
+		pEffect->SetToFollowFramePosition();
 	}
 }
 
@@ -416,11 +424,6 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 
 		int i = 0;
 		m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
-	}
-
-	for (CParticle *pParticle : m_vpParticles)
-	{
-		ApplyToParticle(pParticle);
 	}
 }
 
@@ -461,6 +464,16 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
 		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, bSetTexture);
+	}
+
+	for (CParticle *pParticle : m_vpParticles)
+	{
+		ApplyToParticle(pParticle);
+	}
+
+	for (CFollowEffect *pEffect : m_vpFollowEffects)
+	{
+		ApplyToEffect(pEffect);
 	}
 }
 
@@ -968,6 +981,16 @@ void CRobotObject::ApplyToParticle(CParticle *pParticle)
 
 	XMFLOAT3 xmf3Direction = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
 	pParticle->SetDirection(xmf3Direction);
+}
+
+void CRobotObject::ApplyToEffect(CFollowEffect *pEffect)
+{
+	CGameObject::ApplyToEffect(pEffect);
+
+	if (m_nState & OBJECT_STATE_BOOSTER) 
+		pEffect->Show();
+	else 
+		pEffect->Hide();
 }
 
 void CRobotObject::Animate(float fTimeElapsed, CCamera *pCamera)

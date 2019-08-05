@@ -4,9 +4,8 @@
 #include "GameObject.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////
 
-CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, XMFLOAT4 xmf4Color, float fDuration)
+CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration, UINT nBytes)
 {
 	m_nVertices = 0;
 	m_nBytes = nBytes;
@@ -182,27 +181,17 @@ void CEffect::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	m_nInitVertices = 0;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-CFadeOut::CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CFadeOutVertex), xmf4Color, fDuration)
+void CEffect::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
 {
-}
-
-CFadeOut::~CFadeOut()
-{
-}
-
-void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
-{
-	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
-	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
-	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices].m_nAngle = nAngle;
-	((CFadeOutVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_fAge = 0.0f;
+	((CEffectVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf3Position = xmf3Position;
+	((CEffectVertex*)m_pMappedInitVertices)[m_nInitVertices].m_xmf2Size = xmf2Size;
+	((CEffectVertex*)m_pMappedInitVertices)[m_nInitVertices].m_nAngle = nAngle;
+	((CEffectVertex*)m_pMappedInitVertices)[m_nInitVertices++].m_fAge = 0.0f;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CLaserVertex), xmf4Color, fDuration)
+
+CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, sizeof(CLaserVertex))
 {
 }
 
@@ -219,9 +208,87 @@ void CLaserBeam::AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XM
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
-CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), xmf4Color, fDuration)
+CFollowEffect::CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, 0.0f, sizeof(CEffectVertex))
+{
+}
+
+CFollowEffect::~CFollowEffect()
+{
+}
+
+void CFollowEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_FOLLOW_EFFECT) + 255) & ~255);
+
+	m_pd3dcbFollowEffect = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes);
+
+	m_pd3dcbFollowEffect->Map(0, NULL, (void**)&m_pcbMappedFollowEffect);
+}
+
+void CFollowEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	m_pcbMappedFollowEffect->xmf3Position = m_xmf3Position;
+	m_pcbMappedFollowEffect->m_fElapsedTime = m_fElapsedTime;
+	m_pcbMappedFollowEffect->m_xmf4Color = m_xmf4Color;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_FOLLOW_EFFECT_INFO, m_pd3dcbFollowEffect->GetGPUVirtualAddress());
+}
+
+void CFollowEffect::ReleaseShaderVariables()
+{
+	if (m_pd3dcbFollowEffect)
+	{
+		m_pd3dcbFollowEffect->Unmap(0, NULL);
+		m_pd3dcbFollowEffect->Release();
+
+		m_pd3dcbFollowEffect = NULL;
+	}
+}
+
+void CFollowEffect::SetFollowObject(CGameObject *pObject, CModel *pModel)
+{
+	pObject->AddEffect(this);
+	m_pFollowFrame = pModel;
+}
+
+void CFollowEffect::SetToFollowFramePosition()
+{
+	if (m_pFollowFrame)
+	{
+		m_xmf3Position = m_pFollowFrame->GetPosition();
+	}
+}
+
+void CFollowEffect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (!m_bShow) return;
+
+	if (m_nVertices | m_nInitVertices)
+	{
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+		UpdateShaderVariables(pd3dCommandList);
+	}
+
+	if (m_nVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView[m_nDrawBufferIndex]);
+
+		pd3dCommandList->DrawInstanced(m_nVertices, 1, 0, 0);
+	}
+
+	if (m_nInitVertices > 0)
+	{
+		pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dInitVertexBufferView);
+
+		pd3dCommandList->DrawInstanced(m_nInitVertices, 1, 0, 0);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, sizeof(CSpriteVertex))
 {
 	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
 	m_nMaxSpriteX = nMaxX;
@@ -281,7 +348,6 @@ void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAni
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 
 CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
 {
@@ -395,23 +461,18 @@ void CParticle::ReleaseShaderVariables()
 
 void CParticle::SetFollowObject(CGameObject *pObject, CModel *pModel)
 {
-	m_pFollowObject = pObject;
 	pObject->AddParticle(this);
 	m_pFollowFrame = pModel;
 }
 
-void CParticle::SetToFollowFramePositions()
+void CParticle::SetToFollowFramePosition()
 {
 	if (m_pFollowFrame)
 	{
 		m_xmf3Position = m_pFollowFrame->GetPosition();
-	}
-
-	if (m_pFollowObject)
-	{
-		m_xmf3Right = m_pFollowObject->GetRight();
-		m_xmf3Up = m_pFollowObject->GetUp();
-		m_xmf3Look = m_pFollowObject->GetLook();
+		m_xmf3Right = m_pFollowFrame->GetRight();
+		m_xmf3Up = m_pFollowFrame->GetUp();
+		m_xmf3Look = m_pFollowFrame->GetLook();
 	}
 }
 

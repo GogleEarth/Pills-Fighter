@@ -357,6 +357,8 @@ public:
 	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
 	virtual void AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType);
 
+	virtual void SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame) {}
+
 protected:
 	// Effect Count = Texture Count
 	int						m_nEffects = 0;
@@ -433,21 +435,32 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define GLOW_EFFECT_COUNT 1
+#define FOLLOW_EFFECT_COUNT 1
 
-#define GLOW_EFFECT_INDEX_BOOSTER 0
+#define FOLLOW_EFFECT_INDEX_BOOSTER 0
 
-class CGlowEffectShader : public CEffectShader
+class CFollowEffectShader : public CEffectShader
 {
 public:
-	CGlowEffectShader();
-	virtual ~CGlowEffectShader();
+	CFollowEffectShader();
+	virtual ~CFollowEffectShader();
 
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
+	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
+	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 
-	//void SetFollowObject(CGameObject *pObject, CModel *pFrame);
+	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle) {}
+	virtual void SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame);
+
+protected:
+	std::vector<CEffect*>			*m_pvpEffects = NULL;
+	std::queue<CEffect*>			*m_pvpTempEffects = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -489,11 +502,10 @@ public:
 #define PARTICLE_INDEX_BOOSTER_FLARE 0
 #define PARTICLE_INDEX_BOOSTER_FOG 1
 
-#define PARTICLE_TEXTURE_COUNT 3
+#define PARTICLE_TEXTURE_COUNT 2
 
 #define PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE 0
 #define PARTICLE_TEXTURE_INDEX_BOOSTER_FOG 1
-#define PARTICLE_TEXTURE_INDEX_HIT 2
 
 class CParticleShader : public CShader
 {
@@ -517,7 +529,6 @@ public:
 
 	virtual void ReleaseUploadBuffers();
 
-	virtual void CheckDeleteObjects();
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -535,8 +546,6 @@ protected:
 
 	std::vector<CParticle*>			*m_pvpParticles = NULL;
 	std::queue<CParticle*>			*m_pvpTempParticles = NULL;
-
-	CParticle						*m_pHitParticle = NULL;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -593,6 +602,12 @@ struct CB_RELOAD_INFO
 	float fReloadTime;
 };
 
+struct CB_UI_3D_INFO
+{
+	XMFLOAT4 xmf4Color;
+	XMFLOAT3 xmf3Position;
+};
+
 class CUserInterface : public CShader
 {
 public:
@@ -647,7 +662,7 @@ protected:
 
 	ID3D12Resource					*m_pd3dcbReloadInfo = NULL;
 	CB_RELOAD_INFO					*m_pcbMappedReloadInfo = NULL;
-
+	
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
 
@@ -673,6 +688,9 @@ protected:
 	std::vector<ID3D12Resource*>				m_vpd3dTeamNameTexture;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE>	m_vd3dTeamNameTextureSRVGPUHandle;
 	std::vector<CRect*>							m_vpTeamNameRect;
+
+	std::vector<ID3D12Resource*>				m_vpd3dcbUI3DInfo;
+	std::vector<CB_UI_3D_INFO*>					m_vpcbMappedUI3DInfo;
 
 public:
 	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect);

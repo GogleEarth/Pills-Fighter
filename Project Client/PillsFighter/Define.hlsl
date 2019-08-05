@@ -17,6 +17,7 @@
 #define MINIMAP_PLAYER_POS				b17
 #define UI_COLOR_INFO					b18
 #define UI_3D_INFO						b19
+#define FOLLOW_EFFECT_INFO				b20
 
 #define DIFFUSE_TEXTURES				t1 // t1 ~ t3
 #define SPECULAR_TEXTURE				t4

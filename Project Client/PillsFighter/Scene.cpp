@@ -646,19 +646,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.ShaderRegister = 9;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.Num32BitValues = 2;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.ShaderRegister = 10;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.Num32BitValues = 5;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.ShaderRegister = 11;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
+	
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Descriptor.ShaderRegister = 12;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Descriptor.RegisterSpace = 0;
@@ -673,18 +661,11 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].Descriptor.ShaderRegister = 13;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_LIGHT_CAMERA_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.ShaderRegister = 14;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.Num32BitValues = 4;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
+	
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].Descriptor.ShaderRegister = 15;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 16;
@@ -696,23 +677,46 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.Num32BitValues = 4;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.ShaderRegister = 18;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].Constants.Num32BitValues = 7;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].Constants.ShaderRegister = 19;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_NORMAL_MAP].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_NORMAL_MAP].DescriptorTable.NumDescriptorRanges = 1;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_NORMAL_MAP].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[8];
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_NORMAL_MAP].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_FOLLOW_EFFECT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_FOLLOW_EFFECT_INFO].Descriptor.ShaderRegister = 20;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_FOLLOW_EFFECT_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_FOLLOW_EFFECT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].Descriptor.ShaderRegister = 19;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+/////
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.Num32BitValues = 2;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.ShaderRegister = 10;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.Num32BitValues = 5;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.ShaderRegister = 11;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.Num32BitValues = 4;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.ShaderRegister = 14;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.Num32BitValues = 4;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.ShaderRegister = 18;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -2884,11 +2888,11 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pLaserEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS] = pLaserEffectShader;
 
-	// 그룹 5 [ Laser Effect Shader ]
-	CGlowEffectShader *pGlowEffectShader = new CGlowEffectShader();
-	pGlowEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
-	pGlowEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
-	m_ppEffectShaders[INDEX_SHADER_GLOW_EFFECTS] = pGlowEffectShader;
+	// 그룹 5 [ Follow Effect Shader ]
+	CFollowEffectShader *pFollowEffectShader = new CFollowEffectShader();
+	pFollowEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pFollowEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_SHADER_FOLLOW_EFFECTS] = pFollowEffectShader;
 
 	// Particle
 	m_pParticleShader = new CParticleShader();
@@ -2914,6 +2918,16 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_pTomahawk = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/Tomahawk.bin", NULL, NULL);
 	m_pBeamRifle = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamRifle.bin", NULL, NULL);
 	m_pBeamSniper = pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Weapon/BeamSniper.bin", NULL, NULL);
+}
+
+void CBattleScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+
+}
+
+void CBattleScene::ReleaseShaderVariables()
+{
+
 }
 
 void CBattleScene::ReleaseObjects()
@@ -2995,10 +3009,11 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 {
 	CScene::SetAfterBuildObject(pd3dDevice, pd3dCommandList, pContext);
 	
-	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
-	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
+	m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
+	m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
 
-//	m_ppEffectShaders[INDEX_SHADER_GLOW_EFFECTS]->AddEffect(GLOW_EFFECT_INDEX_BOOSTER, XMFLOAT3(10.0f, 20.0f, 0.0f), XMFLOAT2(20, 20), 0, rand() % 360);
+	m_ppEffectShaders[INDEX_SHADER_FOLLOW_EFFECTS]->SetFollowObject(FOLLOW_EFFECT_INDEX_BOOSTER, m_pPlayer, m_pPlayer->GetRightNozzleFrame());
+	m_ppEffectShaders[INDEX_SHADER_FOLLOW_EFFECTS]->SetFollowObject(FOLLOW_EFFECT_INDEX_BOOSTER, m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
 
 	if (m_pPlayer)
 	{

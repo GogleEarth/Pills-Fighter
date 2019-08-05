@@ -1228,7 +1228,7 @@ D3D12_STREAM_OUTPUT_DESC CEffectShader::CreateStreamOutput()
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
-	pnStride[0] = sizeof(CFadeOutVertex);
+	pnStride[0] = sizeof(CEffectVertex);
 
 	D3D12_STREAM_OUTPUT_DESC d3dStreamOutputDesc;
 	d3dStreamOutputDesc.pSODeclaration = pd3dStreamOutputDeclarations;
@@ -1289,7 +1289,7 @@ D3D12_BLEND_DESC CEffectShader::CreateBlendState()
 	D3D12_BLEND_DESC d3dBlendDesc;
 	::ZeroMemory(&d3dBlendDesc, sizeof(D3D12_BLEND_DESC));
 	d3dBlendDesc.AlphaToCoverageEnable = FALSE;
-	d3dBlendDesc.IndependentBlendEnable = FALSE;
+	d3dBlendDesc.IndependentBlendEnable = TRUE;
 	d3dBlendDesc.RenderTarget[0].BlendEnable = TRUE;
 	d3dBlendDesc.RenderTarget[0].LogicOpEnable = FALSE;
 	d3dBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
@@ -1300,6 +1300,39 @@ D3D12_BLEND_DESC CEffectShader::CreateBlendState()
 	d3dBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	d3dBlendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	d3dBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	d3dBlendDesc.RenderTarget[1].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[1].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[1].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[1].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[1].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[1].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[1].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[1].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[1].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[1].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_RED | D3D12_COLOR_WRITE_ENABLE_BLUE | D3D12_COLOR_WRITE_ENABLE_GREEN;
+
+	d3dBlendDesc.RenderTarget[2].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[2].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[2].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[2].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[2].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[2].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[2].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[2].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[2].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[2].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	d3dBlendDesc.RenderTarget[3].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[3].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[3].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[3].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[3].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[3].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[3].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[3].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[3].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[3].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	return(d3dBlendDesc);
 }
@@ -1371,10 +1404,17 @@ void CEffectShader::ReleaseObjects()
 		for (int i = 0; i < m_nEffects; i++)
 		{
 			if (m_ppEffects[i]) delete m_ppEffects[i];
-			if (m_ppTextures[i]) delete m_ppTextures[i];
 		}
 
 		delete[] m_ppEffects;
+	}
+
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			if (m_ppTextures[i]) delete m_ppTextures[i];
+		}
 		delete[] m_ppTextures;
 	}
 }
@@ -1441,7 +1481,7 @@ void CTimedEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TIMED_EFFECT_INDEX_MUZZLE_FIRE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
+	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
 	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1507,7 +1547,7 @@ void CTextEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TEXT_EFFECT_INDEX_HIT_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
+	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1616,37 +1656,6 @@ void CLaserEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-CGlowEffectShader::CGlowEffectShader()
-{
-
-}
-
-CGlowEffectShader::~CGlowEffectShader()
-{
-}
-
-D3D12_SHADER_BYTECODE CGlowEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
-{
-	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSGlowEffectDraw", "ps_5_1", ppd3dShaderBlob));
-}
-
-void CGlowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
-{
-	m_nEffects = GLOW_EFFECT_COUNT;
-	m_ppTextures = new CTexture*[m_nEffects];
-	m_ppEffects = new CEffect*[m_nEffects];
-
-	m_ppTextures[GLOW_EFFECT_INDEX_BOOSTER] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[GLOW_EFFECT_INDEX_BOOSTER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/BeamSI.dds", 0);
-
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[GLOW_EFFECT_INDEX_BOOSTER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
-
-	m_ppEffects[GLOW_EFFECT_INDEX_BOOSTER] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f), 1110.0f);
-	m_ppEffects[GLOW_EFFECT_INDEX_BOOSTER]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1765,6 +1774,167 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+CFollowEffectShader::CFollowEffectShader()
+{
+
+}
+
+CFollowEffectShader::~CFollowEffectShader()
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (CEffect* pEffect : m_pvpEffects[i])
+			{
+				pEffect->ReleaseShaderVariables();
+				delete pEffect;
+			}
+		}
+
+		delete[] m_pvpEffects;
+	}
+
+	if (m_pvpTempEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			while (!m_pvpTempEffects[i].empty())
+			{
+				CEffect *pEffect = m_pvpTempEffects[i].front();
+				m_pvpTempEffects[i].pop();
+
+				pEffect->ReleaseShaderVariables();
+				delete pEffect;
+			}
+		}
+
+		delete[] m_pvpTempEffects;
+	}
+}
+
+D3D12_SHADER_BYTECODE CFollowEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSFollowEffectDraw", "ps_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowEffectShader::CreateGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowEffectDraw", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CFollowEffectShader::CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "GSFollowEffectStreamOut", "gs_5_1", ppd3dShaderBlob));
+}
+
+void CFollowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	m_nEffects = FOLLOW_EFFECT_COUNT;
+	m_pvpEffects = new std::vector<CEffect*>[FOLLOW_EFFECT_COUNT];
+	m_pvpTempEffects = new std::queue<CEffect*>[FOLLOW_EFFECT_COUNT];
+
+	for (int i = 0; i < 16; i++)
+	{
+		CFollowEffect *pEffect = NULL;
+
+		pEffect = new CFollowEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+		pEffect->AddVertex(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), 0, 0);
+
+		m_pvpTempEffects[FOLLOW_EFFECT_INDEX_BOOSTER].push(pEffect);
+	}
+
+	m_ppTextures = new CTexture*[m_nEffects];
+
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare2.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FLARE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+}
+
+void CFollowEffectShader::SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame)
+{
+	CEffect *pEffect = m_pvpTempEffects[nIndex].front();
+	m_pvpTempEffects[nIndex].pop();
+
+	pEffect->SetFollowObject(pObject, pFrame);
+	m_pvpEffects[nIndex].emplace_back(pEffect);
+}
+
+void CFollowEffectShader::AnimateObjects(float fTimeElapsed)
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->Animate(fTimeElapsed);
+			}
+		}
+	}
+}
+
+void CFollowEffectShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
+{
+	CShader::OnPrepareRender(pd3dCommandList);
+
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			m_ppTextures[i]->UpdateShaderVariables(pd3dCommandList);
+
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->Render(pd3dCommandList);
+			}
+		}
+	}
+}
+
+void CFollowEffectShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->ReadVertexCount(pd3dCommandList);
+			}
+		}
+
+		if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
+
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->SORender(pd3dCommandList);
+			}
+		}
+	}
+}
+
+void CFollowEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	if (m_pvpEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			for (const auto& pEffect : m_pvpEffects[i])
+			{
+				pEffect->AfterRender(pd3dCommandList);
+			}
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 CParticleShader::CParticleShader()
 {
 
@@ -1811,12 +1981,6 @@ CParticleShader::~CParticleShader()
 		}
 
 		delete[] m_ppTextures;
-	}
-
-	if (m_pHitParticle)
-	{
-		m_pHitParticle->ReleaseShaderVariables();
-		delete m_pHitParticle;
 	}
 
 	if (m_pd3dSOPipelineState) m_pd3dSOPipelineState->Release();
@@ -2018,17 +2182,6 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FOG]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Fog1.dds", 0);
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FOG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
-
-
-	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
-	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 30.0f, 0.5f, false, 20.0,
-		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-
-	m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Flare2.dds", 0);
-
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 }
 
 void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
@@ -2043,8 +2196,6 @@ void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
 		pParticleVertex[i].m_nType = PARTICLE_TYPE_ONE_EMITTER;
 		pParticleVertex[i].m_fAge = 0.0f;
 	}
-
-	m_pHitParticle->AddVertex(pParticleVertex, nNum);
 }
 
 void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
@@ -2064,14 +2215,8 @@ void CParticleShader::SetFollowObject(CGameObject *pObject, CModel *pFrame)
 	m_pvpParticles[PARTICLE_INDEX_BOOSTER_FOG].emplace_back(pParticle);
 }
 
-void CParticleShader::CheckDeleteObjects()
-{
-}
-
 void CParticleShader::AnimateObjects(float fTimeElapsed)
 {
-	CheckDeleteObjects();
-
 	for (int i = 0; i < PARTICLE_COUNT; i++)
 	{
 		for (const auto& pParticle : m_pvpParticles[i])
@@ -2079,8 +2224,6 @@ void CParticleShader::AnimateObjects(float fTimeElapsed)
 			pParticle->Animate(fTimeElapsed);
 		}
 	}
-
-	if (m_pHitParticle) m_pHitParticle->Animate(fTimeElapsed);
 }
 
 void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -2096,13 +2239,6 @@ void CParticleShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 			pParticle->Render(pd3dCommandList);
 		}
 	}
-
-	
-	if (m_pHitParticle)
-	{
-		m_ppTextures[2]->UpdateShaderVariables(pd3dCommandList);
-		m_pHitParticle->Render(pd3dCommandList);
-	}
 }
 
 void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -2114,8 +2250,6 @@ void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 			pParticle->ReadVertexCount(pd3dCommandList);
 		}
 	}
-	if (m_pHitParticle) m_pHitParticle->ReadVertexCount(pd3dCommandList);
-
 	if (m_pd3dSOPipelineState) pd3dCommandList->SetPipelineState(m_pd3dSOPipelineState);
 
 	for (int i = 0; i < PARTICLE_COUNT; i++)
@@ -2125,7 +2259,6 @@ void CParticleShader::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 			pParticle->SORender(pd3dCommandList);
 		}
 	}
-	if (m_pHitParticle) m_pHitParticle->SORender(pd3dCommandList);
 }
 
 void CParticleShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -2137,8 +2270,6 @@ void CParticleShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 			pParticle->AfterRender(pd3dCommandList);
 		}
 	}
-
-	if (m_pHitParticle) m_pHitParticle->AfterRender(pd3dCommandList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2460,6 +2591,21 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 	m_pd3dcbPlayerAmmo->Map(0, NULL, (void **)&m_pcbMappedPlayerAmmo);
 
+	ncbElementBytes = ((sizeof(CB_UI_3D_INFO) + 255) & ~255);
+
+	for (int i = 0; i < m_vppTeamObject.size(); i++)
+	{
+		ID3D12Resource *pd3dcb = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+			D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+
+		CB_UI_3D_INFO *pcbMapped;
+
+		pd3dcb->Map(0, NULL, (void **)&pcbMapped);
+
+		m_vpd3dcbUI3DInfo.emplace_back(pd3dcb);
+		m_vpcbMappedUI3DInfo.emplace_back(pcbMapped);
+	}
+
 	ncbElementBytes = ((sizeof(CB_RELOAD_INFO) + 255) & ~255);
 
 	m_pd3dcbReloadInfo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
@@ -2505,6 +2651,7 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbReloadInfo->Unmap(0, NULL);
 		m_pd3dcbReloadInfo->Release();
 	}
+
 	
 	for (int i = 0; i < m_vpd3dcbTeamHP.size(); i++)
 	{
@@ -2512,6 +2659,12 @@ void CUserInterface::ReleaseShaderVariables()
 		{
 			m_vpd3dcbTeamHP[i]->Unmap(0, NULL);
 			m_vpd3dcbTeamHP[i]->Release();
+		}
+
+		if (m_vpd3dcbUI3DInfo[i])
+		{
+			m_vpd3dcbUI3DInfo[i]->Unmap(0, NULL);
+			m_vpd3dcbUI3DInfo[i]->Release();
 		}
 	}
 
@@ -2890,11 +3043,10 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	{
 		if (!(*m_vppTeamObject[i])) continue;
 
-		XMFLOAT4 COLOR = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-		XMFLOAT3 POSITION = Vector3::Add((*m_vppTeamObject[i])->GetPosition(), XMFLOAT3(0.0f, 19.0f, 0.0f));
+		m_vpcbMappedUI3DInfo[i]->xmf3Position = Vector3::Add((*m_vppTeamObject[i])->GetPosition(), XMFLOAT3(0.0f, 19.0f, 0.0f));
+		m_vpcbMappedUI3DInfo[i]->xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 
-		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 4, &COLOR, 0);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_UI_3D_INFO, 3, &POSITION, 4);
+		pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_3D_INFO, m_vpd3dcbUI3DInfo[i]->GetGPUVirtualAddress());
 
 		pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_vd3dTeamNameTextureSRVGPUHandle[i]);
 		m_vpTeamNameRect[i]->Render(pd3dCommandList, 1);

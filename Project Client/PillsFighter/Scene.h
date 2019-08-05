@@ -631,7 +631,7 @@ protected:
 #define INDEX_SHADER_SPRITE_EFFECTS 1
 #define INDEX_SHADER_TEXT_EEFECTS 2
 #define INDEX_SHADER_LASER_BEAM_EEFECTS 3
-#define INDEX_SHADER_GLOW_EFFECTS 4
+#define INDEX_SHADER_FOLLOW_EFFECTS 4
 
 struct MOTIONBLUR
 {
@@ -641,6 +641,11 @@ struct MOTIONBLUR
 	int m_nHeight;
 	int m_nSamples;
 };
+
+//struct SCREENEFFECT
+//{
+//
+//};
 
 class CBattleScene : public CScene
 {
@@ -666,9 +671,9 @@ public:
 	virtual void FindAimToTargetDistance();
 
 	virtual void BuildLightsAndMaterials() {}
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables() {}
+	virtual void ReleaseShaderVariables();
 
 	virtual void StartScene() {}
 	virtual void EndScene() {}

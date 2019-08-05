@@ -13,10 +13,18 @@ struct CB_EFFECT_INFO
 	float m_fDuration;
 };
 
+struct CEffectVertex
+{
+	XMFLOAT3	m_xmf3Position;
+	float		m_fAge;
+	XMFLOAT2	m_xmf2Size;
+	int			m_nAngle;
+};
+
 class CEffect
 {
 public:
-	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, XMFLOAT4 xmf4Color, float fDuration);
+	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration, UINT nBytes = sizeof(CEffectVertex));
 	virtual ~CEffect();
 
 protected:
@@ -61,27 +69,11 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle) {}
-	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType) {}
-};
-
-/////////////////////////////////////////////////////////
-
-struct CFadeOutVertex
-{
-	XMFLOAT3	m_xmf3Position;
-	float		m_fAge;
-	XMFLOAT2	m_xmf2Size;
-	int			m_nAngle;
-};
-
-class CFadeOut : public CEffect
-{
-public:
-	CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration);
-	virtual ~CFadeOut();
-
 	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
+	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType) {}
+
+	virtual void SetFollowObject(CGameObject *pObject, CModel *pModel) {}
+	virtual void SetToFollowFramePosition() {}
 };
 
 /////////////////////////////////////////////////////////
@@ -105,14 +97,38 @@ public:
 
 /////////////////////////////////////////////////////////
 
-class CGlowEffect : public CEffect
+struct CB_FOLLOW_EFFECT
+{
+	XMFLOAT3 xmf3Position;
+	float m_fElapsedTime;
+	XMFLOAT4 m_xmf4Color;
+};
+
+class CFollowEffect : public CEffect
 {
 public:
-	CGlowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration);
-	virtual ~CGlowEffect();
+	CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
+	virtual ~CFollowEffect();
+
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void ReleaseShaderVariables();
+
+	virtual void SetFollowObject(CGameObject *pObject, CModel *pModel);
+	virtual void SetToFollowFramePosition();
+
+	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
+	void Show() { m_bShow = true; }
+	void Hide() { m_bShow = false; }
 
 protected:
+	ID3D12Resource		*m_pd3dcbFollowEffect = NULL;
+	CB_FOLLOW_EFFECT	*m_pcbMappedFollowEffect = NULL;
 
+	CModel				*m_pFollowFrame = NULL;
+	XMFLOAT3			m_xmf3Position;
+
+	bool				m_bShow = false;
 };
 
 /////////////////////////////////////////////////////////
@@ -235,7 +251,6 @@ protected:
 
 	int									m_nVertices = 0;
 
-	CGameObject							*m_pFollowObject = NULL;
 	CModel								*m_pFollowFrame = NULL;
 
 	ID3D12Resource						*m_pd3dcbParticle = NULL;
@@ -267,7 +282,7 @@ public:
 	void SetEmit(bool bEmit) { m_bEmit = bEmit; }
 
 	void SetFollowObject(CGameObject *pObject, CModel *pModel);
-	void SetToFollowFramePositions();
+	void SetToFollowFramePosition();
 
 	void Delete() { m_bDelete = true; }
 	int IsDelete() { return m_bDelete; }

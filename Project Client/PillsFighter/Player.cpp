@@ -870,8 +870,6 @@ void CPlayer::ProcessShootAnimation()
 
 void CPlayer::ProcessDashAnimation()
 {
-	OutputDebugString(L"¥ÎΩ√¡ﬂ!");
-
 	if (IsAnimationEnd(ANIMATION_DOWN, 0))
 	{
 		m_bChangedDashStart = true;
@@ -940,9 +938,6 @@ void CPlayer::ProcessDashAnimation()
 
 void CPlayer::ProcessJumpAnimation()
 {
-	if(m_bSpaceDown)
-		OutputDebugString(L"SPACE!");
-
 	if (IsAnimationEnd(ANIMATION_DOWN, 0))
 	{
 		ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_JUMP_LOOP);
