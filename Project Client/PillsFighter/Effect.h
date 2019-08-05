@@ -8,7 +8,7 @@ class CModel;
 
 struct CB_EFFECT_INFO
 {
-	XMFLOAT3 m_xmf3Color;
+	XMFLOAT4 m_xmf4Color;
 	float m_fElapsedTime;
 	float m_fDuration;
 };
@@ -16,7 +16,7 @@ struct CB_EFFECT_INFO
 class CEffect
 {
 public:
-	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, XMFLOAT3 xmf3Color, float fDuration);
+	CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, XMFLOAT4 xmf4Color, float fDuration);
 	virtual ~CEffect();
 
 protected:
@@ -42,7 +42,7 @@ protected:
 	int									m_nVertices = 0;
 	UINT								m_nBytes = 0;
 
-	XMFLOAT3							m_xmf3Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	XMFLOAT4							m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	float								m_fElapsedTime = 0.0f;
 	float								m_fDuration = 0.0f;
 
@@ -78,7 +78,7 @@ struct CFadeOutVertex
 class CFadeOut : public CEffect
 {
 public:
-	CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, float fDuration);
+	CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration);
 	virtual ~CFadeOut();
 
 	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
@@ -97,10 +97,22 @@ struct CLaserVertex
 class CLaserBeam : public CEffect
 {
 public:
-	CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, float fDuration);
+	CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration);
 	virtual ~CLaserBeam();
 
 	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType);
+};
+
+/////////////////////////////////////////////////////////
+
+class CGlowEffect : public CEffect
+{
+public:
+	CGlowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration);
+	virtual ~CGlowEffect();
+
+protected:
+
 };
 
 /////////////////////////////////////////////////////////
@@ -127,7 +139,7 @@ struct CSpriteVertex
 class CSprite : public CEffect
 {
 public:
-	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration);
+	CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration);
 	virtual ~CSprite();
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
@@ -182,7 +194,7 @@ struct CB_PARTICLE_INFO
 	bool		m_bEmit;
 	XMFLOAT3	m_vAngles;
 	bool		m_bScaling;
-	XMFLOAT3	m_xmf3Color;
+	XMFLOAT4	m_xmf4Color;
 };
 
 class CParticle
@@ -219,7 +231,7 @@ protected:
 	XMFLOAT3							m_xmf3Angles;
 	bool								m_bScaling = false;
 	float								m_fMass = 0.0f;
-	XMFLOAT3							m_xmf3Color;
+	XMFLOAT4							m_xmf4Color;
 
 	int									m_nVertices = 0;
 
@@ -243,7 +255,7 @@ public:
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, bool bScaling, float fMass,
-		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles, XMFLOAT3 xmf3Color);
+		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles, XMFLOAT4 xmf4Color);
 
 	virtual void AddVertex(CParticleVertex *pParticleVertices, int nVertices);
 

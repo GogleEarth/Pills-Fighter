@@ -62,6 +62,12 @@ float4 PSPostProcessing(VS input) : SV_Target
 	return cColor * gScreenColor;
 }
 
+float4 PSPostProcessingCombine(VS input) : SV_Target
+{
+	float4 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
+
+	return cColor;
+}
 
 //
 #define FILTER_SAMPLE 5
@@ -84,13 +90,13 @@ float4 PSPostProcessingByLaplacianEdge(VS input) : SV_Target
 			cEdgeness = float3(fEdgeness, fEdgeness, fEdgeness);
 		}
 	}
-	float3 outlineColor = float3(0.0f, 0.0f, 0.0f);
+	float4 outlineColor = 0;
 	float4 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
-	float3 sColor = cColor.rgb;
+	float4 sColor = cColor;
 	//sColor = (fEdgeness < 0.15f) ? cColor : ((fEdgeness < 0.65f) ? (cColor - cEdgeness) : outlineColor);
 	sColor = (fEdgeness < 0.5f) ? cColor : outlineColor;
 
-	return float4(sColor, 1.0f);
+	return sColor;
 }
 
 
@@ -142,7 +148,7 @@ VS VSTest(uint nVertexID : SV_VertexID)
 
 float4 PSTest(VS input) : SV_Target
 {
-	float3 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
+	float4 cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
 
-	return float4(cColor, 1.0f);
+	return cColor;
 }

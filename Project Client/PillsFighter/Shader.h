@@ -431,6 +431,25 @@ public:
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define GLOW_EFFECT_COUNT 1
+
+#define GLOW_EFFECT_INDEX_BOOSTER 0
+
+class CGlowEffectShader : public CEffectShader
+{
+public:
+	CGlowEffectShader();
+	virtual ~CGlowEffectShader();
+
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
+
+	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
+
+	//void SetFollowObject(CGameObject *pObject, CModel *pFrame);
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 

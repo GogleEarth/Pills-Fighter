@@ -129,7 +129,7 @@ D3D12_BLEND_DESC CShader::CreateBlendState()
 	D3D12_BLEND_DESC d3dBlendDesc;
 	::ZeroMemory(&d3dBlendDesc, sizeof(D3D12_BLEND_DESC));
 	d3dBlendDesc.AlphaToCoverageEnable = FALSE;
-	d3dBlendDesc.IndependentBlendEnable = FALSE;
+	d3dBlendDesc.IndependentBlendEnable = TRUE;
 	d3dBlendDesc.RenderTarget[0].BlendEnable = TRUE;
 	d3dBlendDesc.RenderTarget[0].LogicOpEnable = FALSE;
 	d3dBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
@@ -141,6 +141,39 @@ D3D12_BLEND_DESC CShader::CreateBlendState()
 	d3dBlendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	d3dBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
+	d3dBlendDesc.RenderTarget[1].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[1].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[1].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[1].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[1].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[1].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[1].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[1].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[1].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[1].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_RED | D3D12_COLOR_WRITE_ENABLE_BLUE |D3D12_COLOR_WRITE_ENABLE_GREEN;
+
+	d3dBlendDesc.RenderTarget[2].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[2].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[2].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[2].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[2].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[2].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[2].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[2].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[2].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[2].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	d3dBlendDesc.RenderTarget[3].BlendEnable = TRUE;
+	d3dBlendDesc.RenderTarget[3].LogicOpEnable = FALSE;
+	d3dBlendDesc.RenderTarget[3].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[3].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	d3dBlendDesc.RenderTarget[3].BlendOp = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[3].SrcBlendAlpha = D3D12_BLEND_ONE;
+	d3dBlendDesc.RenderTarget[3].DestBlendAlpha = D3D12_BLEND_ZERO;
+	d3dBlendDesc.RenderTarget[3].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	d3dBlendDesc.RenderTarget[3].LogicOp = D3D12_LOGIC_OP_NOOP;
+	d3dBlendDesc.RenderTarget[3].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
 	return(d3dBlendDesc);
 }
 
@@ -148,7 +181,7 @@ D3D12_DEPTH_STENCIL_DESC CShader::CreateAlwaysDepthStencilState()
 {
 	D3D12_DEPTH_STENCIL_DESC d3dDepthStencilDesc;
 	d3dDepthStencilDesc.DepthEnable = FALSE;
-	d3dDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	d3dDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	d3dDepthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	d3dDepthStencilDesc.StencilEnable = FALSE;
 	d3dDepthStencilDesc.StencilReadMask = 0x00;
@@ -1408,7 +1441,7 @@ void CTimedEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TIMED_EFFECT_INDEX_MUZZLE_FIRE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 0.1f);
+	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
 	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1474,7 +1507,7 @@ void CTextEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TEXT_EFFECT_INDEX_HIT_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 2.0f);
+	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1581,8 +1614,39 @@ void CLaserEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 2.0f);
+	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+CGlowEffectShader::CGlowEffectShader()
+{
+
+}
+
+CGlowEffectShader::~CGlowEffectShader()
+{
+}
+
+D3D12_SHADER_BYTECODE CGlowEffectShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"EffectShaders.hlsl", "PSGlowEffectDraw", "ps_5_1", ppd3dShaderBlob));
+}
+
+void CGlowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
+{
+	m_nEffects = GLOW_EFFECT_COUNT;
+	m_ppTextures = new CTexture*[m_nEffects];
+	m_ppEffects = new CEffect*[m_nEffects];
+
+	m_ppTextures[GLOW_EFFECT_INDEX_BOOSTER] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[GLOW_EFFECT_INDEX_BOOSTER]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/BeamSI.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[GLOW_EFFECT_INDEX_BOOSTER], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppEffects[GLOW_EFFECT_INDEX_BOOSTER] = new CFadeOut(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f), 1110.0f);
+	m_ppEffects[GLOW_EFFECT_INDEX_BOOSTER]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1678,7 +1742,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Hit1.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
@@ -1686,7 +1750,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Hit2.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
@@ -1695,7 +1759,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT3(1.0f, 1.0f, 1.0f), 5, 3, 12, 1.0f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 3, 12, 1.0f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1910,7 +1974,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 1.0f, false, 2.0f,
-			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		CParticleVertex *pParticleVertex = new CParticleVertex();
@@ -1927,7 +1991,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 5.0f, 4.0f, true, 0.1f,
-			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		pParticleVertex = new CParticleVertex();
@@ -1958,7 +2022,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 	m_pHitParticle = new CParticle(pd3dDevice, pd3dCommandList);
 	m_pHitParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 30.0f, 0.5f, false, 20.0,
-		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f), XMFLOAT3(1.0f, 1.0f, 1.0f));
+		XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(720.0f, 720.0f, 720.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 	m_pHitParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	m_ppTextures[PARTICLE_TEXTURE_INDEX_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);

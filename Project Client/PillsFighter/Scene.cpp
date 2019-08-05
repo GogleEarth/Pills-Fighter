@@ -2884,6 +2884,12 @@ void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	pLaserEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS] = pLaserEffectShader;
 
+	// ±×·ì 5 [ Laser Effect Shader ]
+	CGlowEffectShader *pGlowEffectShader = new CGlowEffectShader();
+	pGlowEffectShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	pGlowEffectShader->Initialize(pd3dDevice, pd3dCommandList, NULL);
+	m_ppEffectShaders[INDEX_SHADER_GLOW_EFFECTS] = pGlowEffectShader;
+
 	// Particle
 	m_pParticleShader = new CParticleShader();
 	m_pParticleShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
@@ -2991,6 +2997,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetRightNozzleFrame());
 	if (m_pParticleShader) m_pParticleShader->SetFollowObject(m_pPlayer, m_pPlayer->GetLeftNozzleFrame());
+
+//	m_ppEffectShaders[INDEX_SHADER_GLOW_EFFECTS]->AddEffect(GLOW_EFFECT_INDEX_BOOSTER, XMFLOAT3(10.0f, 20.0f, 0.0f), XMFLOAT2(20, 20), 0, rand() % 360);
 
 	if (m_pPlayer)
 	{

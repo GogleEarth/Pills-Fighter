@@ -6,12 +6,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 
-CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, XMFLOAT3 xmf3Color, float fDuration)
+CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nBytes, XMFLOAT4 xmf4Color, float fDuration)
 {
 	m_nVertices = 0;
 	m_nBytes = nBytes;
 	m_fDuration = fDuration;
-	m_xmf3Color = xmf3Color;
+	m_xmf4Color = xmf4Color;
 
 	m_pd3dInitVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, m_nBytes * MAX_EFFECT_INIT_VERTEX_COUNT);
 
@@ -74,9 +74,9 @@ void CEffect::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 void CEffect::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
+	m_pcbMappedEffect->m_xmf4Color = m_xmf4Color;
 	m_pcbMappedEffect->m_fElapsedTime = m_fElapsedTime;
 	m_pcbMappedEffect->m_fDuration = m_fDuration;
-	m_pcbMappedEffect->m_xmf3Color = m_xmf3Color;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_EFFECT, m_pd3dcbEffect->GetGPUVirtualAddress());
 }
@@ -184,7 +184,7 @@ void CEffect::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-CFadeOut::CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CFadeOutVertex), xmf3Color, fDuration)
+CFadeOut::CFadeOut(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CFadeOutVertex), xmf4Color, fDuration)
 {
 }
 
@@ -202,7 +202,7 @@ void CFadeOut::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAn
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CLaserVertex), xmf3Color, fDuration)
+CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CLaserVertex), xmf4Color, fDuration)
 {
 }
 
@@ -221,7 +221,7 @@ void CLaserBeam::AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XM
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT3 xmf3Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), xmf3Color, fDuration)
+CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, sizeof(CSpriteVertex), xmf4Color, fDuration)
 {
 	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
 	m_nMaxSpriteX = nMaxX;
@@ -329,7 +329,7 @@ CParticle::~CParticle()
 }
 
 void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, bool bScaling, float fMass,
-	XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles, XMFLOAT3 xmf3Color)
+	XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles, XMFLOAT4 xmf4Color)
 {
 	m_xmf3Position = xmf3Position;
 	m_xmf3Direction = xmf3Direction;
@@ -341,7 +341,7 @@ void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float 
 	m_xmf3Look = xmf3Look;
 	m_bScaling = bScaling;
 	m_fMass = fMass;
-	m_xmf3Color = xmf3Color;
+	m_xmf4Color = xmf4Color;
 
 	m_nDrawBufferIndex = 0;
 	m_nSOBufferIndex = 1;
@@ -378,7 +378,7 @@ void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 	m_pcbMappedParticle->m_vAngles = m_xmf3Angles;
 	m_pcbMappedParticle->m_bScaling = m_bScaling;
 	m_pcbMappedParticle->m_fMass = m_fMass;
-	m_pcbMappedParticle->m_xmf3Color = m_xmf3Color;
+	m_pcbMappedParticle->m_xmf4Color = m_xmf4Color;
 
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_PARTICLE, m_pd3dcbParticle->GetGPUVirtualAddress());
 }
@@ -392,6 +392,7 @@ void CParticle::ReleaseShaderVariables()
 		m_pd3dcbParticle = NULL;
 	}
 }
+
 void CParticle::SetFollowObject(CGameObject *pObject, CModel *pModel)
 {
 	m_pFollowObject = pObject;

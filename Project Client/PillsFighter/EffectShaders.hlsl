@@ -18,10 +18,9 @@ cbuffer cbSceneInfo : register(SCENE_INFO)
 
 struct EFFECT
 {
-	float3	m_vColor;
+	float4	m_vColor;
 	float	m_fElapsedTime;
 	float	m_fDuration;
-	
 };
 
 ConstantBuffer<EFFECT> gEffect : register(EFFECT_INFO);
@@ -103,7 +102,7 @@ float4 PSEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return(cColor * input.color * float4(gEffect.m_vColor, 1.0f));
+	return cColor * input.color * gEffect.m_vColor;
 }
 
 VS_EFFECT_INPUT VSEffectStreamOut(VS_EFFECT_INPUT input)
@@ -201,7 +200,7 @@ PS_LASER_EFFECT_OUTPUT PSLaserEffectDraw(GS_LASER_EFFECT_OUTPUT input) : SV_TARG
 	output.color = gtxtTexture[0].Sample(gssWrap, input.uv);
 	output.glow = gtxtTexture[1].Sample(gssWrap, input.uv);
 
-	return(output);
+	return output;
 }
 
 VS_LASER_EFFECT_INPUT VSLaserEffectStreamOut(VS_LASER_EFFECT_INPUT input)
@@ -223,6 +222,15 @@ void GSLaserEffectStreamOut(point VS_LASER_EFFECT_INPUT input[1], inout PointStr
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
+float4 PSGlowEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET1
+{
+	return gtxtTexture[0].Sample(gssWrap, input.uv);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
 [maxvertexcount(4)]
 void GSTextEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFECT_OUTPUT> outStream)
 {
@@ -351,7 +359,7 @@ float4 PSSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return(cColor * float4(gEffect.m_vColor, 1.0f));
+	return cColor * gEffect.m_vColor;
 }
 
 VS_SPRITE_INPUT VSSpriteStreamOut(VS_SPRITE_INPUT input)
@@ -415,7 +423,7 @@ struct PARTICLE
 	bool	m_bEmit;
 	float3	m_vAngles;
 	bool	m_bScaling;
-	float3	m_vColor;
+	float4	m_vColor;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(PARTICLE_INFO);
@@ -576,9 +584,9 @@ void GSParticleDraw(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_P
 	}
 }
 
-float4 PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET
+float4 PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET1
 {
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
+	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return cColor * float4(gParticle.m_vColor, 1.0f);
+	return cColor * gParticle.m_vColor * input.color;
 }
