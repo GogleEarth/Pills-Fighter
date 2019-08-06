@@ -708,6 +708,8 @@ public:
 	void Blurring(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
 	void Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidth, int nHeight);
 
+	virtual void SetMap(int nMap) { m_nCurrentMap = nMap; }
+
 protected:
 	ID3D12Resource					*m_pd3dEnvirCube = NULL;
 	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
@@ -724,6 +726,7 @@ protected:
 	CLightCamera					*m_pLightCamera = NULL;
 
 protected:
+	int								m_nCurrentMap = SCENE_TYPE_COLONY;
 	int								m_nRedScore = 0;
 	int								m_nBlueScore = 0;
 

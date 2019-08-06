@@ -357,12 +357,10 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 void CGameObject::MoveToCollisionByRadius(CGameObject *pObject)
 {
 	float radius = pObject->GetCollisionRadius();
-	float objectX = pObject->GetPosition().x;
-	float objectY = pObject->GetPosition().y;
-	float objectZ = pObject->GetPosition().z;
-	float valX = m_xmf3Position.x - objectX;
-	float valY = m_xmf3Position.y - objectY;
-	float valZ = m_xmf3Position.z - objectZ;
+	XMFLOAT3 objectPos = pObject->GetPosition();
+	float valX = m_xmf3Position.x - objectPos.x;
+	float valY = m_xmf3Position.y - objectPos.y;
+	float valZ = m_xmf3Position.z - objectPos.z;
 
 	float distance = sqrtf(
 		(valX) * (valX)
@@ -375,12 +373,13 @@ void CGameObject::MoveToCollisionByRadius(CGameObject *pObject)
 		direction.y = valY / distance;
 		direction.z = valZ / distance;
 
-		if (m_nState & OBJECT_STATE_BOOSTER)
-			Move(direction, 4.0f);
-		else
-			Move(direction, 2.0f);
+		XMFLOAT3 newPosition;
+		newPosition.x = objectPos.x + direction.x * radius;
+		newPosition.y = objectPos.y + direction.y * radius;
+		newPosition.z = objectPos.z + direction.z * radius;
 
-		//std::cout << "Player Collision by Planet" << std::endl;
+		SetPosition(newPosition);
+
 	}
 }
 

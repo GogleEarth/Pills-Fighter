@@ -3859,8 +3859,8 @@ void CBattleScene::CheckCollision()
 			// 카메라 이동 O
 			if (m_pPlayer->CollisionCheck(Obstacle))
 			{
-				//std::cout << "Collision Player By Building\n" << std::endl;
-				m_pPlayer->MoveToCollision(Obstacle);
+				if (m_nCurrentMap == SCENE_TYPE_COLONY) m_pPlayer->MoveToCollision(Obstacle);
+				else m_pPlayer->MoveToCollisionByRadius(Obstacle);
 			}
 		}
 	}

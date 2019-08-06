@@ -356,6 +356,7 @@ void CGameFramework::BuildBattleScene(int nType)
 	if(nType == SCENE_TYPE_SPACE)
 		m_pScene = new CSpaceScene();
 
+	m_pScene->SetMap(nType);
 	m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList, m_pRepository);
 
 	CPlayer *pPlayer = new CPlayer(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), m_pRepository, m_pScene->GetTerrain(), m_pScene->GetPlayerRobotType());
