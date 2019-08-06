@@ -868,14 +868,11 @@ public:
 };
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define ROBOTCOUNT 1
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct CB_MINIMAP_ROBOT_POSITION
 {
 	XMFLOAT2 robotPosition;
-	BOOL enemyOrTeam;
 };
 
 struct CB_MINIMAP_PLAYER_POSITION
@@ -892,23 +889,31 @@ public:
 	CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CMinimapShader();
 
+	//pipelines
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateVertexShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapEnemy(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapTeam(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderMinimapSight(ID3DBlob **ppd3dShaderBlob);
+
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapRobot(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapEnemy(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapTeam(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapBG(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderMinimapSight(ID3DBlob **ppd3dShaderBlob);
+
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayoutMinimapRect();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
+
+	//
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 
-	void UpdateMinimapRobotInfo(CGameObject *object, BYTE id);
-	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
+	virtual void UpdateShaderVariablesTeamPosition(ID3D12GraphicsCommandList *pd3dCommandList, int index);
+	virtual void UpdateShaderVariablesEnemyPosition(ID3D12GraphicsCommandList *pd3dCommandList, int index);
 	virtual void UpdateShaderVariablesMinimapPlayer(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
@@ -917,9 +922,14 @@ public:
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fCenterX, float fCenterY, float fSizeX, float fSizeY);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 
-	void InsertMinimapRobot(CGameObject *object, int index);
-	void InsertMinimapRobotInfo(XMFLOAT4X4 objectWorld, int index);
 	void SetPlayer(CPlayer *pPlayer) { m_pPlayer = pPlayer; }
+
+	void SetTeamInfo(CGameObject **ppObject);
+	void SetEnemyInfo(CGameObject **ppObject);
+	void SetRobotCount() {
+		m_nMinimapEnemies = m_vppEnemyObject.size();
+		m_nMinimapTeammates = m_vppTeamObject.size();
+	};
 
 protected:
 
@@ -929,18 +939,29 @@ protected:
 	int								m_nTextures;
 	CTexture						**m_ppTextures = NULL;
 
-	int								m_nMinimapRobotRect = 0;
-	CMinimapRobotRect				**m_ppMinimapRobotRects = NULL;
+	int								m_nMinimapRobotCount = 0;
+	int								m_nMinimapEnemies = 0;
+	int								m_nMinimapTeammates = 0;
+	CRect							**m_ppMinimapEnemyRects = NULL;
+	CRect							**m_ppMinimapTeamRects = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
-	ID3D12Resource					*m_MinimapRobotRsc = NULL;
-	CB_MINIMAP_ROBOT_POSITION		*m_cbMinimapRobotInfo = NULL;
+	// team & enemy info
+	std::vector<CGameObject**>		m_vppTeamObject;
+	std::vector<CGameObject**>		m_vppEnemyObject;
+
+	std::vector<ID3D12Resource*>	m_vpd3dcbTeamPosition;
+	std::vector<ID3D12Resource*>	m_vpd3dcbEnemyPosition;
+
+	std::vector<CB_MINIMAP_ROBOT_POSITION*>	m_cbMinimapEnemyInfo;
+	std::vector<CB_MINIMAP_ROBOT_POSITION*>	m_cbMinimapTeamInfo;
 
 	ID3D12Resource					*m_MinimapPlayerRsc = NULL;
 	CB_MINIMAP_PLAYER_POSITION		*m_cbMinimapPlayerInfo;
 
-	ID3D12PipelineState				*m_pd3dPipelineStateMinimapRobot = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapEnemy = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateMinimapTeam = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateMinimapBG = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateMinimapSight = NULL;
 };

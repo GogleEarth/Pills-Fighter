@@ -354,7 +354,6 @@ void GSCursor(point VS_UI_INPUT input[1], inout TriangleStream<GS_UI_OUT> outStr
 
 
 
-
 ////////////////////////////////////////////////////////////////
 
 struct VS_UI_MINIMAPROBOT_INPUT
@@ -371,17 +370,18 @@ struct VS_UI_MINIMAPROBOT_OUTPUT
 	uint index : INDEX;
 };
 
-VS_UI_MINIMAPROBOT_OUTPUT VSMinimapEnemy(VS_UI_MINIMAPROBOT_INPUT input)
+VS_UI_MINIMAPROBOT_OUTPUT VSMinimapRobot(VS_UI_MINIMAPROBOT_INPUT input)
 {
 	return(input);
 }
 
-#define MINIMAP_ROBOT_MAX			1
-
-cbuffer cbMinimapRobotPos : register(MINIMAP_ROBOT_POS)
+cbuffer cbMinimapEnemyPos : register(MINIMAP_ENEMY_POS)
 {
-	float2 gvMinimapRobotPos[MINIMAP_ROBOT_MAX];
-	bool enemyOrTeam[MINIMAP_ROBOT_MAX];
+	float2 gvMinimapEnemyPos;
+}
+cbuffer cbMinimapTeamPos : register(MINIMAP_TEAM_POS)
+{
+	float2 gvMinimapTeamPos;
 }
 
 cbuffer cbMinimapPlayerPos : register(MINIMAP_PLAYER_POS)
@@ -396,7 +396,6 @@ struct GS_UI_MINIMAPROBOT_OUT
 {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD;
-	bool eort : ENEMYORTEAM;
 	bool outOfRange : OUTOFRANGE;
 };
 
@@ -408,14 +407,11 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	float fHalfW = input[0].size.x *0.9;
 	float fHalfH = input[0].size.y *1.6;
 
-	bool eOrT = enemyOrTeam[input[0].index];
-
 	float2 fVertices[4];
 	fVertices[0] = float2(input[0].center - fHalfW * vRight - fHalfH * vUp);
 	fVertices[1] = float2(input[0].center - fHalfW * vRight + fHalfH * vUp);
 	fVertices[2] = float2(input[0].center + fHalfW * vRight - fHalfH * vUp);
 	fVertices[3] = float2(input[0].center + fHalfW * vRight + fHalfH * vUp);
-
 	float2 fUVs[4];
 	fUVs[0] = float2(0.0f, 1.0f);
 	fUVs[1] = float2(0.0f, 0.0f);
@@ -424,13 +420,13 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 
 	GS_UI_MINIMAPROBOT_OUT output;
 
-	float2 world = mul(float4(gvMinimapRobotPos[input[0].index].x, 0.0f, gvMinimapRobotPos[input[0].index].y, 1.0f), gmtxPlayerView).xz;
+	float2 world = mul(float4(gvMinimapEnemyPos.x, 0.0f, gvMinimapEnemyPos.y, 1.0f), gmtxPlayerView).xz;
 	world.x *= 0.0009f;
 	world.y *= 0.0016f;
 
 	float2 enemyPos;
-	enemyPos.x = (gvMinimapRobotPos[input[0].index].x - gvMinimapPlayerPosition.x);
-	enemyPos.y = (gvMinimapRobotPos[input[0].index].y - gvMinimapPlayerPosition.y);
+	enemyPos.x = (gvMinimapEnemyPos.x - gvMinimapPlayerPosition.x);
+	enemyPos.y = (gvMinimapEnemyPos.y - gvMinimapPlayerPosition.y);
 	enemyPos = mul(float4(enemyPos.x, 0.0f, enemyPos.y, 1.0f), gmtxPlayerView).xz;
 	if (sqrt((enemyPos.x*enemyPos.x) + (enemyPos.y*enemyPos.y)) > 320) output.outOfRange = true;
 
@@ -438,23 +434,68 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	{
 		output.pos = float4(fVertices[i] + world, 0.0f, 1.0f);
 		output.uv = fUVs[i];
-		output.eort = eOrT;
 
 		outStream.Append(output);
 	}
 }
+[maxvertexcount(4)]
+void GSMinimapTeam(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStream<GS_UI_MINIMAPROBOT_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x *0.9;
+	float fHalfH = input[0].size.y *1.6;
 
+	float2 fVertices[4];
+	fVertices[0] = float2(input[0].center - fHalfW * vRight - fHalfH * vUp);
+	fVertices[1] = float2(input[0].center - fHalfW * vRight + fHalfH * vUp);
+	fVertices[2] = float2(input[0].center + fHalfW * vRight - fHalfH * vUp);
+	fVertices[3] = float2(input[0].center + fHalfW * vRight + fHalfH * vUp);
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_MINIMAPROBOT_OUT output;
+
+	float2 world = mul(float4(gvMinimapTeamPos.x, 0.0f, gvMinimapTeamPos.y, 1.0f), gmtxPlayerView).xz;
+	world.x *= 0.0009f;
+	world.y *= 0.0016f;
+
+	float2 teamPos;
+	teamPos.x = (gvMinimapTeamPos.x - gvMinimapPlayerPosition.x);
+	teamPos.y = (gvMinimapTeamPos.y - gvMinimapPlayerPosition.y);
+	teamPos = mul(float4(teamPos.x, 0.0f, teamPos.y, 1.0f), gmtxPlayerView).xz;
+	if (sqrt((teamPos.x*teamPos.x) + (teamPos.y*teamPos.y)) > 320)
+		output.outOfRange = true;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = float4(fVertices[i] + world, 0.0f, 1.0f);
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
 
 float4 PSMinimapEnemy(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
 {
 	if (input.outOfRange) discard;
 
 	float4 cColor;
-	if (input.eort == false) {
-		// 0: Àû , 1: ÆÀ
-		cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
-	}
-	else { cColor = gtxtTexture[1].Sample(gssWrap, input.uv); }
+	cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+
+	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
+
+	return(cColor);
+}
+float4 PSMinimapTeam(GS_UI_MINIMAPROBOT_OUT input) : SV_TARGET
+{
+	if (input.outOfRange) discard;
+
+	float4 cColor;
+	cColor = gtxtTexture[1].Sample(gssWrap, input.uv);
 
 	if (cColor.r >= 0.9 && cColor.g >= 0.9 && cColor.b >= 0.9) discard;
 
