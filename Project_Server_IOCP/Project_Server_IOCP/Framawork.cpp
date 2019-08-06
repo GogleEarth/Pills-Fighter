@@ -92,7 +92,7 @@ int Framawork::thread_process()
 			using namespace chrono;
 			float elapsed_time;
 
-			if (over_ex->elapsed_time <= 0.001f)
+			if (over_ex->elapsed_time <= 0.016f)
 				elapsed_time = 0.016f;
 			else
 				elapsed_time = over_ex->elapsed_time;
@@ -245,7 +245,7 @@ int Framawork::thread_process()
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (over_ex->elapsed_time <= 0.016f)
 					elapsed_time = 0.016f;
 				else
 					elapsed_time = over_ex->elapsed_time;
@@ -306,7 +306,7 @@ int Framawork::thread_process()
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (over_ex->elapsed_time <= 0.016f)
 					elapsed_time = 0.016f;
 				else
 					elapsed_time = over_ex->elapsed_time;
@@ -340,7 +340,7 @@ int Framawork::thread_process()
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (over_ex->elapsed_time <= 0.016f)
 					elapsed_time = 0.016f;
 				else
 					elapsed_time = over_ex->elapsed_time;
@@ -368,7 +368,7 @@ int Framawork::thread_process()
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (over_ex->elapsed_time <= 0.016f)
 					elapsed_time = 0.016f;
 				else
 					elapsed_time = over_ex->elapsed_time;
@@ -396,7 +396,7 @@ int Framawork::thread_process()
 				auto object = rooms_[over_ex->room_num].get_object(key);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (over_ex->elapsed_time <= 0.016f)
 					elapsed_time = 0.016f;
 				else
 					elapsed_time = over_ex->elapsed_time;
@@ -422,14 +422,6 @@ int Framawork::thread_process()
 			if (rooms_[over_ex->room_num].get_playing())
 			{
 				auto object = rooms_[over_ex->room_num].get_object(key);
-				float elapsed_time;
-
-				if (over_ex->elapsed_time <= 0.001f)
-					elapsed_time = 0.016f;
-				else
-					elapsed_time = over_ex->elapsed_time;
-
-				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
 
 				if (!object->get_is_die())
 				{

@@ -93,6 +93,7 @@ void GameObject::Animate(float fTimeElapsed, char map)
 		if (is_die_)
 		{
 			ElapsedTime_ += fTimeElapsed;
+			std::cout << 5.0f - ElapsedTime_ << "초 후 부활\n";
 			if (ElapsedTime_ >= respawn_time_)
 			{
 				is_die_ = false;
