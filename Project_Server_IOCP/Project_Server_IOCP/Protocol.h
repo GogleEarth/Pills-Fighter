@@ -48,7 +48,7 @@ typedef enum PKT_ID
 	PKT_ID_MOVE_TEAM,
 	PKT_ID_PLAYER_DIE,
 	PKT_ID_CHANGE_NAME,
-	PKT_ID_RESPAWN_POINT
+	PKT_ID_PLAYER_RESPAWN
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -410,6 +410,7 @@ struct PKT_PLAYER_RESPAWN
 	BYTE		PktId;
 	int			id;
 	XMFLOAT3	point;
+	int			hp;
 };
 
 ///////////////////////////////////////////////////////////

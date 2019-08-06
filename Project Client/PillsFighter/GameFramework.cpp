@@ -1138,16 +1138,22 @@ void CGameFramework::ProcessPacket()
 		m_pScene->ApplyRecvInfo(PKT_ID_MAP_EVENT, (LPVOID)pPacket);
 		break;
 	}
+	case PKT_ID_CHANGE_NAME:
+	{
+		PKT_CHANGE_NAME *pPacket = (PKT_CHANGE_NAME*)m_pPacketBuffer;
+		m_pScene->InitName(pPacket->name);
+		break;
+	}
 	case PKT_ID_PLAYER_DIE:
 	{
 		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)m_pPacketBuffer;
 		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_DIE, (LPVOID)pPacket);
 		break;
 	}
-	case PKT_ID_CHANGE_NAME:
+	case PKT_ID_PLAYER_RESPAWN:
 	{
-		PKT_CHANGE_NAME *pPacket = (PKT_CHANGE_NAME*)m_pPacketBuffer;
-		m_pScene->InitName(pPacket->name);
+		PKT_PLAYER_RESPAWN *pPacket = (PKT_PLAYER_RESPAWN*)m_pPacketBuffer;
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_RESPAWN, (LPVOID)pPacket);
 		break;
 	}
 	default:

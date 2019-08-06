@@ -211,7 +211,7 @@ protected:
 	float m_fRespawnTime = 0.0f;
 
 public:
-	void ProcessDie() { m_bDie = true; }
+	void ProcessDie(float fRespawnTime) { m_bDie = true; m_fRespawnTime = fRespawnTime; }
 	bool IsDie() { return m_bDie; }
 };
 

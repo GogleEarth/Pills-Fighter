@@ -4301,7 +4301,18 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		
 		if (m_pObjects[pPacket->id])
 		{
+			m_pObjects[pPacket->id]->ProcessDie(pPacket->respawntime);
+		}
+		break;
+	}
+	case PKT_ID_PLAYER_RESPAWN:
+	{
+		PKT_PLAYER_RESPAWN *pPacket = (PKT_PLAYER_RESPAWN*)pktData;
+		
+		if (m_pObjects[pPacket->id])
+		{
 			m_pObjects[pPacket->id]->SetHitPoint(pPacket->hp);
+			m_pObjects[pPacket->id]->SetPosition(pPacket->point);
 		}
 		break;
 	}
