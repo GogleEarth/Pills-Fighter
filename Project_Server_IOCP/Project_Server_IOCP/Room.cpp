@@ -306,6 +306,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	OBJECT_TYPE type;
 	XMFLOAT3 look = XMFLOAT3{ matrix._31, matrix._32, matrix._33 };
 	XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
+	EFFECT_TYPE eftype;
 	if (weapon == WEAPON_TYPE_BEAM_RIFLE)
 	{
 		hp = 21;
@@ -313,6 +314,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
 		length = 1000.0f;
+		eftype = EFFECT_TYPE_BEAM_RIFLE;
 	}
 	else if (weapon == WEAPON_TYPE_GM_GUN)
 	{
@@ -321,6 +323,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
 		length = 600.0f;
+		eftype = EFFECT_TYPE_GM_GUN;
 	}
 	else if (weapon == WEAPON_TYPE_BEAM_SNIPER)
 	{
@@ -329,13 +332,14 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
 		length = 2000.0f;
+		eftype = EFFECT_TYPE_BEAM_SNIPER;
 	}
 
 	PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
 	pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
 	pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
 	pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-	pkt_ce->efType = EFFECT_TYPE_LASER_BEAM;
+	pkt_ce->efType = eftype;
 	pkt_ce->xmf3Look = look;
 	pkt_ce->xmf3Position = position;
 	pkt_ce->fDistance = length;
