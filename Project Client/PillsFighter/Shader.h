@@ -579,7 +579,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 19
+#define UI_TEXTURE_COUNT 20
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -597,6 +597,7 @@ protected:
 #define UI_TEXTURE_SLOT 13
 #define UI_TEXTURE_TEAM_HP_BASE 14
 #define UI_TEXTURE_TEAM_HP 15
+#define UI_TEXTURE_TEAM_HP_RESPAWN 19
 #define UI_TEXTURE_BEAM_GAUGE 16
 #define UI_TEXTURE_SCOPE_MASK 17
 #define UI_TEXTURE_BEAM_BULLER_N_EMPTY 18
@@ -626,7 +627,7 @@ struct CB_PLAYER_VALUE
 	int nValue;
 };
 
-struct CB_RELOAD_INFO
+struct CB_RELOAD_N_RESPAWN_INFO
 {
 	float fTextColor;
 	float fReloadTime;
@@ -654,6 +655,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderColored(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHPRespawn(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader3DUI(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -661,7 +663,7 @@ public:
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
-	virtual void UpdateReloadShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fReloadTime, float fReloadElapsedTime);
+	virtual void UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fTime, float fElapsedTime);
 	virtual void UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
 	virtual void UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
 	virtual void ReleaseShaderVariables();
@@ -678,6 +680,7 @@ protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateTeamHP = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateColored = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineState3DUI = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateTeamHPRespawn = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
@@ -691,7 +694,7 @@ protected:
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
 
 	ID3D12Resource					*m_pd3dcbReloadInfo = NULL;
-	CB_RELOAD_INFO					*m_pcbMappedReloadInfo = NULL;
+	CB_RELOAD_N_RESPAWN_INFO		*m_pcbMappedReloadInfo = NULL;
 	
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;

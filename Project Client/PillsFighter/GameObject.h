@@ -209,10 +209,13 @@ public:
 protected:
 	bool m_bDie = false;
 	float m_fRespawnTime = 0.0f;
+	float m_fRespawnTimeElapsed = 0.0f;
 
 public:
-	void ProcessDie(float fRespawnTime) { m_bDie = true; m_fRespawnTime = fRespawnTime; }
+	void ProcessDie(float fRespawnTime);
 	bool IsDie() { return m_bDie; }
+	float GetRespwanTime() { return m_fRespawnTime; }
+	float GetRespwanElapsedTime() { return m_fRespawnTimeElapsed; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

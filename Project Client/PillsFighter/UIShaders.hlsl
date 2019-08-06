@@ -117,17 +117,17 @@ float4 PSUIBullet(GS_UI_OUT input) : SV_TARGET
 	return(cColor);
 }
 
-cbuffer cbReloadInfo : register(UI_RELOAD_INFO)
+cbuffer cbReloadNRespawnInfo : register(UI_RELOAD_N_RESPAWN_INFO)
 {
 	float gfTextColor;
-	float gfReloadTime;
+	float gfNormalizedTime;
 }
 
 float4 PSUIReload(GS_UI_OUT input) : SV_TARGET
 {
 	float4 cColor = float4(1.0f, 0.0f, 0.0f, 0.8f);
 
-	if (input.uv.y < gfReloadTime)
+	if (input.uv.y < gfNormalizedTime)
 	{
 		cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
 		cColor.rgb *= gfTextColor;
@@ -186,6 +186,18 @@ void GSUITeamHP(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout 
 float4 PSUITeamHP(GS_UI_OUT input) : SV_TARGET
 {
 	return gtxtTexture[0].Sample(gssClamp, input.uv);
+}
+
+float4 PSUITeamHPRespawn(GS_UI_OUT input) : SV_TARGET
+{
+	float4 cColor = float4(1.0f, 0.0f, 0.0f, 0.8f);
+
+	if (input.uv.x < gfNormalizedTime)
+	{
+		cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
+	}
+
+	return cColor;
 }
 
 ////////////////////////////////////////////

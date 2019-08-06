@@ -12,7 +12,7 @@
 #define FONT_INFO						b12
 #define LIGHT_CAMERA_INFO				b13
 #define SCREEN_EFFECT					b14
-#define UI_RELOAD_INFO					b15
+#define UI_RELOAD_N_RESPAWN_INFO		b15
 #define MINIMAP_ENEMY_POS				b16
 #define MINIMAP_PLAYER_POS				b17
 #define UI_COLOR_INFO					b18
