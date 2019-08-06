@@ -790,6 +790,7 @@ void Framawork::process_packet(int id, char* packet)
 					pkt_rp.id = i;
 					pkt_rp.hp = rooms_[room_num].get_object(i)->GetMaxHitPoint();
 					pkt_rp.point = rooms_[room_num].get_respawn_point(i);
+					send_packet_to_player(players[i].get_serverid(), (char*)&pkt_rp);
 				}
 			}
 
