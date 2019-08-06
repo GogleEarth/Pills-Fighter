@@ -4052,6 +4052,12 @@ void CMinimapShader::UpdateShaderVariablesTeamPosition(ID3D12GraphicsCommandList
 	if ((*m_vppTeamObject[index])) {
 		XMFLOAT3 position = (*m_vppTeamObject[index])->GetPosition();
 		m_cbMinimapTeamInfo[index]->robotPosition = XMFLOAT2(position.x, position.z);
+
+		XMFLOAT3 playerPosition = m_pPlayer->GetPosition();
+		XMFLOAT2 distance = XMFLOAT2(playerPosition.x - position.x, playerPosition.z - position.z);
+		float temp = sqrt((distance.x*distance.x) + (distance.y*distance.y));
+		if (temp > MINIMAP_SIGHT_RANGE) m_cbMinimapTeamInfo[index]->cut = true;
+		else m_cbMinimapTeamInfo[index]->cut = false;
 	}
 	D3D12_GPU_VIRTUAL_ADDRESS d3dcbGpuVirtualAddress = m_vpd3dcbTeamPosition[index]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO, d3dcbGpuVirtualAddress);
@@ -4061,6 +4067,12 @@ void CMinimapShader::UpdateShaderVariablesEnemyPosition(ID3D12GraphicsCommandLis
 	if ((*m_vppEnemyObject[index])) {
 		XMFLOAT3 position = (*m_vppEnemyObject[index])->GetPosition();
 		m_cbMinimapEnemyInfo[index]->robotPosition = XMFLOAT2(position.x, position.z);
+
+		XMFLOAT3 playerPosition = m_pPlayer->GetPosition();
+		XMFLOAT2 distance = XMFLOAT2(playerPosition.x - position.x, playerPosition.z - position.z);
+		float temp = sqrt((distance.x*distance.x) + (distance.y*distance.y));
+		if (temp > MINIMAP_SIGHT_RANGE) m_cbMinimapEnemyInfo[index]->cut = true;
+		else m_cbMinimapEnemyInfo[index]->cut = false;
 	}
 	D3D12_GPU_VIRTUAL_ADDRESS d3dcbGpuVirtualAddress = m_vpd3dcbEnemyPosition[index]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_ENEMY_INFO, d3dcbGpuVirtualAddress);

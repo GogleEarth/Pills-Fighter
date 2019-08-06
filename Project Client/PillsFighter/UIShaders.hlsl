@@ -378,10 +378,12 @@ VS_UI_MINIMAPROBOT_OUTPUT VSMinimapRobot(VS_UI_MINIMAPROBOT_INPUT input)
 cbuffer cbMinimapEnemyPos : register(MINIMAP_ENEMY_POS)
 {
 	float2 gvMinimapEnemyPos;
+	bool gvMinimapEnemyCut;
 }
 cbuffer cbMinimapTeamPos : register(MINIMAP_TEAM_POS)
 {
 	float2 gvMinimapTeamPos;
+	bool gvMinimapTeamCut;
 }
 
 cbuffer cbMinimapPlayerPos : register(MINIMAP_PLAYER_POS)
@@ -428,7 +430,7 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	enemyPos.x = (gvMinimapEnemyPos.x - gvMinimapPlayerPosition.x);
 	enemyPos.y = (gvMinimapEnemyPos.y - gvMinimapPlayerPosition.y);
 	enemyPos = mul(float4(enemyPos.x, 0.0f, enemyPos.y, 1.0f), gmtxPlayerView).xz;
-	if (sqrt((enemyPos.x*enemyPos.x) + (enemyPos.y*enemyPos.y)) > 320) output.outOfRange = true;
+	if (gvMinimapEnemyCut == true) output.outOfRange = true;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -467,8 +469,7 @@ void GSMinimapTeam(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStrea
 	teamPos.x = (gvMinimapTeamPos.x - gvMinimapPlayerPosition.x);
 	teamPos.y = (gvMinimapTeamPos.y - gvMinimapPlayerPosition.y);
 	teamPos = mul(float4(teamPos.x, 0.0f, teamPos.y, 1.0f), gmtxPlayerView).xz;
-	if (sqrt((teamPos.x*teamPos.x) + (teamPos.y*teamPos.y)) > 320)
-		output.outOfRange = true;
+	if (gvMinimapTeamCut == true) output.outOfRange = true;
 
 	for (int i = 0; i < 4; i++)
 	{
