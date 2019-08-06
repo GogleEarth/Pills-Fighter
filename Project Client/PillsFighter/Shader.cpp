@@ -1889,7 +1889,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 3, 12, 1.0f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 14, 1.0f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
