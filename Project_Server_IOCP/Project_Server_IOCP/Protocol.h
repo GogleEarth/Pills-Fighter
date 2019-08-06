@@ -1,7 +1,7 @@
 #pragma once
 
 ////////////////////////////////////////
-#define ON_NETWORKING
+//#define ON_NETWORKING
 
 #define MAX_NUM_OBJECT 3000
 #define MAX_NAME_LENGTH 10

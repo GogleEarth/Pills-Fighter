@@ -262,12 +262,14 @@ int Framawork::thread_process()
 					OBJECT_TYPE type = object->GetObjectType();
 					if (type == OBJECT_TYPE_MACHINE_BULLET
 						|| type == OBJECT_TYPE_BZK_BULLET
-						|| type == OBJECT_TYPE_BEAM_BULLET)
+						|| type == OBJECT_TYPE_BEAM_BULLET
+						|| type == OBJECT_TYPE_METEOR)
 					{
 						PKT_CREATE_EFFECT pktCE;
 						pktCE.PktId = PKT_ID_CREATE_EFFECT;
 						pktCE.PktSize = (char)sizeof(PKT_CREATE_EFFECT);
-						if (type == OBJECT_TYPE_BZK_BULLET)
+						if (type == OBJECT_TYPE_BZK_BULLET
+							|| type == OBJECT_TYPE_METEOR)
 							pktCE.efType = EFFECT_TYPE_EXPLOSION;
 						else
 							pktCE.efType = EFFECT_TYPE_HIT;

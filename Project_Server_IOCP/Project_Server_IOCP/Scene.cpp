@@ -454,6 +454,48 @@ bool Scene::check_collision_player(int object)
 								life_lock.unlock();
 
 							}
+							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_METEOR)
+							{
+								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+								pkt_pl->ID = i;
+								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+								pkt_pl->HP = Objects_[object].GetHitPoint();
+								pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+								pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+								if (Objects_[i].GetHitPoint() <= 0)
+								{
+									if (Objects_[i].get_team() == 0)
+										red_score_ -= 5;
+									else
+										blue_score_ -= 5;
+									PKT_SCORE* pkt_sco = new PKT_SCORE;
+									pkt_sco->PktId = PKT_ID_SCORE;
+									pkt_sco->PktSize = sizeof(PKT_SCORE);
+									pkt_sco->RedScore = red_score_;
+									pkt_sco->BlueScore = blue_score_;
+
+									Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+									pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+									pkt_pd->hp = Objects_[i].GetMaxHitPoint();
+									pkt_pd->id = i;
+
+									die_lock_.lock();
+									player_die_queue_.push(pkt_pd);
+									die_lock_.unlock();
+
+									score_lock.lock();
+									score_queue_.push(pkt_sco);
+									score_lock.unlock();
+								}
+
+								life_lock.lock();
+								player_life_queue_.push(pkt_pl);
+								life_lock.unlock();
+							}
 							return true;
 						}
 					}
