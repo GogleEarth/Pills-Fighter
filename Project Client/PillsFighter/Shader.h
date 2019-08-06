@@ -352,8 +352,8 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) {}
-	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
-	virtual void AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType);
+	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle, XMFLOAT4 xmf4Color);
+	virtual void AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, XMFLOAT4 xmf4Color);
 
 	virtual void SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame) {}
 
@@ -453,7 +453,7 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void SetFollowObject(int nIndex, CGameObject *pObject, CModel *pFrame);
 
-	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle) {}
+	virtual void AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle, XMFLOAT4 xmf4Color) {}
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 
 protected:
@@ -464,15 +464,17 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define SPRITE_EFFECT_COUNT 3
+#define SPRITE_EFFECT_COUNT 4
 
-#define SPRITE_EFFECT_INDEX_HIT_1 0
-#define SPRITE_EFFECT_INDEX_HIT_2 1
+#define SPRITE_EFFECT_INDEX_SWORD_HIT 0
+#define SPRITE_EFFECT_INDEX_GUN_HIT 1
 #define SPRITE_EFFECT_INDEX_EXPLOSION 2
+#define SPRITE_EFFECT_INDEX_SWORD_HIT_2 3
 
-#define SPRITE_EFFECT_HIT_1_SIZE 15.0f
-#define SPRITE_EFFECT_HIT_2_SIZE 17.5f
+#define SPRITE_EFFECT_GUN_HIT_SIZE 12.5f
+#define SPRITE_EFFECT_SWORD_HIT_SIZE 20.0f
 #define SPRITE_EFFECT_EXPLOSION_SIZE 30.0f
+#define SPRITE_EFFECT_SWORD_HIT_2_SIZE 20.0f
 
 class CSpriteShader : public CEffectShader
 {
@@ -560,7 +562,7 @@ public:
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
-	virtual void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
+	virtual void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum, XMFLOAT4 xmf4Color);
 
 	void SetFollowObject(CGameObject *pObject, CModel *pFrame);
 

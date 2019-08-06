@@ -18,7 +18,6 @@ cbuffer cbSceneInfo : register(SCENE_INFO)
 
 struct EFFECT
 {
-	float4	m_vColor;
 	float	m_fElapsedTime;
 	float	m_fDuration;
 };
@@ -31,6 +30,7 @@ struct VS_EFFECT_INPUT
 	float age : AGE;
 	float2 size : SIZE;
 	int angle : ANGLE;
+	float4 color : COLOR;
 };
 
 struct VS_EFFECT_OUTPUT
@@ -46,7 +46,7 @@ VS_EFFECT_OUTPUT VSEffectDraw(VS_EFFECT_INPUT input)
 	VS_EFFECT_OUTPUT output;
 
 	float fOpacity = 1.0f - smoothstep(0.0f, gEffect.m_fDuration, input.age);
-	output.color = float4(1.0f, 1.0f, 1.0f, fOpacity);
+	output.color = float4(input.color.rgb, fOpacity);
 
 	output.size = input.size;
 	output.position = input.position;
@@ -102,7 +102,7 @@ float4 PSEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET
 {
 	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
 
-	return cColor * input.color * gEffect.m_vColor;
+	return cColor * input.color;
 }
 
 VS_EFFECT_INPUT VSEffectStreamOut(VS_EFFECT_INPUT input)
@@ -128,6 +128,7 @@ struct VS_LASER_EFFECT_INPUT
 	float2	size : SIZE;
 	float	age : AGE;
 	float3	look : LOOK;
+	float4	color : COLOR;
 };
 
 struct VS_LASER_EFFECT_OUTPUT
@@ -135,6 +136,7 @@ struct VS_LASER_EFFECT_OUTPUT
 	float3 position : POSITION;
 	float2 size : SIZE;
 	float3 look : LOOK;
+	float4 color : COLOR;
 };
 
 VS_LASER_EFFECT_OUTPUT VSLaserEffectDraw(VS_LASER_EFFECT_INPUT input)
@@ -144,6 +146,7 @@ VS_LASER_EFFECT_OUTPUT VSLaserEffectDraw(VS_LASER_EFFECT_INPUT input)
 	output.size = input.size;
 	output.position = input.position;
 	output.look = input.look;
+	output.color = input.color;
 
 	return output;
 }
@@ -152,6 +155,7 @@ struct GS_LASER_EFFECT_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD;
+	float4 color : COLOR;
 };
 
 [maxvertexcount(4)]
@@ -177,6 +181,7 @@ void GSLaserEffectDraw(point VS_LASER_EFFECT_OUTPUT input[1], inout TriangleStre
 	fUVs[3] = float2(1.0f, 1.0f);
 
 	GS_LASER_EFFECT_OUTPUT output;
+	output.color = input[0].color;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -187,18 +192,18 @@ void GSLaserEffectDraw(point VS_LASER_EFFECT_OUTPUT input[1], inout TriangleStre
 	}
 }
 
-struct PS_LASER_EFFECT_OUTPUT
+struct PS_EFFECT_OUTPUT
 {
 	float4 color : SV_TARGET0;
 	float4 glow : SV_TARGET1;
 };
 
-PS_LASER_EFFECT_OUTPUT PSLaserEffectDraw(GS_LASER_EFFECT_OUTPUT input)
+PS_EFFECT_OUTPUT PSLaserEffectDraw(GS_LASER_EFFECT_OUTPUT input)
 {
-	PS_LASER_EFFECT_OUTPUT output;
+	PS_EFFECT_OUTPUT output;
 
-	output.color = gtxtTexture[0].Sample(gssWrap, input.uv);
-	output.glow = gtxtTexture[1].Sample(gssWrap, input.uv);
+	output.color = gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
+	output.glow = gtxtTexture[1].Sample(gssWrap, input.uv) * input.color;
 
 	return output;
 }
@@ -227,7 +232,6 @@ struct FOLLOW_EFFECT
 {
 	float3	m_f3Position;
 	float	m_fElapsedTime;
-	float4	m_f4Color;
 	float	m_fDuration;
 };
 
@@ -271,7 +275,7 @@ void GSFollowEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS
 
 float4 PSFollowEffectDraw(GS_EFFECT_OUTPUT input) : SV_TARGET1
 {
-	return gtxtTexture[0].Sample(gssWrap, input.uv);
+	return gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
 }
 
 [maxvertexcount(1)]
@@ -338,26 +342,29 @@ ConstantBuffer<SPRITE> gSprite : register(SPRITE_INFO);
 
 struct VS_SPRITE_INPUT
 {
-	float3 position : POSITION;
-	float2 size : SIZE;
-	uint2 spritepos : SPRITEPOS;
-	float age : AGE;
-	uint type : TYPE;
-	int angle : ANGLE;
+	float3	position : POSITION;
+	float2	size : SIZE;
+	uint2	spritepos : SPRITEPOS;
+	float	age : AGE;
+	uint	type : TYPE;
+	int		angle : ANGLE;
+	float4	color : COLOR;
 };
 
 struct VS_SPRITE_OUTPUT
 {
-	float3 position : POSITION;
-	float2 size : SIZE;
-	uint2 spritepos : SPRITEPOS;
-	int angle : ANGLE;
+	float3	position : POSITION;
+	float2	size : SIZE;
+	uint2	spritepos : SPRITEPOS;
+	int		angle : ANGLE;
+	float4	color : COLOR;
 };
 
 struct GS_SPRITE_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD;
+	float4 color : COLOR;
 };
 
 VS_SPRITE_OUTPUT VSSpriteDraw(VS_SPRITE_INPUT input)
@@ -368,6 +375,7 @@ VS_SPRITE_OUTPUT VSSpriteDraw(VS_SPRITE_INPUT input)
 	output.size = input.size;
 	output.spritepos = input.spritepos;
 	output.angle = input.angle;
+	output.color = input.color;
 
 	return output;
 }
@@ -397,6 +405,7 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_SPRITE_OUTPUT output;
+	output.color = input[0].color;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -409,11 +418,13 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 	}
 }
 
-float4 PSSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
+PS_EFFECT_OUTPUT PSSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
 {
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	PS_EFFECT_OUTPUT output;
 
-	return cColor * gEffect.m_vColor;
+	output.color = output.glow = gtxtTexture[0].Sample(gssWrap, input.uv)* input.color;
+
+	return output;
 }
 
 VS_SPRITE_INPUT VSSpriteStreamOut(VS_SPRITE_INPUT input)
@@ -484,6 +495,7 @@ void GSFollowSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS
 	fUVs[3] = float2(1.0f, 0.0f);
 
 	GS_SPRITE_OUTPUT output;
+	output.color = input[0].color;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -496,18 +508,12 @@ void GSFollowSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS
 	}
 }
 
-struct PS_FOLLOW_SPRITE_OUTPUT
+PS_EFFECT_OUTPUT PSFollowSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
 {
-	float4 color : SV_TARGET0;
-	float4 glow : SV_TARGET1;
-};
+	PS_EFFECT_OUTPUT output;
 
-PS_FOLLOW_SPRITE_OUTPUT PSFollowSpriteDraw(GS_SPRITE_OUTPUT input) : SV_TARGET
-{
-	PS_FOLLOW_SPRITE_OUTPUT output;
-
-	output.color = gtxtTexture[0].Sample(gssWrap, input.uv);
-	output.glow = gtxtTexture[0].Sample(gssWrap, input.uv);
+	output.color = gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
+	output.glow = gtxtTexture[0].Sample(gssWrap, input.uv) * input.color;
 
 	return output;
 }
@@ -533,7 +539,6 @@ struct PARTICLE
 	bool	m_bEmit;
 	float3	m_vAngles;
 	bool	m_bScaling;
-	float4	m_vColor;
 };
 
 ConstantBuffer<PARTICLE> gParticle : register(PARTICLE_INFO);
@@ -546,6 +551,7 @@ struct VS_PARTICLE_INPUT
 	int		type : TYPE;
 	float	age : AGE;
 	int		angle : ANGLE;
+	float4	color : COLOR;
 };
 
 struct VS_PARTICLE_SO_OUTPUT
@@ -557,6 +563,7 @@ struct VS_PARTICLE_SO_OUTPUT
 	float	age : AGE;
 	float	verid : VERTEXID;
 	int		angle : ANGLE;
+	float4	color : COLOR;
 };
 
 VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID : SV_VertexID)
@@ -569,6 +576,7 @@ VS_PARTICLE_SO_OUTPUT VSParticleStreamOut(VS_PARTICLE_INPUT input, uint nVerID :
 	output.age = input.age;
 	output.verid = float(nVerID);
 	output.angle = input.angle;
+	output.color = input.color;
 
 	return output;
 }
@@ -583,6 +591,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 	output.type = input[0].type;
 	output.age = input[0].age + gParticle.m_fElapsedTime;
 	output.angle = input[0].angle;
+	output.color = input[0].color;
 
 	if ((input[0].type == PARTICLE_TYPE_EMITTER) || (input[0].type == PARTICLE_TYPE_ONE_EMITTER))
 	{
@@ -607,6 +616,7 @@ void GSParticleStreamOut(point VS_PARTICLE_SO_OUTPUT input[1], inout PointStream
 			particle.type = PARTICLE_TYPE_COMMON;
 			particle.age = 0.0f;
 			particle.angle = vRandom.w / 360.0f;
+			particle.color = output.color;
 
 			pointStream.Append(particle);
 
@@ -649,7 +659,7 @@ VS_PARTICLE_OUTPUT VSParticleDraw(VS_PARTICLE_INPUT input)
 	output.position = (input.velocity * t) + (vGravity * t * t * gParticle.m_fMass) + input.position;
 
 	float fOpacity = 1.0f - smoothstep(0.0f, gParticle.m_fDuration, input.age);
-	output.color = float4(1.0f, 1.0f, 1.0f, fOpacity);
+	output.color = float4(input.color.rgb, fOpacity);
 
 	output.size = input.size;
 
@@ -685,18 +695,20 @@ void GSParticleDraw(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_P
 	vQuads[3] = float4(input[0].position - fHalfWidth * vRight + fHalfHeight * vUp, 1.0f);
 
 	GS_PARTICLE_OUTPUT output;
+	output.color = input[0].color;
+
 	for (int i = 0; i < 4; i++)
 	{
 		output.position = mul(vQuads[i], gmtxViewProjection);
 		output.uv = gvQuadTexCoord[i];
-		output.color = input[0].color;
 		triStream.Append(output);
 	}
 }
 
-float4 PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET1
+PS_EFFECT_OUTPUT PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET1
 {
-	float4 cColor = gtxtTexture[0].Sample(gssWrap, input.uv);
+	PS_EFFECT_OUTPUT output;
+	output.color = output.glow = gtxtTexture[0].Sample(gssWrap, input.uv)* input.color;
 
-	return cColor * gParticle.m_vColor * input.color;
+	return output;
 }

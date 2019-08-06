@@ -198,6 +198,13 @@ private:
 public:
 	void SetCollisionRadius(float radius) { collisionRadius = radius; }
 	float GetCollisionRadius() { return collisionRadius; }
+
+protected:
+	std::unordered_set<CGameObject*> m_uspHitObjects;
+
+public:
+	bool CheckDidHitObject(CGameObject *pObject) { return m_uspHitObjects.count(pObject) > 0; }
+	void AddHitObject(CGameObject* pObject) { m_uspHitObjects.emplace(pObject); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -381,14 +388,9 @@ protected:
 	
 public:
 	virtual void AfterAdvanceAnimationController();
-
-protected:
-	bool m_bHitSword = false;
-
-public:
-	bool IsHitSword() { return m_bHitSword; }
-	void HitSword() { m_bHitSword = true; }
 	virtual bool ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
+
+	bool IsAnimationSwording() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_1_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_2_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_3_ONCE); }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

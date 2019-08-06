@@ -19,7 +19,6 @@ CFMODSound::CFMODSound()
 	m_pfmodSystem->createSound("./Resource/SE/PickHeal.wav", FMOD_DEFAULT, NULL, &m_pSoundPickHeal);
 	m_pfmodSystem->createSound("./Resource/SE/SaberAttack.wav", FMOD_DEFAULT, NULL, &m_pSoundSaberAttack);
 	m_pfmodSystem->createSound("./Resource/SE/SaberHit1.wav", FMOD_DEFAULT, NULL, &m_pSoundSaberHit1);
-	m_pfmodSystem->createSound("./Resource/SE/SaberHit2.wav", FMOD_DEFAULT, NULL, &m_pSoundSaberHit2);
 	m_pfmodSystem->createSound("./Resource/SE/Booster.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundBooster);
 	m_pfmodSystem->createSound("./Resource/SE/Alert.wav", FMOD_DEFAULT, NULL, &m_pSoundAlert);
 	m_pfmodSystem->createSound("./Resource/SE/BeamRifle.wav", FMOD_DEFAULT, NULL, &m_pSoundBeamRifle);
@@ -40,6 +39,7 @@ CFMODSound::~CFMODSound()
 	m_pSoundSaberAttack->release();
 	m_pSoundAlert->release();
 	m_pSoundBeamRifle->release();
+	m_pSoundSaberHit1->release();
 
 	m_pfmodSystem->close();
 	m_pfmodSystem->release();

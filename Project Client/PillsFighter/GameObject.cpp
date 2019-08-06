@@ -1028,7 +1028,10 @@ bool CRobotObject::ChangeAnimation(int nController, int nTrack, int nAnimation, 
 {
 	if (CAnimationObject::ChangeAnimation(nController, nTrack, nAnimation, bResetPosition))
 	{
-		m_bHitSword = false;
+		if (nController == ANIMATION_UP)
+		{
+			m_uspHitObjects.clear();
+		}
 
 		return true;
 	}

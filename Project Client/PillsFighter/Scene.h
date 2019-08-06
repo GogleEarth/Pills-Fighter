@@ -745,8 +745,8 @@ protected:
 public:
 	float GetToTargetDistance() { return m_fCameraToTarget; }
 
-	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum);
-	void AddEffect(int nEffect, XMFLOAT3 xmf3Position, int nType);
+	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum, XMFLOAT4 xmf4Color);
+	void AddEffect(int nEffect, XMFLOAT3 xmf3Position, int nType, XMFLOAT4 xmf4Color);
 
 protected:
 	CMinimapShader						*m_pMinimapShader = NULL;

@@ -1220,13 +1220,14 @@ CEffectShader::~CEffectShader()
 
 D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 4;
+	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1237,13 +1238,14 @@ D3D12_INPUT_LAYOUT_DESC CEffectShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CEffectShader::CreateStreamOutput()
 {
-	UINT nSODecls = 4;
+	UINT nSODecls = 5;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
 	pd3dStreamOutputDeclarations[1] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[2] = { 0, "SIZE", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "ANGLE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[4] = { 0, "COLOR", 0, 0, 4, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1394,14 +1396,14 @@ void CEffectShader::AfterRender(ID3D12GraphicsCommandList *pd3dCommandList)
 		if (m_ppEffects[i]) m_ppEffects[i]->AfterRender(pd3dCommandList);
 }
 
-void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle)
+void CEffectShader::AddEffect(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle, XMFLOAT4 xmf4Color)
 {
-	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nEffectAniType, nAngle);
+	if(m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertex(xmf3Position, xmf2Size, nEffectAniType, nAngle, xmf4Color);
 }
 
-void CEffectShader::AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType)
+void CEffectShader::AddEffectWithLookV(int nIndex, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, XMFLOAT4 xmf4Color)
 {
-	if (m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertexWithLookV(xmf3Position, xmf2Size, xmf3Look, nEffectAniType);
+	if (m_ppEffects[nIndex]) m_ppEffects[nIndex]->AddVertexWithLookV(xmf3Position, xmf2Size, xmf3Look, nEffectAniType, xmf4Color);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1522,13 +1524,14 @@ CLaserEffectShader::~CLaserEffectShader()
 
 D3D12_INPUT_LAYOUT_DESC CLaserEffectShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 4;
+	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "LOOK", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1539,13 +1542,14 @@ D3D12_INPUT_LAYOUT_DESC CLaserEffectShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CLaserEffectShader::CreateStreamOutput()
 {
-	UINT nSODecls = 4;
+	UINT nSODecls = 5;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
 	pd3dStreamOutputDeclarations[1] = { 0, "SIZE", 0, 0, 2, 0 };
 	pd3dStreamOutputDeclarations[2] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[3] = { 0, "LOOK", 0, 0, 3, 0 };
+	pd3dStreamOutputDeclarations[4] = { 0, "COLOR", 0, 0, 4, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1673,7 +1677,7 @@ void CFollowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		pEffect = new CFollowEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-		pEffect->AddVertex(XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), 0, 0);
+		pEffect->AddVertex(XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), 0, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		m_pvpTempEffects[FOLLOW_EFFECT_INDEX_BOOSTER].push(pEffect);
 	}
@@ -1779,7 +1783,7 @@ CSpriteShader::~CSpriteShader()
 
 D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 6;
+	UINT nInputElementDescs = 7;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -1788,6 +1792,7 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 	pd3dInputElementDescs[3] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[5] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[6] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1798,7 +1803,7 @@ D3D12_INPUT_LAYOUT_DESC CSpriteShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 {
-	UINT nSODecls = 6;
+	UINT nSODecls = 7;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
@@ -1807,6 +1812,7 @@ D3D12_STREAM_OUTPUT_DESC CSpriteShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[3] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "TYPE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[5] = { 0, "ANGLE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[6] = { 0, "COLOR", 0, 0, 4, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1852,22 +1858,30 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_nEffects = SPRITE_EFFECT_COUNT;
 	m_ppTextures = new CTexture*[m_nEffects];
 	m_ppEffects = new CEffect*[m_nEffects];;
+	
+	//
+	m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Gun_Hit.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppEffects[SPRITE_EFFECT_INDEX_GUN_HIT] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.1f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_GUN_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Hit1.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Sword_Hit.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_1]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.05f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
-	m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Hit2.dds", 0);
-	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Sword_Hit2.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.2f);
-	m_ppEffects[SPRITE_EFFECT_INDEX_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 2, 6, 0.05f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
 	m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
@@ -1892,7 +1906,7 @@ CFollowSpriteShader::~CFollowSpriteShader()
 
 D3D12_INPUT_LAYOUT_DESC CFollowSpriteShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 6;
+	UINT nInputElementDescs = 7;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -1901,6 +1915,7 @@ D3D12_INPUT_LAYOUT_DESC CFollowSpriteShader::CreateInputLayout()
 	pd3dInputElementDescs[3] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[5] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[6] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -1911,7 +1926,7 @@ D3D12_INPUT_LAYOUT_DESC CFollowSpriteShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CFollowSpriteShader::CreateStreamOutput()
 {
-	UINT nSODecls = 6;
+	UINT nSODecls = 7;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
@@ -1920,6 +1935,7 @@ D3D12_STREAM_OUTPUT_DESC CFollowSpriteShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[3] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "TYPE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[5] = { 0, "ANGLE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[6] = { 0, "COLOR", 0, 0, 4, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -1973,7 +1989,7 @@ void CFollowSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		pEffect = new CFollowSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 4, 20, 0.5f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-		pEffect->AddVertex(XMFLOAT3(0.0f, -2.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), EFFECT_SPRITE_TYPE_LOOP, 0);
+		pEffect->AddVertex(XMFLOAT3(0.0f, -2.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), EFFECT_SPRITE_TYPE_LOOP, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		m_pvpTempEffects[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER].push(pEffect);
 	}
@@ -2041,7 +2057,7 @@ CParticleShader::~CParticleShader()
 
 D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 6;
+	UINT nInputElementDescs = 7;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
@@ -2050,6 +2066,7 @@ D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 	pd3dInputElementDescs[3] = { "TYPE", 0, DXGI_FORMAT_R32_SINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[4] = { "AGE", 0, DXGI_FORMAT_R32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[5] = { "ANGLE", 0, DXGI_FORMAT_R32_SINT, 0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[6] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -2060,7 +2077,7 @@ D3D12_INPUT_LAYOUT_DESC CParticleShader::CreateInputLayout()
 
 D3D12_STREAM_OUTPUT_DESC CParticleShader::CreateStreamOutput()
 {
-	UINT nSODecls = 6;
+	UINT nSODecls = 7;
 	D3D12_SO_DECLARATION_ENTRY *pd3dStreamOutputDeclarations = new D3D12_SO_DECLARATION_ENTRY[nSODecls];
 
 	pd3dStreamOutputDeclarations[0] = { 0, "POSITION", 0, 0, 3, 0 };
@@ -2069,6 +2086,7 @@ D3D12_STREAM_OUTPUT_DESC CParticleShader::CreateStreamOutput()
 	pd3dStreamOutputDeclarations[3] = { 0, "TYPE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[4] = { 0, "AGE", 0, 0, 1, 0 };
 	pd3dStreamOutputDeclarations[5] = { 0, "ANGLE", 0, 0, 1, 0 };
+	pd3dStreamOutputDeclarations[6] = { 0, "COLOR", 0, 0, 4, 0 };
 
 	UINT nStrides = 1;
 	UINT *pnStride = new UINT[nStrides];
@@ -2191,7 +2209,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 20.0f, 1.0f, false, 2.0f,
-			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		CParticleVertex *pParticleVertex = new CParticleVertex();
@@ -2200,6 +2218,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		pParticleVertex->m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		pParticleVertex->m_xmf2Size = XMFLOAT2(4.0f, 4.0f);
 		pParticleVertex->m_nType = PARTICLE_TYPE_EMITTER;
+		pParticleVertex->m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		pParticleVertex->m_fAge = 0.0f;
 
 		pParticle->AddVertex(pParticleVertex, 1);
@@ -2208,7 +2227,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 
 		pParticle = new CParticle(pd3dDevice, pd3dCommandList);
 		pParticle->Initialize(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 5.0f, 4.0f, true, 0.1f,
-			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+			XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 90.0f, 90.0f));
 		pParticle->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		pParticleVertex = new CParticleVertex();
@@ -2217,6 +2236,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 		pParticleVertex->m_xmf3Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		pParticleVertex->m_xmf2Size = XMFLOAT2(6.0f, 6.0f);
 		pParticleVertex->m_nType = PARTICLE_TYPE_EMITTER;
+		pParticleVertex->m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		pParticleVertex->m_fAge = 0.0f;
 
 		pParticle->AddVertex(pParticleVertex, 1);
@@ -2237,7 +2257,7 @@ void CParticleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommand
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[PARTICLE_TEXTURE_INDEX_BOOSTER_FOG], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 }
 
-void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
+void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum, XMFLOAT4 xmf4Color)
 {
 	CParticleVertex *pParticleVertex = new CParticleVertex[nNum];
 
@@ -2248,6 +2268,7 @@ void CParticleShader::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum)
 		pParticleVertex[i].m_xmf2Size = XMFLOAT2(1.0f, 1.0f);
 		pParticleVertex[i].m_nType = PARTICLE_TYPE_ONE_EMITTER;
 		pParticleVertex[i].m_fAge = 0.0f;
+		pParticleVertex[i].m_xmf4Color = xmf4Color;
 	}
 }
 

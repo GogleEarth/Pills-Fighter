@@ -8,7 +8,6 @@ class CModel;
 
 struct CB_EFFECT_INFO
 {
-	XMFLOAT4 m_xmf4Color;
 	float m_fElapsedTime;
 	float m_fDuration;
 };
@@ -19,6 +18,7 @@ struct CEffectVertex
 	float		m_fAge;
 	XMFLOAT2	m_xmf2Size;
 	int			m_nAngle;
+	XMFLOAT4	m_xmf4Color;
 };
 
 class CEffect
@@ -50,7 +50,6 @@ protected:
 	int									m_nVertices = 0;
 	UINT								m_nBytes = 0;
 
-	XMFLOAT4							m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	float								m_fElapsedTime = 0.0f;
 	float								m_fDuration = 0.0f;
 
@@ -69,8 +68,8 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void AfterRender(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
-	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType) {}
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle, XMFLOAT4 xmf4Color);
+	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, XMFLOAT4 xmf4Color) {}
 
 	virtual void SetFollowObject(CGameObject *pObject, CModel *pModel) {}
 	virtual void SetToFollowFramePosition() {}
@@ -84,6 +83,7 @@ struct CLaserVertex
 	XMFLOAT2	m_xmf2Size;
 	float		m_fAge;
 	XMFLOAT3	m_xmf3Look;
+	XMFLOAT4	m_xmf4Color;
 };
 
 class CLaserBeam : public CEffect
@@ -92,7 +92,7 @@ public:
 	CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration);
 	virtual ~CLaserBeam();
 
-	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType);
+	virtual void AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XMFLOAT3 xmf3Look, int nEffectAniType, XMFLOAT4 xmf4Color);
 };
 
 /////////////////////////////////////////////////////////
@@ -101,7 +101,6 @@ struct CB_FOLLOW_EFFECT
 {
 	XMFLOAT3 xmf3Position;
 	float m_fElapsedTime;
-	XMFLOAT4 m_xmf4Color;
 	float m_fDuration;
 };
 
@@ -154,6 +153,7 @@ struct CSpriteVertex
 	float		m_fAge;
 	UINT		m_nType;
 	int			m_nAngle;
+	XMFLOAT4	m_xmf4Color;
 };
 
 class CSprite : public CEffect
@@ -166,7 +166,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 	
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle, XMFLOAT4 xmf4Color);
 
 protected:
 	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
@@ -193,7 +193,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle);
+	virtual void AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAniType, int nAngle, XMFLOAT4 xmf4Color);
 
 protected:
 	XMFLOAT2			m_xmf2SpriteSize = XMFLOAT2(0.0f, 0.0f);
@@ -225,6 +225,7 @@ struct CParticleVertex
 	int			m_nType;
 	float		m_fAge;
 	int			m_nAngle;
+	XMFLOAT4	m_xmf4Color;
 };
 
 struct CB_PARTICLE_INFO
@@ -241,7 +242,6 @@ struct CB_PARTICLE_INFO
 	bool		m_bEmit;
 	XMFLOAT3	m_vAngles;
 	bool		m_bScaling;
-	XMFLOAT4	m_xmf4Color;
 };
 
 class CParticle
@@ -278,7 +278,6 @@ protected:
 	XMFLOAT3							m_xmf3Angles;
 	bool								m_bScaling = false;
 	float								m_fMass = 0.0f;
-	XMFLOAT4							m_xmf4Color;
 
 	int									m_nVertices = 0;
 
@@ -301,7 +300,7 @@ public:
 	virtual void ReadVertexCount(ID3D12GraphicsCommandList *pd3dCommandList);
 
 	virtual void Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, bool bScaling, float fMass,
-		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles, XMFLOAT4 xmf4Color);
+		XMFLOAT3 xmf3Right, XMFLOAT3 xmf3Up, XMFLOAT3 xmf3Look, XMFLOAT3 xmf3Angles);
 
 	virtual void AddVertex(CParticleVertex *pParticleVertices, int nVertices);
 

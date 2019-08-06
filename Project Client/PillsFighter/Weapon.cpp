@@ -157,7 +157,7 @@ void CGun::Shot()
 
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 
-	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360);
+	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 #else
 	pPlayer->SendShootPacket();
 #endif
@@ -375,7 +375,7 @@ void CBeamGun::Shot()
 	XMFLOAT3 xmf3Look = Vector3::Normalize(xmf3Distance);
 	float fDistance = Vector3::Length(xmf3Distance);
 
-	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(3.0f, fDistance), xmf3Look, 0);
+	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(3.0f, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 #else
 	pPlayer->SendShootPacket();

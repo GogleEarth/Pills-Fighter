@@ -180,7 +180,6 @@ public:
 	bool IsDoingAttack() { return (m_nState & OBJECT_STATE_SHOOTING) || (m_nState & OBJECT_STATE_SWORDING); }
 	bool IsShooting() { return m_nState & OBJECT_STATE_SHOOTING; }
 	bool IsSwording() { return m_nState & OBJECT_STATE_SWORDING; }
-	bool IsAnimationSwording() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_1_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_2_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_3_ONCE); }
 	bool IsMoving() { return IsJumping() || IsWalking() || IsBoostering() || IsDoingAttack(); }
 	bool IsIdle() { return !IsMoving(); }
 	bool IsUnderBodyChangeable() { return !IsJumping() && !IsWalking() && !IsDash() && IsOnGround(); }
