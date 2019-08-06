@@ -4315,15 +4315,13 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 
 		if (gClientIndex == pPacket->id)
 		{
-			m_pPlayer->SetHitPoint(pPacket->hp);
-			m_pPlayer->SetPosition(pPacket->point);
+			m_pPlayer->ProcessRespawn(pPacket->hp, pPacket->point);
 		}
 		else
-			if (m_pObjects[pPacket->id])
-			{
-				m_pObjects[pPacket->id]->SetHitPoint(pPacket->hp);
-				m_pObjects[pPacket->id]->SetPosition(pPacket->point);
-			}
+		{
+			if (m_pObjects[pPacket->id]) 
+				m_pObjects[pPacket->id]->ProcessRespawn(pPacket->hp, pPacket->point);
+		}
 		break;
 	}
 	}
