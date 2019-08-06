@@ -208,6 +208,7 @@ public:
 
 protected:
 	bool m_bDie = false;
+	float m_fRespawnTime = 0.0f;
 
 public:
 	void ProcessDie() { m_bDie = true; }

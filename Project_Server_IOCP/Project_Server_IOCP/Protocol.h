@@ -388,14 +388,6 @@ struct PKT_MAP_EVENT
 	float gravity;
 };
 
-struct PKT_PLAYER_DIE
-{
-	BYTE PktSize;
-	BYTE PktId;
-	int id;
-	DWORD hp;
-};
-
 struct PKT_GAME_STATE
 {
 	BYTE		PktSize;
@@ -404,10 +396,19 @@ struct PKT_GAME_STATE
 	BYTE		num_player;
 };
 
-struct PKT_RESPAWN_POINT
+struct PKT_PLAYER_DIE
+{
+	BYTE PktSize;
+	BYTE PktId;
+	int id;
+	float respawntime;
+};
+
+struct PKT_PLAYER_RESPAWN
 {
 	BYTE		PktSize;
 	BYTE		PktId;
+	int			id;
 	XMFLOAT3	point;
 };
 
