@@ -121,6 +121,8 @@ void Scene::init(CRepository * pRepository)
 		Objects_[i].SetMaxHitPoint(PLAYER_HP);
 		Objects_[i].SetHitPoint(PLAYER_HP);
 		Objects_[i].SetPlay(false);
+		Objects_[i].set_is_player(true);
+		Objects_[i].set_is_die(false);
 	}
 
 	Objects_[0].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
@@ -147,12 +149,15 @@ void Scene::init()
 	{
 		Objects_[i].Delete();
 		Objects_[i].SetUse(false);
+		Objects_[i].set_elapsed_time_to_zero();
 	}
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
 		Objects_[i].SetHitPoint(PLAYER_HP);
 		Objects_[i].SetPlay(false);
+		Objects_[i].set_is_die(false);
+		Objects_[i].set_elapsed_time_to_zero();
 	}
 
 	Objects_[0].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
@@ -269,136 +274,17 @@ bool Scene::check_saber_collision_player(int object)
 	{
 		if (Objects_[i].GetPlay())
 		{
-			for (auto objaabb : Objects_[object].GetAABB())
+			if (!Objects_[i].get_is_die())
 			{
-				for (auto playeraabb : Objects_[i].GetAABB())
+				for (auto objaabb : Objects_[object].GetAABB())
 				{
-					if (objaabb.Intersects(playeraabb))
+					for (auto playeraabb : Objects_[i].GetAABB())
 					{
-						if (Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
+						if (objaabb.Intersects(playeraabb))
 						{
-							if (i == Objects_[object].get_owner_id()) continue;
-							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
-							pkt_pl->ID = i;
-							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-							pkt_pl->HP = Objects_[object].GetHitPoint();
-							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
-							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
-
-							PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
-							pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
-							pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
-							pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
-							pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							auto position = Objects_[i].GetPosition();
-							position.y += 20.0f;
-							pkt_ce->xmf3Position = position;
-							pkt_ce->id = Objects_[object].get_owner_id();
-
-							effect_lock_.lock();
-							create_effect_queue_.push(pkt_ce);
-							effect_lock_.unlock();
-
-							if (Objects_[i].GetHitPoint() <= 0)
+							if (Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
 							{
-								if (Objects_[i].get_team() == 0)
-									red_score_ -= 5;
-								else
-									blue_score_ -= 5;
-								PKT_SCORE* pkt_sco = new PKT_SCORE;
-								pkt_sco->PktId = PKT_ID_SCORE;
-								pkt_sco->PktSize = sizeof(PKT_SCORE);
-								pkt_sco->RedScore = red_score_;
-								pkt_sco->BlueScore = blue_score_;
-
-								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
-
-								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
-								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
-								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-								pkt_pd->hp = Objects_[i].GetMaxHitPoint();
-								pkt_pd->id = i;
-
-								die_lock_.lock();
-								player_die_queue_.push(pkt_pd);
-								die_lock_.unlock();
-
-								score_lock.lock();
-								score_queue_.push(pkt_sco);
-								score_lock.unlock();
-							}
-
-							life_lock.lock();
-							player_life_queue_.push(pkt_pl);
-							life_lock.unlock();
-
-						}
-						return true;
-					}
-				}
-			}
-		}
-	}
-
-	return false;
-}
-
-bool Scene::check_collision_player(int object)
-{
-	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
-	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
-	float distance;
-
-	for (int i = 0; i < MAX_CLIENT; ++i)
-	{
-		if (Objects_[i].GetPlay())
-		{
-			for (auto playeraabb : Objects_[i].GetAABB())
-			{
-				if (playeraabb.Intersects(origin, direction, distance))
-				{
-					XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
-					float len = Vector3::Length(length);
-					if (distance <= len)
-					{
-						if (i != Objects_[object].get_owner_id())
-						{
-							if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
-								Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
-							{
-								PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
-								pkt_pi->PktId = PKT_ID_PICK_ITEM;
-								pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
-								pkt_pi->ID = i;
-								pkt_pi->AMMO = Objects_[object].GetHitPoint();
-								if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1)
-									pkt_pi->Item_type = ITEM_TYPE_AMMO1;
-								else
-									pkt_pi->Item_type = ITEM_TYPE_AMMO2;
-								item_lock.lock();
-								item_queue_.push(pkt_pi);
-								item_lock.unlock();
-							}
-							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
-							{
-								PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
-								pkt_pi->PktId = PKT_ID_PICK_ITEM;
-								pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
-								pkt_pi->ID = i;
-								pkt_pi->HP = Objects_[object].GetHitPoint();
-								pkt_pi->Item_type = ITEM_TYPE_HEALING;
-
-								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
-
-								item_lock.lock();
-								item_queue_.push(pkt_pi);
-								item_lock.unlock();
-							}
-							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
-								Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
-								Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET ||
-								Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
-							{
+								if (i == Objects_[object].get_owner_id()) continue;
 								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 								pkt_pl->ID = i;
 								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
@@ -437,8 +323,10 @@ bool Scene::check_collision_player(int object)
 									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
 									pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-									pkt_pd->hp = Objects_[i].GetMaxHitPoint();
+									pkt_pd->respawntime = 5.0f;
 									pkt_pd->id = i;
+
+									Objects_[i].set_is_die(true);
 
 									die_lock_.lock();
 									player_die_queue_.push(pkt_pd);
@@ -453,50 +341,179 @@ bool Scene::check_collision_player(int object)
 								player_life_queue_.push(pkt_pl);
 								life_lock.unlock();
 
-							}
-							else if (Objects_[object].GetObjectType() == OBJECT_TYPE_METEOR)
-							{
-								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
-								pkt_pl->ID = i;
-								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-								pkt_pl->HP = Objects_[object].GetHitPoint();
-								pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
-								pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
-
-								if (Objects_[i].GetHitPoint() <= 0)
-								{
-									if (Objects_[i].get_team() == 0)
-										red_score_ -= 5;
-									else
-										blue_score_ -= 5;
-									PKT_SCORE* pkt_sco = new PKT_SCORE;
-									pkt_sco->PktId = PKT_ID_SCORE;
-									pkt_sco->PktSize = sizeof(PKT_SCORE);
-									pkt_sco->RedScore = red_score_;
-									pkt_sco->BlueScore = blue_score_;
-
-									Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
-
-									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
-									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
-									pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-									pkt_pd->hp = Objects_[i].GetMaxHitPoint();
-									pkt_pd->id = i;
-
-									die_lock_.lock();
-									player_die_queue_.push(pkt_pd);
-									die_lock_.unlock();
-
-									score_lock.lock();
-									score_queue_.push(pkt_sco);
-									score_lock.unlock();
-								}
-
-								life_lock.lock();
-								player_life_queue_.push(pkt_pl);
-								life_lock.unlock();
 							}
 							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+bool Scene::check_collision_player(int object)
+{
+	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
+	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
+	float distance;
+
+	for (int i = 0; i < MAX_CLIENT; ++i)
+	{
+		if (Objects_[i].GetPlay())
+		{
+			if (!Objects_[i].get_is_die())
+			{
+				for (auto playeraabb : Objects_[i].GetAABB())
+				{
+					if (playeraabb.Intersects(origin, direction, distance))
+					{
+						XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
+						float len = Vector3::Length(length);
+						if (distance <= len)
+						{
+							if (i != Objects_[object].get_owner_id())
+							{
+								if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
+									Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
+								{
+									PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
+									pkt_pi->PktId = PKT_ID_PICK_ITEM;
+									pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
+									pkt_pi->ID = i;
+									pkt_pi->AMMO = Objects_[object].GetHitPoint();
+									if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1)
+										pkt_pi->Item_type = ITEM_TYPE_AMMO1;
+									else
+										pkt_pi->Item_type = ITEM_TYPE_AMMO2;
+									item_lock.lock();
+									item_queue_.push(pkt_pi);
+									item_lock.unlock();
+								}
+								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
+								{
+									PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
+									pkt_pi->PktId = PKT_ID_PICK_ITEM;
+									pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
+									pkt_pi->ID = i;
+									pkt_pi->HP = Objects_[object].GetHitPoint();
+									pkt_pi->Item_type = ITEM_TYPE_HEALING;
+
+									Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
+
+									item_lock.lock();
+									item_queue_.push(pkt_pi);
+									item_lock.unlock();
+								}
+								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
+									Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
+									Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET ||
+									Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
+								{
+									PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+									pkt_pl->ID = i;
+									Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+									pkt_pl->HP = Objects_[object].GetHitPoint();
+									pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+									pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+									PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+									pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+									pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+									pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
+									pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+									auto position = Objects_[i].GetPosition();
+									position.y += 20.0f;
+									pkt_ce->xmf3Position = position;
+									pkt_ce->id = Objects_[object].get_owner_id();
+
+									effect_lock_.lock();
+									create_effect_queue_.push(pkt_ce);
+									effect_lock_.unlock();
+
+									if (Objects_[i].GetHitPoint() <= 0)
+									{
+										if (Objects_[i].get_team() == 0)
+											red_score_ -= 5;
+										else
+											blue_score_ -= 5;
+										PKT_SCORE* pkt_sco = new PKT_SCORE;
+										pkt_sco->PktId = PKT_ID_SCORE;
+										pkt_sco->PktSize = sizeof(PKT_SCORE);
+										pkt_sco->RedScore = red_score_;
+										pkt_sco->BlueScore = blue_score_;
+
+										Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+										PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+										pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+										pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+										pkt_pd->respawntime = 5.0f;
+										pkt_pd->id = i;
+
+										die_lock_.lock();
+										player_die_queue_.push(pkt_pd);
+										die_lock_.unlock();
+
+										Objects_[i].set_is_die(true);
+
+										score_lock.lock();
+										score_queue_.push(pkt_sco);
+										score_lock.unlock();
+									}
+
+									life_lock.lock();
+									player_life_queue_.push(pkt_pl);
+									life_lock.unlock();
+
+								}
+								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_METEOR)
+								{
+									PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+									pkt_pl->ID = i;
+									Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+									pkt_pl->HP = Objects_[object].GetHitPoint();
+									pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+									pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
+
+									if (Objects_[i].GetHitPoint() <= 0)
+									{
+										if (Objects_[i].get_team() == 0)
+											red_score_ -= 5;
+										else
+											blue_score_ -= 5;
+										PKT_SCORE* pkt_sco = new PKT_SCORE;
+										pkt_sco->PktId = PKT_ID_SCORE;
+										pkt_sco->PktSize = sizeof(PKT_SCORE);
+										pkt_sco->RedScore = red_score_;
+										pkt_sco->BlueScore = blue_score_;
+
+										Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+										PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+										pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+										pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+										pkt_pd->respawntime = 5.0f;
+										pkt_pd->id = i;
+
+										Objects_[i].set_is_die(true);
+
+										die_lock_.lock();
+										player_die_queue_.push(pkt_pd);
+										die_lock_.unlock();
+
+										score_lock.lock();
+										score_queue_.push(pkt_sco);
+										score_lock.unlock();
+									}
+
+									life_lock.lock();
+									player_life_queue_.push(pkt_pl);
+									life_lock.unlock();
+								}
+								return true;
+							}
 						}
 					}
 				}
@@ -515,68 +532,73 @@ bool Scene::check_collision_player_to_vector(int object, float len)
 	{
 		if (Objects_[i].GetPlay())
 		{
-			for (auto playeraabb : Objects_[i].GetAABB())
+			if (!Objects_[i].get_is_die())
 			{
-				if (playeraabb.Intersects(origin, direction, distance))
+				for (auto playeraabb : Objects_[i].GetAABB())
 				{
-					if (Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET)
+					if (playeraabb.Intersects(origin, direction, distance))
 					{
-						if (distance <= len)
+						if (Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET)
 						{
-							PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
-							pkt_pl->ID = i;
-							Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-							pkt_pl->HP = Objects_[object].GetHitPoint();
-							pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
-							pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
-
-							life_lock.lock();
-							player_life_queue_.push(pkt_pl);
-							life_lock.unlock();
-
-							PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
-							pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
-							pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
-							pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
-							pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-							auto position = Objects_[i].GetPosition();
-							position.y += 20.0f;
-							pkt_ce->xmf3Position = position;
-							pkt_ce->id = Objects_[object].get_owner_id();
-
-							effect_lock_.lock();
-							create_effect_queue_.push(pkt_ce);
-							effect_lock_.unlock();
-
-							if (Objects_[i].GetHitPoint() <= 0)
+							if (distance <= len)
 							{
-								if (Objects_[i].get_team() == 0)
-									red_score_ -= 5;
-								else
-									blue_score_ -= 5;
-								PKT_SCORE* pkt_sco = new PKT_SCORE;
-								pkt_sco->PktId = PKT_ID_SCORE;
-								pkt_sco->PktSize = sizeof(PKT_SCORE);
-								pkt_sco->RedScore = red_score_;
-								pkt_sco->BlueScore = blue_score_;
+								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
+								pkt_pl->ID = i;
+								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
+								pkt_pl->HP = Objects_[object].GetHitPoint();
+								pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
+								pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
-								Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+								life_lock.lock();
+								player_life_queue_.push(pkt_pl);
+								life_lock.unlock();
 
-								PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
-								pkt_pd->PktId = PKT_ID_PLAYER_DIE;
-								pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
-								pkt_pd->hp = Objects_[i].GetMaxHitPoint();
-								pkt_pd->id = i;
+								PKT_CREATE_EFFECT* pkt_ce = new PKT_CREATE_EFFECT();
+								pkt_ce->PktId = PKT_ID_CREATE_EFFECT;
+								pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
+								pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
+								pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+								auto position = Objects_[i].GetPosition();
+								position.y += 20.0f;
+								pkt_ce->xmf3Position = position;
+								pkt_ce->id = Objects_[object].get_owner_id();
 
-								die_lock_.lock();
-								player_die_queue_.push(pkt_pd);
-								die_lock_.unlock();
+								effect_lock_.lock();
+								create_effect_queue_.push(pkt_ce);
+								effect_lock_.unlock();
 
-								score_lock.lock();
-								score_queue_.push(pkt_sco);
-								score_lock.unlock();
+								if (Objects_[i].GetHitPoint() <= 0)
+								{
+									if (Objects_[i].get_team() == 0)
+										red_score_ -= 5;
+									else
+										blue_score_ -= 5;
+									PKT_SCORE* pkt_sco = new PKT_SCORE;
+									pkt_sco->PktId = PKT_ID_SCORE;
+									pkt_sco->PktSize = sizeof(PKT_SCORE);
+									pkt_sco->RedScore = red_score_;
+									pkt_sco->BlueScore = blue_score_;
+
+									Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+
+									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
+									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
+									pkt_pd->PktSize = sizeof(PKT_PLAYER_DIE);
+									pkt_pd->respawntime = 5.0f;
+									pkt_pd->id = i;
+
+									Objects_[i].set_is_die(true);
+
+									die_lock_.lock();
+									player_die_queue_.push(pkt_pd);
+									die_lock_.unlock();
+
+									score_lock.lock();
+									score_queue_.push(pkt_sco);
+									score_lock.unlock();
+								}
+								return true;
 							}
-							return true;
 						}
 					}
 				}

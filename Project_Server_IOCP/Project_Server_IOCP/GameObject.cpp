@@ -17,6 +17,9 @@ GameObject::GameObject()
 	SetPrepareRotate(0.0f, 0.0f, 0.0f);
 
 	ElapsedTime_ = 0.0f;
+	respawn_time_ = 5.0f;
+	is_die_ = false;
+	is_player_ = false;
 }
 
 
@@ -83,6 +86,18 @@ void GameObject::Animate(float fTimeElapsed, char map)
 		{
 			MoveForward(MovingSpeed_ * fTimeElapsed);
 			ElapsedTime_ += fTimeElapsed;
+		}
+	}
+	if (is_player_)
+	{
+		if (is_die_)
+		{
+			ElapsedTime_ += fTimeElapsed;
+			if (ElapsedTime_ >= respawn_time_)
+			{
+				is_die_ = false;
+				ElapsedTime_ = 0.0f;
+			}
 		}
 	}
 

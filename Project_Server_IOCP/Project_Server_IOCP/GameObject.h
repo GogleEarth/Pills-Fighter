@@ -49,6 +49,10 @@ protected:
 
 	char team_;
 	int owner_id_;
+	
+	bool is_player_;
+	bool is_die_;
+	float respawn_time_;
 public:
 	GameObject();
 	~GameObject();
@@ -123,6 +127,14 @@ public:
 
 	inline void set_owner_id(int id) { owner_id_ = id; }
 	inline int get_owner_id() { return owner_id_; }
+
+	inline void set_is_player(bool is_player) { is_player_ = is_player; }
+	inline bool get_is_player() { return is_player_; }
+	inline void set_is_die(bool is_die) { is_die_ = is_die; }
+	inline bool get_is_die() { return is_die_; }
+
+	inline void set_elapsed_time_to_zero() { ElapsedTime_ = 0.0f; }
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

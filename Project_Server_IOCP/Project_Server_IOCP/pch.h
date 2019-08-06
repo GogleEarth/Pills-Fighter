@@ -69,7 +69,7 @@ using Microsoft::WRL::ComPtr;
 
 #define MAX_CLIENT 8
 #define PLAYER_HP 100
-#define MAX_SCORE 10
+#define MAX_SCORE 20
 
 ///////////////////////////////////////
 

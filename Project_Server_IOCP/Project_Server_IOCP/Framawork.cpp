@@ -143,6 +143,9 @@ int Framawork::thread_process()
 				auto data = rooms_[key].player_die_dequeue();
 				if (data == nullptr) break;
 				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->id));
+				using namespace std;
+				using namespace chrono;
+				add_timer(data->id, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
 				delete data;
 			}
 
@@ -410,6 +413,40 @@ int Framawork::thread_process()
 					using namespace std;
 					using namespace chrono;
 					add_timer(key, over_ex->room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+				}
+			}
+			delete over_ex;
+		}
+		else if (EVENT_TYPE_RESPAWN == over_ex->event_t)
+		{
+			if (rooms_[over_ex->room_num].get_playing())
+			{
+				auto object = rooms_[over_ex->room_num].get_object(key);
+				float elapsed_time;
+
+				if (over_ex->elapsed_time <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = over_ex->elapsed_time;
+
+				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+
+				if (!object->get_is_die())
+				{
+					PKT_PLAYER_RESPAWN pkt_rp;
+					pkt_rp.PktId = PKT_ID_PLAYER_RESPAWN;
+					pkt_rp.PktSize = sizeof(PKT_PLAYER_RESPAWN);
+					pkt_rp.id = key;
+					pkt_rp.hp = object->GetMaxHitPoint();
+					pkt_rp.point = rooms_[over_ex->room_num].get_respawn_point(key);
+
+					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_rp);
+				}
+				else
+				{
+					using namespace std;
+					using namespace chrono;
+					add_timer(key, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
 				}
 			}
 			delete over_ex;
@@ -747,9 +784,11 @@ void Framawork::process_packet(int id, char* packet)
 
 					}
 
-					PKT_RESPAWN_POINT pkt_rp;
-					pkt_rp.PktId = PKT_ID_RESPAWN_POINT;
-					pkt_rp.PktSize = sizeof(PKT_RESPAWN_POINT);
+					PKT_PLAYER_RESPAWN pkt_rp;
+					pkt_rp.PktId = PKT_ID_PLAYER_RESPAWN;
+					pkt_rp.PktSize = sizeof(PKT_PLAYER_RESPAWN);
+					pkt_rp.id = i;
+					pkt_rp.hp = rooms_[room_num].get_object(i)->GetMaxHitPoint();
 					pkt_rp.point = rooms_[room_num].get_respawn_point(i);
 				}
 			}

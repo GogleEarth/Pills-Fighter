@@ -878,7 +878,7 @@ void CGameFramework::FrameAdvance()
 	
 	::SetWindowText(m_hWnd, m_pszCaption);
 
-	if(m_pPlayer) std::cout << m_pPlayer->GetPosition().x << ", " << m_pPlayer->GetPosition().y << ", " << m_pPlayer->GetPosition().z << "\n";
+	//if(m_pPlayer) std::cout << m_pPlayer->GetPosition().x << ", " << m_pPlayer->GetPosition().y << ", " << m_pPlayer->GetPosition().z << "\n";
 
 }
 
