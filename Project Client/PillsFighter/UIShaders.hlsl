@@ -192,7 +192,7 @@ float4 PSUITeamHPRespawn(GS_UI_OUT input) : SV_TARGET
 {
 	float4 cColor = float4(1.0f, 0.0f, 0.0f, 0.8f);
 
-	if (input.uv.x < gfNormalizedTime)
+	if (input.uv.x > gfNormalizedTime)
 	{
 		cColor = gtxtTexture[0].Sample(gssClamp, input.uv);
 	}

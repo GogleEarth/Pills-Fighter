@@ -3144,6 +3144,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	for (int i = 0; i < m_vpd3dTeamNameTexture.size(); i++)
 	{
 		if (!(*m_vppTeamObject[i])) continue;
+		if ((*m_vppTeamObject[i])->IsDie()) continue;
 
 		m_vpcbMappedUI3DInfo[i]->xmf3Position = Vector3::Add((*m_vppTeamObject[i])->GetPosition(), XMFLOAT3(0.0f, 19.0f, 0.0f));
 		m_vpcbMappedUI3DInfo[i]->xmf4Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);

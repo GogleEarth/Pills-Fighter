@@ -633,6 +633,15 @@ void CGameObject::ProcessDie(float fRespawnTime)
 	m_fRespawnTimeElapsed = 0.0f;
 }
 
+void CGameObject::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
+{
+	m_bDie = false;
+	m_nHitPoint = nHP;
+	m_xmf3Position = xmf3Position;
+
+	serverPosition = xmf3Position;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 
 RandomMoveObject::RandomMoveObject() : CGameObject()
@@ -1163,6 +1172,20 @@ void CRobotObject::SetCallBackKeys(CModel *pModel)
 
 	SetAnimationController(ppAnimationControllers[ANIMATION_UP], ANIMATION_UP);
 	SetAnimationController(ppAnimationControllers[ANIMATION_DOWN], ANIMATION_DOWN);
+}
+
+void CRobotObject::ProcessDie(float fRespawnTime)
+{
+	CAnimationObject::ProcessDie(fRespawnTime);
+
+	if (m_pRHWeapon) m_pRHWeapon->Hide();
+}
+
+void CRobotObject::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
+{
+	CAnimationObject::ProcessRespawn(nHP, xmf3Position);
+
+	if (m_pRHWeapon) m_pRHWeapon->Show();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

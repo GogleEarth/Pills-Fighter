@@ -212,7 +212,8 @@ protected:
 	float m_fRespawnTimeElapsed = 0.0f;
 
 public:
-	void ProcessDie(float fRespawnTime);
+	virtual void ProcessDie(float fRespawnTime);
+	virtual void ProcessRespawn(int nHP, XMFLOAT3 xmf3Position);
 	bool IsDie() { return m_bDie; }
 	float GetRespwanTime() { return m_fRespawnTime; }
 	float GetRespwanElapsedTime() { return m_fRespawnTimeElapsed; }
@@ -402,6 +403,9 @@ public:
 	virtual bool ChangeAnimation(int nController, int nTrack, int nAnimation, bool bResetPosition = false);
 
 	bool IsAnimationSwording() { return AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_1_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_2_ONCE) || AnimationIs(ANIMATION_UP, ANIMATION_STATE_BEAM_SABER_3_ONCE); }
+
+	virtual void ProcessDie(float fRespawnTime);
+	virtual void ProcessRespawn(int nHP, XMFLOAT3 xmf3Position);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
