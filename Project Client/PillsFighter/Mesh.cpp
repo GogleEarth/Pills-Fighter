@@ -910,3 +910,31 @@ void CRect::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[2] = { m_d3dPositionBufferView, m_d3dSizeBufferView };
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, 2, pVertexBufferViews);
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+CMinimapRobotRect::CMinimapRobotRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size) : CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size)
+{
+	m_pnIndices = new int[1];
+	m_pnIndices[0] = indexCnt;
+	m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnIndices, sizeof(int), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dIndexUploadBuffer);
+	indexCnt++;
+	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
+	m_d3dIndexBufferView.StrideInBytes = sizeof(int);
+	m_d3dIndexBufferView.SizeInBytes = sizeof(int);
+}
+
+CMinimapRobotRect::~CMinimapRobotRect()
+{
+	if (m_pnIndices) delete[] m_pnIndices;
+
+	if (m_pd3dIndexBuffer) m_pd3dIndexBuffer->Release();
+}
+
+void CMinimapRobotRect::ReleaseUploadBuffers()
+{
+	if (m_pd3dIndexUploadBuffer) m_pd3dIndexUploadBuffer->Release();
+	m_pd3dIndexUploadBuffer = NULL;
+
+	CRect::ReleaseUploadBuffers();
+}

@@ -246,3 +246,23 @@ public:
 	void ReleaseUploadBuffers();
 	virtual void OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList);
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class CMinimapRobotRect : public CRect
+{
+protected:
+	int								indexCnt = 0;
+	int								*m_pnIndices = NULL;
+	ID3D12Resource					*m_pd3dIndexBuffer = NULL;
+	ID3D12Resource					*m_pd3dIndexUploadBuffer = NULL;
+	D3D12_VERTEX_BUFFER_VIEW		m_d3dIndexBufferView;
+
+public:
+	CMinimapRobotRect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Center, XMFLOAT2 xmf2Size);
+	virtual ~CMinimapRobotRect();
+
+	virtual void ReleaseUploadBuffers();
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

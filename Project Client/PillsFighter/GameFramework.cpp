@@ -330,10 +330,6 @@ void CGameFramework::BuildScene(int nSceneType)
 	{
 		m_pScene->AddTeam(m_vnIndices[i], m_vpwstrNames[i]);
 	}
-	for (int i = 0; i < m_vnEnemyIndices.size(); i++)
-	{
-		m_pScene->AddEnemy(m_vnEnemyIndices[i]);
-	}
 
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList, NULL);
 	m_pScene->StartScene();
@@ -1015,7 +1011,7 @@ void CGameFramework::ProcessPacket()
 
 		int nPlayerTeam = CScene::GetMyTeam();
 
-		m_pScene->GetTeamsInfo(nPlayerTeam, m_vnIndices, m_vnEnemyIndices, m_vpwstrNames);
+		m_pScene->GetTeamsInfo(nPlayerTeam, m_vnIndices, m_vpwstrNames);
 
 		ReleaseObjects();
 
