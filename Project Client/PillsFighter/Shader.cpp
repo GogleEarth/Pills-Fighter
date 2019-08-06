@@ -4013,17 +4013,19 @@ void CMinimapShader::SetEnemyInfo(CGameObject **ppObject)
 
 void CMinimapShader::UpdateShaderVariablesTeamPosition(ID3D12GraphicsCommandList *pd3dCommandList, int index)
 {
-	XMFLOAT3 position = (*m_vppTeamObject[index])->GetPosition();
-	m_cbMinimapTeamInfo[index]->robotPosition = XMFLOAT2(position.x, position.z);
-
+	if ((*m_vppTeamObject[index])) {
+		XMFLOAT3 position = (*m_vppTeamObject[index])->GetPosition();
+		m_cbMinimapTeamInfo[index]->robotPosition = XMFLOAT2(position.x, position.z);
+	}
 	D3D12_GPU_VIRTUAL_ADDRESS d3dcbGpuVirtualAddress = m_vpd3dcbTeamPosition[index]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO, d3dcbGpuVirtualAddress);
 }
 void CMinimapShader::UpdateShaderVariablesEnemyPosition(ID3D12GraphicsCommandList *pd3dCommandList, int index)
 {
-	XMFLOAT3 position = (*m_vppEnemyObject[index])->GetPosition();
-	m_cbMinimapEnemyInfo[index]->robotPosition = XMFLOAT2(position.x, position.z);
-
+	if ((*m_vppEnemyObject[index])) {
+		XMFLOAT3 position = (*m_vppEnemyObject[index])->GetPosition();
+		m_cbMinimapEnemyInfo[index]->robotPosition = XMFLOAT2(position.x, position.z);
+	}
 	D3D12_GPU_VIRTUAL_ADDRESS d3dcbGpuVirtualAddress = m_vpd3dcbEnemyPosition[index]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_MINIMAP_ENEMY_INFO, d3dcbGpuVirtualAddress);
 }
