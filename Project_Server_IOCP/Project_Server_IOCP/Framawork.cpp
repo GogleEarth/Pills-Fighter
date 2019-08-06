@@ -431,6 +431,7 @@ int Framawork::thread_process()
 					pkt_rp.id = key;
 					pkt_rp.hp = object->GetMaxHitPoint();
 					pkt_rp.point = rooms_[over_ex->room_num].get_respawn_point(key);
+					pkt_rp.team = object->get_team();
 
 					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_rp);
 				}
@@ -782,6 +783,7 @@ void Framawork::process_packet(int id, char* packet)
 					pkt_rp.id = i;
 					pkt_rp.hp = rooms_[room_num].get_object(i)->GetMaxHitPoint();
 					pkt_rp.point = rooms_[room_num].get_respawn_point(i);
+					pkt_rp.team = rooms_[room_num].get_object(i)->get_team();
 					send_packet_to_player(players[i].get_serverid(), (char*)&pkt_rp);
 				}
 			}
@@ -1133,7 +1135,7 @@ void Framawork::send_packet_to_team_player(int room, char * packet, char team)
 		if (!player->get_use()) continue;
 		if (player->get_team() != team) continue;
 		send_packet_to_player(player->get_serverid(), packet);
-		std::cout << (int)team << "ÆÀÀÇ " << i << "¹øÂ° ÇÃ·¹ÀÌ¾î¿¡°Ô º¸³¿\n";
+		//std::cout << (int)team << "ÆÀÀÇ " << i << "¹øÂ° ÇÃ·¹ÀÌ¾î¿¡°Ô º¸³¿\n";
 	}
 }
 

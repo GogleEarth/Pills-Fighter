@@ -411,6 +411,7 @@ struct PKT_PLAYER_RESPAWN
 	int			id;
 	XMFLOAT3	point;
 	int			hp;
+	char		team;
 };
 
 ///////////////////////////////////////////////////////////

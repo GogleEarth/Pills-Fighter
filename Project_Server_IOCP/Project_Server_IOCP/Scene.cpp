@@ -245,7 +245,7 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 
 void Scene::set_player_team(int id, char team)
 {
-	std::cout << id << "ÀÇ ÆÀ : " << (int)team << "\n";
+	//std::cout << id << "ÀÇ ÆÀ : " << (int)team << "\n";
 	Objects_[id].set_team(team);
 }
 
