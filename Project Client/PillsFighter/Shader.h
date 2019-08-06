@@ -577,7 +577,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 18
+#define UI_TEXTURE_COUNT 19
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -597,6 +597,7 @@ protected:
 #define UI_TEXTURE_TEAM_HP 15
 #define UI_TEXTURE_BEAM_GAUGE 16
 #define UI_TEXTURE_SCOPE_MASK 17
+#define UI_TEXTURE_BEAM_BULLER_N_EMPTY 18
 
 #define UI_RECT_COUNT 16
 

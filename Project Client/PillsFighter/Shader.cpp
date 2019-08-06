@@ -2966,6 +2966,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BulletEmpty.dds", 1);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BULLET_N_EMPTY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+	m_ppTextures[UI_TEXTURE_BEAM_BULLER_N_EMPTY] = new CTexture(2, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[UI_TEXTURE_BEAM_BULLER_N_EMPTY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamBullet.dds", 0);
+	m_ppTextures[UI_TEXTURE_BEAM_BULLER_N_EMPTY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BulletEmpty.dds", 1);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_BULLER_N_EMPTY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 	m_ppTextures[UI_TEXTURE_RELOAD] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_RELOAD]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Reload.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_RELOAD], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
@@ -3206,6 +3211,16 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 				if (m_ppTextures[UI_TEXTURE_BEAM_GAUGE])
 				{
 					m_ppTextures[UI_TEXTURE_BEAM_GAUGE]->UpdateShaderVariables(pd3dCommandList);
+					m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
+				}
+			}
+			else if (nWeaponType & WEAPON_TYPE_OF_GM_GUN)
+			{
+				if (m_pd3dPipelineStateBullet) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBullet);
+
+				if (m_ppTextures[UI_TEXTURE_BEAM_BULLER_N_EMPTY])
+				{
+					m_ppTextures[UI_TEXTURE_BEAM_BULLER_N_EMPTY]->UpdateShaderVariables(pd3dCommandList);
 					m_ppUIRects[UI_RECT_BULLET_N_RELOAD]->Render(pd3dCommandList, 0);
 				}
 			}
