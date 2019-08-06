@@ -356,7 +356,11 @@ void CPlayer::Update(float fTimeElapsed)
 	ProcessTime(m_pRHWeapon, fTimeElapsed);
 	ProcessAnimation();
 
-	if (!IsZero(m_fVelocityY)) Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+	if (!IsZero(m_fVelocityY))
+	{
+		if(m_xmf3Position.y + m_fVelocityY < 1700.0f)
+			Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+	}
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);

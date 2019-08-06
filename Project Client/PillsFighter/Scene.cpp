@@ -156,6 +156,8 @@ void CScene::ReleaseObjects()
 	{
 		m_pUserInterface->ReleaseShaderVariables();
 		delete m_pUserInterface;
+
+		m_pUserInterface = NULL;
 	}
 
 	if (m_pFont)
@@ -183,13 +185,41 @@ void CScene::ReleaseObjects()
 		m_pComputeShader = NULL;
 	}
 
-	if (m_pd3dOffScreenTexture) m_pd3dOffScreenTexture->Release();
-	if (m_pd3dGlowScreenTexture) m_pd3dGlowScreenTexture->Release();
-	if (m_pd3dDepthStencilBuffer) m_pd3dDepthStencilBuffer->Release();
-	if (m_pd3dMotionBlurScreenTexture) m_pd3dMotionBlurScreenTexture->Release();
-	if (m_pd3dTempTexture) m_pd3dTempTexture->Release();
-	if (m_pd3dMaskTexture) m_pd3dMaskTexture->Release();
-	if (m_pd3dScreenNormalTexture) m_pd3dScreenNormalTexture->Release();
+	if (m_pd3dOffScreenTexture)
+	{
+		m_pd3dOffScreenTexture->Release();
+		m_pd3dOffScreenTexture = NULL;
+	}
+	if (m_pd3dGlowScreenTexture)
+	{
+		m_pd3dGlowScreenTexture->Release();
+		m_pd3dGlowScreenTexture = NULL;
+	}
+	if (m_pd3dDepthStencilBuffer)
+	{
+		m_pd3dDepthStencilBuffer->Release();
+		m_pd3dDepthStencilBuffer = NULL;
+	}
+	if (m_pd3dMotionBlurScreenTexture)
+	{
+		m_pd3dMotionBlurScreenTexture->Release();
+		m_pd3dMotionBlurScreenTexture = NULL;
+	}
+	if (m_pd3dTempTexture)
+	{
+		m_pd3dTempTexture->Release();
+		m_pd3dTempTexture = NULL;
+	}
+	if (m_pd3dMaskTexture)
+	{
+		m_pd3dMaskTexture->Release();
+		m_pd3dMaskTexture = NULL;
+	}
+	if (m_pd3dScreenNormalTexture)
+	{
+		m_pd3dScreenNormalTexture->Release();
+		m_pd3dScreenNormalTexture = NULL;
+	}
 
 	ReleaseShaderVariables();
 }
@@ -2927,16 +2957,28 @@ void CBattleScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphic
 
 void CBattleScene::ReleaseShaderVariables()
 {
-
+	CScene::ReleaseShaderVariables();
 }
 
 void CBattleScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
 
-	if (m_pd3dEnvirCube) m_pd3dEnvirCube->Release();
-	if (m_pd3dEnvirCubeDSBuffer) m_pd3dEnvirCubeDSBuffer->Release();
-	if (m_pd3dShadowMap) m_pd3dShadowMap->Release();
+	if (m_pd3dEnvirCube)
+	{
+		m_pd3dEnvirCube->Release();
+		m_pd3dEnvirCube = NULL;
+	}
+	if (m_pd3dEnvirCubeDSBuffer)
+	{
+		m_pd3dEnvirCubeDSBuffer->Release();
+		m_pd3dEnvirCubeDSBuffer = NULL;
+	}
+	if (m_pd3dShadowMap)
+	{
+		m_pd3dShadowMap->Release();
+		m_pd3dShadowMap = NULL;
+	}
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -2944,6 +2986,8 @@ void CBattleScene::ReleaseObjects()
 		{
 			m_pCubeMapCamera[i]->ReleaseShaderVariables();
 			delete m_pCubeMapCamera[i];
+
+			m_pCubeMapCamera[i] = NULL;
 		}
 	}
 
@@ -2951,12 +2995,16 @@ void CBattleScene::ReleaseObjects()
 	{
 		m_pLightCamera->ReleaseShaderVariables();
 		delete m_pLightCamera;
+
+		m_pLightCamera = NULL;
 	}
 
 	if (m_pMinimapShader)
 	{
 		m_pMinimapShader->ReleaseShaderVariables();
 		delete m_pMinimapShader;
+
+		m_pMinimapShader = NULL;
 	}
 }
 
@@ -3616,15 +3664,15 @@ void CBattleScene::CheckCollision()
 			CRobotObject *enemy = (CRobotObject*)Enemy;
 
 			if (!(Enemy->GetState() & OBJECT_STATE_SWORDING)) continue;
-			CSword *pSword = (CSword*)((CRobotObject*)Enemy)->GetWeapon(0);
+			CWeapon *pWeapon = ((CRobotObject*)Enemy)->GetWeapon(0);
 
 			for (const auto& anotherE : vEnemys)
 			{
 				if (Enemy == anotherE) continue;
-				if (!pSword->CollisionCheck(anotherE)) continue;
+				if (!pWeapon->CollisionCheck(anotherE)) continue;
 				if (enemy->IsHitSword()) continue;
 
-				AddParticle(0, pSword->GetBladePos(), rand() % 10 + 10);
+				//AddParticle(0, pSword->GetBladePos(), rand() % 10 + 10);
 
 				enemy->HitSword();
 
@@ -3641,10 +3689,10 @@ void CBattleScene::CheckCollision()
 
 			if (m_pPlayer)
 			{
-				if (!pSword->CollisionCheck(m_pPlayer)) continue;
+				if (!pWeapon->CollisionCheck(m_pPlayer)) continue;
 				if (enemy->IsHitSword()) continue;
 
-				AddParticle(0, pSword->GetBladePos(), rand() % 10 + 10);
+				//AddParticle(0, pSword->GetBladePos(), rand() % 10 + 10);
 
 				enemy->HitSword();
 

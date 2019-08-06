@@ -613,6 +613,13 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			OnResizeBackBuffers();
 			break;
 		}
+		case VK_F4:
+			if (m_pScene) m_pScene->EndScene();
+
+			ReleaseObjects();
+
+			BuildScene(SCENE_TYPE_LOBBY_ROOM);
+			break;
 		case VK_TAB:
 			if (::GetCapture() == m_hWnd)
 			{
@@ -836,7 +843,12 @@ void CGameFramework::FrameAdvance()
 
 	WaitForGpuComplete();
 
-	m_pdxgiSwapChain->Present(0, 0);
+	HRESULT ret = m_pdxgiSwapChain->Present(0, 0);
+	if (ret)
+	{
+		HRESULT reason = m_pd3dDevice->GetDeviceRemovedReason();
+		std::cout << reason << "\n";
+	}
 
 	MoveToNextFrame();
 

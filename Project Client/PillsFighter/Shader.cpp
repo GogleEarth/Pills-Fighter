@@ -1196,6 +1196,25 @@ CEffectShader::CEffectShader()
 
 CEffectShader::~CEffectShader()
 {
+	if (m_ppEffects)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			if (m_ppEffects[i]) delete m_ppEffects[i];
+		}
+
+		delete[] m_ppEffects;
+	}
+
+	if (m_ppTextures)
+	{
+		for (int i = 0; i < m_nEffects; i++)
+		{
+			if (m_ppTextures[i]) delete m_ppTextures[i];
+		}
+		delete[] m_ppTextures;
+	}
+
 	if (m_pd3dSOPipelineState) m_pd3dSOPipelineState->Release();
 }
 
@@ -1341,28 +1360,6 @@ void CEffectShader::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 		{
 			if (m_ppEffects[i]) m_ppEffects[i]->Animate(fTimeElapsed);
 		}
-	}
-}
-
-void CEffectShader::ReleaseObjects()
-{
-	if (m_ppEffects)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			if (m_ppEffects[i]) delete m_ppEffects[i];
-		}
-
-		delete[] m_ppEffects;
-	}
-
-	if (m_ppTextures)
-	{
-		for (int i = 0; i < m_nEffects; i++)
-		{
-			if (m_ppTextures[i]) delete m_ppTextures[i];
-		}
-		delete[] m_ppTextures;
 	}
 }
 
@@ -1626,6 +1623,7 @@ CFollowEffectShader::~CFollowEffectShader()
 		}
 
 		delete[] m_pvpEffects;
+		m_pvpEffects = NULL;
 	}
 
 	if (m_pvpTempEffects)
@@ -1643,6 +1641,7 @@ CFollowEffectShader::~CFollowEffectShader()
 		}
 
 		delete[] m_pvpTempEffects;
+		m_pvpTempEffects = NULL;
 	}
 }
 
@@ -1964,7 +1963,7 @@ D3D12_SHADER_BYTECODE CFollowSpriteShader::CreateSOGeometryShader(ID3DBlob **ppd
 void CFollowSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	m_nEffects = FOLLOW_SPRITE_EFFECT_COUNT;
-	m_pvpEffects = new std::vector<CEffect*>[m_nEffects];
+	m_pvpEffects = new std::vector<CEffect*>[m_nEffects];	
 	m_pvpTempEffects = new std::queue<CEffect*>[m_nEffects];
 
 	for (int i = 0; i < 16; i++)
@@ -1974,7 +1973,7 @@ void CFollowSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		pEffect = new CFollowSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 4, 20, 0.5f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-		pEffect->AddVertex(XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), EFFECT_SPRITE_TYPE_LOOP, 0);
+		pEffect->AddVertex(XMFLOAT3(0.0f, -2.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), EFFECT_SPRITE_TYPE_LOOP, 0);
 
 		m_pvpTempEffects[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER].push(pEffect);
 	}

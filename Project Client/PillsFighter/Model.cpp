@@ -34,11 +34,20 @@ CTexture::~CTexture()
 		for (int i = 0; i < m_nTextures; i++) 
 			if (m_ppd3dTextures[i]) m_ppd3dTextures[i]->Release();
 		delete[] m_ppd3dTextures;
+		m_ppd3dTextures = NULL;
 	}
 
-	if (m_pRootArgumentInfos) delete[] m_pRootArgumentInfos;
+	if (m_pRootArgumentInfos)
+	{
+		delete[] m_pRootArgumentInfos;
+		m_pRootArgumentInfos = NULL;
+	}
 
-	if (m_pd3dSamplerGpuDescriptorHandles) delete[] m_pd3dSamplerGpuDescriptorHandles;
+	if (m_pd3dSamplerGpuDescriptorHandles)
+	{
+		delete[] m_pd3dSamplerGpuDescriptorHandles;
+		m_pd3dSamplerGpuDescriptorHandles = NULL;
+	}
 }
 
 void CTexture::SetRootArgument(int nIndex, UINT nRootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE d3dSrvGpuDescriptorHandle)
@@ -344,7 +353,12 @@ CModel::~CModel()
 	if (m_pMesh)
 	{
 		delete m_pMesh;
-		if (m_pCubeMesh) delete m_pCubeMesh;
+		m_pMesh = NULL;
+		if (m_pCubeMesh)
+		{
+			delete m_pCubeMesh;
+			m_pCubeMesh = NULL;
+		}
 	}
 
 	if (m_ppMaterials)
@@ -352,10 +366,19 @@ CModel::~CModel()
 		for (int i = 0; i < m_nMaterials; i++)
 			if (m_ppMaterials[i]) delete m_ppMaterials[i];
 		delete[] m_ppMaterials;
+		m_ppMaterials = NULL;
 	}
 
-	if (m_ppAnimationSets[0]) delete m_ppAnimationSets[0];
-	if (m_ppAnimationSets[1]) delete m_ppAnimationSets[1];
+	if (m_ppAnimationSets[0])
+	{
+		delete m_ppAnimationSets[0];
+		m_ppAnimationSets[0] = NULL;
+	}
+	if (m_ppAnimationSets[1])
+	{
+		delete m_ppAnimationSets[1];
+		m_ppAnimationSets[1] = NULL;
+	}
 }
 
 void CModel::AddRef()

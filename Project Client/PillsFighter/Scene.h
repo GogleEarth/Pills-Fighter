@@ -98,14 +98,14 @@ public:
 	static void ResetDescriptorHeapHandles();
 
 protected:
+	static ID3D12RootSignature				*m_pd3dGraphicsRootSignature;
+	static ID3D12RootSignature				*m_pd3dComputeRootSignature;
+
 	static ID3D12DescriptorHeap				*m_pd3dSrvUavDescriptorHeap;
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvUavTextureCPUDescStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvUavTextureGPUDescStartHandle;
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dSrvModelCPUDescStartHandle;
 	static D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvModelGPUDescStartHandle;
-
-	static ID3D12RootSignature				*m_pd3dGraphicsRootSignature;
-	static ID3D12RootSignature				*m_pd3dComputeRootSignature;
 
 	static ID3D12DescriptorHeap				*m_pd3dRtvDescriptorHeap;
 	static D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRtvCPUDesciptorStartHandle;

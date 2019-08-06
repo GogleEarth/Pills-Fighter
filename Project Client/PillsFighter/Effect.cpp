@@ -47,16 +47,37 @@ CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 CEffect::~CEffect()
 {
-	if (m_pd3dBuffer) m_pd3dBuffer->Release();
-	if (m_pd3dDummyBuffer) m_pd3dDummyBuffer->Release();
-	if (m_pd3dReadBackBuffer) m_pd3dReadBackBuffer->Release();
+	if (m_pd3dBuffer)
+	{
+		m_pd3dBuffer->Release();
+		m_pd3dBuffer = NULL;
+	}
+	if (m_pd3dDummyBuffer)
+	{
+		m_pd3dDummyBuffer->Release();
+		m_pd3dDummyBuffer = NULL;
+	}
+	if (m_pd3dReadBackBuffer)
+	{
+		m_pd3dReadBackBuffer->Release();
+		m_pd3dReadBackBuffer = NULL;
+	}
 
-	for (int i = 0; i < 2; i++) if (m_pd3dVertexBuffer[i]) m_pd3dVertexBuffer[i]->Release();
+	for (int i = 0; i < 2; i++)
+	{
+		if (m_pd3dVertexBuffer[i])
+		{
+			m_pd3dVertexBuffer[i]->Release();
+			m_pd3dVertexBuffer[i] = NULL;
+		}
+	}
 
 	if (m_pd3dInitVertexBuffer)
 	{
 		m_pd3dInitVertexBuffer->Unmap(0, NULL);
 		m_pd3dInitVertexBuffer->Release();
+
+		m_pd3dInitVertexBuffer = NULL;
 	}
 
 	ReleaseShaderVariables();
@@ -431,7 +452,6 @@ CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 
 	m_pd3dMappedVertexBuffer->Map(0, NULL, (void**)&m_pMappedParticleVertices);
 
-
 	m_pd3dBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, sizeof(UINT64),
 		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_STREAM_OUT, NULL);
 
@@ -458,12 +478,40 @@ CParticle::CParticle(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCo
 
 CParticle::~CParticle()
 {
-	if (m_pd3dBuffer) m_pd3dBuffer->Release();
-	if (m_pd3dDummyBuffer) m_pd3dDummyBuffer->Release();
-	if (m_pd3dReadBackBuffer) m_pd3dReadBackBuffer->Release();
+	if (m_pd3dBuffer)
+	{
+		m_pd3dBuffer->Release();
+		m_pd3dBuffer = NULL;
+	}
+	if (m_pd3dDummyBuffer)
+	{
+		m_pd3dDummyBuffer->Release();
+		m_pd3dDummyBuffer = NULL;
+	}
+	if (m_pd3dReadBackBuffer)
+	{
+		m_pd3dReadBackBuffer->Release();
+		m_pd3dReadBackBuffer = NULL;
+	}
 
-	for (int i = 0; i < 2; i++) if (m_pd3dVertexBuffer[i]) m_pd3dVertexBuffer[i]->Release();
-	if (m_pd3dMappedVertexBuffer) m_pd3dMappedVertexBuffer->Release();
+	for (int i = 0; i < 2; i++)
+	{
+		if (m_pd3dVertexBuffer[i])
+		{
+			m_pd3dVertexBuffer[i]->Release();
+			m_pd3dVertexBuffer[i] = NULL;
+		}
+	}
+
+	if (m_pd3dMappedVertexBuffer)
+	{
+		m_pd3dMappedVertexBuffer->Unmap(0, NULL);
+		m_pd3dMappedVertexBuffer->Release();
+
+		m_pd3dMappedVertexBuffer = NULL;
+	}
+
+	ReleaseShaderVariables();
 }
 
 void CParticle::Initialize(XMFLOAT3 xmf3Position, XMFLOAT3 xmf3Direction, float fSpeed, float fDuration, bool bScaling, float fMass,
@@ -523,10 +571,11 @@ void CParticle::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList
 
 void CParticle::ReleaseShaderVariables()
 {
-	if (m_pcbMappedParticle)
+	if (m_pd3dcbParticle)
 	{
 		m_pd3dcbParticle->Unmap(0, NULL);
 		m_pd3dcbParticle->Release();
+
 		m_pd3dcbParticle = NULL;
 	}
 }
