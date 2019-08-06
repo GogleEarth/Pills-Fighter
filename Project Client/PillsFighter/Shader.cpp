@@ -1138,7 +1138,7 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	switch (nGroup)
 	{
 	case SKINNED_OBJECT_INDEX_GM:
-		pWeapon = new CWeapon();
+		pWeapon = new CSword();
 		pWeapon->SetType(WEAPON_TYPE_OF_SABER);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_SABER, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
@@ -1154,7 +1154,7 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case SKINNED_OBJECT_INDEX_GUNDAM: // 빔사벨, 빔라이플, 바주카
-		pWeapon = new CWeapon();
+		pWeapon = new CSword();
 		pWeapon->SetType(WEAPON_TYPE_OF_SABER);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_SABER, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
@@ -1170,7 +1170,7 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case SKINNED_OBJECT_INDEX_ZAKU: // 토마호크, 머신건, 바주카
-		pWeapon = new CWeapon();
+		pWeapon = new CSword();
 		pWeapon->SetType(WEAPON_TYPE_OF_TOMAHAWK);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_TOMAHAWK, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
