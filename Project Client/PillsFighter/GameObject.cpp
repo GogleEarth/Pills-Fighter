@@ -410,7 +410,11 @@ void CGameObject::AfterAdvanceAnimationController()
 
 void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
-	if (m_bDie) return;
+	if (m_bDie)
+	{
+		m_fRespawnTimeElapsed += fTimeElapsed;
+		return;
+	}
 
 	if (m_pModel)
 	{
@@ -620,6 +624,13 @@ void CGameObject::Move(XMFLOAT3 xmf3Direction, float fDistance)
 	XMFLOAT3 xmf3Position = GetPosition();
 	xmf3Position = Vector3::Add(xmf3Position, xmf3Direction, fDistance);
 	CGameObject::SetPosition(xmf3Position);
+}
+
+void CGameObject::ProcessDie(float fRespawnTime)
+{
+	m_bDie = true;
+	m_fRespawnTime = fRespawnTime;
+	m_fRespawnTimeElapsed = 0.0f;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
