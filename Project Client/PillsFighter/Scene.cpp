@@ -3691,6 +3691,7 @@ void CBattleScene::CheckCollision()
 			for (const auto& anotherE : vEnemys)
 			{
 				if (Enemy == anotherE) continue;
+				if (anotherE->IsDie()) continue;
 				if (!pSword->CollisionCheck(anotherE)) continue;
 				if (Enemy->CheckDidHitObject(anotherE)) continue;
 
@@ -3703,6 +3704,7 @@ void CBattleScene::CheckCollision()
 
 			if (m_pPlayer)
 			{
+				if (m_pPlayer->IsDie()) continue;
 				if (!pSword->CollisionCheck(m_pPlayer)) continue;
 				if (Enemy->CheckDidHitObject(m_pPlayer)) continue;
 
@@ -3720,6 +3722,7 @@ void CBattleScene::CheckCollision()
 			{
 				for (const auto& Enemy : vEnemys)
 				{
+					if (Enemy->IsDie()) continue;
 					CSword *pSword = (CSword*)(m_pPlayer->GetWeapon(0));
 					if (!pSword->CollisionCheck(Enemy)) continue;
 					if (m_pPlayer->CheckDidHitObject(Enemy)) continue;
@@ -3970,6 +3973,8 @@ void CBattleScene::FindAimToTargetDistance()
 
 		for (const auto& Robot : vRobots)
 		{
+			if (Robot->IsDie()) continue;
+
 			// 카메라 이동 X 단 목표가 되지 않음.
 			if (Robot->CollisionCheck(&xmvCameraPos, &xmvLook, &fTemp))
 			{

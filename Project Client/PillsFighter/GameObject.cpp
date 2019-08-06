@@ -411,6 +411,8 @@ void CGameObject::AfterAdvanceAnimationController()
 
 void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 {
+	if (m_bDie) return;
+
 	if (m_pModel)
 	{
 		OnPrepareRender();
@@ -438,6 +440,7 @@ void CGameObject::SetSkinnedMeshBoneTransformConstantBuffer()
 
 void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
+	if (m_bDie) return;
 	if (!m_bRender) return;
 
 	if(nInstances > 1)
@@ -479,6 +482,7 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
+	if (m_bDie) return;
 	if (!m_bRender) return;
 
 	if (nInstances > 1)
@@ -510,6 +514,7 @@ void CGameObject::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCa
 
 void CGameObject::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera* pCamera, int nInstances)
 {
+	if (m_bDie) return;
 	if (!m_bRender) return;
 
 	OnPrepareRender();

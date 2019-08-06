@@ -617,13 +617,6 @@ void CGameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			OnResizeBackBuffers();
 			break;
 		}
-		case VK_F4:
-			if (m_pScene) m_pScene->EndScene();
-
-			ReleaseObjects();
-
-			BuildScene(SCENE_TYPE_LOBBY_ROOM);
-			break;
 		case VK_TAB:
 			if (::GetCapture() == m_hWnd)
 			{

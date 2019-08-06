@@ -274,7 +274,7 @@ protected:
 	float								m_fSpeed;
 	float								m_fElapsedTime;
 	float								m_fDuration;
-	bool								m_bEmit = true;
+	bool								m_bEmit = false;
 	XMFLOAT3							m_xmf3Angles;
 	bool								m_bScaling = false;
 	float								m_fMass = 0.0f;

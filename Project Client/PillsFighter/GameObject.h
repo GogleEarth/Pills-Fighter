@@ -205,6 +205,13 @@ protected:
 public:
 	bool CheckDidHitObject(CGameObject *pObject) { return m_uspHitObjects.count(pObject) > 0; }
 	void AddHitObject(CGameObject* pObject) { m_uspHitObjects.emplace(pObject); }
+
+protected:
+	bool m_bDie = false;
+
+public:
+	void ProcessDie() { m_bDie = true; }
+	bool IsDie() { return m_bDie; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -111,6 +111,8 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 
 void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
+	if (m_bDie) return;
+
 	XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 	
 	if (IsDash())
@@ -308,6 +310,7 @@ void CPlayer::Move(const XMFLOAT3& xmf3Shift)
 
 void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
+	if (m_bDie) return;
 	if (m_bZoomIn) return;
 
 	CRobotObject::Render(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
@@ -329,6 +332,8 @@ void CPlayer::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamer
 
 void CPlayer::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, bool bSetTexture, bool bSetShader, int nInstances)
 {
+	if (m_bDie) return;
+
 	CRobotObject::RenderToShadow(pd3dCommandList, pCamera, bSetTexture, bSetShader, nInstances);
 
 	if (m_pWeaponShader) m_pWeaponShader->RenderToShadow(pd3dCommandList, pCamera);
@@ -339,6 +344,8 @@ void CPlayer::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera
 
 void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera, int nInstances)
 {
+	if (m_bDie) return;
+
 	CRobotObject::RenderWire(pd3dCommandList, pCamera, nInstances);
 
 	if (m_pRHWeapon) m_pRHWeapon->RenderWire(pd3dCommandList, pCamera);
@@ -347,19 +354,22 @@ void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 void CPlayer::Update(float fTimeElapsed)
 {
-	CRobotObject::Animate(fTimeElapsed);
-
-	for (const auto& Weapon : m_vpWeapon) Weapon->Animate(fTimeElapsed, NULL);
-
-	ProcessBooster(fTimeElapsed);
-	ProcessHitPoint();
-	ProcessTime(m_pRHWeapon, fTimeElapsed);
-	ProcessAnimation();
-
-	if (!IsZero(m_fVelocityY))
+	if (!m_bDie)
 	{
-		if(m_xmf3Position.y + m_fVelocityY < 1700.0f)
-			Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+		CRobotObject::Animate(fTimeElapsed);
+
+		for (const auto& Weapon : m_vpWeapon) Weapon->Animate(fTimeElapsed, NULL);
+
+		ProcessBooster(fTimeElapsed);
+		ProcessHitPoint();
+		ProcessTime(m_pRHWeapon, fTimeElapsed);
+		ProcessAnimation();
+
+		if (!IsZero(m_fVelocityY))
+		{
+			if (m_xmf3Position.y + m_fVelocityY < 1700.0f)
+				Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
+		}
 	}
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
