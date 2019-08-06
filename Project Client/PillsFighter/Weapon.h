@@ -136,8 +136,8 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define GG_SHOT_COOLTIME	0.04f
-#define GG_BURST_COOLTIME	0.25f
+#define GG_SHOT_COOLTIME	0.06f
+#define GG_BURST_COOLTIME	0.4f
 #define GG_RELOAD_TIME		2.0f
 
 class CGimGun : public CGun
@@ -231,11 +231,13 @@ public:
 
 	virtual void CheckShootable(float fElapsedTime);
 	virtual void SetShootEnergy() {}
+	virtual void SetSizeX() {}
 
 	virtual void Animate(float fElapsedTime, CCamera *pCamera = NULL);
 
 protected:
 	int m_nShootEnergy = 0;
+	float m_fSizeX = 0.0f;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,6 +261,7 @@ public:
 	virtual void SetShootEnergy() { m_nShootEnergy = BR_SHOOT_ENERGY; }
 
 	virtual int ShootNumber() { return 1; };
+	virtual void SetSizeX() { m_fSizeX = 3.0f; }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -282,6 +285,7 @@ public:
 	virtual void SetShootEnergy() { m_nShootEnergy = BS_SHOOT_ENERGY; }
 
 	virtual int ShootNumber() { return 1; };
+	virtual void SetSizeX() { m_fSizeX = 5.0f; }
 
 	virtual void OnPrepareAnimate();
 };

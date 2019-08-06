@@ -3180,7 +3180,7 @@ void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	case WEAPON_TYPE_OF_GM_GUN:
 		pWeapon = new CGimGun();
 		pWeapon->SetModel(m_pGimGun);
-		((CGun*)pWeapon)->SetBullet(m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS], m_ppEffectShaders[INDEX_SHADER_TIMED_EEFECTS], STANDARD_OBJECT_INDEX_GG_BULLET);
+		((CGun*)pWeapon)->SetBullet(NULL, m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case WEAPON_TYPE_OF_BAZOOKA:
@@ -4168,9 +4168,17 @@ void CBattleScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pCreateEffectInfo->xmf3Position, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		break;
-	case EFFECT_TYPE::EFFECT_TYPE_LASER_BEAM:
+	case EFFECT_TYPE::EFFECT_TYPE_GM_GUN:
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
+		m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS]->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, pCreateEffectInfo->xmf3Position, XMFLOAT2(1.0f, pCreateEffectInfo->fDistance), pCreateEffectInfo->xmf3Look, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		break;
+	case EFFECT_TYPE::EFFECT_TYPE_BEAM_RIFLE:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
 		m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS]->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, pCreateEffectInfo->xmf3Position, XMFLOAT2(3.0f, pCreateEffectInfo->fDistance), pCreateEffectInfo->xmf3Look, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		break;
+	case EFFECT_TYPE::EFFECT_TYPE_BEAM_SNIPER:
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
+		m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS]->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, pCreateEffectInfo->xmf3Position, XMFLOAT2(5.0f, pCreateEffectInfo->fDistance), pCreateEffectInfo->xmf3Look, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		break;
 	}
 }

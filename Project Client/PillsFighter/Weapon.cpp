@@ -224,10 +224,35 @@ void CGimGun::SetShotCoolTime()
 
 void CGimGun::Shot()
 {
-	CGun::Shot();
+	CPlayer *pPlayer = (CPlayer*)m_pOwner;
 
 #ifndef ON_NETWORKING
-	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGShot);
+	Bullet *pBullet = NULL;
+	pBullet = new Bullet();
+
+	if (!m_pMuzzle) return;
+
+	XMFLOAT3 xmf3MuzzlePos = m_pMuzzle->GetPosition();
+
+	XMFLOAT3 xmf3TargetPos = pPlayer->GetToTargetPosition(xmf3MuzzlePos);
+
+	XMFLOAT3 xmf3Distance = Vector3::Subtract(xmf3TargetPos, xmf3MuzzlePos);
+	XMFLOAT3 xmf3Look = Vector3::Normalize(xmf3Distance);
+	float fDistance = Vector3::Length(xmf3Distance);
+
+	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(1.0f, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+#else
+	pPlayer->SendShootPacket();
+#endif
+
+	m_nShootedCount++;
+	m_nReloadedAmmo--;
+
+	SetShotCoolTime();
+
+#ifndef ON_NETWORKING
+	gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
 #endif
 }
 
@@ -348,6 +373,7 @@ void CBeamGun::Initialize()
 
 	m_nReloadedAmmo = 100;
 	SetShootEnergy();
+	SetSizeX();	
 }
 
 void CBeamGun::SetType()
@@ -375,7 +401,7 @@ void CBeamGun::Shot()
 	XMFLOAT3 xmf3Look = Vector3::Normalize(xmf3Distance);
 	float fDistance = Vector3::Length(xmf3Distance);
 
-	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(3.0f, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(m_fSizeX, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 #else
 	pPlayer->SendShootPacket();
