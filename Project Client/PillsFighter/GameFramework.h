@@ -114,6 +114,7 @@ protected: // for Network
 	int		m_nFramePerSecond;
 
 	std::vector<int> m_vnIndices;
+	std::vector<int> m_vnEnemyIndices;
 	std::vector<wchar_t*> m_vpwstrNames;
 
 public:

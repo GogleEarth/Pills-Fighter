@@ -697,10 +697,10 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_RELOAD_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.ShaderRegister = 16;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ROBOT_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ENEMY_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ENEMY_INFO].Descriptor.ShaderRegister = 16;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ENEMY_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_ENEMY_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_PLAYER_INFO].Descriptor.ShaderRegister = 17;
@@ -746,7 +746,12 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.ShaderRegister = 18;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].Constants.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_COLOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].Descriptor.ShaderRegister = 21;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 
 	pd3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -2723,9 +2728,10 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
 }
 
-void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<wchar_t*> &vpwstrNames)
+void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<int> &vnEnemyIndices, std::vector<wchar_t*> &vpwstrNames)
 {
 	std::map<int, int> slotindex;
+	std::map<int, int> enemyIndex;
 
 	for (int i = 0; i < 8; i++)
 	{
@@ -2738,6 +2744,7 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 			{
 				slotindex[m_pPlayerInfos[i].m_nSlot] = i;
 			}
+			else enemyIndex[m_pPlayerInfos[i].m_nSlot] = i;
 		}
 		else if (nTeam == TEAM_TYPE::TEAM_TYPE_BLUE)
 		{
@@ -2745,6 +2752,7 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 			{
 				slotindex[m_pPlayerInfos[i].m_nSlot] = i;
 			}
+			else enemyIndex[m_pPlayerInfos[i].m_nSlot] = i;
 		}
 	}
 
@@ -2755,6 +2763,13 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 		vnIndices.emplace_back(nIndex);
 		vpwstrNames.emplace_back(m_pPlayerInfos[nIndex].m_pTextObject->GetText());
 	}
+
+	for (auto iter : enemyIndex)
+	{
+		int nIndex = iter.second;
+		vnEnemyIndices.emplace_back(nIndex);
+	}
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3131,6 +3146,15 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CMinimapShader *pMinimapShader = new CMinimapShader(pd3dDevice, pd3dCommandList);
 	pMinimapShader->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
+	for (int i = 0; i < m_vTeamIndex.size(); i++)
+	{
+		pMinimapShader->SetTeamInfo(&m_pObjects[m_vTeamIndex[i]]);
+	}
+	for (int i = 0; i < m_vEnemyIndex.size(); i++)
+	{
+		pMinimapShader->SetEnemyInfo(&m_pObjects[m_vEnemyIndex[i]]);
+	}
+	pMinimapShader->SetRobotCount();
 	pMinimapShader->Initialize(pd3dDevice, pd3dCommandList, xmf2Center.x, xmf2Center.y, xmf2Size.x, xmf2Size.y);
 	pMinimapShader->SetPlayer(m_pPlayer);
 
@@ -4178,10 +4202,6 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 
 		m_pObjects[pPacket->ID]->SetWorldTransf(pPacket->WorldMatrix);
 		m_pObjects[pPacket->ID]->SetPrepareRotate(0.0f, 180.0f, 0.0f);
-
-		if (m_pMinimapShader) {
-			m_pMinimapShader->UpdateMinimapRobotInfo(m_pObjects[pPacket->ID], pPacket->ID);
-		}
 
 		if (pPacket->isUpChangeAnimation)
 		{
