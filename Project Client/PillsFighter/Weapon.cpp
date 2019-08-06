@@ -157,7 +157,7 @@ void CGun::Shot()
 
 	m_pBulletShader->InsertObject(m_pd3dDevice, m_pd3dCommandList, pBullet, m_nBulletGroup, true, NULL);
 
-	m_pEffectShader->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	((CEffectShader*)m_pEffectShader)->AddEffect(TIMED_EFFECT_INDEX_MUZZLE_FIRE, xmf3MuzzlePos, XMFLOAT2(2.5f, 2.5f), 0, rand() % 360, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 #else
 	pPlayer->SendShootPacket();
 #endif
@@ -240,7 +240,10 @@ void CGimGun::Shot()
 	XMFLOAT3 xmf3Look = Vector3::Normalize(xmf3Distance);
 	float fDistance = Vector3::Length(xmf3Distance);
 
-	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(1.0f, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	((CEffectShader*)m_pBulletShader)->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(1.0f, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	float fSize = SPRITE_EFFECT_BEAM_HIT_SIZE;
+	((CEffectShader*)m_pEffectShader)->AddEffect(SPRITE_EFFECT_INDEX_BEAM_HIT, xmf3TargetPos, XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, 360, XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f));
 
 #else
 	pPlayer->SendShootPacket();
@@ -401,8 +404,10 @@ void CBeamGun::Shot()
 	XMFLOAT3 xmf3Look = Vector3::Normalize(xmf3Distance);
 	float fDistance = Vector3::Length(xmf3Distance);
 
-	m_pEffectShader->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(m_fSizeX, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	((CEffectShader*)m_pBulletShader)->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, xmf3MuzzlePos, XMFLOAT2(m_fSizeX, fDistance), xmf3Look, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
+	float fSize = SPRITE_EFFECT_BEAM_HIT_SIZE;
+	((CSpriteShader*)m_pEffectShader)->AddEffect(SPRITE_EFFECT_INDEX_BEAM_HIT, xmf3TargetPos, XMFLOAT2(fSize, fSize), EFFECT_ANIMATION_TYPE_ONE, 360, XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f));
 #else
 	pPlayer->SendShootPacket();
 #endif

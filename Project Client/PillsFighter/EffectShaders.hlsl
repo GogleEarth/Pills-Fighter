@@ -435,34 +435,18 @@ VS_SPRITE_INPUT VSSpriteStreamOut(VS_SPRITE_INPUT input)
 [maxvertexcount(1)]
 void GSSpriteStreamOut(point VS_SPRITE_INPUT input[1], inout PointStream<VS_SPRITE_INPUT> outStream)
 {
-	uint nSpritePos = input[0].spritepos.x + input[0].spritepos.y * gSprite.m_nMaxSpriteX;
+	input[0].age += gEffect.m_fElapsedTime;
 
-	if (nSpritePos == gSprite.m_nMaxSprite)
+	if (input[0].age > gEffect.m_fDuration)
 	{
-		if (input[0].type == EFFECT_TYPE_SPRITE_ONE) return;
-		else if (input[0].type == EFFECT_TYPE_SPRITE_LOOP)
-		{
-			input[0].spritepos.x = input[0].spritepos.y = 0;
-			input[0].age = 0.0f;
-		}
+		if(input[0].type == EFFECT_TYPE_SPRITE_ONE)  return;
+		else if (input[0].type == EFFECT_TYPE_SPRITE_LOOP) input[0].age = fmod(input[0].age, gEffect.m_fDuration);
 	}
-	else
-	{
-		input[0].age += gEffect.m_fElapsedTime;
 
-		float fNextSpriteTime = nSpritePos * gSprite.m_fDurationPerSprite;
+	uint nSpritePos = int(input[0].age / gSprite.m_fDurationPerSprite);
 
-		if (input[0].age >= fNextSpriteTime)
-		{
-			input[0].spritepos.x += 1;
-
-			if (input[0].spritepos.x == gSprite.m_nMaxSpriteX)
-			{
-				input[0].spritepos.x = 0;
-				input[0].spritepos.y += 1;
-			}
-		}
-	}
+	input[0].spritepos.x = nSpritePos % gSprite.m_nMaxSpriteX; 
+	input[0].spritepos.y = int(nSpritePos / gSprite.m_nMaxSpriteX);
 
 	outStream.Append(input[0]);
 }

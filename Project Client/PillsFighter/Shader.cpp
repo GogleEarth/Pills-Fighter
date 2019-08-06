@@ -1427,7 +1427,7 @@ void CTimedEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TIMED_EFFECT_INDEX_MUZZLE_FIRE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
+	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE] = new CEffect(pd3dDevice, pd3dCommandList, 0.1f);
 	m_ppEffects[TIMED_EFFECT_INDEX_MUZZLE_FIRE]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1493,7 +1493,7 @@ void CTextEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[TEXT_EFFECT_INDEX_HIT_TEXT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
+	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT] = new CEffect(pd3dDevice, pd3dCommandList, 2.0f);
 	m_ppEffects[TEXT_EFFECT_INDEX_HIT_TEXT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1602,7 +1602,7 @@ void CLaserEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LASER_EFFECT_INDEX_LASER_BEAM], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
+	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM] = new CLaserBeam(pd3dDevice, pd3dCommandList, 2.0f);
 	m_ppEffects[LASER_EFFECT_INDEX_LASER_BEAM]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -1674,7 +1674,7 @@ void CFollowEffectShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	{
 		CFollowEffect *pEffect = NULL;
 
-		pEffect = new CFollowEffect(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+		pEffect = new CFollowEffect(pd3dDevice, pd3dCommandList, 1.0f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		pEffect->AddVertex(XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), 0, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -1860,37 +1860,46 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppEffects = new CEffect*[m_nEffects];;
 	
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Gun_Hit.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_GUN_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_GUN_HIT] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.1f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_GUN_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 16, 0.5f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_GUN_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Sword_Hit.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 16, 0.05f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 16, 0.5f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Sword_Hit2.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 2, 6, 0.05f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.3f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
-	m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION] = new CTexture(1, RESOURCE_TEXTURE2D_ARRAY, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Explosion.dds", 0);
 
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_EXPLOSION], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 4, 4, 14, 1.0f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 14, 1.0f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_EXPLOSION]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	//
+	m_ppTextures[SPRITE_EFFECT_INDEX_BEAM_HIT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_BEAM_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Beam_Hit.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_BEAM_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppEffects[SPRITE_EFFECT_INDEX_BEAM_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 16, 0.3f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_BEAM_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1986,7 +1995,7 @@ void CFollowSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	{
 		CFollowSprite *pEffect = NULL;
 
-		pEffect = new CFollowSprite(pd3dDevice, pd3dCommandList, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 5, 4, 20, 0.5f);
+		pEffect = new CFollowSprite(pd3dDevice, pd3dCommandList, 5, 4, 20, 0.5f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 		pEffect->AddVertex(XMFLOAT3(0.0f, -2.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), EFFECT_SPRITE_TYPE_LOOP, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));

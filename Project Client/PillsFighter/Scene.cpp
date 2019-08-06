@@ -3180,7 +3180,7 @@ void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	case WEAPON_TYPE_OF_GM_GUN:
 		pWeapon = new CGimGun();
 		pWeapon->SetModel(m_pGimGun);
-		((CGun*)pWeapon)->SetBullet(NULL, m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
+		((CGun*)pWeapon)->SetBullet(m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS],  NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case WEAPON_TYPE_OF_BAZOOKA:
@@ -3198,13 +3198,13 @@ void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	case WEAPON_TYPE_OF_BEAM_RIFLE:
 		pWeapon = new CBeamRifle();
 		pWeapon->SetModel(m_pBeamRifle);
-		((CGun*)pWeapon)->SetBullet(NULL, m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
+		((CGun*)pWeapon)->SetBullet(m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS], NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case WEAPON_TYPE_OF_BEAM_SNIPER:
 		pWeapon = new CBeamSniper();
 		pWeapon->SetModel(m_pBeamSniper);
-		((CGun*)pWeapon)->SetBullet(NULL, m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], NULL);
+		((CGun*)pWeapon)->SetBullet(m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS], m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS], NULL);
 		m_pPlayer->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case WEAPON_TYPE_OF_SABER:

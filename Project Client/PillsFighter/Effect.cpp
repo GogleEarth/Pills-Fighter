@@ -5,7 +5,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration, UINT nBytes)
+CEffect::CEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration, UINT nBytes)
 {
 	m_nVertices = 0;
 	m_nBytes = nBytes;
@@ -211,7 +211,7 @@ void CEffect::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAni
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, sizeof(CLaserVertex))
+CLaserBeam::CLaserBeam(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, fDuration, sizeof(CLaserVertex))
 {
 }
 
@@ -230,7 +230,7 @@ void CLaserBeam::AddVertexWithLookV(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, XM
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CFollowEffect::CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, float fDuration, UINT nBytes) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, nBytes)
+CFollowEffect::CFollowEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fDuration, UINT nBytes) : CEffect(pd3dDevice, pd3dCommandList, fDuration, nBytes)
 {
 }
 
@@ -315,7 +315,7 @@ void CFollowEffect::Render(ID3D12GraphicsCommandList *pd3dCommandList)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, sizeof(CSpriteVertex))
+CSprite::CSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CEffect(pd3dDevice, pd3dCommandList, fDuration, sizeof(CSpriteVertex))
 {
 	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
 	m_nMaxSpriteX = nMaxX;
@@ -379,7 +379,7 @@ void CSprite::AddVertex(XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size, int nEffectAni
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CFollowSprite::CFollowSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CFollowEffect(pd3dDevice, pd3dCommandList, xmf4Color, fDuration, sizeof(CSpriteVertex))
+CFollowSprite::CFollowSprite(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, UINT nMaxX, UINT nMaxY, UINT nMax, float fDuration) : CFollowEffect(pd3dDevice, pd3dCommandList, fDuration, sizeof(CSpriteVertex))
 {
 	m_xmf2SpriteSize = XMFLOAT2(1.0f / nMaxX, 1.0f / nMaxY);
 	m_nMaxSpriteX = nMaxX;

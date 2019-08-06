@@ -82,7 +82,7 @@ public:
 	float GetReloadTime() { return m_fReloadTime; }
 	int GetMaxReloadAmmo() { return m_nMaxReloadAmmo; }
 	int GetReloadedAmmo() { return m_nReloadedAmmo; }
-	void SetBullet(CShader *pBullet, CShader *pEffect, int nGroup) { m_pBulletShader = (CObjectsShader*)pBullet; m_pEffectShader = (CEffectShader*)pEffect;  m_nBulletGroup = nGroup; }
+	void SetBullet(CShader *pBullet, CShader *pEffect, int nGroup) { m_pBulletShader = pBullet; m_pEffectShader = pEffect;  m_nBulletGroup = nGroup; }
 	
 	virtual void OnPrepareAnimate();
 	virtual void Reload(int& nAmmo);
@@ -104,8 +104,8 @@ public:
 protected:
 	CModel *m_pMuzzle = NULL;
 	CModel *m_pScope = NULL;
-	CObjectsShader *m_pBulletShader = NULL;
-	CEffectShader *m_pEffectShader = NULL;
+	CShader *m_pBulletShader = NULL;
+	CShader *m_pEffectShader = NULL;
 	int	m_nBulletGroup;
 
 	float	m_fShotCoolTime = 0.0f;
