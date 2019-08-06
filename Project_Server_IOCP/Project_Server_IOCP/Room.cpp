@@ -68,6 +68,79 @@ int Room::get_empty_slot_blue_team()
 	return -1;
 }
 
+XMFLOAT3 Room::get_respawn_point(int id)
+{
+	XMFLOAT3 point;
+
+	if (using_scene_ == 0)
+	{
+		switch (players_[id].get_slot())
+		{
+		case 0:
+			point = XMFLOAT3{ -700, 0, -725 };
+			break;
+		case 1:
+			point = XMFLOAT3{ 610, 0, 800 };
+			break;
+		case 2:
+			point = XMFLOAT3{ -735, 0, -725 };
+			break;
+		case 3:
+			point = XMFLOAT3{ 690, 0, 800 };
+			break;
+		case 4:
+			point = XMFLOAT3{ -635, 0, -725 };
+			break;
+		case 5:
+			point = XMFLOAT3{ 530, 0, 800 };
+			break;
+		case 6:
+			point = XMFLOAT3{ -700, 0, -770 };
+			break;
+		case 7:
+			point = XMFLOAT3{ 610, 0, 850 };
+			break;
+		default:
+			break;
+		}
+	}
+	else
+	{
+		switch (players_[id].get_slot())
+		{
+		case 0:
+			point = XMFLOAT3{ -525, 0, -800 };
+			break;
+		case 1:
+			point = XMFLOAT3{ 525, 0, 800 };
+			break;
+		case 2:
+			point = XMFLOAT3{ -600, 0, -800 };
+			break;
+		case 3:
+			point = XMFLOAT3{ 615, 0, 800 };
+			break;
+		case 4:
+			point = XMFLOAT3{ -455, 0, -800 };
+			break;
+		case 5:
+			point = XMFLOAT3{ 440, 0, 800 };
+			break;
+		case 6:
+			point = XMFLOAT3{ -525, 0, -850 };
+			break;
+		case 7:
+			point = XMFLOAT3{ 525, 0, 850 };
+			break;
+		default:
+			break;
+		}
+	}
+
+
+	return point;
+}
+
 XMFLOAT4X4 Room::get_player_worldmatrix(int id)
 {
 	return 	scenes_[using_scene_]->get_player_worldmatrix(id);

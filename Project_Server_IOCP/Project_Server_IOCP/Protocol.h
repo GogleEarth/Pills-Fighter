@@ -47,7 +47,8 @@ typedef enum PKT_ID
 	PKT_ID_MAP_EVENT,
 	PKT_ID_MOVE_TEAM,
 	PKT_ID_PLAYER_DIE,
-	PKT_ID_CHANGE_NAME
+	PKT_ID_CHANGE_NAME,
+	PKT_ID_RESPAWN_POINT
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -401,6 +402,13 @@ struct PKT_GAME_STATE
 	BYTE		PktId;
 	GAME_STATE	game_state;
 	BYTE		num_player;
+};
+
+struct PKT_RESPAWN_POINT
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	XMFLOAT3	point;
 };
 
 ///////////////////////////////////////////////////////////

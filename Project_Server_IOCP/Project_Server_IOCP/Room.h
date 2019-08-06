@@ -80,7 +80,7 @@ public:
 	int get_empty_slot_red_team();
 	int get_empty_slot_blue_team();
 
-
+	XMFLOAT3 get_respawn_point(int id);
 	XMFLOAT4X4 get_player_worldmatrix(int id);
 	XMFLOAT4X4 make_matrix();
 	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);

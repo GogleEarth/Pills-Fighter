@@ -746,6 +746,11 @@ void Framawork::process_packet(int id, char* packet)
 						send_packet_to_player(players[i].get_serverid(), (char*)&anotherpktdata);
 
 					}
+
+					PKT_RESPAWN_POINT pkt_rp;
+					pkt_rp.PktId = PKT_ID_RESPAWN_POINT;
+					pkt_rp.PktSize = sizeof(PKT_RESPAWN_POINT);
+					pkt_rp.point = rooms_[room_num].get_respawn_point(i);
 				}
 			}
 
