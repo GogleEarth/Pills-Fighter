@@ -280,9 +280,14 @@ PS_OUTPUT PSInsTextured(VS_INSTANCING_OUTPUT input) : SV_TARGET
 	PS_OUTPUT output;
 	//float4 cCubeColor = gtxtSkyCubeTexture.Sample(gssClamp, input.reflection);
 
+	uint nTexMask = gGameObjectsInfo[input.instanceID].m_nTexturesMask;
+
+	float4 f4GlowColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (nTexMask & MATERIAL_EMISSION_MAP)
+		f4GlowColor = gtxtEmissiveTexture.Sample(gssWrap, input.uv);
+
 	// 임시 텍스처 배열 인덱스는 0
 	float4 f4AlbedoColor = float4(1.0f, 0.0f, 0.0f, 1.0f);
-	uint nTexMask = gGameObjectsInfo[input.instanceID].m_nTexturesMask;
 
 	if (nTexMask & MATERIAL_ALBEDO_MAP)
 		f4AlbedoColor = gtxtTexture[0].Sample(gssWrap, input.uv);
@@ -314,6 +319,7 @@ PS_OUTPUT PSInsTextured(VS_INSTANCING_OUTPUT input) : SV_TARGET
 	cIllumination = Lighting(input.positionW, normalW, gGameObjectsInfo[input.instanceID].m_Material, fSpecularFactor, shadowFactor);
 
 	output.color = cColor * cIllumination;
+	output.glow = f4GlowColor;
 	output.normal = float4(normalW, 1.0f);
 
 	return output;
