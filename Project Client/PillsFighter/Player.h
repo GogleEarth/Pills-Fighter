@@ -223,4 +223,6 @@ protected:
 
 public:
 	void SendShootPacket();
+	virtual void ProcessDie(float fRespawnTime);
+	virtual void ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World);
 };

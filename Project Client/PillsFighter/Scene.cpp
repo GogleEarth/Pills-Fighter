@@ -3123,10 +3123,10 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 #endif
 
 	CUserInterface *pUserInterface = new CUserInterface();
+	pUserInterface->SetFont(m_pFont);
 	pUserInterface->Initialize(pd3dDevice, pd3dCommandList, NULL);
 	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pUserInterface->SetPlayer(m_pPlayer);
-	pUserInterface->SetFont(m_pFont);
 	pUserInterface->SetAmmoText(0);
 
 	for (int i = 0; i < m_vTeamIndex.size(); i++)

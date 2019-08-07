@@ -153,6 +153,15 @@ void CGameObject::ReleaseShaderVariables()
 	}
 }
 
+void CGameObject::SetHitPoint(int nHitPoint)
+{
+	m_nHitPoint = nHitPoint; 
+	if (m_nHitPoint > m_nMaxHitPoint) 
+		m_nHitPoint = m_nMaxHitPoint;
+	if (m_nHitPoint < 0)
+		m_nHitPoint = 0;
+}
+
 void CGameObject::OnPrepareRender()
 {
 	m_xmf4x4World._11 = m_xmf3Right.x;

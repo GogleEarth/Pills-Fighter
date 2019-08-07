@@ -354,10 +354,10 @@ void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 void CPlayer::Update(float fTimeElapsed)
 {
+	CRobotObject::Animate(fTimeElapsed);
+
 	if (!m_bDie)
 	{
-		CRobotObject::Animate(fTimeElapsed);
-
 		for (const auto& Weapon : m_vpWeapon) Weapon->Animate(fTimeElapsed, NULL);
 
 		ProcessBooster(fTimeElapsed);
@@ -1309,4 +1309,18 @@ void CPlayer::TakeAim()
 			}
 		}
 	}
+}
+
+void CPlayer::ProcessDie(float fRespawnTime)
+{
+	CRobotObject::ProcessDie(fRespawnTime);
+
+	if(m_pUI) m_pUI->ClientDie();
+}
+
+void CPlayer::ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World)
+{
+	CRobotObject::ProcessRespawn(nHP, xmf4x4World);
+
+	if (m_pUI) m_pUI->ClientRespawn();
 }
