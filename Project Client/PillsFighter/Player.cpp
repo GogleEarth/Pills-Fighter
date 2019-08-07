@@ -1349,9 +1349,9 @@ void CPlayer::ProcessDie(float fRespawnTime)
 	}
 }
 
-void CPlayer::ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World)
+void CPlayer::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
 {
-	CRobotObject::ProcessRespawn(nHP, xmf4x4World);
+	CRobotObject::ProcessRespawn(nHP, xmf3Position);
 
 	if (m_pUI) m_pUI->ClientRespawn();
 }

@@ -3488,7 +3488,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		XMFLOAT2 xmf2Scale(fScale, fScale);
 		UpdateCustomUIShaderVariable(pd3dCommandList, xmf2Scale);
 
-		m_ppTextures[UI_TEXTURE_TEXT_1 + m_nNotifyOrder]->UpdateShaderVariables(pd3dCommandList);
+		m_ppTextures[UI_TEXTURE_TEXT_3 + m_nNotifyOrder]->UpdateShaderVariables(pd3dCommandList);
 		m_ppUIRects[UI_RECT_BATTLE_NOTIFY]->Render(pd3dCommandList, 0);
 	}
 }
