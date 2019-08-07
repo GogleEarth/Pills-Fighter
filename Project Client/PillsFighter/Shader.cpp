@@ -2513,7 +2513,7 @@ CUserInterface::~CUserInterface()
 	if (m_pd3dPipelineStateTeamHP) m_pd3dPipelineStateTeamHP->Release();
 	if (m_pd3dPipelineStateColored) m_pd3dPipelineStateColored->Release();
 	if (m_pd3dPipelineState3DUI) m_pd3dPipelineState3DUI->Release();
-	if (m_pd3dPipelineStateTeamHPRespawn) m_pd3dPipelineStateTeamHPRespawn->Release();
+	if (m_pd3dPipelineStateRespawn) m_pd3dPipelineStateRespawn->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -2561,9 +2561,9 @@ D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderTeamHP(ID3DBlob **ppd3dSh
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUITeamHP", "ps_5_1", ppd3dShaderBlob));
 }
 
-D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderTeamHPRespawn(ID3DBlob **ppd3dShaderBlob)
+D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderRespawn(ID3DBlob **ppd3dShaderBlob)
 {
-	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUITeamHPRespawn", "ps_5_1", ppd3dShaderBlob));
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "PSUIRespawn", "ps_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader3DUI(ID3DBlob **ppd3dShaderBlob)
@@ -2649,8 +2649,8 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateReload);
 
 	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
-	d3dPipelineStateDesc.PS = CreatePixelShaderTeamHPRespawn(&pd3dPixelShaderBlob);
-	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateTeamHPRespawn);
+	d3dPipelineStateDesc.PS = CreatePixelShaderRespawn(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateRespawn);
 
 	d3dPipelineStateDesc.GS = CreateGeometryShaderTeamHP(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShaderTeamHP(&pd3dPixelShaderBlob);
@@ -2684,6 +2684,15 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 	m_pd3dcbPlayerAmmo->Map(0, NULL, (void **)&m_pcbMappedPlayerAmmo);
 
+	ncbElementBytes = ((sizeof(CB_RELOAD_N_RESPAWN_INFO) + 255) & ~255);
+
+	for (int i = 0; i < 5; i++)
+	{
+		m_pd3dcbTimeInfo[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+			D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+		m_pd3dcbTimeInfo[i]->Map(0, NULL, (void **)&m_pcbMappedTimeInfo[i]);
+	}
+
 	ncbElementBytes = ((sizeof(CB_UI_3D_INFO) + 255) & ~255);
 
 	for (int i = 0; i < m_vppTeamObject.size(); i++)
@@ -2698,12 +2707,6 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 		m_vpd3dcbUI3DInfo.emplace_back(pd3dcb);
 		m_vpcbMappedUI3DInfo.emplace_back(pcbMapped);
 	}
-
-	ncbElementBytes = ((sizeof(CB_RELOAD_N_RESPAWN_INFO) + 255) & ~255);
-
-	m_pd3dcbReloadInfo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
-		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
-	m_pd3dcbReloadInfo->Map(0, NULL, (void **)&m_pcbMappedReloadInfo);
 
 	for (int i = 0; i < m_vppTeamObject.size(); i++)
 	{
@@ -2739,13 +2742,15 @@ void CUserInterface::ReleaseShaderVariables()
 		m_pd3dcbPlayerAmmo->Release();
 	}
 
-	if (m_pd3dcbReloadInfo)
+	for (int i = 0; i < 5; i++)
 	{
-		m_pd3dcbReloadInfo->Unmap(0, NULL);
-		m_pd3dcbReloadInfo->Release();
+		if (m_pd3dcbTimeInfo[i])
+		{
+			m_pd3dcbTimeInfo[i]->Unmap(0, NULL);
+			m_pd3dcbTimeInfo[i]->Release();
+		}
 	}
 
-	
 	for (int i = 0; i < m_vpd3dcbTeamHP.size(); i++)
 	{
 		if (m_vpd3dcbTeamHP[i])
@@ -2773,7 +2778,7 @@ void CUserInterface::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dComman
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
 }
 
-void CUserInterface::UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fTime, float fElapsedTime)
+void CUserInterface::UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fTime, float fElapsedTime, XMFLOAT4 xmf4FillColor)
 {
 	float f = (fTime - fElapsedTime) / fTime; // min 0 -> max 1
 	float t = fmod(f, 0.5f); // 0 ~ 0.5
@@ -2782,10 +2787,11 @@ void CUserInterface::UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCom
 	if (v >= 1.0f) color = fmod(v, 1.0f);
 	else color = color - v;
 
-	m_pcbMappedReloadInfo->fReloadTime = 1.0f - f;
-	m_pcbMappedReloadInfo->fTextColor = color;
+	m_pcbMappedTimeInfo[m_nTimeInfoIndex]->fReloadTime = 1.0f - f;
+	m_pcbMappedTimeInfo[m_nTimeInfoIndex]->xmf4TextureColor = XMFLOAT4(color, color, color, 1.0f);
+	m_pcbMappedTimeInfo[m_nTimeInfoIndex]->xmf4FillColor = xmf4FillColor;
 
-	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbReloadInfo->GetGPUVirtualAddress();
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbTimeInfo[m_nTimeInfoIndex++]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_RELOAD_INFO, d3dGpuVirtualAddress);
 }
 
@@ -3050,6 +3056,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_SCOPE_MASK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScopeMask.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SCOPE_MASK], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+	m_ppTextures[UI_TEXTURE_RESPAWN_BAR] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_RESPAWN_BAR]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Respawn.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_RESPAWN_BAR], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
 
@@ -3063,11 +3073,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Size = ::CalculateSize(-0.375000f, -0.332812f, 0.257778f, -0.257778f);
 	m_ppUIRects[UI_RECT_HP] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = ::CalculateCenter(0.375000f, 0.417287f, 0.257778f, -0.257778f);
+	xmf2Center = ::CalculateCenter(0.333000f, 0.375287f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(0.375000f, 0.417287f, 0.257778f, -0.257778f);
 	m_ppUIRects[UI_RECT_BOOSTER] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	xmf2Center = ::CalculateCenter(0.418007f, 0.457070f, 0.257778f, -0.257778f);
+	xmf2Center = ::CalculateCenter(0.376007f, 0.415070f, 0.257778f, -0.257778f);
 	xmf2Size = ::CalculateSize(0.418007f, 0.457070f, 0.257778f, -0.257778f);
 	m_ppUIRects[UI_RECT_BULLET_N_RELOAD] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
@@ -3135,10 +3145,32 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	m_ppUIRects[UI_RECT_TEAM_HP_3] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	fCenterX = 0.0f;
+	fCenterY = -0.5f;
+	fSizeX = 340.0f / FRAME_BUFFER_WIDTH;
+	fSizeY = 20.0f / FRAME_BUFFER_HEIGHT;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
+	m_ppUIRects[UI_RECT_RESPAWN_BAR] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
+	m_pRespawnNotifyText = m_pFont->SetText(1280, 720, L"리스폰 대기중", XMFLOAT2(-0.10f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+}
+
+void CUserInterface::ClientDie()
+{ 
+	m_pRespawnNotifyText->Display();
+}
+
+void CUserInterface::ClientRespawn()
+{ 
+	m_pRespawnNotifyText->Hide(); 
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	m_nTimeInfoIndex = 0;
+
 	if (m_vpd3dTeamNameTexture.size() > 0) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
 
 	for (int i = 0; i < m_vpd3dTeamNameTexture.size(); i++)
@@ -3186,18 +3218,31 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		}
 	}
 
-	if (nDie > 0)
+	if (nDie > 0 || m_pPlayer->IsDie())
 	{
-		pd3dCommandList->SetPipelineState(m_pd3dPipelineStateTeamHPRespawn);
+		pd3dCommandList->SetPipelineState(m_pd3dPipelineStateRespawn);
 
 		for (int i = 0; i < m_vppTeamObject.size(); i++)
 		{
 			if (!(*m_vppTeamObject[i])) continue;
 			if (!(*m_vppTeamObject[i])->IsDie()) continue;
 
-			UpdateTimeShaderVariable(pd3dCommandList, (*m_vppTeamObject[i])->GetRespwanTime(), (*m_vppTeamObject[i])->GetRespwanElapsedTime());
+			UpdateTimeShaderVariable(pd3dCommandList, (*m_vppTeamObject[i])->GetRespwanTime(), (*m_vppTeamObject[i])->GetRespwanElapsedTime(), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.8f));
 			m_ppTextures[UI_TEXTURE_TEAM_HP_RESPAWN]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
+		}
+
+		// Client Respawn
+		if (m_pPlayer->IsDie())
+		{
+			if (m_ppTextures[UI_TEXTURE_RESPAWN_BAR])
+			{
+				float fGreen = m_pPlayer->GetRespwanElapsedTime() / m_pPlayer->GetRespwanTime();
+
+				UpdateTimeShaderVariable(pd3dCommandList, m_pPlayer->GetRespwanTime(), m_pPlayer->GetRespwanElapsedTime(), XMFLOAT4(1.0f, fGreen, 0.0f, 0.8f));
+				m_ppTextures[UI_TEXTURE_RESPAWN_BAR]->UpdateShaderVariables(pd3dCommandList);
+				m_ppUIRects[UI_RECT_RESPAWN_BAR]->Render(pd3dCommandList, 0);
+			}
 		}
 	}
 
@@ -3245,7 +3290,7 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 		// Draw Reload
 		if (m_pd3dPipelineStateReload) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateReload);
 
-		UpdateTimeShaderVariable(pd3dCommandList, pRHGun->GetReloadTime(), m_pPlayer->GetReloadElapsedTime());
+		UpdateTimeShaderVariable(pd3dCommandList, pRHGun->GetReloadTime(), m_pPlayer->GetReloadElapsedTime(), XMFLOAT4(1.0f, 0.0f, 0.0f, 0.8f));
 
 		if (m_ppTextures[UI_TEXTURE_RELOAD])
 		{

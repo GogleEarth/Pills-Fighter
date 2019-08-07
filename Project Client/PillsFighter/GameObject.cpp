@@ -153,6 +153,15 @@ void CGameObject::ReleaseShaderVariables()
 	}
 }
 
+void CGameObject::SetHitPoint(int nHitPoint)
+{
+	m_nHitPoint = nHitPoint; 
+	if (m_nHitPoint > m_nMaxHitPoint) 
+		m_nHitPoint = m_nMaxHitPoint;
+	if (m_nHitPoint < 0)
+		m_nHitPoint = 0;
+}
+
 void CGameObject::OnPrepareRender()
 {
 	m_xmf4x4World._11 = m_xmf3Right.x;
@@ -413,7 +422,6 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 	if (m_bDie)
 	{
 		m_fRespawnTimeElapsed += fTimeElapsed;
-		return;
 	}
 
 	if (m_pModel)
@@ -429,6 +437,17 @@ void CGameObject::Animate(float fTimeElapsed, CCamera *pCamera)
 
 		int i = 0;
 		m_pModel->UpdateCollisionBox(m_vxmAABB, &i);
+	}
+
+
+	for (CParticle *pParticle : m_vpParticles)
+	{
+		ApplyToParticle(pParticle);
+	}
+
+	for (CFollowEffect *pEffect : m_vpFollowEffects)
+	{
+		ApplyToEffect(pEffect);
 	}
 }
 
@@ -470,16 +489,6 @@ void CGameObject::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 		if (m_nSkinnedMeshes > 0) SetSkinnedMeshBoneTransformConstantBuffer();
 
 		m_pModel->Render(pd3dCommandList, pCamera, m_vd3dcbGameObject, m_vcbMappedGameObject, &i, bSetTexture);
-	}
-
-	for (CParticle *pParticle : m_vpParticles)
-	{
-		ApplyToParticle(pParticle);
-	}
-
-	for (CFollowEffect *pEffect : m_vpFollowEffects)
-	{
-		ApplyToEffect(pEffect);
 	}
 }
 
@@ -631,6 +640,8 @@ void CGameObject::ProcessDie(float fRespawnTime)
 	m_bDie = true;
 	m_fRespawnTime = fRespawnTime;
 	m_fRespawnTimeElapsed = 0.0f;
+
+	m_nState = 0;
 }
 
 void CGameObject::ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World)

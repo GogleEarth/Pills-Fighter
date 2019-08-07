@@ -579,7 +579,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 20
+#define UI_TEXTURE_COUNT 21
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -597,12 +597,13 @@ protected:
 #define UI_TEXTURE_SLOT 13
 #define UI_TEXTURE_TEAM_HP_BASE 14
 #define UI_TEXTURE_TEAM_HP 15
-#define UI_TEXTURE_TEAM_HP_RESPAWN 19
-#define UI_TEXTURE_BEAM_GAUGE 16
-#define UI_TEXTURE_SCOPE_MASK 17
-#define UI_TEXTURE_BEAM_BULLER_N_EMPTY 18
+#define UI_TEXTURE_TEAM_HP_RESPAWN 16
+#define UI_TEXTURE_BEAM_GAUGE 17
+#define UI_TEXTURE_SCOPE_MASK 18
+#define UI_TEXTURE_BEAM_BULLER_N_EMPTY 19
+#define UI_TEXTURE_RESPAWN_BAR 20
 
-#define UI_RECT_COUNT 16
+#define UI_RECT_COUNT 17
 
 #define UI_RECT_BASE 0
 #define UI_RECT_HP 1
@@ -620,6 +621,7 @@ protected:
 #define UI_RECT_TEAM_HP_2 13
 #define UI_RECT_TEAM_HP_3 14
 #define UI_RECT_SCOPE 15
+#define UI_RECT_RESPAWN_BAR 16
 
 struct CB_PLAYER_VALUE
 {
@@ -629,7 +631,8 @@ struct CB_PLAYER_VALUE
 
 struct CB_RELOAD_N_RESPAWN_INFO
 {
-	float fTextColor;
+	XMFLOAT4 xmf4FillColor;
+	XMFLOAT4 xmf4TextureColor;
 	float fReloadTime;
 };
 
@@ -655,7 +658,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderColored(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
-	virtual D3D12_SHADER_BYTECODE CreatePixelShaderTeamHPRespawn(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreatePixelShaderRespawn(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader3DUI(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
@@ -663,7 +666,7 @@ public:
 
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList, ID3D12Resource *pd3dcb, CB_PLAYER_VALUE *pcbMapped, int nMaxValue, int nValue);
-	virtual void UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fTime, float fElapsedTime);
+	virtual void UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fTime, float fElapsedTime, XMFLOAT4 xmf4FillColor);
 	virtual void UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
 	virtual void UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
 	virtual void ReleaseShaderVariables();
@@ -680,7 +683,7 @@ protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateTeamHP = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateColored = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineState3DUI = NULL;
-	ID3D12PipelineState				*m_pd3dPipelineStateTeamHPRespawn = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateRespawn = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
 
@@ -693,8 +696,9 @@ protected:
 	ID3D12Resource					*m_pd3dcbPlayerAmmo = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
 
-	ID3D12Resource					*m_pd3dcbReloadInfo = NULL;
-	CB_RELOAD_N_RESPAWN_INFO		*m_pcbMappedReloadInfo = NULL;
+	ID3D12Resource					*m_pd3dcbTimeInfo[5] = { NULL };
+	CB_RELOAD_N_RESPAWN_INFO		*m_pcbMappedTimeInfo[5] = { NULL };
+	int								m_nTimeInfoIndex = 0;
 	
 	int								m_nUIRect = 0;
 	CRect							**m_ppUIRects = NULL;
@@ -708,6 +712,7 @@ protected:
 	CFont							*m_pFont = NULL;
 	CTextObject						*m_pReloadedAmmoText = NULL;
 	CTextObject						*m_pAmmoText = NULL;
+	CTextObject						*m_pRespawnNotifyText = NULL;
 
 // Team
 	std::vector<CTextObject*>		m_vpTeamNameText;
@@ -735,6 +740,8 @@ public:
 	void ChangeAmmoText(int nWeaponIndex);
 	void GetAmmos(int &nAmmo, int &nReloadedAmmo, int nIndex);
 	void SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName);
+	void ClientDie();
+	void ClientRespawn();
 
 protected:
 // Zoom

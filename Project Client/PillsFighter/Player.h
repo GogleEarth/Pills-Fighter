@@ -73,7 +73,6 @@ protected:
 	float				m_fMass = 2.0f;
 
 	float				m_fVelocityY = 0.0f;
-	float				m_StopRange = 0.0f;
 
 public:
 #define BOOSTER_TYPE_UP 1
@@ -223,4 +222,6 @@ protected:
 
 public:
 	void SendShootPacket();
+	virtual void ProcessDie(float fRespawnTime);
+	virtual void ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World);
 };
