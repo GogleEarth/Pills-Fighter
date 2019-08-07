@@ -323,7 +323,7 @@ int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix, int id)
 	if (type == OBJECT_TYPE_SABER)
 	{
 		hp = 15;
-		lifetime = 0.001f;
+		lifetime = 0.0f;
 		speed = 0.0f;
 	}
 	return scenes_[using_scene_]->AddObject(type, hp, lifetime, speed, matrix, id);
