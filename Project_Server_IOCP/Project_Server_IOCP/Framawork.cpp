@@ -142,7 +142,7 @@ int Framawork::thread_process()
 			{
 				auto data = rooms_[key].player_die_dequeue();
 				if (data == nullptr) break;
-				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->id));
+				send_packet_to_room_player(key, (char*)data);
 				using namespace std;
 				using namespace chrono;
 				add_timer(data->id, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
