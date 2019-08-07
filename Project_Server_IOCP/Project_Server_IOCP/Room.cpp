@@ -701,9 +701,9 @@ void Room::check_saber_collision_player(int object)
 	}
 }
 
-void Room::check_collision_player_to_vector(int object, float len)
+void Room::check_collision_player_to_vector(int object, float len, float* dis)
 {
-	if (scenes_[using_scene_]->check_collision_player_to_vector(object, len))
+	if (scenes_[using_scene_]->check_collision_player_to_vector(object, len, dis))
 	{
 		scenes_[using_scene_]->deleteObject(object);
 	}

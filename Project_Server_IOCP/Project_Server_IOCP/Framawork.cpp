@@ -346,7 +346,20 @@ int Framawork::thread_process()
 					elapsed_time = over_ex->elapsed_time;
 
 				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
-				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 1000.0f);
+
+				float distance = 1000.0f;
+				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 1000.0f, &distance);
+				
+				PKT_CREATE_EFFECT pkt_ce;
+				pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
+				pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
+				pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+				pkt_ce.efType = EFFECT_TYPE_BEAM_RIFLE;
+				pkt_ce.xmf3Look = object->GetLook();
+				pkt_ce.xmf3Position = object->GetPosition();
+				pkt_ce.fDistance = distance;
+
+				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_ce);
 
 				if (object->IsDelete())
 				{
@@ -374,7 +387,20 @@ int Framawork::thread_process()
 					elapsed_time = over_ex->elapsed_time;
 
 				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
-				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 600.0f);
+
+				float distance = 600.0f;
+				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 600.0f, &distance);
+
+				PKT_CREATE_EFFECT pkt_ce;
+				pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
+				pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
+				pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+				pkt_ce.efType = EFFECT_TYPE_GM_GUN;
+				pkt_ce.xmf3Look = object->GetLook();
+				pkt_ce.xmf3Position = object->GetPosition();
+				pkt_ce.fDistance = distance;
+
+				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_ce);
 
 				if (object->IsDelete())
 				{
@@ -443,6 +469,47 @@ int Framawork::thread_process()
 				}
 			}
 			delete over_ex;
+		}
+		else if (EVENT_TYPE_BEAM_SNIPER == over_ex->event_t)
+		{
+		if (rooms_[over_ex->room_num].get_playing())
+		{
+			auto object = rooms_[over_ex->room_num].get_object(key);
+			float elapsed_time;
+
+			if (over_ex->elapsed_time <= 0.001f)
+				elapsed_time = 0.016f;
+			else
+				elapsed_time = over_ex->elapsed_time;
+
+			object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+
+			float distance = 2000.0f;
+			rooms_[over_ex->room_num].check_collision_player_to_vector(key, 2000.0f, &distance);
+			
+			PKT_CREATE_EFFECT pkt_ce;
+			pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
+			pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
+			pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+			pkt_ce.efType = EFFECT_TYPE_BEAM_SNIPER;
+			pkt_ce.xmf3Look = object->GetLook();
+			pkt_ce.xmf3Position = object->GetPosition();
+			pkt_ce.fDistance = distance;
+
+			send_packet_to_room_player(over_ex->room_num, (char*)&pkt_ce);
+
+			if (object->IsDelete())
+			{
+				object->SetUse(false);
+			}
+			else
+			{
+				using namespace std;
+				using namespace chrono;
+				add_timer(key, over_ex->room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
+			}
+		}
+		delete over_ex;
 		}
 		else
 		{
@@ -916,7 +983,7 @@ void Framawork::process_packet(int id, char* packet)
 		auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 			reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 600.0f, &index);
-		send_packet_to_room_player(room_num, (char*)pkt_ce);
+		//send_packet_to_room_player(room_num, (char*)pkt_ce);
 		add_timer(index, room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
 		delete pkt_ce;
 		}
@@ -926,7 +993,7 @@ void Framawork::process_packet(int id, char* packet)
 			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
-			send_packet_to_room_player(room_num, (char*)pkt_ce);
+			//send_packet_to_room_player(room_num, (char*)pkt_ce);
 			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
 			delete pkt_ce;
 		}
@@ -936,8 +1003,8 @@ void Framawork::process_packet(int id, char* packet)
 			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 2000.0f, &index);
-			send_packet_to_room_player(room_num, (char*)pkt_ce);
-			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+			//send_packet_to_room_player(room_num, (char*)pkt_ce);
+			add_timer(index, room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
 			delete pkt_ce;
 		}
 		else

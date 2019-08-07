@@ -251,13 +251,19 @@ void Scene::set_player_team(int id, char team)
 
 bool Scene::check_collision_obstacles(int object)
 {
+	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
+	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
+	float distance;
+
 	for (auto obstacle : Obstacles_)
 	{
-		for (auto objaabb : Objects_[object].GetAABB())
+		for (auto playeraabb : obstacle->GetAABB())
 		{
-			for (auto playeraabb : obstacle->GetAABB())
+			if (playeraabb.Intersects(origin, direction, distance))
 			{
-				if (objaabb.Intersects(playeraabb))
+				XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
+				float len = Vector3::Length(length);
+				if (distance <= len)
 				{
 					return true;
 				}
@@ -523,7 +529,7 @@ bool Scene::check_collision_player(int object)
 	return false;
 }
 
-bool Scene::check_collision_player_to_vector(int object, float len)
+bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 {
 	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPosition());
 	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
@@ -542,6 +548,8 @@ bool Scene::check_collision_player_to_vector(int object, float len)
 						{
 							if (distance <= len)
 							{
+								*dis = distance;
+
 								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 								pkt_pl->ID = i;
 								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
