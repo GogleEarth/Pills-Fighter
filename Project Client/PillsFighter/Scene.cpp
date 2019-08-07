@@ -4369,23 +4369,24 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		{
 			m_pPlayer->CameraReset();
 
+			m_pPlayer->ProcessRespawn(pPacket->hp, pPacket->point);
+
 			if (pPacket->team == TEAM_TYPE_BLUE)
 			{
 				m_pPlayer->Rotate(0.0f, 180.0f, 0.0f);
 			}
-
-			m_pPlayer->ProcessRespawn(pPacket->hp, pPacket->point);
 		}
 		else
 		{
 			if (m_pObjects[pPacket->id])
 			{
+
+				m_pObjects[pPacket->id]->ProcessRespawn(pPacket->hp, pPacket->point);
+
 				if (pPacket->team == TEAM_TYPE_BLUE)
 				{
 					m_pObjects[pPacket->id]->Rotate(0.0f, 180.0f, 0.0f);
 				}
-
-				m_pObjects[pPacket->id]->ProcessRespawn(pPacket->hp, pPacket->point);
 			}
 		}
 		break;

@@ -649,6 +649,15 @@ void CGameObject::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
 	m_bDie = false;
 	m_nHitPoint = nHP;
 
+	m_xmf4x4World = Matrix4x4::Identity();
+	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
+
+	m_fPitch = 0.0f;
+	m_fRoll = 0.0f;
+	m_fYaw = 0.0f;
+
 	m_xmf3Position = xmf3Position;
 
 	serverPosition = xmf3Position;
