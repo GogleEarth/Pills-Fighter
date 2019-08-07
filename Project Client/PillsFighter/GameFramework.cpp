@@ -1004,7 +1004,6 @@ void CGameFramework::ProcessPacket()
 	{
 		m_pScene->ApplyRecvInfo(PKT_ID_LOAD_COMPLETE_ALL, (LPVOID)m_pPacketBuffer);
 		break;
-		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
@@ -1031,8 +1030,8 @@ void CGameFramework::ProcessPacket()
 
 		ReleaseObjects();
 
-		//BuildScene(SCENE_TYPE_LOBBY_MAIN);
-		BuildScene(SCENE_TYPE_LOBBY_ROOM);
+		BuildScene(SCENE_TYPE_LOBBY_MAIN);
+		SendToServer(PKT_ID_MOVE_TO_MAIN_LOBBY, NULL);
 		break;
 	}
 	case PKT_ID_PICK_ITEM:
@@ -1338,6 +1337,17 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 	case PKT_ID_CHANGE_NAME:
 	{
 		PKT_CHANGE_NAME pktToServer;
+		pktToServer.PktId = pktID;
+		pktToServer.PktSize = sizeof(pktToServer);
+		lstrcpynW(pktToServer.name, CScene::GetMyName(), MAX_NAME_LENGTH);
+
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Change Map Error\n");
+		break;
+	}
+	case PKT_ID_MOVE_TO_MAIN_LOBBY:
+	{
+		PKT_MOVE_TO_MAIN_LOBBY pktToServer;
 		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
 		lstrcpynW(pktToServer.name, CScene::GetMyName(), MAX_NAME_LENGTH);
