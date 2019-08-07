@@ -152,6 +152,11 @@ void CCamera::ReleaseShaderVariables()
 	}
 }
 
+void CCamera::CameraReset()
+{
+	m_fPitch = m_fYaw = m_fRoll = 0.0f;
+}
+
 void CCamera::Rotate(float x, float y, float z)
 {
 	if (!IsZero(x))

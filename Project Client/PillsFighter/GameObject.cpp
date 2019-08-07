@@ -633,11 +633,20 @@ void CGameObject::ProcessDie(float fRespawnTime)
 	m_fRespawnTimeElapsed = 0.0f;
 }
 
-void CGameObject::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
+void CGameObject::ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World)
 {
 	m_bDie = false;
 	m_nHitPoint = nHP;
+
+	XMFLOAT3 xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
+	XMFLOAT3 xmf3Right = XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13);
+	XMFLOAT3 xmf3Up = XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23);
+	XMFLOAT3 xmf3Look = XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33);
+
 	m_xmf3Position = xmf3Position;
+	m_xmf3Right = xmf3Right;
+	m_xmf3Up = xmf3Up;
+	m_xmf3Look = xmf3Look;
 
 	serverPosition = xmf3Position;
 }
@@ -1181,9 +1190,9 @@ void CRobotObject::ProcessDie(float fRespawnTime)
 	if (m_pRHWeapon) m_pRHWeapon->Hide();
 }
 
-void CRobotObject::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
+void CRobotObject::ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World)
 {
-	CAnimationObject::ProcessRespawn(nHP, xmf3Position);
+	CAnimationObject::ProcessRespawn(nHP, xmf4x4World);
 
 	if (m_pRHWeapon) m_pRHWeapon->Show();
 }

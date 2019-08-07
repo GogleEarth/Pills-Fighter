@@ -497,6 +497,7 @@ void CPlayer::ProcessHitPoint()
 void CPlayer::ActivationBooster(UINT nType)
 {
 	if (IsBoostering()) return;
+	if (m_bDie) return;
 
 	// Active by Space Bar
 	if (m_nBoosterGauge > 0)
@@ -527,6 +528,7 @@ void CPlayer::ActivationBooster(UINT nType)
 void CPlayer::ActivationDash()
 {
 	if (IsBoostering()) return;
+	if (m_bDie) return;
 
 	static UCHAR pKeyBuffer[256];
 
@@ -991,6 +993,8 @@ void CPlayer::ProcessJumpAnimation()
 
 void CPlayer::Attack(CWeapon *pWeapon)
 {
+	if (m_bDie) return;
+
 	m_LButtonDown = true;
 
 	if (pWeapon)
@@ -1041,6 +1045,8 @@ void CPlayer::PickUpAmmo(int nType, int nAmmo)
 
 void CPlayer::PrepareAttack(CWeapon *pWeapon)
 {
+	if (m_bDie) return;
+
 	if (pWeapon)
 	{
 		int nType = pWeapon->GetType();
@@ -1071,6 +1077,8 @@ void CPlayer::PrepareAttack(CWeapon *pWeapon)
 
 void CPlayer::Reload(CWeapon *pWeapon)
 {
+	if (m_bDie) return;
+
 	if (pWeapon)
 	{
 		if (pWeapon->GetType() & WEAPON_TYPE_OF_BEAM_GUN) return;
@@ -1164,6 +1172,7 @@ void CPlayer::ChangeWeapon(int nIndex)
 {
 	if (IsShooting()) return;
 	if (IsSwording()) return;
+	if (m_bDie) return;
 
 	CRobotObject::ChangeWeapon(nIndex);
 
@@ -1273,6 +1282,10 @@ void CPlayer::ZoomOut()
 
 void CPlayer::TakeAim()
 {
+	if (m_bDie) return;
+
+	m_RButtonDown = true;
+
 	if (!(m_pRHWeapon->GetType() & WEAPON_TYPE_OF_GUN)) return;
 
 	if (m_bZoomIn)

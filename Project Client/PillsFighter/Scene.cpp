@@ -2807,9 +2807,7 @@ int CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 		break;
 	}
 	case WM_RBUTTONDOWN:
-		m_pPlayer->RButtonDown();
 		m_pPlayer->TakeAim();
-		//m_pPlayer->ZoomIn();
 		break;
 	case WM_RBUTTONUP:
 		m_pPlayer->RButtonUp();
@@ -4313,14 +4311,34 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	{
 		PKT_PLAYER_RESPAWN *pPacket = (PKT_PLAYER_RESPAWN*)pktData;
 
+		XMFLOAT4X4 xmf4x4World = Matrix4x4::Identity();
+		xmf4x4World._41 = pPacket->point.x;
+		xmf4x4World._42 = pPacket->point.y;
+		xmf4x4World._43 = pPacket->point.z;
+		
 		if (gClientIndex == pPacket->id)
 		{
-			m_pPlayer->ProcessRespawn(pPacket->hp, pPacket->point);
+			m_pPlayer->CameraReset();
+
+			if (pPacket->team == TEAM_TYPE_BLUE)
+			{
+				m_pPlayer->Rotate(0.0f, 180.0f, 0.0f);
+			}
+
+			m_pPlayer->ProcessRespawn(pPacket->hp, xmf4x4World);
 		}
 		else
 		{
-			if (m_pObjects[pPacket->id]) 
-				m_pObjects[pPacket->id]->ProcessRespawn(pPacket->hp, pPacket->point);
+			if (m_pObjects[pPacket->id])
+			{
+				if (pPacket->team == TEAM_TYPE_BLUE)
+				{
+					xmf4x4World._11 = -1.0f;
+					xmf4x4World._33 = -1.0f;
+				}
+
+				m_pObjects[pPacket->id]->ProcessRespawn(pPacket->hp, xmf4x4World);
+			}
 		}
 		break;
 	}

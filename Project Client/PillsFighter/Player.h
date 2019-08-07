@@ -37,6 +37,7 @@ public:
 	void Move(const XMFLOAT3& xmf3Shift);
 	void DashMove(ULONG dwDirection, float fDistance);
 	virtual void Rotate(float x, float y, float z);
+	virtual void CameraReset() { m_pCamera->CameraReset(); }
 
 	void Update(float fTimeElapsed);
 
@@ -200,7 +201,6 @@ protected:
 public:
 	void LButtonUp() { m_LButtonDown = false; m_fMouseUpTime = 0.0f;}
 	void RButtonUp() { m_RButtonDown = false; }
-	void RButtonDown() { m_RButtonDown = true; }
 	void ProcessMouseUpTime(float fElapsedTime);
 
 	void ZoomIn();
