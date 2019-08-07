@@ -73,7 +73,6 @@ protected:
 	float				m_fMass = 2.0f;
 
 	float				m_fVelocityY = 0.0f;
-	float				m_StopRange = 0.0f;
 
 public:
 #define BOOSTER_TYPE_UP 1

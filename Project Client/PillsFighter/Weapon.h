@@ -121,7 +121,7 @@ protected:
 public:
 	bool IsShootable() { return m_bShootable; }
 	void SetShootable(bool b) { m_bShootable = b; }
-
+	void ResetReloadedAmmo() { m_nReloadedAmmo = m_nMaxReloadAmmo; }
 
 	virtual int ShootNumber() { return 0; };
 

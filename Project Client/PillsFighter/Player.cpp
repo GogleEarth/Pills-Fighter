@@ -1313,9 +1313,40 @@ void CPlayer::TakeAim()
 
 void CPlayer::ProcessDie(float fRespawnTime)
 {
+	if (m_pUI) m_pUI->ClientDie();
+
+	m_nBoosterGauge = 100;
+	m_fVelocityY = 0.0f;
+	m_fTimeForConsumeBoosterGauge = 0.0f;
+	m_fTimeForChargeBoosterGauge = 0.0f;
+	m_fTimeForBoostUp = 0.0f;
+	m_fTimeForBoostDown = 0.0f;
+	m_bReloading = false;
+	m_fReloadTime = 0.0f;
+	m_bZoomIn = false;
+	m_bAim = false;
+	m_nDashDirection = 0;
+	m_bShiftDown = false;
+	m_bChangedDashStart = false;
+	m_bSpaceDown = false;
+	m_bChangedSpaceStart = false;
+	m_bVDown = false;
+	m_bShootable = false;
+	m_nSaberAnimationIndex = 0;
+	m_LButtonDown = false;
+	m_RButtonDown = false;
+	m_fMouseUpTime = 0.0f;
+	ChangeWeapon(0);
+
 	CRobotObject::ProcessDie(fRespawnTime);
 
-	if(m_pUI) m_pUI->ClientDie();
+	for (auto& Weapon : m_vpWeapon)
+	{
+		if (!(Weapon->GetType() & WEAPON_TYPE_OF_GUN)) continue;
+
+		CGun *pGun = (CGun*)Weapon;
+		pGun->ResetReloadedAmmo();
+	}
 }
 
 void CPlayer::ProcessRespawn(int nHP, XMFLOAT4X4 xmf4x4World)
