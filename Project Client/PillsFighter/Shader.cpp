@@ -3260,18 +3260,18 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY, true);
 	m_ppUIRects[UI_RECT_BATTLE_NOTIFY] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	m_pRespawnNotifyText = m_pFont->SetText(1280, 720, L"리스폰 대기중", XMFLOAT2(-0.10f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
-	m_pRespawnNotifyText->Hide();
+	m_pNotifyText = m_pFont->SetText(1280, 720, L"다른 플레이어의 접속을 기다리고 있습니다.", XMFLOAT2(-0.36f, 0.44f), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pNotifyText->Display();
 }
 
 void CUserInterface::ClientDie()
 { 
-	m_pRespawnNotifyText->Display();
+	m_pNotifyText->Display();
 }
 
 void CUserInterface::ClientRespawn()
 { 
-	m_pRespawnNotifyText->Hide(); 
+	m_pNotifyText->Hide();
 }
 
 void CUserInterface::BattleNotifyStart()
@@ -3279,6 +3279,9 @@ void CUserInterface::BattleNotifyStart()
 	m_nNotifyOrder = 0;
 	m_fNotifyElapsedTime = 0.0f;
 	m_bNotify = true;
+
+	m_pFont->ChangeText(1280, 720, m_pNotifyText, L"리스폰 대기중", XMFLOAT2(-0.10f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pNotifyText->Hide();
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

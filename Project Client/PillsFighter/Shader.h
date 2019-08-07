@@ -733,7 +733,7 @@ protected:
 	CFont							*m_pFont = NULL;
 	CTextObject						*m_pReloadedAmmoText = NULL;
 	CTextObject						*m_pAmmoText = NULL;
-	CTextObject						*m_pRespawnNotifyText = NULL;
+	CTextObject						*m_pNotifyText = NULL;
 
 // Team
 	std::vector<CTextObject*>		m_vpTeamNameText;
@@ -975,8 +975,8 @@ public:
 	void SetTeamInfo(CGameObject **ppObject);
 	void SetEnemyInfo(CGameObject **ppObject);
 	void SetRobotCount() {
-		m_nMinimapEnemies = m_vppEnemyObject.size();
-		m_nMinimapTeammates = m_vppTeamObject.size();
+		m_nMinimapEnemies = (int)m_vppEnemyObject.size();
+		m_nMinimapTeammates = (int)m_vppTeamObject.size();
 	};
 
 protected:

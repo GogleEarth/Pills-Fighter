@@ -105,8 +105,6 @@ protected: // for Network
 	char	m_pPacketBuffer[MAX_PACKET];
 
 	int		m_nClientSlot;
-	bool	m_bDrawScene;
-	bool	m_bSend_Complete;
 
 	float	m_fElapsedTime;
 	int		m_nFrameRate;

@@ -2025,7 +2025,7 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		m_pFont->OnPrepareRender(pd3dCommandList);
 
 		int nEnd = m_RoomStart + 8;
-		if (nEnd > m_Rooms.size()) nEnd = m_Rooms.size();
+		if (nEnd > (int)m_Rooms.size()) nEnd = (int)m_Rooms.size();
 
 		for (int i = m_RoomStart; i < nEnd; i++)
 		{
@@ -3210,7 +3210,9 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 	CreateNameTextures(pd3dDevice, pd3dCommandList);
 
+#ifndef ON_NETWORKING
 	m_pUserInterface->BattleNotifyStart();
+#endif
 }
 
 void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nType)
@@ -3272,7 +3274,7 @@ void CBattleScene::CreateNameTextures(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 	ID3D12DescriptorHeap *pd3dRTVHeap;
 	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc;
 	::ZeroMemory(&d3dDescriptorHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
-	d3dDescriptorHeapDesc.NumDescriptors = m_vwstrTeamName.size();
+	d3dDescriptorHeapDesc.NumDescriptors = (int)m_vwstrTeamName.size();
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
@@ -4391,6 +4393,9 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 		}
 		break;
 	}
+	case PKT_ID_LOAD_COMPLETE_ALL:
+		m_pUserInterface->BattleNotifyStart();
+		break;
 	}
 }
 
@@ -4481,7 +4486,7 @@ void CColonyScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 	m_pLightCamera = new CLightCamera();
 
 	m_pLightCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	m_pLightCamera->GenerateOrthogonalMatrix(nWidth / 4, nHeight / 4, 0.0f, 5000.0f);
+	m_pLightCamera->GenerateOrthogonalMatrix(nWidth / 4.0f, nHeight / 4.0f, 0.0f, 5000.0f);
 	m_pLightCamera->SetRight(xmf3Right);
 	m_pLightCamera->SetUp(xmf3Up);
 	m_pLightCamera->SetLook(xmf3Look);
@@ -4665,7 +4670,7 @@ void CSpaceScene::CreateLightCamera(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 	m_pLightCamera = new CLightCamera();
 
 	m_pLightCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	m_pLightCamera->GenerateOrthogonalMatrix(nWidth*0.5, nHeight*0.5, 0.0f, 5000.0f);
+	m_pLightCamera->GenerateOrthogonalMatrix(nWidth * 0.5f, nHeight * 0.5f, 0.0f, 5000.0f);
 	m_pLightCamera->SetRight(xmf3Right);
 	m_pLightCamera->SetUp(xmf3Up);
 	m_pLightCamera->SetLook(xmf3Look);

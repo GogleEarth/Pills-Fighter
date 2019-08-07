@@ -147,7 +147,7 @@ void CFont::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3d
 	if (m_vTextureInfo.size() > 1) nType = RESOURCE_TEXTURE2D_ARRAY;
 	else nType = RESOURCE_TEXTURE2D;
 
-	m_pFontTexture = new CTexture(m_vTextureInfo.size(), nType, 0);
+	m_pFontTexture = new CTexture((int)m_vTextureInfo.size(), nType, 0);
 
 	for (int i = 0; i < m_vTextureInfo.size(); i++)
 	{

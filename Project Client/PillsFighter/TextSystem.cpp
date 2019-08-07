@@ -73,7 +73,7 @@ void CTextSystem::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 			if (m_nTextLength - 1 < m_nPos)
 				break;
 			
-			m_pwstrText[m_nPos++] = wParam;
+			m_pwstrText[m_nPos++] = (wchar_t)wParam;
 			break;
 		}
 		}

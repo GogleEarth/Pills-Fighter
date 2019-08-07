@@ -38,9 +38,6 @@ CGameFramework::CGameFramework()
 	m_nPrevSize = 0;
 	::ZeroMemory(m_pPacketBuffer, sizeof(m_pPacketBuffer));
 
-	m_bDrawScene = true;
-	m_bSend_Complete = true;
-
 	m_fElapsedTime = 0.0f;
 	m_nFrameRate = 0;
 	m_fFPSTimeElapsed = 0.0f;
@@ -756,7 +753,7 @@ void CGameFramework::WaitForGpuComplete()
 void CGameFramework::FrameAdvance()
 {
 #ifdef ON_NETWORKING
-	if (m_pPlayer && m_bDrawScene /*&& m_bSend_Complete*/)
+	if (m_pPlayer /*&& m_bSend_Complete*/)
 	{
 		if (IsZero(m_fElapsedTime)) return;
 		SendToServer();
@@ -775,46 +772,43 @@ void CGameFramework::FrameAdvance()
 	HRESULT hResult = m_pd3dCommandAllocator->Reset();
 	hResult = m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
 		
-	if (m_bDrawScene)
+	if (m_pScene)
 	{
-		if (m_pScene)
-		{
-			CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
+		CScene::SetDescHeapsAndGraphicsRootSignature(m_pd3dCommandList);
 
-			m_pScene->PrepareRender(m_pd3dCommandList);
+		m_pScene->PrepareRender(m_pd3dCommandList);
 
-			m_pScene->Render(m_pd3dCommandList, m_pCamera);
+		m_pScene->Render(m_pd3dCommandList, m_pCamera);
 
-			if (m_bWireRender)
-				m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
+		if (m_bWireRender)
+			m_pScene->RenderWire(m_pd3dCommandList, m_pCamera);
 
-			if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
+		if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 
-			m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
+		m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
 			
-			m_pScene->PostProcessing(m_pd3dCommandList);
+		m_pScene->PostProcessing(m_pd3dCommandList);
 
-			//////
-			::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		//////
+		::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-			D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-			d3dRtvHandle.ptr += m_nSwapChainBufferIndex * ::gnRtvDescriptorIncrementSize;
+		D3D12_CPU_DESCRIPTOR_HANDLE d3dRtvHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		d3dRtvHandle.ptr += m_nSwapChainBufferIndex * ::gnRtvDescriptorIncrementSize;
 
-			m_pd3dCommandList->ClearRenderTargetView(d3dRtvHandle, Colors::Black, 0, NULL);
+		m_pd3dCommandList->ClearRenderTargetView(d3dRtvHandle, Colors::Black, 0, NULL);
 
-			D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-			m_pd3dCommandList->ClearDepthStencilView(d3dDsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+		D3D12_CPU_DESCRIPTOR_HANDLE d3dDsvHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_pd3dCommandList->ClearDepthStencilView(d3dDsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
-			m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvHandle, TRUE, &d3dDsvHandle);
+		m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvHandle, TRUE, &d3dDsvHandle);
 			
-			m_pScene->RenderOffScreen(m_pd3dCommandList);
+		m_pScene->RenderOffScreen(m_pd3dCommandList);
 
-			m_pScene->RenderUI(m_pd3dCommandList);
+		m_pScene->RenderUI(m_pd3dCommandList);
 
-			::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+		::TransitionResourceState(m_pd3dCommandList, m_ppd3dRenderTargetBuffers[m_nSwapChainBufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
-			m_pScene->AfterRender(m_pd3dCommandList, m_pCamera);
-		}
+		m_pScene->AfterRender(m_pd3dCommandList, m_pCamera);
 	}
 
 	hResult = m_pd3dCommandList->Close();
@@ -1003,20 +997,13 @@ void CGameFramework::ProcessPacket()
 
 		CScene::SetMyTeam(nPlayerTeam);
 
-		m_bDrawScene = false;
-
 		SendToServer(PKT_ID_LOAD_COMPLETE, NULL);
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE_ALL:
 	{
-		m_bDrawScene = true;
-
+		m_pScene->ApplyRecvInfo(PKT_ID_LOAD_COMPLETE_ALL, (LPVOID)m_pPacketBuffer);
 		break;
-	}
-	case PKT_ID_SEND_COMPLETE:
-	{
-		m_bSend_Complete = true;
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
@@ -1241,8 +1228,6 @@ void CGameFramework::SendToServer()
 	//send(gSocket, (char*)&id, sizeof(PKT_ID), 0);
 	if (retval = send(gSocket, (char*)&pktPlayerInfo, pktPlayerInfo.PktSize, 0) == SOCKET_ERROR)
 		printf("Send Player Info Error\n");
-
-	m_bSend_Complete = false;
 }
 
 void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
