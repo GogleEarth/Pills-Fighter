@@ -200,6 +200,47 @@ float4 PSUIRespawn(GS_UI_OUT input) : SV_TARGET
 	return cColor;
 }
 
+////////////////////////////////////////////////////////////////
+//
+
+struct CUSTOMUI
+{
+	float2 m_f2Scale;
+};
+
+ConstantBuffer<CUSTOMUI> gCustomUI : register(CUSTOM_UI_INFO);
+
+[maxvertexcount(4)]
+void GSUICustom(point VS_UI_INPUT input[1], uint primID : SV_PrimitiveID, inout TriangleStream<GS_UI_OUT> outStream)
+{
+	float2 vUp = float2(0.0f, 1.0f);
+	float2 vRight = float2(1.0f, 0.0f);
+	float fHalfW = input[0].size.x * gCustomUI.m_f2Scale.x;
+	float fHalfH = input[0].size.y * gCustomUI.m_f2Scale.y;
+
+	float4 fVertices[4];
+	fVertices[0] = float4(input[0].center - fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[1] = float4(input[0].center - fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[2] = float4(input[0].center + fHalfW * vRight - fHalfH * vUp, 0.0f, 1.0f);
+	fVertices[3] = float4(input[0].center + fHalfW * vRight + fHalfH * vUp, 0.0f, 1.0f);
+
+	float2 fUVs[4];
+	fUVs[0] = float2(0.0f, 1.0f);
+	fUVs[1] = float2(0.0f, 0.0f);
+	fUVs[2] = float2(1.0f, 1.0f);
+	fUVs[3] = float2(1.0f, 0.0f);
+
+	GS_UI_OUT output;
+
+	for (int i = 0; i < 4; i++)
+	{
+		output.pos = fVertices[i];
+		output.uv = fUVs[i];
+
+		outStream.Append(output);
+	}
+}
+
 ////////////////////////////////////////////
 
 cbuffer cbFontInfo : register(FONT_INFO)

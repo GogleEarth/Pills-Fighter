@@ -60,7 +60,7 @@ public:
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual int OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-	virtual void ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime);
+	virtual void ProcessInput(float fTimeElapsed);
 
 	virtual void CheckCollision() {}
 	virtual void CheckCollisionPlayer() {}
@@ -656,6 +656,7 @@ public:
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual int OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual void ProcessInput(float fTimeElapsed);
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
 	virtual void BuildObstacleObjetcs(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository) {}
@@ -753,6 +754,7 @@ public:
 
 	void AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum, XMFLOAT4 xmf4Color);
 	void AddSprite(int nEffect, XMFLOAT3 xmf3Position, int nType, XMFLOAT4 xmf4Color);
+	void ActiveAction() { m_bAction = true; }
 
 protected:
 	CMinimapShader						*m_pMinimapShader = NULL;
@@ -766,6 +768,7 @@ protected:
 	CModel		*m_pBeamSniper = NULL;
 
 	bool		m_bRenderEdge = false;
+	bool		m_bAction = false;
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);

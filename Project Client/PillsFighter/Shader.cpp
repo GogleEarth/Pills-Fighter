@@ -8,6 +8,8 @@
 #include "Font.h"
 #include "Effect.h"
 
+extern CFMODSound gFmodSound;
+
 CShader::CShader()
 {
 }
@@ -2523,6 +2525,7 @@ CUserInterface::~CUserInterface()
 	if (m_pd3dPipelineStateColored) m_pd3dPipelineStateColored->Release();
 	if (m_pd3dPipelineState3DUI) m_pd3dPipelineState3DUI->Release();
 	if (m_pd3dPipelineStateRespawn) m_pd3dPipelineStateRespawn->Release();
+	if (m_pd3dPipelineStateCustomUI) m_pd3dPipelineStateCustomUI->Release();
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -2578,6 +2581,11 @@ D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShaderRespawn(ID3DBlob **ppd3dS
 D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShader3DUI(ID3DBlob **ppd3dShaderBlob)
 {
 	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GS3DUI", "gs_5_1", ppd3dShaderBlob));
+}
+
+D3D12_SHADER_BYTECODE CUserInterface::CreateGeometryShaderCustomUI(ID3DBlob **ppd3dShaderBlob)
+{
+	return(CShader::CompileShaderFromFile(L"UIShaders.hlsl", "GSUICustom", "gs_5_1", ppd3dShaderBlob));
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreatePixelShader3DUI(ID3DBlob **ppd3dShaderBlob)
@@ -2653,6 +2661,10 @@ void CUserInterface::CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature 
 	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateBar);
 
+	d3dPipelineStateDesc.GS = CreateGeometryShaderCustomUI(&pd3dGeometryShaderBlob);
+	d3dPipelineStateDesc.PS = CreatePixelShader(&pd3dPixelShaderBlob);
+	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateCustomUI);
+
 	d3dPipelineStateDesc.GS = CreateGeometryShader(&pd3dGeometryShaderBlob);
 	d3dPipelineStateDesc.PS = CreatePixelShaderReload(&pd3dPixelShaderBlob);
 	hResult = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineStateDesc, __uuidof(ID3D12PipelineState), (void **)&m_pd3dPipelineStateReload);
@@ -2692,6 +2704,12 @@ void CUserInterface::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graph
 	m_pd3dcbPlayerAmmo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
 	m_pd3dcbPlayerAmmo->Map(0, NULL, (void **)&m_pcbMappedPlayerAmmo);
+
+	ncbElementBytes = ((sizeof(CB_CUSTOM_UI) + 255) & ~255); //256의 배수
+
+	m_pd3dcbCustomUI = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
+		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+	m_pd3dcbCustomUI->Map(0, NULL, (void **)&m_pcbMappedCustomUI);
 
 	ncbElementBytes = ((sizeof(CB_RELOAD_N_RESPAWN_INFO) + 255) & ~255);
 
@@ -2737,18 +2755,32 @@ void CUserInterface::ReleaseShaderVariables()
 	{
 		m_pd3dcbPlayerHP->Unmap(0, NULL);
 		m_pd3dcbPlayerHP->Release();
+
+		m_pd3dcbPlayerHP = NULL;
 	}
 
 	if (m_pd3dcbPlayerBooster)
 	{
 		m_pd3dcbPlayerBooster->Unmap(0, NULL);
 		m_pd3dcbPlayerBooster->Release();
+
+		m_pd3dcbPlayerBooster = NULL;
 	}
 
 	if (m_pd3dcbPlayerAmmo)
 	{
 		m_pd3dcbPlayerAmmo->Unmap(0, NULL);
 		m_pd3dcbPlayerAmmo->Release();
+
+		m_pd3dcbPlayerAmmo = NULL;
+	}
+	
+	if (m_pd3dcbCustomUI)
+	{
+		m_pd3dcbCustomUI->Unmap(0, NULL);
+		m_pd3dcbCustomUI->Release();
+
+		m_pd3dcbCustomUI = NULL;
 	}
 
 	for (int i = 0; i < 5; i++)
@@ -2757,6 +2789,8 @@ void CUserInterface::ReleaseShaderVariables()
 		{
 			m_pd3dcbTimeInfo[i]->Unmap(0, NULL);
 			m_pd3dcbTimeInfo[i]->Release();
+
+			m_pd3dcbTimeInfo[i] = NULL;
 		}
 	}
 
@@ -2766,12 +2800,16 @@ void CUserInterface::ReleaseShaderVariables()
 		{
 			m_vpd3dcbTeamHP[i]->Unmap(0, NULL);
 			m_vpd3dcbTeamHP[i]->Release();
+
+			m_vpd3dcbTeamHP[i] = NULL;
 		}
 
 		if (m_vpd3dcbUI3DInfo[i])
 		{
 			m_vpd3dcbUI3DInfo[i]->Unmap(0, NULL);
 			m_vpd3dcbUI3DInfo[i]->Release();
+			
+			m_vpd3dcbUI3DInfo[i] = NULL;
 		}
 	}
 
@@ -2816,6 +2854,14 @@ void CUserInterface::UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dC
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_vpd3dcbTeamHP[nIndex]->GetGPUVirtualAddress();
 	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_UI_INFO, d3dGpuVirtualAddress);
+}
+
+void CUserInterface::UpdateCustomUIShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Scale)
+{
+	m_pcbMappedCustomUI->xmf2Scale = xmf2Scale;
+
+	D3D12_GPU_VIRTUAL_ADDRESS d3dGpuVirtualAddress = m_pd3dcbCustomUI->GetGPUVirtualAddress();
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_CUSTOM_UI_INFO, d3dGpuVirtualAddress);
 }
 
 void CUserInterface::ReleaseUploadBuffers()
@@ -2879,6 +2925,11 @@ void CUserInterface::SetPlayer(CPlayer *pPlayer)
 		if (nWeaponType & WEAPON_TYPE_OF_BEAM_SNIPER)
 			m_pWeaponTextures[i] = m_ppTextures[UI_TEXTURE_BEAM_SNIPER];
 	}
+}
+
+void CUserInterface::SetScene(CBattleScene *pScene)
+{
+	m_pScene = pScene;
 }
 
 void CUserInterface::ChangeWeapon(int nIndex)
@@ -2978,6 +3029,28 @@ void CUserInterface::SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName
 	m_vppTeamObject.emplace_back(ppObject);
 }
 
+void CUserInterface::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
+{
+	if (m_bNotify)
+	{
+		m_fNotifyElapsedTime += fTimeElapsed;
+
+		if (m_fNotifyElapsedTime > m_fNotifyTime[m_nNotifyOrder])
+		{
+			if (m_nNotifyOrder == 3)
+			{
+				m_bNotify = false;
+				m_pScene->ActiveAction();
+			}
+			else
+			{
+				m_fNotifyElapsedTime = 0.0f;
+				m_nNotifyOrder++;
+			}
+		}
+	}
+}
+
 void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext)
 {
 	m_nTextures = UI_TEXTURE_COUNT;
@@ -3068,6 +3141,22 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_RESPAWN_BAR] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_RESPAWN_BAR]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Respawn.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_RESPAWN_BAR], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TEXT_1] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEXT_1]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_1.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_1], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TEXT_2] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEXT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_2.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TEXT_3] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEXT_3]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_3.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_3], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppTextures[UI_TEXTURE_TEXT_FIGHT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEXT_FIGHT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_FIGHT.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_FIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
@@ -3163,7 +3252,16 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY);
 	m_ppUIRects[UI_RECT_RESPAWN_BAR] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
+	fCenterX = 0.0f;
+	fCenterY = 0.3f;
+	fSizeX = 350.0f / FRAME_BUFFER_WIDTH;
+	fSizeY = 90.0f / FRAME_BUFFER_HEIGHT;
+	xmf2Center = ::CalculateCenter(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY, true);
+	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY, true);
+	m_ppUIRects[UI_RECT_BATTLE_NOTIFY] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
+
 	m_pRespawnNotifyText = m_pFont->SetText(1280, 720, L"리스폰 대기중", XMFLOAT2(-0.10f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pRespawnNotifyText->Hide();
 }
 
 void CUserInterface::ClientDie()
@@ -3174,6 +3272,13 @@ void CUserInterface::ClientDie()
 void CUserInterface::ClientRespawn()
 { 
 	m_pRespawnNotifyText->Hide(); 
+}
+
+void CUserInterface::BattleNotifyStart()
+{
+	m_nNotifyOrder = 0;
+	m_fNotifyElapsedTime = 0.0f;
+	m_bNotify = true;
 }
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
@@ -3372,6 +3477,19 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 			m_pWeaponTextures[i]->UpdateShaderVariables(pd3dCommandList);
 			m_ppUIRects[UI_RECT_SLOT_1 + i]->Render(pd3dCommandList, 0);
 		}
+	}
+
+	if (m_bNotify)
+	{
+		if (m_pd3dPipelineStateCustomUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateCustomUI);
+
+		float fTime = fmin(m_fNotifyElapsedTime / (m_fNotifyTime[m_nNotifyOrder] / 2.0f), 1.0f);
+		float fScale = 1.0f + ((1.0f - fTime) * 3.0f);
+		XMFLOAT2 xmf2Scale(fScale, fScale);
+		UpdateCustomUIShaderVariable(pd3dCommandList, xmf2Scale);
+
+		m_ppTextures[UI_TEXTURE_TEXT_1 + m_nNotifyOrder]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_BATTLE_NOTIFY]->Render(pd3dCommandList, 0);
 	}
 }
 

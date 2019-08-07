@@ -19,6 +19,7 @@
 #define UI_3D_INFO						b19
 #define FOLLOW_EFFECT_INFO				b20
 #define MINIMAP_TEAM_POS				b21
+#define CUSTOM_UI_INFO					b22
 
 #define DIFFUSE_TEXTURES				t1 // t1 ~ t3
 #define SPECULAR_TEXTURE				t4

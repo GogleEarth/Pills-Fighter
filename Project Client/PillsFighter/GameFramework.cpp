@@ -688,24 +688,7 @@ LRESULT CALLBACK CGameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMess
 
 void CGameFramework::ProcessInput()
 {
-	static UCHAR pKeyBuffer[256];
-
-	if(m_pPlayer) m_pPlayer->DeactiveMoving();
-
-	if (::GetKeyboardState(pKeyBuffer) || m_pPlayer->IsDash())
-	{
-		if (m_pPlayer)
-		{
-			ULONG dwDirection = 0;
-
-			if (pKeyBuffer['W'] & 0xF0) dwDirection |= DIR_FORWARD;
-			if (pKeyBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
-			if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
-			if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
-			
-			m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * m_fElapsedTime);
-		}
-	}
+	if(m_pScene) m_pScene->ProcessInput(m_fElapsedTime);
 
 	float cxDelta = 0.0f, cyDelta = 0.0f;
 	POINT ptCursorPos;

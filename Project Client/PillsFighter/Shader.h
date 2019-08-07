@@ -581,7 +581,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 21
+#define UI_TEXTURE_COUNT 25
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -604,8 +604,12 @@ protected:
 #define UI_TEXTURE_SCOPE_MASK 18
 #define UI_TEXTURE_BEAM_BULLER_N_EMPTY 19
 #define UI_TEXTURE_RESPAWN_BAR 20
+#define UI_TEXTURE_TEXT_1 21
+#define UI_TEXTURE_TEXT_2 22
+#define UI_TEXTURE_TEXT_3 23
+#define UI_TEXTURE_TEXT_FIGHT 24
 
-#define UI_RECT_COUNT 17
+#define UI_RECT_COUNT 18
 
 #define UI_RECT_BASE 0
 #define UI_RECT_HP 1
@@ -624,6 +628,7 @@ protected:
 #define UI_RECT_TEAM_HP_3 14
 #define UI_RECT_SCOPE 15
 #define UI_RECT_RESPAWN_BAR 16
+#define UI_RECT_BATTLE_NOTIFY 17
 
 struct CB_PLAYER_VALUE
 {
@@ -644,6 +649,11 @@ struct CB_UI_3D_INFO
 	XMFLOAT3 xmf3Position;
 };
 
+struct CB_CUSTOM_UI
+{
+	XMFLOAT2 xmf2Scale;
+};
+
 class CUserInterface : public CShader
 {
 public:
@@ -655,6 +665,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderBar(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderTeamHP(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader3DUI(ID3DBlob **ppd3dShaderBlob);
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShaderCustomUI(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderBullet(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreatePixelShaderReload(ID3DBlob **ppd3dShaderBlob);
@@ -671,9 +682,12 @@ public:
 	virtual void UpdateTimeShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, float fTime, float fElapsedTime, XMFLOAT4 xmf4FillColor);
 	virtual void UpdateUIColorShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT4 xmf4Color);
 	virtual void UpdateTeamHPShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, int nIndex);
+	virtual void UpdateCustomUIShaderVariable(ID3D12GraphicsCommandList *pd3dCommandList, XMFLOAT2 xmf2Scale);
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
+
+	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -686,8 +700,10 @@ protected:
 	ID3D12PipelineState				*m_pd3dPipelineStateColored = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineState3DUI = NULL;
 	ID3D12PipelineState				*m_pd3dPipelineStateRespawn = NULL;
+	ID3D12PipelineState				*m_pd3dPipelineStateCustomUI = NULL;
 
 	CPlayer							*m_pPlayer = NULL;
+	CBattleScene					*m_pScene = NULL;
 
 	ID3D12Resource					*m_pd3dcbPlayerHP = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerHP = NULL;
@@ -697,6 +713,9 @@ protected:
 
 	ID3D12Resource					*m_pd3dcbPlayerAmmo = NULL;
 	CB_PLAYER_VALUE					*m_pcbMappedPlayerAmmo = NULL;
+
+	ID3D12Resource					*m_pd3dcbCustomUI = NULL;
+	CB_CUSTOM_UI					*m_pcbMappedCustomUI = NULL;
 
 	ID3D12Resource					*m_pd3dcbTimeInfo[5] = { NULL };
 	CB_RELOAD_N_RESPAWN_INFO		*m_pcbMappedTimeInfo[5] = { NULL };
@@ -736,6 +755,7 @@ public:
 	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect);
 
 	void SetPlayer(CPlayer *pPlayer);
+	void SetScene(CBattleScene *pScene);
 	void SetFont(CFont *pFont) { m_pFont = pFont; }
 	void ChangeWeapon(int nIndex);
 	void SetAmmoText(int nWeaponIndex);
@@ -752,6 +772,17 @@ protected:
 public:
 	void ZoomIn() { m_bZoomIn = true; }
 	void ZoomOut() { m_bZoomIn = false; }
+
+protected:
+	int				m_nNotifyOrder = 0;
+	float			m_fNotifyTime[4] = { 1.0f, 1.0f, 1.0f, 1.5f };
+	float			m_fNotifyElapsedTime = 0.0f;
+
+	bool			m_bNotify = false;
+
+public:
+	void BattleNotifyStart();
+	bool IsNotifying() { return m_bNotify; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////

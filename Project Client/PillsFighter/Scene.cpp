@@ -325,7 +325,7 @@ int CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wPara
 	return 0;
 }
 
-void CScene::ProcessInput(UCHAR *pKeysBuffer, float fElapsedTime)
+void CScene::ProcessInput(float fTimeElapsed)
 {
 }
 
@@ -751,6 +751,11 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].Descriptor.ShaderRegister = 21;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_MINIMAP_TEAM_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CUSTOM_UI_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CUSTOM_UI_INFO].Descriptor.ShaderRegister = 22;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CUSTOM_UI_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_CUSTOM_UI_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC pd3dSamplerDescs[3];
 
@@ -2789,6 +2794,8 @@ CBattleScene::~CBattleScene()
 
 int CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
+	if (!m_bAction) return 0;
+
 	switch (nMessageID)
 	{
 	case WM_LBUTTONDOWN:
@@ -2822,6 +2829,8 @@ int CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 	CScene::OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+
+	if (!m_bAction) return 0;
 
 	switch (nMessageID)
 	{
@@ -2868,6 +2877,9 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 		case VK_F1:
 			m_bRenderEdge = !m_bRenderEdge;
 			break;
+		case VK_F4:
+			m_pUserInterface->BattleNotifyStart();
+			break;
 		default:
 			break;
 		}
@@ -2877,6 +2889,30 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 	}
 
 	return 0;
+}
+
+void CBattleScene::ProcessInput(float fTimeElapsed)
+{
+	if (!m_bAction) return;
+
+	static UCHAR pKeyBuffer[256];
+
+	if (m_pPlayer) m_pPlayer->DeactiveMoving();
+
+	if (::GetKeyboardState(pKeyBuffer) || m_pPlayer->IsDash())
+	{
+		if (m_pPlayer)
+		{
+			ULONG dwDirection = 0;
+
+			if (pKeyBuffer['W'] & 0xF0) dwDirection |= DIR_FORWARD;
+			if (pKeyBuffer['S'] & 0xF0) dwDirection |= DIR_BACKWARD;
+			if (pKeyBuffer['A'] & 0xF0) dwDirection |= DIR_LEFT;
+			if (pKeyBuffer['D'] & 0xF0) dwDirection |= DIR_RIGHT;
+
+			m_pPlayer->Move(dwDirection, m_pPlayer->GetMovingSpeed() * fTimeElapsed);
+		}
+	}
 }
 
 void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
@@ -3063,6 +3099,11 @@ void CBattleScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 	if (m_pPlayer) m_pPlayer->ApplyGravity(m_fGravAcc, fTimeElapsed);
 	if (m_bAlert) ProcessAlert(fTimeElapsed);
 
+	if (m_pUserInterface)
+	{
+		m_pUserInterface->AnimateObjects(fTimeElapsed, pCamera);
+	}
+
 	CScene::AnimateObjects(fTimeElapsed, pCamera);
 }
 
@@ -3128,6 +3169,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pUserInterface->CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	pUserInterface->SetPlayer(m_pPlayer);
 	pUserInterface->SetAmmoText(0);
+	pUserInterface->SetScene(this);
 
 	for (int i = 0; i < m_vTeamIndex.size(); i++)
 	{
@@ -3167,6 +3209,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	CreateShadowMap(pd3dDevice, pd3dCommandList, 4096 * 2, 4096 * 2);
 
 	CreateNameTextures(pd3dDevice, pd3dCommandList);
+
+	m_pUserInterface->BattleNotifyStart();
 }
 
 void CBattleScene::AddWeaponToPlayer(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, int nType)
