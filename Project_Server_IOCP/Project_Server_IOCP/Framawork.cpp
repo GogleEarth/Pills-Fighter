@@ -438,7 +438,7 @@ int Framawork::thread_process()
 				{
 					using namespace std;
 					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+					add_timer(key, over_ex->room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 				}
 			}
 			delete over_ex;
