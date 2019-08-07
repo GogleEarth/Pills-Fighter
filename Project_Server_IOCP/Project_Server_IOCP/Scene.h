@@ -14,6 +14,7 @@ class Scene
 protected:
 	CModel*	bullet_mesh_;
 	CModel*	robot_mesh_;
+	CModel* saber_mesh_;
 	std::vector<CModel*> models_;
 
 	std::mutex obj_lock;

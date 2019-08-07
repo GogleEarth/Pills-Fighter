@@ -253,6 +253,9 @@ void Room::end_game()
 	blue_score_ = 0;
 	red_score_ = 0;
 
+	for (int i = 0; i < MAX_CLIENT; ++i)
+		players_[i].set_robot(0);
+
 	while (create_object_queue_.size() > 0)
 		create_object_queue_.pop();
 	while (map_event_queue_.size() > 0)

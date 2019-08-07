@@ -107,6 +107,7 @@ void Scene::init(CRepository * pRepository)
 {
 	robot_mesh_ = pRepository->GetModel("./Resource/PlayerCollisionBox.bin", NULL, NULL);
 	bullet_mesh_ = pRepository->GetModel("./Resource/Bullet/Bullet.bin", NULL, NULL);
+	saber_mesh_ = pRepository->GetModel("./Resource/SaberCollisionBox.bin", NULL, NULL);
 
 	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
 	{
@@ -198,6 +199,7 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 	Objects_[index].SetObjectType(type);
 	Objects_[index].SetMaxHitPoint(hp);
 	Objects_[index].SetHitPoint(hp);
+	XMFLOAT4X4 worldmatrix = matrix;
 	if (index != -1)
 	{
 		Objects_[index].SetIndex(index);
@@ -224,20 +226,20 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 		}
 		else if (type == OBJECT_TYPE_SABER)
 		{
-			Objects_[index].SetModel(robot_mesh_);
+			Objects_[index].SetModel(saber_mesh_);
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
 			XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
 			XMFLOAT3 look = XMFLOAT3{ matrix._31, matrix._32, matrix._33 };
 			position = Vector3::Add(position, Vector3::ScalarProduct(look, 10.0f, false));
-			matrix._41 = position.x;
-			matrix._42 = position.y;
-			matrix._43 = position.z;
+			worldmatrix._41 = position.x;
+			worldmatrix._42 = position.y;
+			worldmatrix._43 = position.z;
 		}
 	}
 	Objects_[index].set_owner_id(id);
-	Objects_[index].SetWorldTransf(matrix);
-	Objects_[index].SetPrevPosition(XMFLOAT3{ matrix._41, matrix._42, matrix._43 });
+	Objects_[index].SetWorldTransf(worldmatrix);
+	Objects_[index].SetPrevPosition(XMFLOAT3{ worldmatrix._41, worldmatrix._42, worldmatrix._43 });
 	Objects_[index].SetUse(true);
 	obj_lock.unlock();
 	return index;
@@ -286,7 +288,7 @@ bool Scene::check_saber_collision_player(int object)
 				{
 					for (auto playeraabb : Objects_[i].GetAABB())
 					{
-						if (objaabb.Intersects(playeraabb))
+						if (playeraabb.Intersects(objaabb))
 						{
 							if (Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
 							{
@@ -414,8 +416,7 @@ bool Scene::check_collision_player(int object)
 								}
 								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
 									Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
-									Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET ||
-									Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
+									Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
 								{
 									PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 									pkt_pl->ID = i;
