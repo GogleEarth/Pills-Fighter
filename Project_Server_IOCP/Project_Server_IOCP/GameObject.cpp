@@ -88,6 +88,11 @@ void GameObject::Animate(float fTimeElapsed, char map)
 			ElapsedTime_ += fTimeElapsed;
 		}
 	}
+	else if (Object_Type_ == OBJECT_TYPE_SABER)
+	{
+		Delete();
+	}
+
 	if (is_player_)
 	{
 		if (is_die_)
