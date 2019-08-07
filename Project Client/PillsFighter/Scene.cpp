@@ -3693,7 +3693,7 @@ void CBattleScene::CheckCollision()
 				if (!pSword->CollisionCheck(anotherE)) continue;
 				if (Enemy->CheckDidHitObject(anotherE)) continue;
 
-				AddEffect(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 0.75f, 0.79f, 1.0f));
+				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 0.75f, 0.79f, 1.0f));
 
 				Enemy->AddHitObject(anotherE);
 
@@ -3706,7 +3706,7 @@ void CBattleScene::CheckCollision()
 				if (!pSword->CollisionCheck(m_pPlayer)) continue;
 				if (Enemy->CheckDidHitObject(m_pPlayer)) continue;
 
-				AddEffect(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 0.75f, 0.79f, 1.0f));
+				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 0.75f, 0.79f, 1.0f));
 
 				Enemy->AddHitObject(m_pPlayer);
 
@@ -3732,8 +3732,8 @@ void CBattleScene::CheckCollision()
 					if (pSword->GetType() & WEAPON_TYPE_OF_SABER) xmf4Color = XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f);
 					else xmf4Color = XMFLOAT4(0.13f, 1.0f, 0.29f, 1.0f);
 
-					AddEffect(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
-					AddEffect(SPRITE_EFFECT_INDEX_SWORD_HIT_2, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
+					AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
+					AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT_2, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
 
 					m_pPlayer->AddHitObject(Enemy);
 
@@ -3773,7 +3773,7 @@ void CBattleScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-					AddEffect(SPRITE_EFFECT_INDEX_GUN_HIT, pBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+					AddSprite(SPRITE_EFFECT_INDEX_GUN_HIT, pBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 					pBullet->Delete();
 					std::cout << "Collision Enemy By Bullet\n" << std::endl;
@@ -3793,7 +3793,7 @@ void CBattleScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pBZKBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-					AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+					AddSprite(SPRITE_EFFECT_INDEX_EXPLOSION, pBZKBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 					pBZKBullet->Delete();
 
@@ -3812,7 +3812,7 @@ void CBattleScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMGBullet->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-					AddEffect(SPRITE_EFFECT_INDEX_GUN_HIT, pMGBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+					AddSprite(SPRITE_EFFECT_INDEX_GUN_HIT, pMGBullet->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 					pMGBullet->Delete();
 
@@ -3833,7 +3833,7 @@ void CBattleScene::CheckCollision()
 
 					m_ppEffectShaders[INDEX_SHADER_TEXT_EEFECTS]->AddEffect(TEXT_EFFECT_INDEX_HIT_TEXT, pMeteor->GetPosition(), XMFLOAT2(0.04f, 0.02f), EFFECT_ANIMATION_TYPE_ONE, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-					AddEffect(SPRITE_EFFECT_INDEX_GUN_HIT, pMeteor->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+					AddSprite(SPRITE_EFFECT_INDEX_GUN_HIT, pMeteor->GetPosition(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 					pMeteor->Delete();
 
@@ -3924,7 +3924,7 @@ void CBattleScene::AddParticle(int nType, XMFLOAT3 xmf3Position, int nNum, XMFLO
 	m_pParticleShader->AddParticle(nType, xmf3Position, nNum, xmf4Color);
 };
 
-void CBattleScene::AddEffect(int nEffect, XMFLOAT3 xmf3Position, int nType, XMFLOAT4 xmf4Color)
+void CBattleScene::AddSprite(int nEffect, XMFLOAT3 xmf3Position, int nType, XMFLOAT4 xmf4Color)
 {
 	float fSize = 0.0f;
 
@@ -3941,6 +3941,9 @@ void CBattleScene::AddEffect(int nEffect, XMFLOAT3 xmf3Position, int nType, XMFL
 		break;
 	case SPRITE_EFFECT_INDEX_EXPLOSION:
 		fSize = (float)(rand() % 200) / 100.0f + SPRITE_EFFECT_EXPLOSION_SIZE;
+		break;
+	case SPRITE_EFFECT_INDEX_DESTROY:
+		fSize = (float)(rand() % 200) / 100.0f + SPRITE_EFFECT_DESTROY_SIZE;
 		break;
 	}
 
@@ -4164,12 +4167,12 @@ void CBattleScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	case EFFECT_TYPE::EFFECT_TYPE_HIT:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundGGHit);
 
-		AddEffect(SPRITE_EFFECT_INDEX_GUN_HIT, pCreateEffectInfo->xmf3Position, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		AddSprite(SPRITE_EFFECT_INDEX_GUN_HIT, pCreateEffectInfo->xmf3Position, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_EXPLOSION:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBZKHit);
 
-		AddEffect(SPRITE_EFFECT_INDEX_EXPLOSION, pCreateEffectInfo->xmf3Position, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		AddSprite(SPRITE_EFFECT_INDEX_EXPLOSION, pCreateEffectInfo->xmf3Position, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		break;
 	case EFFECT_TYPE::EFFECT_TYPE_GM_GUN:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
@@ -4297,14 +4300,21 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	{
 		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)pktData;
 
+		XMFLOAT3 xmf3DestroyPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
 		if (gClientIndex == pPacket->id)
 		{
 			m_pPlayer->ProcessDie(pPacket->respawntime);
+			xmf3DestroyPos = m_pPlayer->GetPosition();
 		}
 		else if (m_pObjects[pPacket->id])
 		{
 			m_pObjects[pPacket->id]->ProcessDie(pPacket->respawntime);
+			xmf3DestroyPos = m_pObjects[pPacket->id]->GetPosition();
 		}
+
+		AddSprite(SPRITE_EFFECT_INDEX_DESTROY, Vector3::Add(xmf3DestroyPos, XMFLOAT3(0.0f, 15.0f, 0.0f)), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundDestroy);
 		break;
 	}
 	case PKT_ID_PLAYER_RESPAWN:

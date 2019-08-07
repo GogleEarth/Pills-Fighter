@@ -1900,6 +1900,15 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 
 	m_ppEffects[SPRITE_EFFECT_INDEX_BEAM_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 16, 0.3f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_BEAM_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	//
+	m_ppTextures[SPRITE_EFFECT_INDEX_DESTROY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[SPRITE_EFFECT_INDEX_DESTROY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Destroy.dds", 0);
+
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_DESTROY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
+	m_ppEffects[SPRITE_EFFECT_INDEX_DESTROY] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 14, 1.5f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_DESTROY]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

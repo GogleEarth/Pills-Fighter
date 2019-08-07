@@ -22,6 +22,7 @@ CFMODSound::CFMODSound()
 	m_pfmodSystem->createSound("./Resource/SE/Booster.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundBooster);
 	m_pfmodSystem->createSound("./Resource/SE/Alert.wav", FMOD_DEFAULT, NULL, &m_pSoundAlert);
 	m_pfmodSystem->createSound("./Resource/SE/BeamRifle.wav", FMOD_DEFAULT, NULL, &m_pSoundBeamRifle);
+	m_pfmodSystem->createSound("./Resource/SE/Destroy.wav", FMOD_DEFAULT, NULL, &m_pSoundDestroy);
 }
 
 CFMODSound::~CFMODSound()
@@ -40,6 +41,7 @@ CFMODSound::~CFMODSound()
 	m_pSoundAlert->release();
 	m_pSoundBeamRifle->release();
 	m_pSoundSaberHit1->release();
+	m_pSoundDestroy->release();
 
 	m_pfmodSystem->close();
 	m_pfmodSystem->release();

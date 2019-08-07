@@ -1313,6 +1313,8 @@ void CPlayer::TakeAim()
 
 void CPlayer::ProcessDie(float fRespawnTime)
 {
+	CRobotObject::ProcessDie(fRespawnTime);
+
 	if (m_pUI) m_pUI->ClientDie();
 
 	m_nBoosterGauge = 100;
@@ -1337,8 +1339,6 @@ void CPlayer::ProcessDie(float fRespawnTime)
 	m_RButtonDown = false;
 	m_fMouseUpTime = 0.0f;
 	ChangeWeapon(0);
-
-	CRobotObject::ProcessDie(fRespawnTime);
 
 	for (auto& Weapon : m_vpWeapon)
 	{

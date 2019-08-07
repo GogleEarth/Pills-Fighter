@@ -464,19 +464,21 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-#define SPRITE_EFFECT_COUNT 5
+#define SPRITE_EFFECT_COUNT 6
 
 #define SPRITE_EFFECT_INDEX_SWORD_HIT 0
 #define SPRITE_EFFECT_INDEX_GUN_HIT 1
 #define SPRITE_EFFECT_INDEX_EXPLOSION 2
 #define SPRITE_EFFECT_INDEX_SWORD_HIT_2 3
 #define SPRITE_EFFECT_INDEX_BEAM_HIT 4
+#define SPRITE_EFFECT_INDEX_DESTROY 5
 
 #define SPRITE_EFFECT_GUN_HIT_SIZE 12.5f
 #define SPRITE_EFFECT_SWORD_HIT_SIZE 20.0f
 #define SPRITE_EFFECT_EXPLOSION_SIZE 25.0f
 #define SPRITE_EFFECT_SWORD_HIT_2_SIZE 15.0f
 #define SPRITE_EFFECT_BEAM_HIT_SIZE 15.0f
+#define SPRITE_EFFECT_DESTROY_SIZE 25.0f
 
 class CSpriteShader : public CEffectShader
 {
