@@ -1350,7 +1350,6 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		PKT_MOVE_TO_MAIN_LOBBY pktToServer;
 		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
-		lstrcpynW(pktToServer.name, CScene::GetMyName(), MAX_NAME_LENGTH);
 
 		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Change Map Error\n");

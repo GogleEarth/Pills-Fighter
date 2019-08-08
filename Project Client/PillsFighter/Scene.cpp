@@ -2102,14 +2102,6 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_START_HL]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/StartHL.dds", 0);
 		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_START_HL], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/Ready.dds", 0);
-		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
-
-		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY_HL] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY_HL]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/ReadyHL.dds", 0);
-		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY_HL], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
-
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_LEAVE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 		m_ppTextures[LOBBY_ROOM_UI_TEXTURE_LEAVE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Lobby/Room/Leave.dds", 0);
 		CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[LOBBY_ROOM_UI_TEXTURE_LEAVE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
@@ -2221,12 +2213,6 @@ void CLobbyRoomScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsComma
 		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
 		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
 		m_ppUIRects[LOBBY_ROOM_UI_RECT_START_BUTTON] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
-
-		centerx = 0.797187f;
-		centery = -0.60575f;
-		xmf2Center = ::CalculateCenter(centerx - width, centerx + width, centery + height, centery - height);
-		xmf2Size = ::CalculateSize(centerx - width, centerx + width, centery + height, centery - height);
-		m_ppUIRects[LOBBY_ROOM_UI_RECT_READY_BUTTON] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
 		centerx = 0.797187f;
 		centery = -0.8425f;
@@ -2356,11 +2342,6 @@ void CLobbyRoomScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12Graphi
 	m_StartButton.Extents = XMFLOAT3(width, height, 1.0f);
 
 	centerx = 0.797187f;
-	centery = -0.60575f;
-	m_ReadyButton.Center = XMFLOAT3(centerx, centery, 1.0f);
-	m_ReadyButton.Extents = XMFLOAT3(width, height, 1.0f);
-
-	centerx = 0.797187f;
 	centery = -0.8425f;
 	m_LeaveButton.Center = XMFLOAT3(centerx, centery, 1.0f);
 	m_LeaveButton.Extents = XMFLOAT3(width, height, 1.0f);
@@ -2454,14 +2435,6 @@ int CLobbyRoomScene::MouseClick()
 			return LOBBY_MOUSE_CLICK_ROOM_START;
 		}
 	}
-	else
-	{
-		if (m_pCursor->CollisionCheck(m_ReadyButton))
-		{
-			return LOBBY_MOUSE_CLICK_ROOM_READY;
-		}
-	}
-
 	if (m_pCursor->CollisionCheck(m_LeaveButton))
 	{
 		return LOBBY_MOUSE_CLICK_ROOM_LEAVE;
@@ -2520,9 +2493,6 @@ void CLobbyRoomScene::CheckCollision()
 {
 	if (m_pCursor->CollisionCheck(m_StartButton)) m_bHLStartButton = true;
 	else m_bHLStartButton = false;
-
-	if (m_pCursor->CollisionCheck(m_ReadyButton)) m_bHLReadyButton = true;
-	else m_bHLReadyButton = false;
 
 	if (m_pCursor->CollisionCheck(m_LeaveButton)) m_bHLLeaveButton = true;
 	else m_bHLLeaveButton = false;
@@ -2660,14 +2630,6 @@ void CLobbyRoomScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 		else
 			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_START]->UpdateShaderVariables(pd3dCommandList);
 		m_ppUIRects[LOBBY_ROOM_UI_RECT_START_BUTTON]->Render(pd3dCommandList, 0);
-	}
-	else
-	{
-		if (m_bHLReadyButton)
-			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY_HL]->UpdateShaderVariables(pd3dCommandList);
-		else
-			m_ppTextures[LOBBY_ROOM_UI_TEXTURE_READY]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[LOBBY_ROOM_UI_RECT_READY_BUTTON]->Render(pd3dCommandList, 0);
 	}
 
 	if (m_bHLLeaveButton)
