@@ -833,7 +833,11 @@ CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 
 CHeightMapTerrain::~CHeightMapTerrain()
 {
-	if (m_pHeightMapImage) delete m_pHeightMapImage;
+	if (m_pHeightMapImage)
+	{
+		delete m_pHeightMapImage;
+		m_pHeightMapImage = NULL;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

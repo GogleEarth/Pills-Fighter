@@ -398,7 +398,6 @@ void CGameFramework::BuildObjects()
 	CScene::CreateGraphicsRootSignature(m_pd3dDevice);
 	CScene::CreateComputeRootSignature(m_pd3dDevice);
 	CScene::CreateDescriptorHeaps(m_pd3dDevice, MAX_SRV_DESCRIPTOR_HEAP_COUNT);
-	CScene::CreateRtvAndDsvDescriptorHeaps(m_pd3dDevice);
 
 	m_pRepository = new CRepository();
 

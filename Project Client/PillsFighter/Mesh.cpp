@@ -629,7 +629,6 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_xmf3Scale = xmf3Scale;
 
 	CHeightMapImage *pHeightMapImage = (CHeightMapImage *)pContext0;
-	CHeightMapImage *pMapImage = (CHeightMapImage *)pContext1;
 
 	int cxHeightMap = pHeightMapImage->GetHeightMapWidth();
 	int czHeightMap = pHeightMapImage->GetHeightMapLength();
@@ -738,9 +737,6 @@ CHeightMapGridMesh::CHeightMapGridMesh(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 
 CHeightMapGridMesh::~CHeightMapGridMesh()
 {
-	if (m_pd3TextureNumberBuffer) m_pd3TextureNumberBuffer->Release();
-
-	if (m_pnTextureNumbers) delete[] m_pnTextureNumbers;
 }
 
 float CHeightMapGridMesh::OnGetHeight(int x, int z, void *pContext)
@@ -769,14 +765,6 @@ XMFLOAT4 CHeightMapGridMesh::OnGetColor(int x, int z, void *pContext)
 	if (fScale < 0.25f) fScale = 0.25f;
 	XMFLOAT4 xmf4Color = Vector4::Multiply(fScale, xmf4IncidentLightColor);
 	return(xmf4Color);
-}
-
-void CHeightMapGridMesh::ReleaseUploadBuffers()
-{
-	CMesh::ReleaseUploadBuffers();
-
-	if (m_pd3dTextureNumberUploadBuffer) m_pd3dTextureNumberUploadBuffer->Release();
-	m_pd3dTextureNumberUploadBuffer = NULL;
 }
 
 void CHeightMapGridMesh::OnPreRender(ID3D12GraphicsCommandList *pd3dCommandList)

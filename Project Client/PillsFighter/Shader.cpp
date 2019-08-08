@@ -16,8 +16,16 @@ CShader::CShader()
 
 CShader::~CShader()
 {
-	if (m_pd3dPipelineState) m_pd3dPipelineState->Release();
-	if (m_pd3dShadowPipelineState) m_pd3dShadowPipelineState->Release();
+	if (m_pd3dPipelineState)
+	{
+		m_pd3dPipelineState->Release();
+		m_pd3dPipelineState = NULL;
+	}
+	if (m_pd3dShadowPipelineState)
+	{
+		m_pd3dShadowPipelineState->Release();
+		m_pd3dShadowPipelineState = NULL;
+	}
 
 	ReleaseShaderVariables();
 }
@@ -486,14 +494,14 @@ void CObjectsShader::ReleaseObjects()
 {
 	for (int i = 0; i < m_nObjectGroup; i++)
 	{
-		if (m_pvpObjects[i].size())
+		for (auto& Object : m_pvpObjects[i])
 		{
-			for (auto& Object = m_pvpObjects[i].begin(); Object != m_pvpObjects[i].end();)
-			{
-				delete *Object;
-				Object = m_pvpObjects[i].erase(Object);
-			}
+			Object->ReleaseShaderVariables();
+			delete Object;
+			Object = NULL;
 		}
+
+		m_pvpObjects[i].clear();
 	}
 }
 
@@ -643,7 +651,7 @@ CInstancingObjectsShader::CInstancingObjectsShader()
 
 CInstancingObjectsShader::~CInstancingObjectsShader()
 {
-
+	ReleaseShaderVariables();
 }
 
 D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -697,12 +705,15 @@ void CInstancingObjectsShader::UpdateShaderVariables(ID3D12GraphicsCommandList *
 
 void CInstancingObjectsShader::ReleaseShaderVariables()
 {
-	for (const auto& pd3dcb : m_vpd3dcbGameObjects)
+	for (auto& pd3dcb : m_vpd3dcbGameObjects)
 	{
 		pd3dcb->Unmap(0, NULL);
 		pd3dcb->Release();
 
+		pd3dcb = NULL;
 	}
+
+	m_vpd3dcbGameObjects.clear();
 }
 
 void CInstancingObjectsShader::OnPrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -759,7 +770,7 @@ CObstacleShader::~CObstacleShader()
 
 void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup)
 {
-	CGameObject *pObject = new CGameObject();
+	CGameObject *pObject = NULL;
 
 	FILE *pInFile = NULL;
 	::fopen_s(&pInFile, pstrFileName, "rb");
@@ -899,7 +910,7 @@ CSpaceObstacleShader::~CSpaceObstacleShader()
 
 void CSpaceObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, char *pstrFileName, int nGroup, float radius)
 {
-	CGameObject *pObject = new CGameObject();
+	CGameObject *pObject = NULL;
 
 	FILE *pInFile = NULL;
 	::fopen_s(&pInFile, pstrFileName, "rb");
