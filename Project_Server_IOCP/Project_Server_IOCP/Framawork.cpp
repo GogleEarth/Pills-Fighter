@@ -1108,6 +1108,7 @@ void Framawork::process_packet(int id, char* packet)
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
 		rooms_[room_num].disconnect_client(clients_[id].socket);
+		clients_[id].in_room = false;
 
 		for (int i = 0; i < 10; ++i)
 		{
