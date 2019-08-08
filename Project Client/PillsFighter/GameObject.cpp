@@ -34,9 +34,21 @@ CGameObject::~CGameObject()
 	ReleaseShaderVariables();
 
 	if (m_pModel) m_pModel->Release();
-	if (m_pShader) delete m_pShader;
-	if (m_ppAnimationControllers[ANIMATION_UP]) delete m_ppAnimationControllers[ANIMATION_UP];
-	if (m_ppAnimationControllers[ANIMATION_DOWN]) delete m_ppAnimationControllers[ANIMATION_DOWN];
+	if (m_pShader)
+	{
+		delete m_pShader;
+		m_pShader = NULL;
+	}
+	if (m_ppAnimationControllers[ANIMATION_UP])
+	{
+		delete m_ppAnimationControllers[ANIMATION_UP];
+		m_ppAnimationControllers[ANIMATION_UP] = NULL;
+	}
+	if (m_ppAnimationControllers[ANIMATION_DOWN])
+	{
+		delete m_ppAnimationControllers[ANIMATION_DOWN];
+		m_ppAnimationControllers[ANIMATION_DOWN] = NULL;
+	}
 }
 
 void CGameObject::SetModel(CModel *pModel)
@@ -144,13 +156,19 @@ void CGameObject::ReleaseShaderVariables()
 	{
 		pd3dcbGameObject->Unmap(0, NULL);
 		pd3dcbGameObject->Release();
+
+		pd3dcbGameObject = NULL;
 	}
+	m_vd3dcbGameObject.clear();
 
 	for (ID3D12Resource *pd3dcbBoneTransforms : m_vd3dcbBoneTransforms)
 	{
 		pd3dcbBoneTransforms->Unmap(0, NULL);
 		pd3dcbBoneTransforms->Release();
+
+		pd3dcbBoneTransforms = NULL;
 	}
+	m_vd3dcbBoneTransforms.clear();
 }
 
 void CGameObject::SetHitPoint(int nHitPoint)
@@ -599,8 +617,7 @@ void CGameObject::SetPosition(XMFLOAT3& xmf3Position)
 {
 	SetPosition(xmf3Position.x, xmf3Position.y, xmf3Position.z);
 }
-
-//게임 객체를 로컬 x-축 방향으로 이동한다. 
+ 
 void CGameObject::MoveStrafe(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -609,7 +626,6 @@ void CGameObject::MoveStrafe(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
-//게임 객체를 로컬 y-축 방향으로 이동한다. 
 void CGameObject::MoveUp(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -618,7 +634,6 @@ void CGameObject::MoveUp(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
-//게임 객체를 로컬 z-축 방향으로 이동한다. 
 void CGameObject::MoveForward(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -627,7 +642,6 @@ void CGameObject::MoveForward(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
-//게임 객체를 정해진 방향으로 이동한다. 
 void CGameObject::Move(XMFLOAT3 xmf3Direction, float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -1231,9 +1245,21 @@ CCursor::CCursor(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dComman
 
 CCursor::~CCursor()
 {
-	if (m_pMesh) delete m_pMesh;
-	if (m_pTexture) delete m_pTexture;
-	if (m_pShader) delete m_pShader;
+	if (m_pMesh)
+	{
+		delete m_pMesh;
+		m_pMesh = NULL;
+	}
+	if (m_pTexture)
+	{
+		delete m_pTexture;
+		m_pTexture = NULL;
+	}
+	if (m_pShader)
+	{
+		delete m_pShader;
+		m_pTexture = NULL;
+	}
 }
 
 void CCursor::ReleaseUploadBuffer()

@@ -94,6 +94,7 @@ void CCamera::ZoomOut()
 	m_bZoomIn = false;
 	m_xmf4x4Projection = Matrix4x4::PerspectiveFovLH(XMConvertToRadians(m_fFOVAngle), m_fAspectRatio, m_fNearPlaneDistance, m_fFarPlaneDistance);
 }
+
 void CCamera::GenerateViewMatrix()
 {
 	//카메라의 z-축을 기준으로 카메라의 좌표축들이 직교하도록 카메라 변환 행렬을 갱신한다. 
@@ -149,6 +150,8 @@ void CCamera::ReleaseShaderVariables()
 	{
 		m_pd3dcbCamera->Unmap(0, NULL);
 		m_pd3dcbCamera->Release();
+
+		m_pd3dcbCamera = NULL;
 	}
 }
 
@@ -272,5 +275,7 @@ void CLightCamera::ReleaseShaderVariables()
 	{
 		m_pd3dcbLightCamera->Unmap(0, NULL);
 		m_pd3dcbLightCamera->Release();
+		
+		m_pd3dcbLightCamera = NULL;
 	}
 }

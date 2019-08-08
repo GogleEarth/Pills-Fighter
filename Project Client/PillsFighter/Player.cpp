@@ -61,10 +61,24 @@ CPlayer::~CPlayer()
 {
 	ReleaseShaderVariables();
 
-	if (m_pCamera) delete m_pCamera;
+	if (m_pCamera)
+	{
+		delete m_pCamera;
+		m_pCamera = NULL;
+	}
 
-	for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
-	if (m_pWeaponShader) delete m_pWeaponShader;
+	for (CWeapon *pWeapon : m_vpWeapon)
+	{
+		delete pWeapon;
+		pWeapon = NULL;
+	}
+	m_vpWeapon.clear();
+
+	if (m_pWeaponShader)
+	{
+		delete m_pWeaponShader;
+		m_pWeaponShader = NULL;
+	}
 }
 
 bool CPlayer::IsPrepareDashAnimation()
@@ -83,6 +97,8 @@ void CPlayer::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsComm
 void CPlayer::ReleaseShaderVariables()
 {
 	if (m_pCamera) m_pCamera->ReleaseShaderVariables();
+
+	CRobotObject::ReleaseShaderVariables();
 }
 
 void CPlayer::ReleaseUploadBuffers()

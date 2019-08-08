@@ -122,6 +122,8 @@ protected:
 	int										m_nFPSCount = 0;
 
 public:
+	static int regamecount;
+
 	void SetPlayer(CPlayer* pPlayer) { m_pPlayer = pPlayer; }
 	CPlayer *GetPlayer() { return m_pPlayer; }
 	CHeightMapTerrain *GetTerrain() { return(m_pTerrain); }
@@ -636,11 +638,6 @@ struct MOTIONBLUR
 	int m_nHeight;
 	int m_nSamples;
 };
-
-//struct SCREENEFFECT
-//{
-//
-//};
 
 class CBattleScene : public CScene
 {

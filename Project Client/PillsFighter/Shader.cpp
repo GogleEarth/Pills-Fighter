@@ -2497,35 +2497,90 @@ CUserInterface::CUserInterface()
 
 CUserInterface::~CUserInterface()
 {
-	for (int i = 0; i < m_nUIRect; i++)
+	if (m_ppUIRects)
 	{
-		if (m_ppUIRects[i])
-			delete m_ppUIRects[i];
+		for (int i = 0; i < m_nUIRect; i++)
+		{
+			if (m_ppUIRects[i])
+			{
+				delete m_ppUIRects[i];
+				m_ppUIRects[i] = NULL;
+			}
+		}
+
+		delete[] m_ppUIRects;
 	}
 
-	for (int i = 0; i < m_nTextures; i++)
+	if (m_ppTextures)
 	{
-		if (m_ppTextures[i])
-			delete m_ppTextures[i];
+		for (int i = 0; i < m_nTextures; i++)
+		{
+			if (m_ppTextures[i])
+			{
+				delete m_ppTextures[i];
+				m_ppTextures[i] = NULL;
+			}
+		}
+
+		delete[] m_ppTextures;
+		m_ppTextures = NULL;
 	}
 
 	for (int i = 0; i < m_vpd3dTeamNameTexture.size(); i++)
 	{
 		if (m_vpTeamNameRect[i])
+		{
 			delete m_vpTeamNameRect[i];
+			m_vpTeamNameRect[i] = NULL;
+		}
 
 		if (m_vpd3dTeamNameTexture[i])
+		{
 			m_vpd3dTeamNameTexture[i]->Release();
+			m_vpd3dTeamNameTexture[i] = NULL;
+		}
 	}
 
-	if (m_pd3dPipelineStateBar) m_pd3dPipelineStateBar->Release();
-	if (m_pd3dPipelineStateBullet) m_pd3dPipelineStateBullet->Release();
-	if (m_pd3dPipelineStateReload) m_pd3dPipelineStateReload->Release();
-	if (m_pd3dPipelineStateTeamHP) m_pd3dPipelineStateTeamHP->Release();
-	if (m_pd3dPipelineStateColored) m_pd3dPipelineStateColored->Release();
-	if (m_pd3dPipelineState3DUI) m_pd3dPipelineState3DUI->Release();
-	if (m_pd3dPipelineStateRespawn) m_pd3dPipelineStateRespawn->Release();
-	if (m_pd3dPipelineStateCustomUI) m_pd3dPipelineStateCustomUI->Release();
+	if (m_pd3dPipelineStateBar)
+	{
+		m_pd3dPipelineStateBar->Release();
+		m_pd3dPipelineStateBar = NULL;
+	}
+	if (m_pd3dPipelineStateBullet)
+	{
+		m_pd3dPipelineStateBullet->Release();
+		m_pd3dPipelineStateBullet = NULL;
+	}
+	if (m_pd3dPipelineStateReload)
+	{
+		m_pd3dPipelineStateReload->Release();
+		m_pd3dPipelineStateReload = NULL;
+	}
+	if (m_pd3dPipelineStateTeamHP)
+	{
+		m_pd3dPipelineStateTeamHP->Release();
+		m_pd3dPipelineStateTeamHP = NULL;
+	}
+	if (m_pd3dPipelineStateColored)
+	{
+		m_pd3dPipelineStateColored->Release();
+		m_pd3dPipelineStateColored = NULL;
+	}
+	if (m_pd3dPipelineState3DUI)
+	{
+		m_pd3dPipelineState3DUI->Release();
+		m_pd3dPipelineState3DUI = NULL;
+	}
+	if (m_pd3dPipelineStateRespawn)
+	{
+		m_pd3dPipelineStateRespawn->Release();
+		m_pd3dPipelineStateRespawn = NULL;
+	}
+	if (m_pd3dPipelineStateCustomUI)
+	{
+		m_pd3dPipelineStateCustomUI->Release();
+		m_pd3dPipelineStateCustomUI = NULL;
+	}
 }
 
 D3D12_SHADER_BYTECODE CUserInterface::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)

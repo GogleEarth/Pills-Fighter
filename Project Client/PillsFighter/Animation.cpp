@@ -45,11 +45,44 @@ CAnimation::CAnimation()
 
 CAnimation::~CAnimation()
 {
-	if (m_pfKeyFrameTransformTimes) delete[] m_pfKeyFrameTransformTimes;
-	for (int j = 0; j < m_nKeyFrameTransforms; j++) if (m_ppxmf4x4KeyFrameTransforms[j]) delete[] m_ppxmf4x4KeyFrameTransforms[j];
-	if (m_ppxmf4x4KeyFrameTransforms) delete[] m_ppxmf4x4KeyFrameTransforms;
-	if (m_pCallbackKeys) delete[] m_pCallbackKeys;
-	if (m_pAnimationCallbackHandler) delete m_pAnimationCallbackHandler;
+	if (m_pfKeyFrameTransformTimes)
+	{
+		delete[] m_pfKeyFrameTransformTimes;
+		m_pfKeyFrameTransformTimes = NULL;
+	}
+
+	if (m_ppxmf4x4KeyFrameTransforms)
+	{
+		for (int j = 0; j < m_nKeyFrameTransforms; j++)
+		{
+			if (m_ppxmf4x4KeyFrameTransforms[j])
+			{
+				delete[] m_ppxmf4x4KeyFrameTransforms[j];
+				m_ppxmf4x4KeyFrameTransforms[j] = NULL;
+			}
+		}
+
+		delete[] m_ppxmf4x4KeyFrameTransforms;
+		m_ppxmf4x4KeyFrameTransforms = NULL;
+	}
+
+	if (m_ppxmf4x4KeyFrameTransforms)
+	{
+		delete[] m_ppxmf4x4KeyFrameTransforms;
+		m_ppxmf4x4KeyFrameTransforms = NULL;
+	}
+
+	if (m_pCallbackKeys)
+	{
+		delete[] m_pCallbackKeys;
+		m_pCallbackKeys = NULL;
+	}
+
+	if (m_pAnimationCallbackHandler)
+	{
+		delete m_pAnimationCallbackHandler;
+		m_pAnimationCallbackHandler = NULL;
+	}
 }
 
 CALLBACKDATA *CAnimation::GetCallbackData()
@@ -192,8 +225,16 @@ CAnimationSet::CAnimationSet(int nAnimations)
 
 CAnimationSet::~CAnimationSet()
 {
-	if (m_pAnimations) delete[] m_pAnimations;
-	if (m_ppAnimationFrameCaches) delete[] m_ppAnimationFrameCaches;
+	if (m_pAnimations)
+	{
+		delete[] m_pAnimations;
+		m_pAnimations = NULL;
+	}
+	if (m_ppAnimationFrameCaches)
+	{
+		delete[] m_ppAnimationFrameCaches;
+		m_ppAnimationFrameCaches = NULL;
+	}
 }
 
 void CAnimationSet::SetCallbackKeys(int nAnimationSet, int nCallbackKeys)
@@ -264,8 +305,16 @@ CAnimationController::CAnimationController(int nAnimationTracks, CAnimationSet *
 
 CAnimationController::~CAnimationController()
 {
-	if (m_pAnimationTracks) delete[] m_pAnimationTracks;
-	if (m_xmf4x4BoneTransforms) delete[] m_xmf4x4BoneTransforms;
+	if (m_pAnimationTracks)
+	{
+		delete[] m_pAnimationTracks;
+		m_pAnimationTracks = NULL;
+	}
+	if (m_xmf4x4BoneTransforms)
+	{
+		delete[] m_xmf4x4BoneTransforms;
+		m_xmf4x4BoneTransforms = NULL;
+	}
 }
 
 void CAnimationController::SetAnimationSet(CAnimationSet *pAnimationSet)

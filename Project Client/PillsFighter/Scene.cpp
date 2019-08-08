@@ -30,6 +30,8 @@ bool							CScene::m_bInitName = false;
 
 extern CFMODSound gFmodSound;
 
+int								CScene::regamecount = 0;
+
 CScene::CScene()
 {
 	CONSOLE_CURSOR_INFO C;
@@ -92,25 +94,33 @@ void CScene::ReleaseObjects()
 
 	if (m_pSkyBox)
 	{
+		m_pSkyBox->ReleaseShaderVariables();
 		delete m_pSkyBox;
+
 		m_pSkyBox = NULL;
 	}
 
 	if (m_pTerrain)
 	{
+		m_pTerrain->ReleaseShaderVariables();
 		delete m_pTerrain;
+
 		m_pTerrain = NULL;
 	}
 
 	if (m_pFontShader)
 	{
+		m_pFontShader->ReleaseShaderVariables();
 		delete m_pFontShader;
+
 		m_pFontShader = NULL;
 	}
 
 	if (m_pWireShader)
 	{
+		m_pWireShader->ReleaseShaderVariables();
 		delete m_pWireShader;
+
 		m_pWireShader = NULL;
 	}
 
@@ -1057,13 +1067,16 @@ void CScene::CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice)
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	d3dDescriptorHeapDesc.NodeMask = 0;
+
 	HRESULT hResult = pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dRtvDescriptorHeap);
+
 	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
 	d3dDescriptorHeapDesc.NumDescriptors = SCENE_DSV_DESCRIPTOR_HEAP_COUNT;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	hResult = pd3dDevice->CreateDescriptorHeap(&d3dDescriptorHeapDesc, __uuidof(ID3D12DescriptorHeap), (void **)&m_pd3dDsvDescriptorHeap);
+
 	m_d3dDsvCPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	m_d3dDsvGPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 }
@@ -1115,14 +1128,14 @@ void CScene::CreateDepthStencilView(ID3D12Device *pd3dDevice, ID3D12Resource *pd
 
 void CScene::ResetDescriptorHeapHandles()
 {
-	m_d3dSrvUavTextureCPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
-	m_d3dSrvUavTextureGPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	CScene::m_d3dSrvUavTextureCPUDescStartHandle.ptr = CScene::m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	CScene::m_d3dSrvUavTextureGPUDescStartHandle.ptr = CScene::m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
 
-	m_d3dRtvCPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dRtvGPUDesciptorStartHandle = m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	CScene::m_d3dRtvCPUDesciptorStartHandle = CScene::m_pd3dRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	CScene::m_d3dRtvGPUDesciptorStartHandle = CScene::m_pd3dRtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-	m_d3dDsvCPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	m_d3dDsvGPUDesciptorStartHandle = m_pd3dDsvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	CScene::m_d3dDsvCPUDesciptorStartHandle = CScene::m_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	CScene::m_d3dDsvGPUDesciptorStartHandle = CScene::m_pd3dDsvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2887,6 +2900,8 @@ void CBattleScene::ProcessInput(float fTimeElapsed)
 
 void CBattleScene::BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository)
 {
+	CScene::regamecount++;
+
 	CScene::BuildObjects(pd3dDevice, pd3dCommandList, pRepository);
 
 	// Objects
@@ -2988,11 +3003,13 @@ void CBattleScene::ReleaseObjects()
 		m_pd3dEnvirCube->Release();
 		m_pd3dEnvirCube = NULL;
 	}
+
 	if (m_pd3dEnvirCubeDSBuffer)
 	{
 		m_pd3dEnvirCubeDSBuffer->Release();
 		m_pd3dEnvirCubeDSBuffer = NULL;
 	}
+
 	if (m_pd3dShadowMap)
 	{
 		m_pd3dShadowMap->Release();
@@ -3025,6 +3042,8 @@ void CBattleScene::ReleaseObjects()
 
 		m_pMinimapShader = NULL;
 	}
+
+	ReleaseShaderVariables();
 }
 
 void CBattleScene::Alert()
@@ -4088,7 +4107,6 @@ void CBattleScene::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 
 		m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS]->SetFollowObject(FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER, pGameObject, ((CRobotObject*)pGameObject)->GetRightNozzleFrame());
 		m_ppEffectShaders[INDEX_SHADER_FOLLOW_SPRITE_EFFECTS]->SetFollowObject(FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER, pGameObject, ((CRobotObject*)pGameObject)->GetLeftNozzleFrame());
-
 		break;
 	case OBJECT_TYPE_OBSTACLE:
 		printf("Do not Apply Insert Obstacle\n");

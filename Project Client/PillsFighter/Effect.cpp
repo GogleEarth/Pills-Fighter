@@ -51,11 +51,13 @@ CEffect::~CEffect()
 		m_pd3dBuffer->Release();
 		m_pd3dBuffer = NULL;
 	}
+
 	if (m_pd3dDummyBuffer)
 	{
 		m_pd3dDummyBuffer->Release();
 		m_pd3dDummyBuffer = NULL;
 	}
+
 	if (m_pd3dReadBackBuffer)
 	{
 		m_pd3dReadBackBuffer->Release();

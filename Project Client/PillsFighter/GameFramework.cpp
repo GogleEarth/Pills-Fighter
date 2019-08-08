@@ -327,10 +327,14 @@ void CGameFramework::BuildScene(int nSceneType)
 	{
 		m_pScene->AddTeam(m_vnIndices[i], m_vpwstrNames[i]);
 	}
+	m_vnIndices.clear();
+	m_vpwstrNames.clear();
+
 	for (int i = 0; i < m_vnEnemyIndices.size(); i++)
 	{
 		m_pScene->AddEnemy(m_vnEnemyIndices[i]);
 	}
+	m_vnEnemyIndices.clear();
 
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList, NULL);
 	m_pScene->StartScene();
@@ -550,13 +554,26 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		break;
 	}
 	case LOBBY_MOVE:
-		if(m_pScene) m_pScene->EndScene();
+		if (m_pPlayer)
+		{
+			delete m_pPlayer;
 
-		ReleaseObjects();
+			m_pPlayer = NULL;
+			m_pCamera = NULL;
+		}
+
+		m_pScene->EndScene();
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+
+		m_pScene = NULL;
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
+		m_pScene->InitName(CScene::GetMyName());
 
+#ifdef ON_NETWORKING
 		SendToServer(PKT_ID_MOVE_TO_MAIN_LOBBY, NULL);
+#endif
 		break;
 	}
 }
@@ -795,7 +812,7 @@ void CGameFramework::FrameAdvance()
 		if (m_pPlayer) m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 
 		m_pScene->RenderEffects(m_pd3dCommandList, m_pCamera);
-			
+
 		m_pScene->PostProcessing(m_pd3dCommandList);
 
 		//////
@@ -810,7 +827,7 @@ void CGameFramework::FrameAdvance()
 		m_pd3dCommandList->ClearDepthStencilView(d3dDsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 
 		m_pd3dCommandList->OMSetRenderTargets(1, &d3dRtvHandle, TRUE, &d3dDsvHandle);
-			
+
 		m_pScene->RenderOffScreen(m_pd3dCommandList);
 
 		m_pScene->RenderUI(m_pd3dCommandList);
