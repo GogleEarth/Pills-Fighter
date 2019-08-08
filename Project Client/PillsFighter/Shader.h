@@ -581,7 +581,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 25
+#define UI_TEXTURE_COUNT 27
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -608,6 +608,8 @@ protected:
 #define UI_TEXTURE_TEXT_2 22
 #define UI_TEXTURE_TEXT_1 23
 #define UI_TEXTURE_TEXT_FIGHT 24
+#define UI_TEXTURE_TEXT_WIN 25
+#define UI_TEXTURE_TEXT_LOSE 26
 
 #define UI_RECT_COUNT 18
 
@@ -779,9 +781,12 @@ protected:
 	float			m_fNotifyElapsedTime = 0.0f;
 
 	bool			m_bNotify = false;
+	bool			m_bGameEnd = false;
+	bool			m_bWin = false;
 
 public:
 	void BattleNotifyStart();
+	void BattleNotifyEnd(bool bWin);
 	bool IsNotifying() { return m_bNotify; }
 };
 

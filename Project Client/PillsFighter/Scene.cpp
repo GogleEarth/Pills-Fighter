@@ -2757,6 +2757,7 @@ CBattleScene::~CBattleScene()
 int CBattleScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
 	if (!m_bAction) return 0;
+	if (m_bGameEnd) return 0;
 
 	switch (nMessageID)
 	{
@@ -2813,37 +2814,44 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 		}
 		break;
 	case WM_KEYDOWN:
-		switch (wParam)
+		if (m_bGameEnd)
 		{
-		case '1':
-			m_pPlayer->ChangeWeapon(0);
-			break;
-		case '2':
-			m_pPlayer->ChangeWeapon(1);
-			break;
-		case '3':
-			m_pPlayer->ChangeWeapon(2);
-			break;
-		case 'R':
-			m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
-			break;
-		case VK_SPACE:
-			m_pPlayer->ActivationBooster(BOOSTER_TYPE_UP);
-			break;
-		case 'V':
-			m_pPlayer->ActivationBooster(BOOSTER_TYPE_DOWN);
-			break;
-		case VK_SHIFT:
-			m_pPlayer->ActivationDash();
-			break;
-		case VK_F1:
-			m_bRenderEdge = !m_bRenderEdge;
-			break;
-		case VK_F4:
-			m_pUserInterface->BattleNotifyStart();
-			break;
-		default:
-			break;
+			return LOBBY_MOVE;
+		}
+		else
+		{
+			switch (wParam)
+			{
+			case '1':
+				m_pPlayer->ChangeWeapon(0);
+				break;
+			case '2':
+				m_pPlayer->ChangeWeapon(1);
+				break;
+			case '3':
+				m_pPlayer->ChangeWeapon(2);
+				break;
+			case 'R':
+				m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
+				break;
+			case VK_SPACE:
+				m_pPlayer->ActivationBooster(BOOSTER_TYPE_UP);
+				break;
+			case 'V':
+				m_pPlayer->ActivationBooster(BOOSTER_TYPE_DOWN);
+				break;
+			case VK_SHIFT:
+				m_pPlayer->ActivationDash();
+				break;
+			case VK_F1:
+				m_bRenderEdge = !m_bRenderEdge;
+				break;
+			case VK_F4:
+				m_pUserInterface->BattleNotifyStart();
+				break;
+			default:
+				break;
+			}
 		}
 		break;
 	default:
@@ -4357,6 +4365,14 @@ void CBattleScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 	}
 	case PKT_ID_LOAD_COMPLETE_ALL:
 		m_pUserInterface->BattleNotifyStart();
+		break;
+	case PKT_ID_GAME_END:
+		PKT_GAME_END *pPacket = (PKT_GAME_END*)pktData;
+
+		bool bWin = CScene::m_nMyTeam == pPacket->WinTeam;
+
+		m_pUserInterface->BattleNotifyEnd(bWin);
+		m_bGameEnd = true;
 		break;
 	}
 }

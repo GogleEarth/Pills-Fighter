@@ -505,7 +505,7 @@ struct ROOM_PLAYER_INFO
 #define LOBBY_ROOM_UI_TEXTURE_TEAM_BLUE_HL 26
 
 // UI Rect Index
-#define LOBBY_ROOM_UI_RECT_COUNT 11
+#define LOBBY_ROOM_UI_RECT_COUNT 10
 
 #define LOBBY_ROOM_UI_RECT_BASE 0
 #define LOBBY_ROOM_UI_RECT_START_BUTTON 1
@@ -763,6 +763,7 @@ protected:
 
 	bool		m_bRenderEdge = false;
 	bool		m_bAction = false;
+	bool		m_bGameEnd = false;
 
 public: // Network
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, PKT_CREATE_OBJECT *pCreateObjectInfo);

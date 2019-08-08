@@ -3157,6 +3157,14 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_TEXT_FIGHT] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_TEXT_FIGHT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_FIGHT.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_FIGHT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	
+	m_ppTextures[UI_TEXTURE_TEXT_WIN] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEXT_WIN]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_WIN.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_WIN], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+	
+	m_ppTextures[UI_TEXTURE_TEXT_LOSE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_TEXT_LOSE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_LOSE.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_TEXT_LOSE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_nUIRect = UI_RECT_COUNT;
 	m_ppUIRects = new CRect*[m_nUIRect];
@@ -3284,8 +3292,34 @@ void CUserInterface::BattleNotifyStart()
 	m_pNotifyText->Hide();
 }
 
+void CUserInterface::BattleNotifyEnd(bool bWin)
+{
+	m_bGameEnd = true;
+	m_bWin = bWin;
+
+	m_pFont->ChangeText(1280, 720, m_pNotifyText, L"아무 버튼을 누르면 메인 로비로 돌아갑니다.", XMFLOAT2(-0.315f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pNotifyText->Display();
+}
+
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	if (m_bGameEnd)
+	{
+		if (m_pd3dPipelineStateCustomUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateCustomUI);
+
+		XMFLOAT2 xmf2Scale(2.0f, 2.0f);
+		UpdateCustomUIShaderVariable(pd3dCommandList, xmf2Scale);
+
+		if (m_bWin)
+			m_ppTextures[UI_TEXTURE_TEXT_WIN]->UpdateShaderVariables(pd3dCommandList);
+		else
+			m_ppTextures[UI_TEXTURE_TEXT_LOSE]->UpdateShaderVariables(pd3dCommandList);
+
+		m_ppUIRects[UI_RECT_BATTLE_NOTIFY]->Render(pd3dCommandList, 0);
+
+		return;
+	}
+
 	m_nTimeInfoIndex = 0;
 
 	if (m_vpd3dTeamNameTexture.size() > 0) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);

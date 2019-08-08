@@ -549,6 +549,15 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		::PostQuitMessage(0);
 		break;
 	}
+	case LOBBY_MOVE:
+		if(m_pScene) m_pScene->EndScene();
+
+		ReleaseObjects();
+
+		BuildScene(SCENE_TYPE_LOBBY_MAIN);
+
+		SendToServer(PKT_ID_MOVE_TO_MAIN_LOBBY, NULL);
+		break;
 	}
 }
 
@@ -1024,14 +1033,7 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_GAME_END:
 	{
-		PKT_GAME_END *pPacket = (PKT_GAME_END*)m_pPacketBuffer;
-		
-		if(m_pScene) m_pScene->EndScene();
-
-		ReleaseObjects();
-
-		BuildScene(SCENE_TYPE_LOBBY_MAIN);
-		SendToServer(PKT_ID_MOVE_TO_MAIN_LOBBY, NULL);
+		m_pScene->ApplyRecvInfo(PKT_ID_GAME_END, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_PICK_ITEM:
