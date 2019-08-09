@@ -2370,7 +2370,8 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 				m_bRenderEdge = !m_bRenderEdge;
 				break;
 			case VK_F4:
-				m_pUserInterface->BattleNotifyStart();
+				m_pUserInterface->BattleNotifyEnd(true);
+				m_bGameEnd = true;
 				break;
 			default:
 				break;
@@ -2613,9 +2614,6 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 #ifndef ON_NETWORKING
 	m_pUserInterface->BattleNotifyStart();
 #endif
-
-	//m_pUserInterface->BattleNotifyEnd(true);
-	//m_bGameEnd = true;
 }
 
 void CBattleScene::ReleaseObjects()
@@ -3349,8 +3347,8 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 			pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_LIGHTS, d3dcbLightsGpuVirtualAddress);
 		}
 
-		//if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-		//if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 
 		for (int i = 0; i < m_nShaders; i++)
 		{
@@ -3390,6 +3388,7 @@ void CBattleScene::ReleaseShaderVariables()
 		m_pd3dcbSceneInfo = NULL;
 	}
 }
+
 void CBattleScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	if (m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
@@ -3435,7 +3434,7 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_nFPSCount % 5 == 0)
 	{
-		//RenderCubeMap(pd3dCommandList, m_pPlayer);
+		RenderCubeMap(pd3dCommandList, m_pPlayer);
 	}
 
 	RenderShadowMap(pd3dCommandList);
