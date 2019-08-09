@@ -3878,6 +3878,7 @@ void CBattleScene::CheckCollision()
 			}
 		}
 	}
+	m_pPlayer->MoveToWorldRange();
 
 	FindAimToTargetDistance();
 }

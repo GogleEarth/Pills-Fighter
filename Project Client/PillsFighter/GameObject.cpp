@@ -409,6 +409,28 @@ void CGameObject::MoveToCollisionByRadius(CGameObject *pObject)
 	}
 }
 
+void CGameObject::MoveToWorldRange()
+{
+	if (m_xmf3Position.x > WORLD_WIDTH) {
+		m_xmf3Position.x = WORLD_WIDTH;
+	}
+	if (m_xmf3Position.y > WORLD_HEIGHT) {
+		m_xmf3Position.y = WORLD_HEIGHT;
+	}
+	if (m_xmf3Position.z > WORLD_WIDTH) {
+		m_xmf3Position.z = WORLD_WIDTH;
+	}
+	if (m_xmf3Position.x < -WORLD_WIDTH) {
+		m_xmf3Position.x = -WORLD_WIDTH;
+	}
+	if (m_xmf3Position.y < -WORLD_HEIGHT) {
+		m_xmf3Position.y = -WORLD_HEIGHT;
+	}
+	if (m_xmf3Position.z < -WORLD_WIDTH) {
+		m_xmf3Position.z = -WORLD_WIDTH;
+	}
+}
+
 void CGameObject::ApplyToParticle(CParticle *pParticle)
 {
 	if (pParticle)

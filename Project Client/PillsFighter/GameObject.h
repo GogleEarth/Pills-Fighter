@@ -22,6 +22,9 @@ struct MATERIAL
 	float			m_fReflectionFactor;
 };
 
+#define WORLD_WIDTH 1200
+#define WORLD_HEIGHT 600
+
 struct CB_GAMEOBJECT_INFO
 {
 	XMFLOAT4X4						m_xmf4x4World;
@@ -147,6 +150,7 @@ public:
 	bool CollisionCheck(XMVECTOR *pxmf4Origin, XMVECTOR *pxmf4Look, float *pfDistance);
 	void MoveToCollision(CGameObject *pObject);
 	void MoveToCollisionByRadius(CGameObject *pObject);
+	void MoveToWorldRange();
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB) {}
 	virtual void SetAnimationController(CAnimationController *pControllers, int nIndex) { m_ppAnimationControllers[nIndex] = pControllers; }
 	virtual void SetAnimationTrackPosition(int nIndex, float fPosition) { m_ppAnimationControllers[nIndex]->SetTrackPosition(0, fPosition); }

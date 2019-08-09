@@ -476,8 +476,8 @@ void GSMinimapEnemy(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStre
 	GS_UI_MINIMAPROBOT_OUT output;
 
 	float2 world = mul(float4(gvMinimapEnemyPos.x, 0.0f, gvMinimapEnemyPos.y, 1.0f), gmtxPlayerView).xz;
-	world.x *= 0.0009f;
-	world.y *= 0.0016f;
+	world.x *= 0.0003f;
+	world.y *= 0.00053f;
 
 	float2 enemyPos;
 	enemyPos.x = (gvMinimapEnemyPos.x - gvMinimapPlayerPosition.x);
@@ -515,8 +515,8 @@ void GSMinimapTeam(point VS_UI_MINIMAPROBOT_OUTPUT input[1], inout TriangleStrea
 	GS_UI_MINIMAPROBOT_OUT output;
 
 	float2 world = mul(float4(gvMinimapTeamPos.x, 0.0f, gvMinimapTeamPos.y, 1.0f), gmtxPlayerView).xz;
-	world.x *= 0.0009f;
-	world.y *= 0.0016f;
+	world.x *= 0.0003f;
+	world.y *= 0.00053f;
 
 	float2 teamPos;
 	teamPos.x = (gvMinimapTeamPos.x - gvMinimapPlayerPosition.x);
