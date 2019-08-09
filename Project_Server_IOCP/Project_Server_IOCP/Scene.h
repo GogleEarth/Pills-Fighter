@@ -4,9 +4,9 @@
 #include "Protocol.h"
 #include "GameObject.h"
 
-#define EVENT_TIME_GROUND 10.0f
+#define EVENT_TIME_GROUND 30.0f
 #define EVENT_START_INTERVAL_GROUND 90.0f
-#define EVENT_TIME_SPACE 30.0f
+#define EVENT_TIME_SPACE 15.0f
 #define EVENT_START_INTERVAL_SPACE 90.0f
 
 class Scene

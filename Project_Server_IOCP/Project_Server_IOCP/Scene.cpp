@@ -809,7 +809,7 @@ void SpaceScene::SceneEvent(float fTimeElapsed)
 void SpaceScene::start_event()
 {
 	Scene::start_event();
-	meteor_cooltime_ = 0.05f;
+	meteor_cooltime_ = 1.0f;
 }
 
 void SpaceScene::end_event()

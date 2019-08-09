@@ -383,7 +383,6 @@ int Framawork::thread_process()
 				else
 					elapsed_time = over_ex->elapsed_time;
 
-				std::cout << "saber process\n";
 				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
 				rooms_[over_ex->room_num].check_saber_collision_player(key);
 
@@ -720,106 +719,112 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_PLAYER_INFO:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
-		if (rooms_[room_num].get_playing())
+		if (room_num != -1)
 		{
-			rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
-			if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
-				((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE ||
-				((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+			if (rooms_[room_num].get_playing())
 			{
-				if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
-					if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.4f)
-					{
-						int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-						using namespace std;
-						using namespace chrono;
-						add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
-					}
-				if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
-					if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.4f)
-					{
-						int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-						using namespace std;
-						using namespace chrono;
-						add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
-					}
-				if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
-					if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.6f)
-					{
-						int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-						using namespace std;
-						using namespace chrono;
-						add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
-					}
+				rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
+				if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
+					((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE ||
+					((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+				{
+					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
+						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.4f)
+						{
+							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+							using namespace std;
+							using namespace chrono;
+							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+						}
+					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
+						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.4f)
+						{
+							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+							using namespace std;
+							using namespace chrono;
+							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+						}
+					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.6f)
+						{
+							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+							using namespace std;
+							using namespace chrono;
+							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+						}
+				}
+				send_packet_to_room_player(room_num, packet);
 			}
-			send_packet_to_room_player(room_num, packet);
 		}
 		break;
 	}
 	case PKT_ID_LOAD_COMPLETE:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		std::cout << "로드완료패킷\n";
-		rooms_[room_num].player_load_complete(clients_[id].socket);
-		if (rooms_[room_num].all_load_complete())
+		if (room_num != -1)
 		{
-			PKT_LOAD_COMPLETE pktgamestate;
-			pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
-			pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
-			send_packet_to_room_player(room_num, (char*)&pktgamestate);
-			std::cout << "전원 로드 완료\n";
-
-			Player* players = rooms_[room_num].get_players();
-			for (int i = 0; i < MAX_CLIENT; ++i)
+			std::cout << "로드완료패킷\n";
+			rooms_[room_num].player_load_complete(clients_[id].socket);
+			if (rooms_[room_num].all_load_complete())
 			{
-				if (players[i].get_use())
+				PKT_LOAD_COMPLETE pktgamestate;
+				pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
+				pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
+				send_packet_to_room_player(room_num, (char*)&pktgamestate);
+				std::cout << "전원 로드 완료\n";
+
+				Player* players = rooms_[room_num].get_players();
+				for (int i = 0; i < MAX_CLIENT; ++i)
 				{
-					PKT_PLAYER_INFO pktdata;
-					pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
-					pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
-					pktdata.ID = i;
-					pktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(i);
-					rooms_[room_num].set_player_is_play(i, true);
-					rooms_[room_num].set_object_id(i);
-					send_packet_to_player(players[i].get_serverid(), (char*)&pktdata);
-
-					PKT_CREATE_OBJECT anotherpktdata;
-					for (int j = 0; j < MAX_CLIENT; ++j)
+					if (players[i].get_use())
 					{
-						if (!players[j].get_use()) continue;
-						if (i == j) continue;
+						PKT_PLAYER_INFO pktdata;
+						pktdata.PktId = (char)PKT_ID_PLAYER_INFO;
+						pktdata.PktSize = (char)sizeof(PKT_PLAYER_INFO);
+						pktdata.ID = i;
+						pktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(i);
+						rooms_[room_num].set_player_is_play(i, true);
+						rooms_[room_num].set_object_id(i);
+						send_packet_to_player(players[i].get_serverid(), (char*)&pktdata);
 
-						anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
-						anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
-						anotherpktdata.Object_Type = OBJECT_TYPE_PLAYER;
-						anotherpktdata.Object_Index = j;
-						anotherpktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(j);
-						anotherpktdata.Robot_Type = (ROBOT_TYPE)players[j].get_robot();
-						send_packet_to_player(players[i].get_serverid(), (char*)&anotherpktdata);
+						PKT_CREATE_OBJECT anotherpktdata;
+						for (int j = 0; j < MAX_CLIENT; ++j)
+						{
+							if (!players[j].get_use()) continue;
+							if (i == j) continue;
 
+							anotherpktdata.PktId = (char)PKT_ID_CREATE_OBJECT;
+							anotherpktdata.PktSize = (char)sizeof(PKT_CREATE_OBJECT);
+							anotherpktdata.Object_Type = OBJECT_TYPE_PLAYER;
+							anotherpktdata.Object_Index = j;
+							anotherpktdata.WorldMatrix = rooms_[room_num].get_player_worldmatrix(j);
+							anotherpktdata.Robot_Type = (ROBOT_TYPE)players[j].get_robot();
+							send_packet_to_player(players[i].get_serverid(), (char*)&anotherpktdata);
+
+						}
+
+						PKT_PLAYER_RESPAWN pkt_rp;
+						pkt_rp.PktId = PKT_ID_PLAYER_RESPAWN;
+						pkt_rp.PktSize = sizeof(PKT_PLAYER_RESPAWN);
+						pkt_rp.id = i;
+						pkt_rp.hp = rooms_[room_num].get_object(i)->GetMaxHitPoint();
+						pkt_rp.point = rooms_[room_num].get_respawn_point(i);
+						pkt_rp.team = rooms_[room_num].get_object(i)->get_team();
+						send_packet_to_player(players[i].get_serverid(), (char*)&pkt_rp);
 					}
-
-					PKT_PLAYER_RESPAWN pkt_rp;
-					pkt_rp.PktId = PKT_ID_PLAYER_RESPAWN;
-					pkt_rp.PktSize = sizeof(PKT_PLAYER_RESPAWN);
-					pkt_rp.id = i;
-					pkt_rp.hp = rooms_[room_num].get_object(i)->GetMaxHitPoint();
-					pkt_rp.point = rooms_[room_num].get_respawn_point(i);
-					pkt_rp.team = rooms_[room_num].get_object(i)->get_team();
-					send_packet_to_player(players[i].get_serverid(), (char*)&pkt_rp);
 				}
+
+				rooms_[room_num].set_blue_score(MAX_SCORE);
+				rooms_[room_num].set_red_score(MAX_SCORE);
+
+				PKT_SCORE scorepkt;
+				scorepkt.PktSize = sizeof(PKT_SCORE);
+				scorepkt.PktId = PKT_ID_SCORE;
+				scorepkt.BlueScore = rooms_[room_num].get_blue_score();
+				scorepkt.RedScore = rooms_[room_num].get_red_score();
+				send_packet_to_room_player(room_num, (char*)&scorepkt);
 			}
-
-			rooms_[room_num].set_blue_score(MAX_SCORE);
-			rooms_[room_num].set_red_score(MAX_SCORE);
-
-			PKT_SCORE scorepkt;
-			scorepkt.PktSize = sizeof(PKT_SCORE);
-			scorepkt.PktId = PKT_ID_SCORE;
-			scorepkt.BlueScore = rooms_[room_num].get_blue_score();
-			scorepkt.RedScore = rooms_[room_num].get_red_score();
-			send_packet_to_room_player(room_num, (char*)&scorepkt);
 		}
 		break;
 	}
@@ -929,113 +934,79 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_SHOOT:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
+		if (room_num != -1)
+		{
+			using namespace std;
+			using namespace chrono;
 
-		using namespace std;
-		using namespace chrono;
+			if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_GM_GUN)
+			{
+				int index;
+				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 600.0f, &index);
+				//send_packet_to_room_player(room_num, (char*)pkt_ce);
+				add_timer(index, room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+				delete pkt_ce;
+			}
+			else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_RIFLE)
+			{
+				int index;
+				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
+				//send_packet_to_room_player(room_num, (char*)pkt_ce);
+				add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+				delete pkt_ce;
+			}
+			else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_SNIPER)
+			{
+				int index;
+				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 2000.0f, &index);
+				//send_packet_to_room_player(room_num, (char*)pkt_ce);
+				add_timer(index, room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
+				delete pkt_ce;
+			}
+			else
+			{
+				auto pkt_co = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
+					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
+					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
 
-		if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_GM_GUN)
-		{
-		int index;
-		auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
-			reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
-			reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 600.0f, &index);
-		//send_packet_to_room_player(room_num, (char*)pkt_ce);
-		add_timer(index, room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
-		delete pkt_ce;
-		}
-		else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_RIFLE)
-		{
-			int index;
-			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
-				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
-				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
-			//send_packet_to_room_player(room_num, (char*)pkt_ce);
-			add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
-			delete pkt_ce;
-		}
-		else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_SNIPER)
-		{
-			int index;
-			auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
-				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
-				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 2000.0f, &index);
-			//send_packet_to_room_player(room_num, (char*)pkt_ce);
-			add_timer(index, room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
-			delete pkt_ce;
-		}
-		else
-		{
-			auto pkt_co = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
-				reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
-				reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
-
-			send_packet_to_room_player(room_num, (char*)pkt_co);
-			add_timer(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
-			delete pkt_co;
+				send_packet_to_room_player(room_num, (char*)pkt_co);
+				add_timer(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+				delete pkt_co;
+			}
 		}
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		rooms_[room_num].set_player_lobby_info(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot,
+		if (room_num != -1)
+		{
+			rooms_[room_num].set_player_lobby_info(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot,
 				reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->slot);
-		reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team = rooms_[room_num].get_player_team(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id);
-		send_packet_to_room_player(room_num, packet);
+			reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->Team = rooms_[room_num].get_player_team(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id);
+			send_packet_to_room_player(room_num, packet);
+		}
 		break;
 	}
 	case PKT_ID_CHANGE_MAP:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		rooms_[room_num].set_map(reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map);
-
-		PKT_CHANGE_MAP pkt_cm;
-		pkt_cm.map = reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map;
-		pkt_cm.PktId = PKT_ID_CHANGE_MAP;
-		pkt_cm.PktSize = sizeof(PKT_CHANGE_MAP);
-		send_packet_to_room_player(room_num, (char*)&pkt_cm);
-
-		PKT_CHANGE_ROOM_INFO pkt_cmi;
-		pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
-		pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
-		pkt_cmi.Room_num = room_num;
-		pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
-		pkt_cmi.map = rooms_[room_num].get_map();
-		send_packet_to_all_player((char*)&pkt_cmi);
-
-		break;
-	}
-	case PKT_ID_GAME_START:
-	{
-		int room_num = search_client_in_room(clients_[id].socket);
-		PKT_GAME_START pkt_gs;
-		pkt_gs.map = rooms_[room_num].get_map();
-		pkt_gs.PktID = PKT_ID_GAME_START;
-		pkt_gs.PktSize = sizeof(PKT_GAME_START);
-		send_packet_to_room_player(room_num, (char*)&pkt_gs);
-
-		rooms_[room_num].start_game();
-
-		using namespace std;
-		using namespace chrono;
-		add_timer(room_num, room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
-		break;
-	}
-	case PKT_ID_LEAVE_ROOM:
-	{
-		int room_num = search_client_in_room(clients_[id].socket);
-
-		PKT_PLAYER_OUT packet;
-		packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket);
-		packet.PktId = PKT_ID_PLAYER_OUT;
-		packet.PktSize = sizeof(PKT_PLAYER_OUT);
-		send_packet_to_room_player(room_num, (char*)&packet);
-
-		rooms_[room_num].disconnect_client(clients_[id].socket);
-		clients_[id].in_room = false;
-
-		if (rooms_[room_num].get_num_player_in_room() > 0)
+		if (room_num != -1)
 		{
+			rooms_[room_num].set_map(reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map);
+
+			PKT_CHANGE_MAP pkt_cm;
+			pkt_cm.map = reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map;
+			pkt_cm.PktId = PKT_ID_CHANGE_MAP;
+			pkt_cm.PktSize = sizeof(PKT_CHANGE_MAP);
+			send_packet_to_room_player(room_num, (char*)&pkt_cm);
+
 			PKT_CHANGE_ROOM_INFO pkt_cmi;
 			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
 			pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
@@ -1044,55 +1015,103 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_cmi.map = rooms_[room_num].get_map();
 			send_packet_to_all_player((char*)&pkt_cmi);
 		}
-		else
+		break;
+	}
+	case PKT_ID_GAME_START:
+	{
+		int room_num = search_client_in_room(clients_[id].socket);
+		if (room_num != -1)
 		{
-			rooms_[room_num].set_is_use(false);
-			PKT_ROOM_DELETE pkt_rd;
-			pkt_rd.PktId = PKT_ID_DELETE_ROOM;
-			pkt_rd.PktSize = sizeof(PKT_ROOM_DELETE);
-			pkt_rd.Room_num = room_num;
-			send_packet_to_all_player((char*)&pkt_rd);
+			PKT_GAME_START pkt_gs;
+			pkt_gs.map = rooms_[room_num].get_map();
+			pkt_gs.PktID = PKT_ID_GAME_START;
+			pkt_gs.PktSize = sizeof(PKT_GAME_START);
+			send_packet_to_room_player(room_num, (char*)&pkt_gs);
+
+			rooms_[room_num].start_game();
+
+			using namespace std;
+			using namespace chrono;
+			add_timer(room_num, room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 		}
-
-		for (int i = 0; i < 10; ++i)
+		break;
+	}
+	case PKT_ID_LEAVE_ROOM:
+	{
+		int room_num = search_client_in_room(clients_[id].socket);
+		if (room_num != -1)
 		{
-			if (rooms_[i].get_is_use())
-			{
-				PKT_ADD_ROOM pkt_ar;
-				pkt_ar.PktId = PKT_ID_ADD_ROOM;
-				pkt_ar.PktSize = sizeof(pkt_ar);
-				pkt_ar.Room_num = i;
-				lstrcpynW(pkt_ar.name, rooms_[i].get_name(), MAX_ROOM_NAME_LENGTH);
-				send_packet_to_player(id, (char*)&pkt_ar);
+			PKT_PLAYER_OUT packet;
+			packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+			packet.PktId = PKT_ID_PLAYER_OUT;
+			packet.PktSize = sizeof(PKT_PLAYER_OUT);
+			send_packet_to_room_player(room_num, (char*)&packet);
 
+			rooms_[room_num].disconnect_client(clients_[id].socket);
+			clients_[id].in_room = false;
+
+			if (rooms_[room_num].get_num_player_in_room() > 0)
+			{
 				PKT_CHANGE_ROOM_INFO pkt_cmi;
 				pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
 				pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
-				pkt_cmi.Room_num = i;
-				pkt_cmi.numpeople = rooms_[i].get_num_player_in_room();
-				pkt_cmi.map = rooms_[i].get_map();
-				send_packet_to_player(id, (char*)&pkt_cmi);
+				pkt_cmi.Room_num = room_num;
+				pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
+				pkt_cmi.map = rooms_[room_num].get_map();
+				send_packet_to_all_player((char*)&pkt_cmi);
+			}
+			else
+			{
+				rooms_[room_num].set_is_use(false);
+				PKT_ROOM_DELETE pkt_rd;
+				pkt_rd.PktId = PKT_ID_DELETE_ROOM;
+				pkt_rd.PktSize = sizeof(PKT_ROOM_DELETE);
+				pkt_rd.Room_num = room_num;
+				send_packet_to_all_player((char*)&pkt_rd);
+			}
+
+			for (int i = 0; i < 10; ++i)
+			{
+				if (rooms_[i].get_is_use())
+				{
+					PKT_ADD_ROOM pkt_ar;
+					pkt_ar.PktId = PKT_ID_ADD_ROOM;
+					pkt_ar.PktSize = sizeof(pkt_ar);
+					pkt_ar.Room_num = i;
+					lstrcpynW(pkt_ar.name, rooms_[i].get_name(), MAX_ROOM_NAME_LENGTH);
+					send_packet_to_player(id, (char*)&pkt_ar);
+
+					PKT_CHANGE_ROOM_INFO pkt_cmi;
+					pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+					pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+					pkt_cmi.Room_num = i;
+					pkt_cmi.numpeople = rooms_[i].get_num_player_in_room();
+					pkt_cmi.map = rooms_[i].get_map();
+					send_packet_to_player(id, (char*)&pkt_cmi);
+				}
 			}
 		}
-			
 		break;
 	}
 	case PKT_ID_MOVE_TEAM:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
-		rooms_[room_num].change_team(player, reinterpret_cast<PKT_MOVE_TEAM*>(packet)->team);
+		if (room_num != -1)
+		{
+			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+			rooms_[room_num].change_team(player, reinterpret_cast<PKT_MOVE_TEAM*>(packet)->team);
 
-		auto player_data = rooms_[room_num].get_player(player);
-		PKT_LOBBY_PLAYER_INFO pkt_lpi;
-		pkt_lpi.id = player;
-		pkt_lpi.PktId = PKT_ID_LOBBY_PLAYER_INFO;
-		pkt_lpi.PktSize = sizeof(PKT_LOBBY_PLAYER_INFO);
-		pkt_lpi.selected_robot = player_data->get_robot();
-		pkt_lpi.slot = player_data->get_slot();
-		pkt_lpi.Team = player_data->get_team();
+			auto player_data = rooms_[room_num].get_player(player);
+			PKT_LOBBY_PLAYER_INFO pkt_lpi;
+			pkt_lpi.id = player;
+			pkt_lpi.PktId = PKT_ID_LOBBY_PLAYER_INFO;
+			pkt_lpi.PktSize = sizeof(PKT_LOBBY_PLAYER_INFO);
+			pkt_lpi.selected_robot = player_data->get_robot();
+			pkt_lpi.slot = player_data->get_slot();
+			pkt_lpi.Team = player_data->get_team();
 
-		send_packet_to_room_player(room_num, (char*)&pkt_lpi);
+			send_packet_to_room_player(room_num, (char*)&pkt_lpi);
+		}
 		break;
 	}
 	case PKT_ID_CHANGE_NAME:
@@ -1105,51 +1124,53 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_MOVE_TO_MAIN_LOBBY:
 	{
 		int room_num = search_client_in_room(clients_[id].socket);
-		rooms_[room_num].disconnect_client(clients_[id].socket);
-		clients_[id].in_room = false;
-
-		for (int i = 0; i < 10; ++i)
+		if (room_num != -1)
 		{
-			if (rooms_[i].get_is_use())
-			{
-				PKT_ADD_ROOM pkt_ar;
-				pkt_ar.PktId = PKT_ID_ADD_ROOM;
-				pkt_ar.PktSize = sizeof(pkt_ar);
-				pkt_ar.Room_num = i;
-				lstrcpynW(pkt_ar.name, rooms_[i].get_name(), MAX_ROOM_NAME_LENGTH);
-				send_packet_to_player(id, (char*)&pkt_ar);
+			rooms_[room_num].disconnect_client(clients_[id].socket);
+			clients_[id].in_room = false;
 
+			for (int i = 0; i < 10; ++i)
+			{
+				if (rooms_[i].get_is_use())
+				{
+					PKT_ADD_ROOM pkt_ar;
+					pkt_ar.PktId = PKT_ID_ADD_ROOM;
+					pkt_ar.PktSize = sizeof(pkt_ar);
+					pkt_ar.Room_num = i;
+					lstrcpynW(pkt_ar.name, rooms_[i].get_name(), MAX_ROOM_NAME_LENGTH);
+					send_packet_to_player(id, (char*)&pkt_ar);
+
+					PKT_CHANGE_ROOM_INFO pkt_cmi;
+					pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
+					pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
+					pkt_cmi.Room_num = i;
+					pkt_cmi.numpeople = rooms_[i].get_num_player_in_room();
+					pkt_cmi.map = rooms_[i].get_map();
+					send_packet_to_player(id, (char*)&pkt_cmi);
+				}
+			}
+
+			if (rooms_[room_num].get_num_player_in_room() > 0)
+			{
 				PKT_CHANGE_ROOM_INFO pkt_cmi;
 				pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
 				pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
-				pkt_cmi.Room_num = i;
-				pkt_cmi.numpeople = rooms_[i].get_num_player_in_room();
-				pkt_cmi.map = rooms_[i].get_map();
-				send_packet_to_player(id, (char*)&pkt_cmi);
+				pkt_cmi.Room_num = room_num;
+				pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
+				pkt_cmi.map = rooms_[room_num].get_map();
+				send_packet_to_all_player((char*)&pkt_cmi);
+			}
+			else
+			{
+				rooms_[room_num].end_game();
+				rooms_[room_num].set_is_use(false);
+				PKT_ROOM_DELETE pkt_rd;
+				pkt_rd.PktId = PKT_ID_DELETE_ROOM;
+				pkt_rd.PktSize = sizeof(PKT_ROOM_DELETE);
+				pkt_rd.Room_num = room_num;
+				send_packet_to_all_player((char*)&pkt_rd);
 			}
 		}
-
-		if (rooms_[room_num].get_num_player_in_room() > 0)
-		{
-			PKT_CHANGE_ROOM_INFO pkt_cmi;
-			pkt_cmi.PktSize = sizeof(PKT_CHANGE_ROOM_INFO);
-			pkt_cmi.PktId = PKT_ID_CHANGE_ROOM_INFO;
-			pkt_cmi.Room_num = room_num;
-			pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
-			pkt_cmi.map = rooms_[room_num].get_map();
-			send_packet_to_all_player((char*)&pkt_cmi);
-		}
-		else
-		{
-			rooms_[room_num].end_game();
-			rooms_[room_num].set_is_use(false);
-			PKT_ROOM_DELETE pkt_rd;
-			pkt_rd.PktId = PKT_ID_DELETE_ROOM;
-			pkt_rd.PktSize = sizeof(PKT_ROOM_DELETE);
-			pkt_rd.Room_num = room_num;
-			send_packet_to_all_player((char*)&pkt_rd);
-		}
-
 		break;
 	}
 	default:
