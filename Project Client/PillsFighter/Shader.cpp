@@ -3208,6 +3208,10 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures[UI_TEXTURE_BEAM_GAUGE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_BeamGuage.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BEAM_GAUGE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
+	m_ppTextures[UI_TEXTURE_SCOPE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
+	m_ppTextures[UI_TEXTURE_SCOPE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_Scope.dds", 0);
+	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SCOPE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
+
 	m_ppTextures[UI_TEXTURE_SCOPE_MASK] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
 	m_ppTextures[UI_TEXTURE_SCOPE_MASK]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/UI_ScopeMask.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_SCOPE_MASK], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
@@ -3478,6 +3482,15 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	{
 		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
 		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
+	}
+
+	if (m_bZoomIn)
+	{
+		if (m_ppTextures[UI_TEXTURE_SCOPE])
+		{
+			m_ppTextures[UI_TEXTURE_SCOPE]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[UI_RECT_SCOPE]->Render(pd3dCommandList, 0);
+		}
 	}
 
 	// Draw Team HP Base

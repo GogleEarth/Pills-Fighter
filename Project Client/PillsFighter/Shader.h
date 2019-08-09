@@ -581,7 +581,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UIs
-#define UI_TEXTURE_COUNT 27
+#define UI_TEXTURE_COUNT 28
 
 #define UI_TEXTURE_BASE 0
 #define UI_TEXTURE_HP 1
@@ -601,15 +601,16 @@ protected:
 #define UI_TEXTURE_TEAM_HP 15
 #define UI_TEXTURE_TEAM_HP_RESPAWN 16
 #define UI_TEXTURE_BEAM_GAUGE 17
-#define UI_TEXTURE_SCOPE_MASK 18
-#define UI_TEXTURE_BEAM_BULLER_N_EMPTY 19
-#define UI_TEXTURE_RESPAWN_BAR 20
-#define UI_TEXTURE_TEXT_3 21
-#define UI_TEXTURE_TEXT_2 22
-#define UI_TEXTURE_TEXT_1 23
-#define UI_TEXTURE_TEXT_FIGHT 24
-#define UI_TEXTURE_TEXT_WIN 25
-#define UI_TEXTURE_TEXT_LOSE 26
+#define UI_TEXTURE_SCOPE 18
+#define UI_TEXTURE_SCOPE_MASK 19
+#define UI_TEXTURE_BEAM_BULLER_N_EMPTY 20
+#define UI_TEXTURE_RESPAWN_BAR 21
+#define UI_TEXTURE_TEXT_3 22
+#define UI_TEXTURE_TEXT_2 23
+#define UI_TEXTURE_TEXT_1 24
+#define UI_TEXTURE_TEXT_FIGHT 25
+#define UI_TEXTURE_TEXT_WIN 26
+#define UI_TEXTURE_TEXT_LOSE 27
 
 #define UI_RECT_COUNT 18
 
