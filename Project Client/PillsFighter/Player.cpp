@@ -384,9 +384,9 @@ void CPlayer::Update(float fTimeElapsed)
 			if (m_xmf3Position.y + m_fVelocityY < 1700.0f)
 				Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 		}
-
-		CRobotObject::Animate(fTimeElapsed);
 	}
+
+	CRobotObject::Animate(fTimeElapsed);
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	m_pCamera->Update(fTimeElapsed);

@@ -644,8 +644,8 @@ void CScene::SetDescHeapsAndGraphicsRootSignature(ID3D12GraphicsCommandList *pd3
 
 void CScene::ResetDescriptorHeapHandles()
 {
-	CScene::m_d3dSrvUavTextureCPUDescStartHandle.ptr = CScene::m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
-	CScene::m_d3dSrvUavTextureGPUDescStartHandle.ptr = CScene::m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvUavTextureCPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
+	m_d3dSrvUavTextureGPUDescStartHandle.ptr = m_pd3dSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart().ptr + ::gnCbvSrvDescriptorIncrementSize * SCENE_MODEL_SRV_DESCRIPTOR_HEAP_COUNT;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3693,7 +3693,12 @@ void CBattleScene::CheckCollision()
 				if (!pSword->CollisionCheck(anotherE)) continue;
 				if (Enemy->CheckDidHitObject(anotherE)) continue;
 
-				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 0.75f, 0.79f, 1.0f));
+				XMFLOAT4 xmf4Color;
+				if (pSword->GetType() & WEAPON_TYPE_OF_SABER) xmf4Color = XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f);
+				else xmf4Color = XMFLOAT4(0.13f, 1.0f, 0.29f, 1.0f);
+
+				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
+				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT_2, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
 
 				Enemy->AddHitObject(anotherE);
 
@@ -3706,7 +3711,12 @@ void CBattleScene::CheckCollision()
 				if (!pSword->CollisionCheck(m_pPlayer)) continue;
 				if (Enemy->CheckDidHitObject(m_pPlayer)) continue;
 
-				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, XMFLOAT4(1.0f, 0.75f, 0.79f, 1.0f));
+				XMFLOAT4 xmf4Color;
+				if (pSword->GetType() & WEAPON_TYPE_OF_SABER) xmf4Color = XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f);
+				else xmf4Color = XMFLOAT4(0.13f, 1.0f, 0.29f, 1.0f);
+
+				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
+				AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT_2, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
 
 				Enemy->AddHitObject(m_pPlayer);
 
