@@ -186,8 +186,6 @@ int Framawork::thread_process()
 					pkt_ge.WinTeam = 1;
 
 				send_packet_to_room_player(key, (char*)&pkt_ge);
-
-				rooms_[key].end_game();
 			}
 			else if (rooms_[key].get_num_player_in_room() > 0)
 				add_timer(key, key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
@@ -1143,6 +1141,7 @@ void Framawork::process_packet(int id, char* packet)
 		}
 		else
 		{
+			rooms_[room_num].end_game();
 			rooms_[room_num].set_is_use(false);
 			PKT_ROOM_DELETE pkt_rd;
 			pkt_rd.PktId = PKT_ID_DELETE_ROOM;
