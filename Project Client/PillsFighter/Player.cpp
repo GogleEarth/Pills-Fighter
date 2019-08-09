@@ -63,12 +63,14 @@ CPlayer::~CPlayer()
 
 	if (m_pCamera)
 	{
+		m_pCamera->ReleaseShaderVariables();
 		delete m_pCamera;
 		m_pCamera = NULL;
 	}
 
 	for (CWeapon *pWeapon : m_vpWeapon)
 	{
+		pWeapon->ReleaseShaderVariables();
 		delete pWeapon;
 		pWeapon = NULL;
 	}
@@ -76,6 +78,8 @@ CPlayer::~CPlayer()
 
 	if (m_pWeaponShader)
 	{
+		m_pWeaponShader->ReleaseObjects();
+		m_pWeaponShader->ReleaseShaderVariables();
 		delete m_pWeaponShader;
 		m_pWeaponShader = NULL;
 	}

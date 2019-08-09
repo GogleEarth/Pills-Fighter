@@ -36,6 +36,8 @@ CGameObject::~CGameObject()
 	if (m_pModel) m_pModel->Release();
 	if (m_pShader)
 	{
+		m_pShader->ReleaseObjects();
+		m_pShader->ReleaseShaderVariables();
 		delete m_pShader;
 		m_pShader = NULL;
 	}
@@ -801,7 +803,6 @@ void Bullet::Animate(float ElapsedTime, CCamera *pCamera)
 //
 CHeightMapTerrain::CHeightMapTerrain(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, ID3D12RootSignature *pd3dGraphicsRootSignature, LPCTSTR pFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color) : CGameObject()
 {
-	//m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf3Position = XMFLOAT3(-(nWidth *xmf3Scale.x/2), 0.0f, -(nLength *xmf3Scale.z / 2));
 
 	m_nWidth = nWidth;
@@ -955,6 +956,7 @@ CRobotObject::CRobotObject() : CAnimationObject()
 CRobotObject::~CRobotObject()
 {
 	//for (CWeapon *pWeapon : m_vpWeapon) delete pWeapon;
+	gFmodSound.PauseFMODSound(m_pChannelBooster);
 }
 
 void CRobotObject::OnPrepareAnimate()

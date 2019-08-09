@@ -3336,7 +3336,7 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 
 	for (int i = 0; i < 6; i++)
 	{
-		m_pCubeMapCamera[i]->SetPosition(pMainObject->GetPosition());
+		m_pCubeMapCamera[i]->SetPosition(Vector3::Add(pMainObject->GetPosition(), XMFLOAT3(0.0f, 5.0f, 0.0f)));
 		m_pCubeMapCamera[i]->GenerateViewMatrix();
 		m_pCubeMapCamera[i]->OnPrepareRender(pd3dCommandList);
 
@@ -3354,11 +3354,11 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 		if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 
-		//for (int i = 0; i < m_nShaders; i++)
-		//{
-		//	if (m_ppShaders[i])
-		//		m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-		//}
+		for (int i = 0; i < m_nShaders; i++)
+		{
+			if (m_ppShaders[i])
+				m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		}
 	}
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -3438,12 +3438,12 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	if (m_pParticleShader) m_pParticleShader->PrepareRender(pd3dCommandList);
 
+	RenderShadowMap(pd3dCommandList);
+
 	if (m_nFPSCount % 5 == 0)
 	{
 		RenderCubeMap(pd3dCommandList, m_pPlayer);
 	}
-
-	RenderShadowMap(pd3dCommandList);
 }
 
 void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
