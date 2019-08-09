@@ -581,7 +581,6 @@ void Room::room_update(float elapsed_time)
 			if (((SpaceScene*)scenes_[using_scene_])->get_meteor_cooltime_duration() >= ((SpaceScene*)scenes_[using_scene_])->get_meteor_cooltime())
 			{
 				((SpaceScene*)scenes_[using_scene_])->init_meteor_cooltime_duration();
-				std::cout << "운석생성\n";
 				PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 				pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 				pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
