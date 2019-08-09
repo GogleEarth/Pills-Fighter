@@ -22,8 +22,8 @@ struct MATERIAL
 	float			m_fReflectionFactor;
 };
 
-#define WORLD_WIDTH 1200
-#define WORLD_HEIGHT 600
+#define WORLD_WIDTH 1000
+#define WORLD_HEIGHT 470
 
 struct CB_GAMEOBJECT_INFO
 {
