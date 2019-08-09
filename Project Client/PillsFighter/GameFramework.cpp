@@ -429,13 +429,20 @@ void CGameFramework::ReleaseObjects()
 
 	if (m_pScene)
 	{
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 	}
 	
 	m_Font.ClearTexts();
+}
+
+void CGameFramework::ReleaseScene()
+{
+	m_pScene->EndScene();
+	m_pScene->ReleaseShaderVariables();
+	m_pScene->ReleaseObjects();
+	delete m_pScene;
+
+	m_pScene = NULL;
 }
 
 void CGameFramework::ProcessSceneReturnVal(int n)
@@ -448,10 +455,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		SendToServer(PKT_ID_CREATE_ROOM, m_pScene->GetRoomName());
 #else
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
@@ -474,10 +478,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 #else
 		int map = m_pScene->GetSelectedMap();
 
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 
 		BuildScene(map);
 #endif
@@ -489,10 +490,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		SendToServer(PKT_ID_LEAVE_ROOM, NULL);
 #endif
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->SetCursorPosition(xmf2Pos);
@@ -537,10 +535,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		WSAAsyncSelect(gSocket, m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE);
 #endif
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->SetCursorPosition(xmf2Pos);
@@ -561,11 +556,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 			m_pCamera = NULL;
 		}
 
-		m_pScene->EndScene();
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->InitName(CScene::GetMyName());
@@ -1090,10 +1081,6 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_CREATE_ROOM_OK:
 	{
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
@@ -1107,10 +1094,7 @@ void CGameFramework::ProcessPacket()
 		PKT_ROOM_IN_OK *pPacket = (PKT_ROOM_IN_OK*)m_pPacketBuffer;
 
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-
-		m_pScene = NULL;
+		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);

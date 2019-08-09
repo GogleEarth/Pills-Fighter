@@ -45,6 +45,7 @@ void CScene::ReleaseObjects()
 	if (m_pFontShader)
 	{
 		m_pFontShader->ReleaseShaderVariables();
+		m_pFontShader->ReleaseObjects();
 		delete m_pFontShader;
 
 		m_pFontShader = NULL;
@@ -2619,8 +2620,139 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 void CBattleScene::ReleaseObjects()
 {
 	CScene::ReleaseObjects();
+	
+	if (m_pLights)
+	{
+		delete m_pLights;
+		m_pLights = NULL;
+	}
 
-	ReleaseShaderVariables();
+	if (m_pSkyBox)
+	{
+		m_pSkyBox->ReleaseShaderVariables();
+		delete m_pSkyBox;
+
+		m_pSkyBox = NULL;
+	}
+
+	if (m_pTerrain)
+	{
+		m_pTerrain->ReleaseShaderVariables();
+		delete m_pTerrain;
+
+		m_pTerrain = NULL;
+	}
+
+	if (m_pWireShader)
+	{
+		m_pWireShader->ReleaseShaderVariables();
+		m_pWireShader->ReleaseObjects();
+		delete m_pWireShader;
+
+		m_pWireShader = NULL;
+	}
+
+	if (m_ppShaders)
+	{
+		for (int i = 0; i < m_nShaders; i++)
+		{
+			if (m_ppShaders[i])
+			{
+				m_ppShaders[i]->ReleaseShaderVariables();
+				m_ppShaders[i]->ReleaseObjects();
+				delete m_ppShaders[i];
+				m_ppShaders[i] = NULL;
+			}
+		}
+
+		delete[] m_ppShaders;
+		m_ppShaders = NULL;
+	}
+
+	if (m_ppEffectShaders)
+	{
+		for (int i = 0; i < m_nEffectShaders; i++)
+		{
+			if (m_ppEffectShaders[i])
+			{
+				m_ppEffectShaders[i]->ReleaseShaderVariables();
+				m_ppEffectShaders[i]->ReleaseObjects();
+				delete m_ppEffectShaders[i];
+				m_ppEffectShaders[i] = NULL;
+			}
+		}
+		delete[] m_ppEffectShaders;
+		m_ppEffectShaders = NULL;
+	}
+
+	if (m_pParticleShader)
+	{
+		m_pParticleShader->ReleaseShaderVariables();
+		m_pParticleShader->ReleaseObjects();
+		delete m_pParticleShader;
+		m_pParticleShader = NULL;
+	}
+
+	if (m_pUserInterface)
+	{
+		m_pUserInterface->ReleaseShaderVariables();
+		m_pUserInterface->ReleaseObjects();
+		delete m_pUserInterface;
+
+		m_pUserInterface = NULL;
+	}
+
+	if (m_pPostProcessingShader)
+	{
+		m_pPostProcessingShader->ReleaseShaderVariables();
+		m_pPostProcessingShader->ReleaseObjects();
+		delete m_pPostProcessingShader;
+		m_pPostProcessingShader = NULL;
+	}
+
+	if (m_pTestShader)
+	{
+		m_pTestShader->ReleaseShaderVariables();
+		m_pTestShader->ReleaseObjects();
+		delete m_pTestShader;
+		m_pTestShader = NULL;
+	}
+
+	if (m_pComputeShader)
+	{
+		m_pComputeShader->ReleaseObjects();
+		delete m_pComputeShader;
+		m_pComputeShader = NULL;
+	}
+
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (m_pCubeMapCamera[i])
+		{
+			m_pCubeMapCamera[i]->ReleaseShaderVariables();
+			delete m_pCubeMapCamera[i];
+
+			m_pCubeMapCamera[i] = NULL;
+		}
+	}
+
+	if (m_pLightCamera)
+	{
+		m_pLightCamera->ReleaseShaderVariables();
+		delete m_pLightCamera;
+
+		m_pLightCamera = NULL;
+	}
+
+	if (m_pMinimapShader)
+	{
+		m_pMinimapShader->ReleaseShaderVariables();
+		m_pMinimapShader->ReleaseObjects();
+		delete m_pMinimapShader;
+
+		m_pMinimapShader = NULL;
+	}
 
 	if (m_pd3dOffScreenTexture)
 	{
@@ -2658,117 +2790,6 @@ void CBattleScene::ReleaseObjects()
 		m_pd3dScreenNormalTexture = NULL;
 	}
 
-	if (m_pd3dRtvDescriptorHeap)
-	{
-		m_pd3dRtvDescriptorHeap->Release();
-		m_pd3dRtvDescriptorHeap = NULL;
-	}
-
-	if (m_pd3dDsvDescriptorHeap)
-	{
-		m_pd3dDsvDescriptorHeap->Release();
-		m_pd3dDsvDescriptorHeap = NULL;
-	}
-
-	if (m_pLights)
-	{
-		delete m_pLights;
-		m_pLights = NULL;
-	}
-
-	if (m_pSkyBox)
-	{
-		m_pSkyBox->ReleaseShaderVariables();
-		delete m_pSkyBox;
-
-		m_pSkyBox = NULL;
-	}
-
-	if (m_pTerrain)
-	{
-		m_pTerrain->ReleaseShaderVariables();
-		delete m_pTerrain;
-
-		m_pTerrain = NULL;
-	}
-
-	if (m_pWireShader)
-	{
-		m_pWireShader->ReleaseShaderVariables();
-		delete m_pWireShader;
-
-		m_pWireShader = NULL;
-	}
-
-	if (m_ppShaders)
-	{
-		for (int i = 0; i < m_nShaders; i++)
-		{
-			if (m_ppShaders[i])
-			{
-				m_ppShaders[i]->ReleaseShaderVariables();
-				m_ppShaders[i]->ReleaseObjects();
-				delete m_ppShaders[i];
-				m_ppShaders[i] = NULL;
-			}
-		}
-		delete[] m_ppShaders;
-		m_ppShaders = NULL;
-	}
-
-	if (m_ppEffectShaders)
-	{
-		for (int i = 0; i < m_nEffectShaders; i++)
-		{
-			if (m_ppEffectShaders[i])
-			{
-				m_ppEffectShaders[i]->ReleaseShaderVariables();
-				m_ppEffectShaders[i]->ReleaseObjects();
-				delete m_ppEffectShaders[i];
-			}
-		}
-		delete[] m_ppEffectShaders;
-		m_ppEffectShaders = NULL;
-	}
-
-	if (m_pParticleShader)
-	{
-		m_pParticleShader->ReleaseShaderVariables();
-		m_pParticleShader->ReleaseObjects();
-		delete m_pParticleShader;
-		m_pParticleShader = NULL;
-	}
-
-	if (m_pUserInterface)
-	{
-		m_pUserInterface->ReleaseShaderVariables();
-		delete m_pUserInterface;
-
-		m_pUserInterface = NULL;
-	}
-
-	if (m_pPostProcessingShader)
-	{
-		m_pPostProcessingShader->ReleaseShaderVariables();
-		m_pPostProcessingShader->ReleaseObjects();
-		delete m_pPostProcessingShader;
-		m_pPostProcessingShader = NULL;
-	}
-
-	if (m_pTestShader)
-	{
-		m_pTestShader->ReleaseShaderVariables();
-		m_pTestShader->ReleaseObjects();
-		delete m_pTestShader;
-		m_pTestShader = NULL;
-	}
-
-	if (m_pComputeShader)
-	{
-		delete m_pComputeShader;
-		m_pComputeShader = NULL;
-	}
-
 	if (m_pd3dEnvirCube)
 	{
 		m_pd3dEnvirCube->Release();
@@ -2787,34 +2808,17 @@ void CBattleScene::ReleaseObjects()
 		m_pd3dShadowMap = NULL;
 	}
 
-	for (int i = 0; i < 6; i++)
+	if (m_pd3dRtvDescriptorHeap)
 	{
-		if (m_pCubeMapCamera[i])
-		{
-			m_pCubeMapCamera[i]->ReleaseShaderVariables();
-			delete m_pCubeMapCamera[i];
-
-			m_pCubeMapCamera[i] = NULL;
-		}
+		m_pd3dRtvDescriptorHeap->Release();
+		m_pd3dRtvDescriptorHeap = NULL;
 	}
 
-	if (m_pLightCamera)
+	if (m_pd3dDsvDescriptorHeap)
 	{
-		m_pLightCamera->ReleaseShaderVariables();
-		delete m_pLightCamera;
-
-		m_pLightCamera = NULL;
+		m_pd3dDsvDescriptorHeap->Release();
+		m_pd3dDsvDescriptorHeap = NULL;
 	}
-
-	if (m_pMinimapShader)
-	{
-		m_pMinimapShader->ReleaseShaderVariables();
-		delete m_pMinimapShader;
-
-		m_pMinimapShader = NULL;
-	}
-
-	ReleaseShaderVariables();
 }
 
 void CBattleScene::Alert()
@@ -3350,11 +3354,11 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 		if (m_pSkyBox) m_pSkyBox->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 		if (m_pTerrain) m_pTerrain->Render(pd3dCommandList, m_pCubeMapCamera[i]);
 
-		for (int i = 0; i < m_nShaders; i++)
-		{
-			if (m_ppShaders[i])
-				m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
-		}
+		//for (int i = 0; i < m_nShaders; i++)
+		//{
+		//	if (m_ppShaders[i])
+		//		m_ppShaders[i]->Render(pd3dCommandList, m_pCubeMapCamera[i]);
+		//}
 	}
 
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -3387,6 +3391,8 @@ void CBattleScene::ReleaseShaderVariables()
 
 		m_pd3dcbSceneInfo = NULL;
 	}
+
+	CScene::ReleaseShaderVariables();
 }
 
 void CBattleScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)

@@ -40,7 +40,7 @@ public:
 
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext = NULL) { }
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera) { }
-	virtual void ReleaseObjects() { }	
+	virtual void ReleaseObjects();
 	virtual void InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList,
 		CGameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext) {}
 
@@ -345,6 +345,7 @@ public:
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual void ReleaseUploadBuffers();
+	virtual void ReleaseObjects();
 
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -398,6 +399,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual void ReleaseObjects();
 	virtual void Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -447,6 +449,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateSOGeometryShader(ID3DBlob **ppd3dShaderBlob);
 
+	virtual void ReleaseObjects();
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera = NULL);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
 	virtual void PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -559,6 +562,7 @@ public:
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 
 	virtual void ReleaseUploadBuffers();
+	virtual void ReleaseObjects();
 
 	virtual void AnimateObjects(float fTimeElapsed);
 	virtual void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -689,6 +693,7 @@ public:
 	virtual void ReleaseShaderVariables();
 
 	virtual void ReleaseUploadBuffers();
+	virtual void ReleaseObjects();
 
 	virtual void AnimateObjects(float fTimeElapsed, CCamera *pCamera);
 
@@ -824,6 +829,7 @@ public:
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
+	virtual void ReleaseObjects();
 
 	void SetScreenPipelineState(ID3D12GraphicsCommandList *pd3dCommandList);
 	
@@ -857,6 +863,7 @@ public:
 	CComputeShader();
 	virtual ~CComputeShader();
 
+	virtual void ReleaseObjects();
 	D3D12_SHADER_BYTECODE CompileShaderFromFile(const WCHAR *pszFileName, LPCSTR pszShaderName, LPCSTR pszShaderProfile, ID3DBlob **ppd3dShaderBlob);
 
 	virtual D3D12_SHADER_BYTECODE CreateHorzComputeShader(ID3DBlob **ppd3dShaderBlob);
@@ -897,6 +904,7 @@ public:
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader(ID3DBlob **ppd3dShaderBlob);
 	virtual D3D12_SHADER_BYTECODE CreateEdgePixelShader(ID3DBlob **ppd3dShaderBlob);
 
+	virtual void ReleaseObjects();
 	virtual void CreateShader(ID3D12Device *pd3dDevice, ID3D12RootSignature *pd3dGraphicsRootSignature);
 
 	virtual void RenderEdge(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera);
@@ -942,6 +950,8 @@ class CMinimapShader : public CShader
 public:
 	CMinimapShader(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual ~CMinimapShader();
+
+	virtual void ReleaseObjects();
 
 	//pipelines
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob **ppd3dShaderBlob);

@@ -26,6 +26,7 @@ public:
 	virtual void ReleaseObjects();
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext) {}
 	virtual void ReleaseUploadBuffers() {}
+	virtual void ReleaseShaderVariables() {}
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	virtual int OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);

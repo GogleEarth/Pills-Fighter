@@ -406,7 +406,6 @@ void CGameObject::MoveToCollisionByRadius(CGameObject *pObject)
 		newPosition.z = objectPos.z + direction.z * radius;
 
 		SetPosition(newPosition);
-
 	}
 }
 

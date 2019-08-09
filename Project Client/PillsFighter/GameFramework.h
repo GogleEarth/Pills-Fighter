@@ -78,6 +78,7 @@ public:
 	void BuildLobbyMainScene();
 	void BuildLobbyRoomScene();
 	void ReleaseObjects();
+	void ReleaseScene();
 
 	void ProcessInput();
 	void AnimateObjects(float fElapsedTime);
