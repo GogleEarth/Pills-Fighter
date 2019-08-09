@@ -2340,7 +2340,8 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 	case WM_KEYDOWN:
 		if (m_bGameEnd)
 		{
-			return LOBBY_MOVE;
+			if(wParam == VK_RETURN)
+				return LOBBY_MOVE;
 		}
 		else
 		{

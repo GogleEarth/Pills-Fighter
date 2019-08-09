@@ -3415,7 +3415,7 @@ void CUserInterface::BattleNotifyEnd(bool bWin)
 	m_bGameEnd = true;
 	m_bWin = bWin;
 
-	m_pFont->ChangeText(1280, 720, m_pNotifyText, L"아무 버튼을 누르면 메인 로비로 돌아갑니다.", XMFLOAT2(-0.315f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pFont->ChangeText(1280, 720, m_pNotifyText, L"Enter를 누르면 메인 로비로 돌아갑니다.", XMFLOAT2(-0.285f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
 	m_pNotifyText->Display();
 }
 
