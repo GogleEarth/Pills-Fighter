@@ -541,6 +541,12 @@ struct MOTIONBLUR
 	int m_nSamples;
 };
 
+struct CB_SCENE_INFO
+{
+	XMFLOAT4 m_xmf4Random;
+	float m_fGravAcc;
+};
+
 class CBattleScene : public CScene
 {
 public:
@@ -566,9 +572,9 @@ public:
 	virtual void FindAimToTargetDistance();
 
 	virtual void BuildLightsAndMaterials() {}
-	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) {}
+	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
-	virtual void ReleaseShaderVariables() {}
+	virtual void ReleaseShaderVariables();
 
 	virtual void StartScene() {}
 	virtual void EndScene() {}
@@ -628,21 +634,7 @@ protected:
 	CEffectShader						**m_ppEffectShaders = NULL;
 
 	CUserInterface						*m_pUserInterface = NULL;
-
-	ID3D12Resource					*m_pd3dEnvirCube = NULL;
-	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvEnvirCubeMapGPUHandle;
-
-	CCamera							*m_pCubeMapCamera[6];
-
-	ID3D12Resource					*m_pd3dShadowMap = NULL;
-	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvShadowMapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvShadowMapGPUHandle;
-
-	CLightCamera					*m_pLightCamera = NULL;
-
+	
 protected:
 	int								m_nCurrentMap = SCENE_TYPE_COLONY;
 	int								m_nRedScore = 0;
@@ -746,6 +738,23 @@ protected:
 	CPostProcessingShader			*m_pPostProcessingShader = NULL;
 	CTestShader						*m_pTestShader = NULL;
 
+	ID3D12Resource					*m_pd3dEnvirCube = NULL;
+	ID3D12Resource					*m_pd3dEnvirCubeDSBuffer = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dRrvEnvirCubeMapCPUHandle[6];
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvEnvirCubeMapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvEnvirCubeMapGPUHandle;
+
+	CCamera							*m_pCubeMapCamera[6];
+
+	ID3D12Resource					*m_pd3dShadowMap = NULL;
+	D3D12_CPU_DESCRIPTOR_HANDLE		m_d3dDsvShadowMapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE		m_d3dSrvShadowMapGPUHandle;
+
+	CLightCamera					*m_pLightCamera = NULL;
+
+	ID3D12Resource					*m_pd3dcbSceneInfo = NULL;
+	CB_SCENE_INFO					*m_pcbMappedSceneInfo = NULL;
+
 public:
 	void CreateRtvAndDsvDescriptorHeaps(ID3D12Device *pd3dDevice);
 	void CreateRenderTargetView(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dResource, D3D12_RTV_DIMENSION d3dRtvDimension, int nViews, D3D12_CPU_DESCRIPTOR_HANDLE *pd3dSaveCPUHandle);
@@ -790,7 +799,6 @@ public:
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
-
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -816,7 +824,5 @@ public:
 	virtual void EndScene();
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
-
 	virtual void ApplyRecvInfo(PKT_ID pktID, LPVOID pktData);
-
 };

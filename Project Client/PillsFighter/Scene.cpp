@@ -282,11 +282,6 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].DescriptorTable.NumDescriptorRanges = 1;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].DescriptorTable.pDescriptorRanges = &pd3dDescriptorRanges[5]; // t6: Texture Cube
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.ShaderRegister = 9;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].Descriptor.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_ENVIRONMENTCUBE_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_FONT_INFO].Descriptor.ShaderRegister = 12;
@@ -333,18 +328,17 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_UI_3D_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Descriptor.ShaderRegister = 11;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 /////
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.Num32BitValues = 2;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.RegisterSpace = 0;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].Constants.ShaderRegister = 10;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_CURSOR_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.Num32BitValues = 5;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.RegisterSpace = 0;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].Constants.ShaderRegister = 11;
-	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCENE_INFO].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	pd3dRootParameters[ROOT_PARAMETER_INDEX_SCREEN_EFFECT].Constants.Num32BitValues = 4;
@@ -2620,8 +2614,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	m_pUserInterface->BattleNotifyStart();
 #endif
 
-	m_pUserInterface->BattleNotifyEnd(true);
-	m_bGameEnd = true;
+	//m_pUserInterface->BattleNotifyEnd(true);
+	//m_bGameEnd = true;
 }
 
 void CBattleScene::ReleaseObjects()
@@ -3368,14 +3362,34 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
+void CBattleScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList)
+{
+	UINT ncbElementBytes = ((sizeof(CB_SCENE_INFO) + 255) & ~255);
+
+	m_pd3dcbSceneInfo = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
+	m_pd3dcbSceneInfo->Map(0, NULL, (void **)&m_pcbMappedSceneInfo);
+}
+
 void CBattleScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	XMFLOAT4 xmf4Random = XMFLOAT4((rand() + 20)* 0.7f, (rand() + 200) * 0.6f, (rand() + 2000) * 0.5f, (rand() + 20000) * 0.4f);
 
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 4, &xmf4Random, 0);
-	pd3dCommandList->SetGraphicsRoot32BitConstants(ROOT_PARAMETER_INDEX_SCENE_INFO, 1, &m_fGravAcc, 4);
+	m_pcbMappedSceneInfo->m_xmf4Random = xmf4Random;
+	m_pcbMappedSceneInfo->m_fGravAcc = m_fGravAcc;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(ROOT_PARAMETER_INDEX_SCENE_INFO, m_pd3dcbSceneInfo->GetGPUVirtualAddress());
 }
 
+void CBattleScene::ReleaseShaderVariables()
+{
+	if (m_pd3dcbSceneInfo)
+	{
+		m_pd3dcbSceneInfo->Unmap(0, NULL);
+		m_pd3dcbSceneInfo->Release();
+
+		m_pd3dcbSceneInfo = NULL;
+	}
+}
 void CBattleScene::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
 	if (m_pWireShader) m_pWireShader->OnPrepareRender(pd3dCommandList);
@@ -4451,6 +4465,8 @@ void CColonyScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphic
 	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 	m_pd3dcbLights->Map(0, NULL, (void **)&m_pcbMappedLights);
+
+	CBattleScene::CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CColonyScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -4468,6 +4484,8 @@ void CColonyScene::ReleaseShaderVariables()
 		m_pd3dcbLights->Release();
 		m_pd3dcbLights = NULL;
 	}
+
+	CBattleScene::ReleaseShaderVariables();
 }
 
 void CColonyScene::RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -4635,6 +4653,8 @@ void CSpaceScene::CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12Graphics
 	m_pd3dcbLights = ::CreateBufferResource(pd3dDevice, pd3dCommandList, NULL, ncbElementBytes,
 		D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL);
 	m_pd3dcbLights->Map(0, NULL, (void **)&m_pcbMappedLights);
+
+	CBattleScene::CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void CSpaceScene::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -4652,6 +4672,8 @@ void CSpaceScene::ReleaseShaderVariables()
 		m_pd3dcbLights->Release();
 		m_pd3dcbLights = NULL;
 	}
+
+	CBattleScene::ReleaseShaderVariables();
 }
 
 void CSpaceScene::RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList)

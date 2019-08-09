@@ -370,8 +370,6 @@ void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 
 void CPlayer::Update(float fTimeElapsed)
 {
-	CRobotObject::Animate(fTimeElapsed);
-
 	if (!m_bDie)
 	{
 		for (const auto& Weapon : m_vpWeapon) Weapon->Animate(fTimeElapsed, NULL);
@@ -386,6 +384,8 @@ void CPlayer::Update(float fTimeElapsed)
 			if (m_xmf3Position.y + m_fVelocityY < 1700.0f)
 				Move(XMFLOAT3(0.0f, m_fVelocityY, 0.0f));
 		}
+
+		CRobotObject::Animate(fTimeElapsed);
 	}
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);

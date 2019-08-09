@@ -487,21 +487,30 @@ CObjectsShader::CObjectsShader()
 
 CObjectsShader::~CObjectsShader()
 {
-	if (m_pvpObjects) delete[] m_pvpObjects;
+	ReleaseObjects();
+
+	if (m_pvpObjects)
+	{
+		delete[] m_pvpObjects;
+		m_pvpObjects = NULL;
+	}
 }
 
 void CObjectsShader::ReleaseObjects()
 {
-	for (int i = 0; i < m_nObjectGroup; i++)
+	if (m_pvpObjects)
 	{
-		for (auto& Object : m_pvpObjects[i])
+		for (int i = 0; i < m_nObjectGroup; i++)
 		{
-			Object->ReleaseShaderVariables();
-			delete Object;
-			Object = NULL;
-		}
+			for (auto& Object : m_pvpObjects[i])
+			{
+				Object->ReleaseShaderVariables();
+				delete Object;
+				Object = NULL;
+			}
 
-		m_pvpObjects[i].clear();
+			m_pvpObjects[i].clear();
+		}
 	}
 }
 
@@ -651,7 +660,6 @@ CInstancingObjectsShader::CInstancingObjectsShader()
 
 CInstancingObjectsShader::~CInstancingObjectsShader()
 {
-	ReleaseShaderVariables();
 }
 
 D3D12_SHADER_BYTECODE CInstancingObjectsShader::CreateVertexShader(ID3DBlob **ppd3dShaderBlob)
@@ -848,6 +856,7 @@ void CObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevice, I
 		}
 	}
 
+	::fclose(pInFile);
 }
 
 void CObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
@@ -993,7 +1002,6 @@ void CSpaceObstacleShader::InsertObjectFromLoadInfFromBin(ID3D12Device *pd3dDevi
 
 void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository, void *pContext)
 {
-
 	m_nObjectGroup = INSTANCING_OBJECT_GROUP_SPACE;
 	m_pvpObjects = new std::vector<CGameObject*>[m_nObjectGroup];
 

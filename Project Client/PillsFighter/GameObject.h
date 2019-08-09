@@ -167,7 +167,7 @@ protected:
 
 
 protected:
-	int							m_nState = 0x000;
+	int							m_nState = 0x00;
 	int							m_nType = 0x00;
 
 public:
@@ -183,26 +183,14 @@ protected:
 	CShader							*m_pShader = NULL;
 	bool							m_bRender = true;
 
+protected:
+	std::unordered_set<CGameObject*> m_uspHitObjects;
+
 public:
 	void SetShader(CShader *pShader) { m_pShader = pShader; }
 	void Show() { m_bRender = true; }
 	void Hide() { m_bRender = false; }
 
-public:
-	virtual void AfterAdvanceAnimationController();
-	virtual void SetCallBackKeys(CModel *pModel) {};
-
-private:
-	float collisionRadius;
-
-public:
-	void SetCollisionRadius(float radius) { collisionRadius = radius; }
-	float GetCollisionRadius() { return collisionRadius; }
-
-protected:
-	std::unordered_set<CGameObject*> m_uspHitObjects;
-
-public:
 	bool CheckDidHitObject(CGameObject *pObject) { return m_uspHitObjects.count(pObject) > 0; }
 	void AddHitObject(CGameObject* pObject) { m_uspHitObjects.emplace(pObject); }
 
@@ -217,6 +205,17 @@ public:
 	bool IsDie() { return m_bDie; }
 	float GetRespwanTime() { return m_fRespawnTime; }
 	float GetRespwanElapsedTime() { return m_fRespawnTimeElapsed; }
+
+public:
+	virtual void AfterAdvanceAnimationController();
+	virtual void SetCallBackKeys(CModel *pModel) {};
+
+private:
+	float collisionRadius = 0.0f;
+
+public:
+	void SetCollisionRadius(float radius) { collisionRadius = radius; }
+	float GetCollisionRadius() { return collisionRadius; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

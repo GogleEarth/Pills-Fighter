@@ -354,6 +354,7 @@ CModel::~CModel()
 	{
 		delete m_pMesh;
 		m_pMesh = NULL;
+
 		if (m_pCubeMesh)
 		{
 			delete m_pCubeMesh;
@@ -429,7 +430,6 @@ void CModel::ReleaseUploadBuffers()
 	{
 		m_pMesh->ReleaseUploadBuffers();
 		if (m_pCubeMesh) m_pCubeMesh->ReleaseUploadBuffers();
-
 	}
 
 	if (m_ppMaterials)
