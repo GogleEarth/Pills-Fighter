@@ -1081,6 +1081,7 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_CREATE_ROOM_OK:
 	{
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
