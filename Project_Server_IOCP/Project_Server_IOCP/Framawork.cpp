@@ -730,24 +730,30 @@ void Framawork::process_packet(int id, char* packet)
 					((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
 				{
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
-						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.4f)
+						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
 						{
+							std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+							std::cout << "1번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
 							using namespace std;
 							using namespace chrono;
 							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 						}
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
-						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.4f)
+						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
 						{
+							std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+							std::cout << "2번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
 							using namespace std;
 							using namespace chrono;
 							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 						}
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
-						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.6f)
+						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.52f)
 						{
+							std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+							std::cout << "3번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
 							using namespace std;
 							using namespace chrono;

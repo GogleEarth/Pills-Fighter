@@ -272,20 +272,24 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 
 				XMFLOAT3 newPosition = m_xmf3Position;
 
-				if (m_xmAABB.Center.y - SEPARATION > worldObjectAABBExtent.y - INVASION && m_xmAABB.Center.y - SEPARATION < worldObjectAABBExtent.y) {
-					m_fVelocityY = 0;
-					newPosition.y = xmAABB.Center.y + xmAABB.Extents.y + SEPARATION;
+				XMFLOAT3 separateCenterMinus = XMFLOAT3(m_xmAABB.Center.x - SEPARATION, m_xmAABB.Center.y - SEPARATION, m_xmAABB.Center.z - SEPARATION);
+				XMFLOAT3 separateCenterPlus = XMFLOAT3(m_xmAABB.Center.x + SEPARATION, 0, m_xmAABB.Center.z + SEPARATION);
+
+				if (m_xmf3Position.y > worldObjectAABBExtent.y - INVASION && m_xmf3Position.y < worldObjectAABBExtent.y) {
+					m_fVelocityY = 0.0f;
+					m_nState |= OBJECT_STATE_ONGROUND;
+					newPosition.y = xmAABB.Center.y + xmAABB.Extents.y ;
 				}
-				if (m_xmAABB.Center.x - SEPARATION > worldObjectAABBExtent.x - INVASION && m_xmAABB.Center.x - SEPARATION < worldObjectAABBExtent.x ) {
+				if (separateCenterMinus.x > worldObjectAABBExtent.x - INVASION && separateCenterMinus.x < worldObjectAABBExtent.x ) {
 					newPosition.x = xmAABB.Center.x + xmAABB.Extents.x + SEPARATION;
 				}
-				if (m_xmAABB.Center.x + SEPARATION < worldObjectAABBReverseExtent.x + INVASION && m_xmAABB.Center.x + SEPARATION > worldObjectAABBReverseExtent.x) {
+				if (separateCenterPlus.x < worldObjectAABBReverseExtent.x + INVASION && separateCenterPlus.x > worldObjectAABBReverseExtent.x) {
 					newPosition.x = xmAABB.Center.x - xmAABB.Extents.x - SEPARATION;
 				}
-				if (m_xmAABB.Center.z - SEPARATION > worldObjectAABBExtent.z - INVASION && m_xmAABB.Center.z - SEPARATION < worldObjectAABBExtent.z ) {
+				if (separateCenterMinus.z > worldObjectAABBExtent.z - INVASION && separateCenterMinus.z < worldObjectAABBExtent.z ) {
 					newPosition.z = xmAABB.Center.z + xmAABB.Extents.z + SEPARATION;
 				}
-				if (m_xmAABB.Center.z + SEPARATION < worldObjectAABBReverseExtent.z + INVASION && m_xmAABB.Center.z + SEPARATION > worldObjectAABBReverseExtent.z ) {
+				if (separateCenterPlus.z < worldObjectAABBReverseExtent.z + INVASION && separateCenterPlus.z > worldObjectAABBReverseExtent.z ) {
 					newPosition.z = xmAABB.Center.z - xmAABB.Extents.z - SEPARATION;
 				}
 				SetPosition(XMFLOAT3(newPosition.x, newPosition.y, newPosition.z));
