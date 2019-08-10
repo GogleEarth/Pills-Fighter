@@ -128,6 +128,12 @@ int Framawork::thread_process()
 				{
 					auto data = rooms_[key].map_event_dequeue();
 					if (data == nullptr) break;
+					if (data->type == MAP_EVENT_TYPE_ALERT)
+						std::cout << key << "번방 이벤트 경고\n";
+					if (data->type == MAP_EVENT_TYPE_START)
+						std::cout << key << "번방 이벤트 시작\n";
+					if (data->type == MAP_EVENT_TYPE_END)
+						std::cout << key << "번방 이벤트 끝\n";
 					send_packet_to_room_player(key, (char*)data);
 					delete data;
 				}
@@ -570,8 +576,6 @@ int Framawork::accept_process()
 		pkt_cn.PktSize = sizeof(PKT_CHANGE_NAME);
 		lstrcpynW(pkt_cn.name, clients_[new_id].name, MAX_NAME_LENGTH);
 
-		std::wcout << pkt_cn.name << "\n";
-
 		send_packet_to_player(new_id, (char*)&pkt_cn);
 
 		for (int i = 0; i < 10; ++i)
@@ -742,8 +746,8 @@ void Framawork::process_packet(int id, char* packet)
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
 						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
 						{
-							std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
-							std::cout << "1번 판정 생성\n";
+							//std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+							//std::cout << "1번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
 							using namespace std;
 							using namespace chrono;
@@ -752,8 +756,8 @@ void Framawork::process_packet(int id, char* packet)
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
 						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
 						{
-							std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
-							std::cout << "2번 판정 생성\n";
+							//std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+							//std::cout << "2번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
 							using namespace std;
 							using namespace chrono;
@@ -762,8 +766,8 @@ void Framawork::process_packet(int id, char* packet)
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
 						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.52f)
 						{
-							std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
-							std::cout << "3번 판정 생성\n";
+							//std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
+							//std::cout << "3번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
 							using namespace std;
 							using namespace chrono;
@@ -780,7 +784,7 @@ void Framawork::process_packet(int id, char* packet)
 		int room_num = search_client_in_room(clients_[id].socket);
 		if (room_num != -1)
 		{
-			std::cout << "로드완료패킷\n";
+			std::cout << room_num << "번방의 " << id << "번 플레이어" << "로드완료\n";
 			rooms_[room_num].player_load_complete(clients_[id].socket);
 			if (rooms_[room_num].all_load_complete())
 			{
@@ -788,7 +792,7 @@ void Framawork::process_packet(int id, char* packet)
 				pktgamestate.PktID = (char)PKT_ID_LOAD_COMPLETE_ALL;
 				pktgamestate.PktSize = (char)sizeof(PKT_GAME_STATE);
 				send_packet_to_room_player(room_num, (char*)&pktgamestate);
-				std::cout << "전원 로드 완료\n";
+				std::cout << room_num << "번방 전원 로드 완료\n";
 
 				Player* players = rooms_[room_num].get_players();
 				for (int i = 0; i < MAX_CLIENT; ++i)
@@ -875,6 +879,8 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
 			pkt_cmi.map = rooms_[room_num].get_map();
 			send_packet_to_all_player((char*)&pkt_cmi);
+
+			std::cout << id << "번 플레이어" << room_num << "번 방 생성\n";
 		}
 		else
 			std::cout << "더이상 방을 생성할 수 없음\n";
@@ -942,9 +948,11 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_cmi.numpeople = rooms_[room_num].get_num_player_in_room();
 			pkt_cmi.map = rooms_[room_num].get_map();
 			send_packet_to_all_player((char*)&pkt_cmi);
+
+			std::cout << id << "번 플레이어" << room_num << "번 방 입장\n";
 		}
 		else
-			std::cout << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 참가 실패\n";
+			std::cout << id << "번 플레이어" << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 참가 실패\n";
 		break;
 	}
 	case PKT_ID_SHOOT:
@@ -961,7 +969,6 @@ void Framawork::process_packet(int id, char* packet)
 				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 600.0f, &index);
-				//send_packet_to_room_player(room_num, (char*)pkt_ce);
 				add_timer(index, room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
 				delete pkt_ce;
 			}
@@ -971,7 +978,6 @@ void Framawork::process_packet(int id, char* packet)
 				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
-				//send_packet_to_room_player(room_num, (char*)pkt_ce);
 				add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
 				delete pkt_ce;
 			}
@@ -981,7 +987,6 @@ void Framawork::process_packet(int id, char* packet)
 				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 2000.0f, &index);
-				//send_packet_to_room_player(room_num, (char*)pkt_ce);
 				add_timer(index, room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
 				delete pkt_ce;
 			}
@@ -1133,8 +1138,8 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_CHANGE_NAME:
 	{
 		PKT_CHANGE_NAME* pkt_cn = reinterpret_cast<PKT_CHANGE_NAME*>(packet);
+		std::wcout << id << L"번 플레이어의 이름을 " << clients_[id].name << L"에서 " << pkt_cn->name << L"로 변경\n";
 		lstrcpynW(clients_[id].name, pkt_cn->name, MAX_NAME_LENGTH);
-		std::wcout << clients_[id].name << "\n";
 		break;
 	}
 	case PKT_ID_MOVE_TO_MAIN_LOBBY:

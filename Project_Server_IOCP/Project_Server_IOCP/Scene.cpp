@@ -714,13 +714,11 @@ PKT_PLAYER_DIE * Scene::player_die_dequeue()
 
 void Scene::start_event()
 {
-	std::cout << "이벤트 시작\n";
 	is_being_event_ = true;
 }
 
 void Scene::end_event()
 {
-	std::cout << "이벤트 끝\n";
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
 	is_being_event_ = false;

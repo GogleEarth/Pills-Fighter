@@ -8,7 +8,8 @@
 #define MAX_ROOM_NAME_LENGTH 20
 
 //#define SERVERIP	"119.64.25.5" // 김대훈
-#define SERVERIP	"121.169.212.228" // 박진수
+//#define SERVERIP	"121.169.212.228" // 박진수
+#define SERVERIP	"127.0.0.1"
 #define SERVERPORT	9000
 #define LOBBYSERVERIP	"127.0.0.1"
 #define LOBBYSERVERPORT	9001

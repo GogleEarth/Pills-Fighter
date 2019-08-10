@@ -34,7 +34,6 @@ int Room::get_empty_slot()
 	{
 		if (!slots_[i])
 		{
-			std::cout << "ºó ½½·Ô : " << i << "\n";
 			return i;
 		}
 	}
@@ -309,7 +308,6 @@ void Room::add_player(int id, SOCKET socket, char slot)
 	players_[num].set_robot(ROBOT_TYPE_GM);
 	players_[num].set_slot(slot);
 	players_[num].set_team((char)((int)slot % 2));
-	std::cout << "player " << num << "ÀÇ ÆÀ : " << (int)players_[num].get_team() << "\n";
 	slots_[slot] = true;
 }
 
