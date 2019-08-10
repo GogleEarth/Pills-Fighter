@@ -205,6 +205,7 @@ void Room::init(CRepository* repository)
 {
 	in_use_ = false;
 	is_playing_ = false;
+	game_end_ = false;
 	using_scene_ = 4;
 	blue_score_ = 0;
 	red_score_ = 0;
@@ -225,7 +226,9 @@ void Room::init(CRepository* repository)
 
 void Room::init()
 {
+	in_use_ = false;
 	is_playing_ = false;
+	game_end_ = false;
 	using_scene_ = 4;
 	blue_score_ = 0;
 	red_score_ = 0;
@@ -242,8 +245,6 @@ void Room::init()
 		players_[i].init();
 
 	std::cout << "방 준비 완료\n";
-
-	in_use_ = false;
 }
 
 void Room::end_game()

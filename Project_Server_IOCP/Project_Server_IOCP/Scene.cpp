@@ -170,6 +170,17 @@ void Scene::init()
 	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
 	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
 
+	while (item_queue_.size() > 0)
+		item_queue_.pop();
+	while (player_life_queue_.size() > 0)
+		player_life_queue_.pop();
+	while (score_queue_.size() > 0)
+		score_queue_.pop();
+	while (create_effect_queue_.size() > 0)
+		create_effect_queue_.pop();
+	while (player_die_queue_.size() > 0)
+		player_die_queue_.pop();
+
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
 	is_being_event_ = false;
@@ -574,6 +585,20 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 
 								effect_lock_.lock();
 								create_effect_queue_.push(pkt_ce);
+								effect_lock_.unlock();
+
+								PKT_CREATE_EFFECT* pkt_ce2 = new PKT_CREATE_EFFECT();
+								pkt_ce2->PktId = PKT_ID_CREATE_EFFECT;
+								pkt_ce2->PktSize = sizeof(PKT_CREATE_EFFECT);
+								pkt_ce2->efType = EFFECT_TYPE_BEAM_HIT;
+								pkt_ce2->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+								auto position2 = Objects_[i].GetPosition();
+								position2.y += 9.0f;
+								pkt_ce2->xmf3Position = position2;
+								pkt_ce2->id = Objects_[object].get_owner_id();
+
+								effect_lock_.lock();
+								create_effect_queue_.push(pkt_ce2);
 								effect_lock_.unlock();
 
 								if (Objects_[i].GetHitPoint() <= 0)
