@@ -82,7 +82,8 @@ public:
 	virtual int GetSelectRoom() { return -1; }
 
 public:
-	virtual void StartScene() {};
+	virtual void StartScene(bool bBGMStop) {};
+	virtual void EndScene() {};
 	virtual void MoveCursor(float x, float y) {}
 	virtual void SetCursorPosition(XMFLOAT2 xmf2Position) {}
 	virtual XMFLOAT2 GetCursorPos() { return XMFLOAT2(0.0f, 0.0f); }
@@ -101,9 +102,6 @@ protected:
 	CFont*							m_pFont = NULL;
 	BOOL							m_LButtonDown = FALSE;
 
-public:
-	virtual void EndScene() {};
-	
 protected:
 	bool			m_bActiveChat = false;
 	CTextSystem		*m_pTextSystem = NULL;
@@ -205,7 +203,6 @@ public:
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext);
 
 	virtual void CheckCollision();
-	virtual void StartScene();
 	virtual int MouseClick();
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -213,6 +210,9 @@ public:
 
 	void Notify();
 	void HideNotify();
+
+	virtual void StartScene(bool bBGMStop);
+	virtual void EndScene();
 
 protected:
 	BoundingBox		m_StartButton;
@@ -290,7 +290,6 @@ public:
 	virtual void ReleaseUploadBuffers();
 
 	virtual void CheckCollision();
-	virtual void StartScene();
 
 	virtual int MouseClick();
 
@@ -305,6 +304,8 @@ public:
 
 	void ChangeInputNameText();
 	void ChangeInputRoomNameText();
+
+	virtual void StartScene(bool bBGMStop);
 
 protected:
 	BoundingBox		m_CreateRoomButton;
@@ -404,7 +405,7 @@ public:
 	virtual void ReleaseUploadBuffers();
 
 	virtual void CheckCollision();
-	virtual void StartScene();
+	virtual void StartScene(bool bBGMStop);
 
 	virtual void JoinPlayer(int nIndex, int nSlot, const wchar_t *pstrPlayerName, int nRobotType);
 	virtual void LeavePlayer(int nIndex);
@@ -420,6 +421,8 @@ public:
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual int GetSelectedMap() { return m_nCurrentMap; }
 	virtual void GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::vector<int> &vnEnemyIndices, std::vector<wchar_t*> &vpwstrNames);
+
+	virtual void EndScene();
 
 protected:
 	int									m_nCurrentMap = SCENE_TYPE_COLONY;
@@ -577,7 +580,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void StartScene() {}
+	virtual void StartScene(bool bBGMStop) {}
 	virtual void EndScene() {}
 	virtual void ProcessAlert(float fElapsedTime);
 	virtual void Alert();
@@ -795,7 +798,7 @@ public:
 
 	virtual void RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void StartScene();
+	virtual void StartScene(bool bBGMStop);
 	virtual void EndScene();
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);
@@ -821,7 +824,7 @@ public:
 
 	virtual void RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList);
 
-	virtual void StartScene();
+	virtual void StartScene(bool bBGMStop);
 	virtual void EndScene();
 
 	virtual void RenderUI(ID3D12GraphicsCommandList *pd3dCommandList);

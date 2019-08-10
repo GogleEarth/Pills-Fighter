@@ -61,8 +61,10 @@ protected:
 #define BOOSTER_POWER 0.1f
 #define MAX_UP_POWER 8.0f
 #define MAX_DOWN_POWER -8.0f
-#define INTERVAL_BOOSTER_GAUGE_CHARGE 2.0f
-#define INTERVAL_BOOSTER_GAUGE_CONSUME 1.0f
+#define INTERVAL_BOOSTER_GAUGE_CHARGE 0.1f
+#define BOOSTER_GAUGE_CHARGE_VALUE 1
+#define INTERVAL_BOOSTER_GAUGE_CONSUME 0.15f
+#define BOOSTER_GAUGE_CONSUME_VALUE 1
 
 	int					m_nBoosterGauge = 100;
 	float				m_fTimeForConsumeBoosterGauge = 0.0f;

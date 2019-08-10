@@ -98,6 +98,7 @@ protected:
 protected:
 	CFont							m_Font;
 	bool							m_bWireRender = false;
+	bool							m_bBGMStop = true;
 
 protected: // for Network
 	char	m_RecvBuf[MAX_BUFFER];

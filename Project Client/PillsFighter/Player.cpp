@@ -672,9 +672,9 @@ void CPlayer::ProcessBoosterCharge(float fElapsedTime)
 		{
 			if (m_fTimeForChargeBoosterGauge >= INTERVAL_BOOSTER_GAUGE_CHARGE)
 			{
-				m_fTimeForChargeBoosterGauge = 0.0f;
+				m_fTimeForChargeBoosterGauge = fmod(m_fTimeForChargeBoosterGauge, INTERVAL_BOOSTER_GAUGE_CHARGE);
 
-				m_nBoosterGauge = m_nBoosterGauge + 10 > 100 ? 100 : m_nBoosterGauge + 10;
+				m_nBoosterGauge = m_nBoosterGauge + BOOSTER_GAUGE_CHARGE_VALUE > 100 ? 100 : m_nBoosterGauge + BOOSTER_GAUGE_CHARGE_VALUE;
 			}
 			else
 			{
@@ -690,9 +690,9 @@ void CPlayer::ProcessBoosterConsume(float fElapsedTime)
 	{
 		if (m_fTimeForConsumeBoosterGauge >= INTERVAL_BOOSTER_GAUGE_CONSUME)
 		{
-			m_fTimeForConsumeBoosterGauge = 0.0f;
+			m_fTimeForConsumeBoosterGauge = fmod(m_fTimeForConsumeBoosterGauge, INTERVAL_BOOSTER_GAUGE_CONSUME);
 
-			m_nBoosterGauge = m_nBoosterGauge - 5 < 0 ? 0 : m_nBoosterGauge - 5;
+			m_nBoosterGauge = m_nBoosterGauge - BOOSTER_GAUGE_CONSUME_VALUE < 0 ? 0 : m_nBoosterGauge - BOOSTER_GAUGE_CONSUME_VALUE;
 		}
 		else
 		{

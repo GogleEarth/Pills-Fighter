@@ -7,7 +7,10 @@ CFMODSound::CFMODSound()
 
 	m_pfmodSystem->init(FMOD_MAX_CHANNEL_WIDTH, FMOD_INIT_NORMAL, NULL);
 
-	m_pfmodSystem->createSound("./Resource/BGM/bgm_pvp_p03.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundBGM);
+	m_pfmodSystem->createSound("./Resource/BGM/Title.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundTitleBGM);
+	m_pfmodSystem->createSound("./Resource/BGM/Lobby.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundLobbyBGM);
+	m_pfmodSystem->createSound("./Resource/BGM/Colony.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundColonyBGM);
+	m_pfmodSystem->createSound("./Resource/BGM/Space.wav", FMOD_LOOP_NORMAL | FMOD_DEFAULT, NULL, &m_pSoundSpaceBGM);
 
 	m_pfmodSystem->createSound("./Resource/SE/Gun_Hit.wav", FMOD_DEFAULT, NULL, &m_pSoundGGHit);
 	m_pfmodSystem->createSound("./Resource/SE/Gun_Shot.wav", FMOD_DEFAULT, NULL, &m_pSoundGGShot);
@@ -28,7 +31,10 @@ CFMODSound::CFMODSound()
 
 CFMODSound::~CFMODSound()
 {
-	m_pSoundBGM->release();
+	m_pSoundTitleBGM->release();
+	m_pSoundLobbyBGM->release();
+	m_pSoundColonyBGM->release();
+	m_pSoundSpaceBGM->release();
 	m_pSoundGGHit->release();
 	m_pSoundGGShot->release();
 	m_pSoundBZKHit->release();
@@ -89,4 +95,11 @@ void CFMODSound::PauseFMODSound(FMOD::Channel *pChannel)
 	if (!bPause) pChannel->setPaused(true);
 
 	pChannel->setPosition(0, FMOD_TIMEUNIT_MS);
+}
+
+void CFMODSound::StopFMODSound(FMOD::Channel *pChannel)
+{
+	if (!pChannel) return;
+
+	pChannel->stop();
 }

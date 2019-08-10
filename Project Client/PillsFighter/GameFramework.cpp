@@ -337,7 +337,7 @@ void CGameFramework::BuildScene(int nSceneType)
 	m_vnEnemyIndices.clear();
 
 	m_pScene->SetAfterBuildObject(m_pd3dDevice, m_pd3dCommandList, NULL);
-	m_pScene->StartScene();
+	m_pScene->StartScene(m_bBGMStop);
 
 	m_pd3dCommandList->Close();
 	ID3D12CommandList *ppd3dCommandLists[] = { m_pd3dCommandList };
@@ -490,6 +490,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		SendToServer(PKT_ID_LEAVE_ROOM, NULL);
 #endif
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
+		m_bBGMStop = false;
 		ReleaseScene();
 
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
@@ -537,6 +538,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		ReleaseScene();
 
+		m_bBGMStop = true;
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->SetCursorPosition(xmf2Pos);
 
@@ -558,6 +560,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 
 		ReleaseScene();
 
+		m_bBGMStop = true;
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->InitName(CScene::GetMyName());
 
@@ -1009,6 +1012,7 @@ void CGameFramework::ProcessPacket()
 
 		ReleaseObjects();
 
+		m_bBGMStop = true;
 		BuildScene(pPacket->map);
 
 		CScene::SetMyTeam(nPlayerTeam);
@@ -1083,6 +1087,7 @@ void CGameFramework::ProcessPacket()
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		ReleaseScene();
 
+		m_bBGMStop = false;
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetClientIndex(0, 0);
@@ -1097,6 +1102,7 @@ void CGameFramework::ProcessPacket()
 		XMFLOAT2 xmf2Pos = m_pScene->GetCursorPos();
 		ReleaseScene();
 
+		m_bBGMStop = false;
 		BuildScene(SCENE_TYPE_LOBBY_ROOM);
 		m_pScene->SetCursorPosition(xmf2Pos);
 		m_pScene->SetClientIndex(pPacket->index, pPacket->slot);

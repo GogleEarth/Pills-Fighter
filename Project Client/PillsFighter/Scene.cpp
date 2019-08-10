@@ -936,10 +936,6 @@ void CTitleScene::CheckCollision()
 	}
 }
 
-void CTitleScene::StartScene()
-{
-}
-
 void CTitleScene::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 {
 	if (m_bShowNotify)
@@ -985,6 +981,16 @@ void CTitleScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
+}
+
+void CTitleScene::StartScene(bool bBGMStop)
+{
+	if (bBGMStop) gFmodSound.StopFMODSound(gFmodSound.m_pBGMChannel);
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundTitleBGM, &(gFmodSound.m_pBGMChannel));
+}
+
+void CTitleScene::EndScene()
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1414,10 +1420,6 @@ void CLobbyMainScene::InitName(wchar_t *pwstrName)
 	CScene::m_bInitName = true;
 }
 
-void CLobbyMainScene::StartScene()
-{
-}
-
 void CLobbyMainScene::AddRoom(int n, wchar_t *name)
 {
 	ROOM_INFO_TEXT newRoom;
@@ -1588,6 +1590,12 @@ void CLobbyMainScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 	}
 
 	if (m_pCursor) m_pCursor->Render(pd3dCommandList);
+}
+
+void CLobbyMainScene::StartScene(bool bBGMStop)
+{
+	if(bBGMStop) gFmodSound.StopFMODSound(gFmodSound.m_pBGMChannel);
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundLobbyBGM, &(gFmodSound.m_pBGMChannel));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2046,7 +2054,7 @@ void CLobbyRoomScene::CheckCollision()
 	else m_bHLTeamBlueButton = false;
 }
 
-void CLobbyRoomScene::StartScene()
+void CLobbyRoomScene::StartScene(bool bBGMStop)
 {
 	//gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
 }
@@ -2261,6 +2269,10 @@ void CLobbyRoomScene::GetTeamsInfo(int nTeam, std::vector<int> &vnIndices, std::
 		vnEnemyIndices.emplace_back(nIndex);
 	}
 
+}
+
+void CLobbyRoomScene::EndScene()
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4585,14 +4597,14 @@ void CColonyScene::RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList)
 	::TransitionResourceState(pd3dCommandList, m_pd3dShadowMap, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
-void CColonyScene::StartScene()
+void CColonyScene::StartScene(bool bBGMStop)
 {
-	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
+	if (bBGMStop) gFmodSound.StopFMODSound(gFmodSound.m_pBGMChannel);
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundColonyBGM, &(gFmodSound.m_pBGMChannel));
 }
 
 void CColonyScene::EndScene()
 {
-	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
 }
 
 void CColonyScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
@@ -4814,14 +4826,14 @@ void CSpaceScene::RenderShadowMap(ID3D12GraphicsCommandList *pd3dCommandList)
 	::TransitionResourceState(pd3dCommandList, m_pd3dShadowMap, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
-void CSpaceScene::StartScene()
+void CSpaceScene::StartScene(bool bBGMStop)
 {
-	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundBGM, &(gFmodSound.m_pBGMChannel));
+	if (bBGMStop) gFmodSound.StopFMODSound(gFmodSound.m_pBGMChannel);
+	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundSpaceBGM, &(gFmodSound.m_pBGMChannel));
 }
 
 void CSpaceScene::EndScene()
 {
-	gFmodSound.PauseFMODSound(gFmodSound.m_pBGMChannel);
 }
 
 void CSpaceScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)

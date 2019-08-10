@@ -11,10 +11,14 @@ public:
 	void PlayFMODSoundLoop(FMOD::Sound *pSound, FMOD::Channel **pChannel);
 	void ResumeFMODSound(FMOD::Channel *pChannel);
 	void PauseFMODSound(FMOD::Channel *pChannel);
+	void StopFMODSound(FMOD::Channel *pChannel);
 
 	FMOD::System* m_pfmodSystem = NULL;
 
-	FMOD::Sound *m_pSoundBGM = NULL;
+	FMOD::Sound *m_pSoundTitleBGM = NULL;
+	FMOD::Sound *m_pSoundLobbyBGM = NULL;
+	FMOD::Sound *m_pSoundColonyBGM = NULL;
+	FMOD::Sound *m_pSoundSpaceBGM = NULL;
 	FMOD::Channel *m_pBGMChannel = NULL;
 
 	FMOD::Sound *m_pSoundGGHit = NULL;

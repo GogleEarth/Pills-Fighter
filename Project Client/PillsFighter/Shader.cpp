@@ -3184,7 +3184,7 @@ void CUserInterface::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 			}
 			else
 			{
-				m_fNotifyElapsedTime = 0.0f;
+				m_fNotifyElapsedTime = fmod(m_fNotifyElapsedTime, m_fNotifyTime[m_nNotifyOrder]);
 				m_nNotifyOrder++;
 			}
 		}
