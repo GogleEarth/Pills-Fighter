@@ -3160,6 +3160,10 @@ void CUserInterface::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 
 		if (m_fNotifyElapsedTime > m_fNotifyTime[m_nNotifyOrder])
 		{
+			if (m_nNotifyOrder == 2)
+			{
+				gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBattleAlert);
+			}
 			if (m_nNotifyOrder == 3)
 			{
 				m_bNotify = false;
