@@ -843,6 +843,8 @@ void CPlayer::ProcessShootAnimation()
 
 		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
+			std::cout << !pGun->IsCoolDown() << ", " << pGun->IsShootable() << "\n";
+
 			if (pGun->IsCoolDown() || !pGun->IsShootable())
 			{
 				if (m_LButtonDown)
@@ -889,6 +891,8 @@ void CPlayer::ProcessShootAnimation()
 		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
 			m_nState &= ~OBJECT_STATE_SHOOTING;
+
+			m_bShootable = false;
 		}
 	}
 
@@ -1017,6 +1021,8 @@ void CPlayer::Attack(CWeapon *pWeapon)
 
 	m_LButtonDown = true;
 
+	if (IsDoingAttack()) return;
+
 	if (pWeapon)
 	{
 		int nType = pWeapon->GetType();
@@ -1025,31 +1031,25 @@ void CPlayer::Attack(CWeapon *pWeapon)
 		{
 			CGun *pGun = (CGun*)pWeapon;
 
-			if (!IsShooting())
+			if (!m_bReloading)
 			{
-				if (!m_bReloading)
-				{
-					pGun->PrepareShot();
-					m_nState |= OBJECT_STATE_SHOOTING;
+				pGun->PrepareShot();
+				m_nState |= OBJECT_STATE_SHOOTING;
 
-					if(IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_START_ONCE, true);
-					else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
+				if (IsDash()) ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_DASH_SHOOT_START_ONCE, true);
+				else ChangeAnimation(ANIMATION_UP, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 
-					if (IsUnderBodyChangeable())
-						ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
-				}
+				if (IsUnderBodyChangeable())
+					ChangeAnimation(ANIMATION_DOWN, 0, ANIMATION_STATE_GM_GUN_SHOOT_START, true);
 			}
 		}
 		else if (nType & WEAPON_TYPE_OF_SWORD)
 		{
-			if (!IsSwording())
-			{
-				m_nState |= OBJECT_STATE_SWORDING;
-				
-				ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
+			m_nState |= OBJECT_STATE_SWORDING;
 
-				m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
-			}
+			ChangeAnimation(ANIMATION_UP, 0, m_nAnimationList[m_nSaberAnimationIndex], true);
+
+			m_nSaberAnimationIndex = (m_nSaberAnimationIndex + 1) % 3;
 		}
 	}
 }
