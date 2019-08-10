@@ -275,7 +275,7 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 				XMFLOAT3 separateCenterMinus = XMFLOAT3(m_xmAABB.Center.x - SEPARATION, m_xmAABB.Center.y - SEPARATION, m_xmAABB.Center.z - SEPARATION);
 				XMFLOAT3 separateCenterPlus = XMFLOAT3(m_xmAABB.Center.x + SEPARATION, 0, m_xmAABB.Center.z + SEPARATION);
 
-				if (m_xmf3Position.y > worldObjectAABBExtent.y - INVASION && m_xmf3Position.y < worldObjectAABBExtent.y) {
+				if (m_xmf3Position.y > worldObjectAABBExtent.y - INVASION_ROOF && m_xmf3Position.y < worldObjectAABBExtent.y) {
 					m_fVelocityY = 0.0f;
 					m_nState |= OBJECT_STATE_ONGROUND;
 					newPosition.y = xmAABB.Center.y + xmAABB.Extents.y ;
