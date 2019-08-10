@@ -1155,48 +1155,57 @@ void CRobotObjectsShader::InsertObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	{
 	case SKINNED_OBJECT_INDEX_GM:
 		pWeapon = new CSword();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_SABER);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_SABER, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_GM_GUN);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_GM_GUN, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_BEAM_SNIPER);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BEAM_SNIPER, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case SKINNED_OBJECT_INDEX_GUNDAM: // 빔사벨, 빔라이플, 바주카
 		pWeapon = new CSword();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_SABER);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_SABER, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_BEAM_RIFLE);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BEAM_RIFLE, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_BAZOOKA);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BZK, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 		break;
 	case SKINNED_OBJECT_INDEX_ZAKU: // 토마호크, 머신건, 바주카
 		pWeapon = new CSword();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_TOMAHAWK);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_TOMAHAWK, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_MACHINEGUN);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_MACHINE_GUN, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);
 
 		pWeapon = new CWeapon();
+		pWeapon->Hide();
 		pWeapon->SetType(WEAPON_TYPE_OF_BAZOOKA);
 		pObjectsShader->InsertObject(pd3dDevice, pd3dCommandList, pWeapon, STANDARD_OBJECT_INDEX_BZK, false, NULL);
 		pRobot->AddWeapon(pd3dDevice, pd3dCommandList, pWeapon);

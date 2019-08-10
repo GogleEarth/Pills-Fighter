@@ -3967,6 +3967,9 @@ void CBattleScene::AddSprite(int nEffect, XMFLOAT3 xmf3Position, int nType, XMFL
 	case SPRITE_EFFECT_INDEX_DESTROY:
 		fSize = (float)(rand() % 200) / 100.0f + SPRITE_EFFECT_DESTROY_SIZE;
 		break;
+	case SPRITE_EFFECT_INDEX_BEAM_HIT:
+		fSize = (float)(rand() % 200) / 100.0f + SPRITE_EFFECT_BEAM_HIT_SIZE;
+		break;
 	}
 
 	m_ppEffectShaders[INDEX_SHADER_SPRITE_EFFECTS]->AddEffect(nEffect, xmf3Position, XMFLOAT2(fSize, fSize), nType, rand() % 360, xmf4Color);
@@ -4206,6 +4209,9 @@ void CBattleScene::CreateEffect(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	case EFFECT_TYPE::EFFECT_TYPE_BEAM_SNIPER:
 		gFmodSound.PlayFMODSound(gFmodSound.m_pSoundBeamRifle);
 		m_ppEffectShaders[INDEX_SHADER_LASER_BEAM_EEFECTS]->AddEffectWithLookV(LASER_EFFECT_INDEX_LASER_BEAM, pCreateEffectInfo->xmf3Position, XMFLOAT2(5.0f, pCreateEffectInfo->fDistance), pCreateEffectInfo->xmf3Look, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		break;
+	case EFFECT_TYPE::EFFECT_TYPE_BEAM_HIT:
+		AddSprite(SPRITE_EFFECT_INDEX_BEAM_HIT, pCreateEffectInfo->xmf3Position, nEffectAniType, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		break;
 	}
 }
