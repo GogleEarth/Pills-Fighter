@@ -30,6 +30,7 @@ public:
 
 	virtual void SetType() {};
 	virtual void SetType(int nType) { m_nType |= nType; };
+	virtual void Reset() {}
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +122,6 @@ protected:
 public:
 	bool IsShootable() { return m_bShootable; }
 	void SetShootable(bool b) { m_bShootable = b; }
-	void ResetReloadedAmmo() { m_nReloadedAmmo = m_nMaxReloadAmmo; }
 
 	virtual int ShootNumber() { return 0; };
 
@@ -131,6 +131,7 @@ public:
 	int ShootedCount() { return m_nShootedCount; }
 	bool IsCoolDown() { return m_bCoolDown; }
 	void PrepareShot() { if(m_bShootable) m_bCoolDown = false; }
+	virtual void Reset();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +164,7 @@ public:
 
 	virtual void CheckShootable(float fElapsedTime);
 	virtual void ResetShootCount();
+	virtual void Reset();
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

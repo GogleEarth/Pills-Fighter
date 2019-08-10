@@ -373,7 +373,7 @@ void CPlayer::RenderWire(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pC
 }
 
 void CPlayer::Update(float fTimeElapsed)
-{
+{	
 	if (!m_bDie)
 	{
 		for (const auto& Weapon : m_vpWeapon) Weapon->Animate(fTimeElapsed, NULL);
@@ -843,8 +843,6 @@ void CPlayer::ProcessShootAnimation()
 
 		if (IsAnimationEnd(ANIMATION_UP, 0))
 		{
-			std::cout << !pGun->IsCoolDown() << ", " << pGun->IsShootable() << "\n";
-
 			if (pGun->IsCoolDown() || !pGun->IsShootable())
 			{
 				if (m_LButtonDown)
@@ -1365,7 +1363,7 @@ void CPlayer::ProcessDie(float fRespawnTime)
 		if (!(Weapon->GetType() & WEAPON_TYPE_OF_GUN)) continue;
 
 		CGun *pGun = (CGun*)Weapon;
-		pGun->ResetReloadedAmmo();
+		pGun->Reset();
 	}
 }
 
