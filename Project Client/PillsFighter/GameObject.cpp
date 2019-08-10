@@ -1191,6 +1191,7 @@ CCursor::~CCursor()
 {
 	if (m_pMesh)
 	{
+		m_pMesh->ReleaseShaderVariables();
 		delete m_pMesh;
 		m_pMesh = NULL;
 	}
@@ -1201,6 +1202,8 @@ CCursor::~CCursor()
 	}
 	if (m_pShader)
 	{
+		m_pShader->ReleaseShaderVariables();
+		m_pShader->ReleaseObjects();
 		delete m_pShader;
 		m_pTexture = NULL;
 	}

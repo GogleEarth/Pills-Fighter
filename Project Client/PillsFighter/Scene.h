@@ -23,9 +23,9 @@ public:
 	virtual ~CScene();
 
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);
-	virtual void ReleaseObjects();
 	virtual void SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, void *pContext) {}
 	virtual void ReleaseUploadBuffers() {}
+	virtual void ReleaseObjects();
 	virtual void ReleaseShaderVariables() {}
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
@@ -143,8 +143,8 @@ public:
 	CUIScene();
 	virtual ~CUIScene();
 
-	virtual void ReleaseObjects();
 	virtual void ReleaseUploadBuffers();
+	virtual void ReleaseObjects();
 
 	virtual int OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
 	virtual void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, CRepository *pRepository);

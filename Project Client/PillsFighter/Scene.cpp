@@ -708,7 +708,10 @@ void CUIScene::ReleaseObjects()
 		for (int i = 0; i < m_nUIRect; i++)
 		{
 			if (m_ppUIRects[i])
+			{
+				m_ppUIRects[i]->ReleaseShaderVariables();
 				delete m_ppUIRects[i];
+			}
 		}
 		delete[] m_ppUIRects;
 		m_ppUIRects = NULL;
@@ -727,6 +730,8 @@ void CUIScene::ReleaseObjects()
 
 	if (m_pLobbyShader)
 	{
+		m_pLobbyShader->ReleaseObjects();
+		m_pLobbyShader->ReleaseShaderVariables();
 		delete m_pLobbyShader;
 		m_pLobbyShader = NULL;
 	}
@@ -2342,6 +2347,7 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 		case VK_SPACE:
 			m_pPlayer->SpaceUp();
 			break;
+		case '¤½':
 		case 'V':
 			m_pPlayer->VUp();
 			break;
@@ -2369,11 +2375,13 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 				m_pPlayer->ChangeWeapon(2);
 				break;
 			case 'R':
+			case '¤¡':
 				m_pPlayer->Reload(m_pPlayer->GetRHWeapon());
 				break;
 			case VK_SPACE:
 				m_pPlayer->ActivationBooster(BOOSTER_TYPE_UP);
 				break;
+			case '¤½':
 			case 'V':
 				m_pPlayer->ActivationBooster(BOOSTER_TYPE_DOWN);
 				break;
@@ -2382,10 +2390,6 @@ int CBattleScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM
 				break;
 			case VK_F1:
 				m_bRenderEdge = !m_bRenderEdge;
-				break;
-			case VK_F4:
-				m_pUserInterface->BattleNotifyEnd(true);
-				m_bGameEnd = true;
 				break;
 			default:
 				break;
