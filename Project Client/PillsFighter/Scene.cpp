@@ -403,7 +403,7 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device *pd3dDevice)
 	pd3dSamplerDescs[2].MaxLOD = D3D12_FLOAT32_MAX;
 	pd3dSamplerDescs[2].ShaderRegister = 2;
 	pd3dSamplerDescs[2].RegisterSpace = 0;
-	pd3dSamplerDescs[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	pd3dSamplerDescs[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT;
 	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc;
@@ -3335,6 +3335,9 @@ void CBattleScene::RenderCubeMap(ID3D12GraphicsCommandList *pd3dCommandList, CGa
 {
 	::TransitionResourceState(pd3dCommandList, m_pd3dEnvirCube, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
+	for(int i = 0; i < 6; i++)
+		pd3dCommandList->ClearRenderTargetView(m_d3dRrvEnvirCubeMapCPUHandle[i], Colors::Black, 0, NULL);
+
 	for (int i = 0; i < 6; i++)
 	{
 		m_pCubeMapCamera[i]->SetPosition(Vector3::Add(pMainObject->GetPosition(), XMFLOAT3(0.0f, 5.0f, 0.0f)));
@@ -3429,6 +3432,9 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	CScene::PrepareRender(pd3dCommandList);
 
+	if (m_pd3dShadowMap) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_SHADOW_MAP, m_d3dSrvShadowMapGPUHandle);
+	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
+
 	UpdateShaderVariables(pd3dCommandList);
 
 	for (int i = 0; i < m_nEffectShaders; i++)
@@ -3441,6 +3447,7 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 	RenderShadowMap(pd3dCommandList);
 
+
 	if (m_nFPSCount % 5 == 0)
 	{
 		RenderCubeMap(pd3dCommandList, m_pPlayer);
@@ -3449,9 +3456,6 @@ void CBattleScene::PrepareRender(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CBattleScene::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_pd3dEnvirCube) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_ENVIRORMENTCUBE, m_d3dSrvEnvirCubeMapGPUHandle);
-	if (m_pd3dShadowMap) pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_SHADOW_MAP, m_d3dSrvShadowMapGPUHandle);
-
 	::TransitionResourceState(pd3dCommandList, m_pd3dOffScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dGlowScreenTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	::TransitionResourceState(pd3dCommandList, m_pd3dScreenNormalTexture, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
