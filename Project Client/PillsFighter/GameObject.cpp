@@ -265,119 +265,32 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 		{
 			if (m_xmAABB.Intersects(xmAABB))
 			{
-				XMFLOAT3 xmf3Min = Vector3::Subtract(m_xmAABB.Center, m_xmAABB.Extents);
-				XMFLOAT3 xmf3Max = Vector3::Add(m_xmAABB.Center, m_xmAABB.Extents);
+				XMFLOAT3 worldObjectPos = pObject->GetPosition();
 
-				XMFLOAT3 xmf3ObjMin = Vector3::Subtract(xmAABB.Center, xmAABB.Extents);
-				XMFLOAT3 xmf3ObjMax = Vector3::Add(xmAABB.Center, xmAABB.Extents);
+				XMFLOAT3 worldObjectAABBExtent = Vector3::Add(xmAABB.Center, xmAABB.Extents);
+				XMFLOAT3 worldObjectAABBReverseExtent = Vector3::Subtract(xmAABB.Center, xmAABB.Extents);
 
-				XMFLOAT3 xmf3Distance = XMFLOAT3(0.0f, 0.0f, 0.0f);
-				XMFLOAT3 xmf3Temp = XMFLOAT3(0.0f, 0.0f, 0.0f);
+				XMFLOAT3 newPosition = m_xmf3Position;
 
-				{
-					if (xmf3Min.x < xmf3ObjMax.x) xmf3Distance.x = xmf3ObjMax.x - xmf3Min.x;
-					if (xmf3Max.x > xmf3ObjMin.x)
-					{
-						xmf3Temp.x = xmf3ObjMin.x - xmf3Max.x;
-						if (fabsf(xmf3Distance.x) > fabsf(xmf3Temp.x)) xmf3Distance.x = xmf3Temp.x;
-					}
-
-					if (xmf3Min.y < xmf3ObjMax.y) xmf3Distance.y = xmf3ObjMax.y - xmf3Min.y;
-					if (xmf3Max.y > xmf3ObjMin.y)
-					{
-						xmf3Temp.y = xmf3ObjMin.y - xmf3Max.y;
-						if (fabsf(xmf3Distance.y) > fabsf(xmf3Temp.y)) xmf3Distance.y = xmf3Temp.y;
-					}
-
-					if (xmf3Min.z < xmf3ObjMax.z) xmf3Distance.z = xmf3ObjMax.z - xmf3Min.z;
-					if (xmf3Max.z > xmf3ObjMin.z)
-					{
-						xmf3Temp.z = xmf3ObjMin.z - xmf3Max.z;
-						if (fabsf(xmf3Distance.z) > fabsf(xmf3Temp.z)) xmf3Distance.z = xmf3Temp.z;
-					}
+				if (m_xmAABB.Center.y - SEPARATION > worldObjectAABBExtent.y - INVASION && m_xmAABB.Center.y - SEPARATION < worldObjectAABBExtent.y) {
+					m_fVelocityY = 0;
+					newPosition.y = xmAABB.Center.y + xmAABB.Extents.y + SEPARATION;
 				}
-
-				xmf3Temp = xmf3Distance;
-
-				XMFLOAT3 xmf3Position = m_xmf3Position;
-
-				if (!IsZero(xmf3Temp.x))
-				{
-					if (!IsZero(xmf3Temp.y))
-					{
-						if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.y))
-						{
-							xmf3Position.x = m_xmf3Position.x;
-							xmf3Distance.x = 0.0f;
-
-							if (!IsZero(xmf3Temp.z))
-							{
-								if (fabsf(xmf3Temp.y) > fabsf(xmf3Temp.z))
-								{
-									xmf3Position.y = m_xmf3Position.y;
-									xmf3Distance.y = 0.0f;
-								}
-								else
-								{
-									xmf3Position.z = m_xmf3Position.z;
-									xmf3Distance.z = 0.0f;
-								}
-							}
-						}
-						else
-						{
-							xmf3Position.y = m_xmf3Position.y;
-							xmf3Distance.y = 0.0f;
-
-							if (!IsZero(xmf3Temp.z))
-							{
-								if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.z))
-								{
-									xmf3Position.x = m_xmf3Position.x;
-									xmf3Distance.x = 0.0f;
-								}
-								else
-								{
-									xmf3Position.z = m_xmf3Position.z;
-									xmf3Distance.z = 0.0f;
-								}
-							}
-						}
-					}
-					else if (!IsZero(xmf3Temp.z))
-					{
-						if (fabsf(xmf3Temp.x) > fabsf(xmf3Temp.z))
-						{
-							xmf3Position.x = m_xmf3Position.x;
-							xmf3Distance.x = 0.0f;
-						}
-						else
-						{
-							xmf3Position.z = m_xmf3Position.z;
-							xmf3Distance.z = 0.0f;
-						}
-					}
+				if (m_xmAABB.Center.x - SEPARATION > worldObjectAABBExtent.x - INVASION && m_xmAABB.Center.x - SEPARATION < worldObjectAABBExtent.x ) {
+					newPosition.x = xmAABB.Center.x + xmAABB.Extents.x + SEPARATION;
 				}
-				else if (!IsZero(xmf3Temp.y))
-				{
-					if (!IsZero(xmf3Temp.z))
-					{
-						if (fabsf(xmf3Temp.y) > fabsf(xmf3Temp.z))
-						{
-							xmf3Position.y = m_xmf3Position.y;
-							xmf3Distance.y = 0.0f;
-						}
-						else
-						{
-							xmf3Position.z = m_xmf3Position.z;
-							xmf3Distance.z = 0.0f;
-						}
-					}
+				if (m_xmAABB.Center.x + SEPARATION < worldObjectAABBReverseExtent.x + INVASION && m_xmAABB.Center.x + SEPARATION > worldObjectAABBReverseExtent.x) {
+					newPosition.x = xmAABB.Center.x - xmAABB.Extents.x - SEPARATION;
 				}
+				if (m_xmAABB.Center.z - SEPARATION > worldObjectAABBExtent.z - INVASION && m_xmAABB.Center.z - SEPARATION < worldObjectAABBExtent.z ) {
+					newPosition.z = xmAABB.Center.z + xmAABB.Extents.z + SEPARATION;
+				}
+				if (m_xmAABB.Center.z + SEPARATION < worldObjectAABBReverseExtent.z + INVASION && m_xmAABB.Center.z + SEPARATION > worldObjectAABBReverseExtent.z ) {
+					newPosition.z = xmAABB.Center.z - xmAABB.Extents.z - SEPARATION;
+				}
+				SetPosition(XMFLOAT3(newPosition.x, newPosition.y, newPosition.z));
 
-				SetPosition(Vector3::Add(xmf3Position, xmf3Distance));
-
-				ProcessMoveToCollision(&m_xmAABB, &xmAABB);
+				//std::cout << "Position: " << m_xmf3Position.x << ", " << m_xmf3Position.y << ", " << m_xmf3Position.z << std::endl;
 			}
 		}
 	}

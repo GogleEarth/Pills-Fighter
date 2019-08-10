@@ -24,6 +24,8 @@ struct MATERIAL
 
 #define WORLD_WIDTH 1000
 #define WORLD_HEIGHT 470
+#define SEPARATION 5
+#define INVASION 6
 
 struct CB_GAMEOBJECT_INFO
 {
@@ -59,6 +61,9 @@ protected:
 	// 이동 속력
 	float m_MovingSpeed;
 	
+	// 중력가속도
+	float				m_fVelocityY = 0.0f;
+
 public:
 	void SetModel(CModel *pModel);
 	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
