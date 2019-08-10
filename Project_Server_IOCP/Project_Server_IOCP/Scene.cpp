@@ -231,7 +231,7 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			Objects_[index].set_speed(speed);
 			XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
 			XMFLOAT3 look = XMFLOAT3{ matrix._31, matrix._32, matrix._33 };
-			position = Vector3::Add(position, Vector3::ScalarProduct(look, 13.0f, false));
+			position = Vector3::Add(position, Vector3::ScalarProduct(look, 11.0f, false));
 			worldmatrix._41 = position.x;
 			worldmatrix._42 = position.y;
 			worldmatrix._43 = position.z;
