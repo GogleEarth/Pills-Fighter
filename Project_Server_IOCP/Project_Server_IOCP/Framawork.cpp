@@ -103,91 +103,101 @@ int Framawork::thread_process()
 			pkt_ti.elapsedtime = elapsed_time;
 			send_packet_to_room_player(key, (char*)&pkt_ti);
 
-			rooms_[key].room_update(elapsed_time);
-
-			while (true)
+			if (!rooms_[key].get_game_end())
 			{
-				auto data = rooms_[key].create_object_dequeue();
-				if (data == nullptr) break;
-				if (data->Object_Type == OBJECT_TYPE_METEOR)
+				rooms_[key].room_update(elapsed_time);
+
+				while (true)
 				{
-					data->Object_Index = rooms_[key].add_object(data->Object_Type, data->WorldMatrix);
-					add_timer(data->Object_Index, key, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+					auto data = rooms_[key].create_object_dequeue();
+					if (data == nullptr) break;
+					if (data->Object_Type == OBJECT_TYPE_METEOR)
+					{
+						data->Object_Index = rooms_[key].add_object(data->Object_Type, data->WorldMatrix);
+						add_timer(data->Object_Index, key, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+					}
+					else if (data->Object_Type == OBJECT_TYPE_ITEM_AMMO || data->Object_Type == OBJECT_TYPE_ITEM_HEALING)
+					{
+						add_timer(data->Object_Index, key, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
+					}
+					send_packet_to_room_player(key, (char*)data);
+					delete data;
 				}
-				else if (data->Object_Type == OBJECT_TYPE_ITEM_AMMO || data->Object_Type == OBJECT_TYPE_ITEM_HEALING)
+
+				while (true)
 				{
-					add_timer(data->Object_Index, key, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
+					auto data = rooms_[key].map_event_dequeue();
+					if (data == nullptr) break;
+					send_packet_to_room_player(key, (char*)data);
+					delete data;
 				}
-				send_packet_to_room_player(key, (char*)data);
-				delete data;
-			}
 
-			while (true)
-			{
-				auto data = rooms_[key].map_event_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-				delete data;
-			}
+				while (true)
+				{
+					auto data = rooms_[key].player_life_dequeue();
+					if (data == nullptr) break;
+					send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
+					delete data;
+				}
 
-			while (true)
-			{
-				auto data = rooms_[key].player_life_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
-				delete data;
-			}
+				while (true)
+				{
+					auto data = rooms_[key].player_die_dequeue();
+					if (data == nullptr) break;
+					send_packet_to_room_player(key, (char*)data);
+					using namespace std;
+					using namespace chrono;
+					add_timer(data->id, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
+					delete data;
+				}
 
-			while (true)
-			{
-				auto data = rooms_[key].player_die_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-				using namespace std;
-				using namespace chrono;
-				add_timer(data->id, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
-				delete data;
-			}
+				while (true)
+				{
+					auto data = rooms_[key].score_dequeue();
+					if (data == nullptr) break;
+					send_packet_to_room_player(key, (char*)data);
 
-			while (true)
-			{
-				auto data = rooms_[key].score_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_room_player(key, (char*)data);
-				delete data;
-			}
+					if (rooms_[key].get_blue_score() <= 0 || rooms_[key].get_red_score() <= 0)
+					{
+						PKT_GAME_END pkt_ge;
+						pkt_ge.PktId = PKT_ID_GAME_END;
+						pkt_ge.PktSize = sizeof(PKT_GAME_END);
+						if (rooms_[key].get_blue_score() <= 0)
+							pkt_ge.WinTeam = 0;
+						else
+							pkt_ge.WinTeam = 1;
 
-			while (true)
-			{
-				auto data = rooms_[key].create_effect_dequeue();
-				if (data == nullptr) break;
-				send_packet_to_player(rooms_[key].get_player(data->id)->get_serverid(), (char*)data);
-				delete data;
-			}
+						rooms_[key].set_game_end(true);
 
-			while (true)
-			{
-				auto data = rooms_[key].item_dequeue();
-				if (data == nullptr) break;
-				if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)
-					data->Item_type = ITEM_TYPE_AMMO;
-				send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
-				delete data;
-			}
+						send_packet_to_room_player(key, (char*)&pkt_ge);
+					}
 
-			if (rooms_[key].get_blue_score() <= 0 || rooms_[key].get_red_score() <= 0)
-			{
-				PKT_GAME_END pkt_ge;
-				pkt_ge.PktId = PKT_ID_GAME_END;
-				pkt_ge.PktSize = sizeof(PKT_GAME_END);
-				if (rooms_[key].get_blue_score() <= 0)
-					pkt_ge.WinTeam = 0;
-				else
-					pkt_ge.WinTeam = 1;
+					delete data;
+				}
 
-				send_packet_to_room_player(key, (char*)&pkt_ge);
+				while (true)
+				{
+					auto data = rooms_[key].create_effect_dequeue();
+					if (data == nullptr) break;
+					if (data->efType == EFFECT_TYPE_BEAM_HIT)
+						send_packet_to_room_player(key, (char*)data);
+					else
+						send_packet_to_player(rooms_[key].get_player(data->id)->get_serverid(), (char*)data);
+					delete data;
+				}
+
+				while (true)
+				{
+					auto data = rooms_[key].item_dequeue();
+					if (data == nullptr) break;
+					if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)
+						data->Item_type = ITEM_TYPE_AMMO;
+					send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
+					delete data;
+				}
 			}
-			else if (rooms_[key].get_num_player_in_room() > 0)
+			
+			if (rooms_[key].get_num_player_in_room() > 0)
 				add_timer(key, key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 			else
 				rooms_[key].init();

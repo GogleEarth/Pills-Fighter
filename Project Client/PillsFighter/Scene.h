@@ -503,7 +503,7 @@ protected:
 #define INDEX_SHADER_FOLLOW_SPRITE_EFFECTS 4
 
 // for lights
-#define MAX_LIGHTS			3
+#define MAX_LIGHTS			7
 #define MAX_MATERIALS		8
 
 #define POINT_LIGHT			1
