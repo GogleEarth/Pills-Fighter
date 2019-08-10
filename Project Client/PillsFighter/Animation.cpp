@@ -287,6 +287,30 @@ CAnimationTrack::~CAnimationTrack()
 
 }
 
+void CAnimationTrack::SetPosition(float fPosition)
+{ 
+	switch (m_pAnimation->GetAnimationType())
+	{
+	case ANIMATION_TYPE_LOOP:
+	{
+
+		m_fPosition = (fPosition) > GetLength() ? 0.0f : fPosition;
+		break;
+	}
+	case ANIMATION_TYPE_ONCE:
+	{
+		m_fPosition = (fPosition) > GetLength() ? GetLength() : fPosition;
+		break;
+	}
+	case ANIMATION_TYPE_PINGPONG:
+	{
+		//m_fAnimationTimePosition = abs(int(fTrackTimePosition / m_fAnimationLength) * m_fAnimationLength - fmod(fTrackTimePosition, m_fAnimationLength));
+		//m_fAnimationTimePosition = m_fAnimationTimePosition > m_fAnimationLength ? 0.0f : m_fAnimationTimePosition;
+		break;
+	}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 

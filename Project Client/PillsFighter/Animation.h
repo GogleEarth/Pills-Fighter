@@ -139,7 +139,7 @@ public:
 	void SetEnable(bool bEnable) { m_bEnable = bEnable; }
 	void SetSpeed(float fSpeed) { m_fSpeed = fSpeed; }
 	void SetWeight(float fWeight) { m_fWeight = fWeight; }
-	void SetPosition(float fPosition) { m_fPosition = fPosition; m_pAnimation->SetTimePosition(fPosition); }
+	void SetPosition(float fPosition);
 	void SetAnimationType(int nType) { m_pAnimation->SetAnimationType(nType); }
 
 	float GetPosition() { return m_fPosition; }
@@ -189,9 +189,9 @@ public:
 
 	int GetTrackAnimationState(int nAnimationTrackIndex) { return m_pAnimationTracks[nAnimationTrackIndex].GetTrackAnimationState(); }
 	CAnimationTrack* GetAnimationTrack(int nAnimationTrackIndex) { return &m_pAnimationTracks[nAnimationTrackIndex]; }
-	float GetAnimationPosition(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(); }
+	float GetAnimationPosition(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetPosition(); }
 	float GetTrackPosition(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetPosition(); }
 	float GetTrackLength(int nAnimationTrack) { return m_pAnimationTracks[nAnimationTrack].GetLength(); }
-	bool IsEndPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(), m_pAnimationTracks[nAnimationTrack].GetLength()); }
-	bool IsStartPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetAnimation()->GetPosition(), 0.0f); }
+	bool IsEndPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetPosition(), m_pAnimationTracks[nAnimationTrack].GetLength()); }
+	bool IsStartPosition(int nAnimationTrack) { return ::IsEqual(m_pAnimationTracks[nAnimationTrack].GetPosition(), 0.0f); }
 };
