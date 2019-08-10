@@ -556,10 +556,12 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 		for (auto& Object : m_pvpObjects[i])
 		{
-			if(nIndex++ == 0)
+			if(nIndex == 0)
 				Object->Render(pd3dCommandList, pCamera, true, false, 1);
 			else
 				Object->Render(pd3dCommandList, pCamera, false, false, 1);
+
+			nIndex++;
 		}
 	}
 }
@@ -1090,6 +1092,23 @@ D3D12_SHADER_BYTECODE CSkinnedObjectsShader::CreateShadowVertexShader(ID3DBlob *
 
 void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
+	CShader::Render(pd3dCommandList, pCamera);
+
+	for (int i = 0; i < m_nObjectGroup; i++)
+	{
+		int nIndex = 0;
+
+		for (auto& Object : m_pvpObjects[i])
+		{
+			if (nIndex == 0)
+				Object->Render(pd3dCommandList, pCamera, true, false, 1);
+			else
+				Object->Render(pd3dCommandList, pCamera, false, false, 1);
+
+			nIndex++;
+		}
+	}
+/*
 	for (int i = 0; i < m_nObjectGroup; i++)
 	{
 		for (auto& Object : m_pvpObjects[i])
@@ -1098,7 +1117,7 @@ void CSkinnedObjectsShader::Render(ID3D12GraphicsCommandList *pd3dCommandList, C
 
 			Object->Render(pd3dCommandList, pCamera, true, false, 1);
 		}
-	}
+	}*/
 }
 
 void CSkinnedObjectsShader::RenderToShadow(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
