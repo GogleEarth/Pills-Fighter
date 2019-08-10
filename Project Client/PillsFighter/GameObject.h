@@ -197,6 +197,7 @@ protected:
 	std::unordered_set<CGameObject*> m_uspHitObjects;
 
 public:
+	bool IsRender() { return m_bRender; }
 	void SetShader(CShader *pShader) { m_pShader = pShader; }
 	void Show() { m_bRender = true; }
 	void Hide() { m_bRender = false; }
