@@ -1006,7 +1006,7 @@ void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_1SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID1, 85);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids2.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_2SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID2, 40);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_2SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID2, 35);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids3_1.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_1, 20);
@@ -1015,7 +1015,7 @@ void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3-1SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_2, 20);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids3_3.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3-2SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_3, 45);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_3-2SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID3_3, 40);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/Astroids4.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_4SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID4, 75);
@@ -1024,7 +1024,7 @@ void CSpaceObstacleShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCo
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_Astroid_5SelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_ASTROID5, 100);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/SpaceShip.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_SpaceShipSelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_SPACESHIP, 1000);
+	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_SpaceShipSelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_SPACESHIP, 100);
 
 	m_vpModels.emplace_back(pRepository->GetModel(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/StarShip_Light.bin", NULL, NULL));
 	InsertObjectFromLoadInfFromBin(pd3dDevice, pd3dCommandList, "./Resource/Buildings/Space/S_StarShipSelfData.bin", INSTANCING_OBJECT_SPACE_INDEX_STARSHIP, 100);
