@@ -2071,7 +2071,7 @@ void CFollowSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCom
 		pEffect = new CFollowSprite(pd3dDevice, pd3dCommandList, 5, 4, 20, 0.5f);
 		pEffect->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-		pEffect->AddVertex(XMFLOAT3(0.0f, -2.0f, 0.0f), XMFLOAT2(2.0f, 2.0f), EFFECT_SPRITE_TYPE_LOOP, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		pEffect->AddVertex(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(3.0f, 3.0f), EFFECT_SPRITE_TYPE_LOOP, 0, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		m_pvpTempEffects[FOLLOW_SPRITE_EFFECT_INDEX_BOOSTER].push(pEffect);
 	}

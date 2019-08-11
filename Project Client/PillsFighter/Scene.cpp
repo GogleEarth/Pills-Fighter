@@ -2569,7 +2569,7 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(50.0f, 0.0f, 0.0f));
 
-	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS]->InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_GM, true, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS]);
+	m_ppShaders[INDEX_SHADER_SKINND_OBJECTS]->InsertObject(pd3dDevice, pd3dCommandList, pObject, SKINNED_OBJECT_INDEX_ZAKU, true, m_ppShaders[INDEX_SHADER_STANDARD_OBJECTS]);
 
 	pObject = new CRobotObject();
 	pObject->SetPosition(XMFLOAT3(-50.0f, 0.0f, 0.0f));

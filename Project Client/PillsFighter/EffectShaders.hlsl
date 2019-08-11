@@ -70,6 +70,7 @@ void GSEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS_EFFEC
 	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
 	vUp = mul(vUp, f3x3Rotate);
 	float3 vRight = normalize(cross(vUp, vLook));
+	vUp = normalize(cross(vRight, vLook));
 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
@@ -245,6 +246,7 @@ void GSFollowEffectDraw(point VS_EFFECT_OUTPUT input[1], inout TriangleStream<GS
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - pos);
 	float3 vRight = normalize(cross(vUp, vLook));
+	vUp = normalize(cross(vRight, vLook));
 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
@@ -388,6 +390,7 @@ void GSSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
 	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
 	vUp = mul(vUp, f3x3Rotate);
 	float3 vRight = normalize(cross(vUp, vLook));
+	vUp = normalize(cross(vRight, vLook));
 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
@@ -462,6 +465,7 @@ void GSFollowSpriteDraw(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS
 	float3 vUp = float3(0.0f, 1.0f, 0.0f);
 	float3 vLook = normalize(gvCameraPosition.xyz - pos);
 	float3 vRight = normalize(cross(vUp, vLook));
+	vUp = normalize(cross(vRight, vLook));
 
 	float fHalfW = input[0].size.x;
 	float fHalfH = input[0].size.y;
@@ -668,6 +672,7 @@ void GSParticleDraw(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_P
 	float3x3 f3x3Rotate = RotateAxis(vLook, input[0].angle);
 	vUp = mul(vUp, f3x3Rotate);
 	float3 vRight = normalize(cross(vUp, vLook));
+	vUp = normalize(cross(vRight, vLook));
 
 	float fHalfWidth = 0.5f * input[0].size.x;
 	float fHalfHeight = 0.5f * input[0].size.y;
