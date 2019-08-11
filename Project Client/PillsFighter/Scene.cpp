@@ -19,6 +19,7 @@ int								CScene::m_nPlayerRobotType = SELECT_CHARACTER_GM;
 int								CScene::m_nMyTeam = TEAM_TYPE::TEAM_TYPE_RED;
 wchar_t							CScene::m_pwstrMyName[10] = L"";
 bool							CScene::m_bInitName = false;
+int								CScene::m_nCurrentScene = SCENE_TYPE_TITLE;
 
 extern CFMODSound gFmodSound;
 
@@ -3640,9 +3641,8 @@ void CBattleScene::Combine(ID3D12GraphicsCommandList *pd3dCommandList, int nWidt
 
 void CBattleScene::RenderUI(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	if (m_pMinimapShader) m_pMinimapShader->Render(pd3dCommandList, NULL);
-
 	if (m_pUserInterface) m_pUserInterface->Render(pd3dCommandList, NULL);
+	if (m_pMinimapShader) m_pMinimapShader->Render(pd3dCommandList, NULL);
 
 	CScene::RenderUI(pd3dCommandList);
 }

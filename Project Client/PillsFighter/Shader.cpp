@@ -3197,7 +3197,11 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	m_ppTextures = new CTexture*[m_nTextures];
 
 	m_ppTextures[UI_TEXTURE_BASE] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
-	m_ppTextures[UI_TEXTURE_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI.dds", 0);
+
+	if(CScene::GetMyTeam() == TEAM_TYPE::TEAM_TYPE_RED)
+		m_ppTextures[UI_TEXTURE_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI_Red.dds", 0);
+	else
+		m_ppTextures[UI_TEXTURE_BASE]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/UI/Base_UI_Blue.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[UI_TEXTURE_BASE], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
 	m_ppTextures[UI_TEXTURE_HP] = new CTexture(1, RESOURCE_TEXTURE2D, 0);
@@ -3447,23 +3451,6 @@ void CUserInterface::BattleNotifyEnd(bool bWin)
 
 void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera)
 {
-	if (m_bGameEnd)
-	{
-		if (m_pd3dPipelineStateCustomUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateCustomUI);
-
-		XMFLOAT2 xmf2Scale(2.0f, 2.0f);
-		UpdateCustomUIShaderVariable(pd3dCommandList, xmf2Scale);
-
-		if (m_bWin)
-			m_ppTextures[UI_TEXTURE_TEXT_WIN]->UpdateShaderVariables(pd3dCommandList);
-		else
-			m_ppTextures[UI_TEXTURE_TEXT_LOSE]->UpdateShaderVariables(pd3dCommandList);
-
-		m_ppUIRects[UI_RECT_BATTLE_NOTIFY]->Render(pd3dCommandList, 0);
-
-		return;
-	}
-
 	m_nTimeInfoIndex = 0;
 
 	if (m_vpd3dTeamNameTexture.size() > 0) pd3dCommandList->SetPipelineState(m_pd3dPipelineState3DUI);
@@ -3480,6 +3467,47 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 
 		pd3dCommandList->SetGraphicsRootDescriptorTable(ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, m_vd3dTeamNameTextureSRVGPUHandle[i]);
 		m_vpTeamNameRect[i]->Render(pd3dCommandList, 1);
+	}
+
+	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
+
+	if (m_bZoomIn)
+	{
+		if (m_ppTextures[UI_TEXTURE_SCOPE])
+		{
+			m_ppTextures[UI_TEXTURE_SCOPE]->UpdateShaderVariables(pd3dCommandList);
+			m_ppUIRects[UI_RECT_SCOPE]->Render(pd3dCommandList, 0);
+		}
+	}
+
+	if (m_ppTextures[UI_TEXTURE_BASE])
+	{
+		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
+	}
+
+	// Draw Team HP Base
+	for (int i = 0; i < m_vppTeamObject.size(); i++)
+	{
+		if (!(*m_vppTeamObject[i])) continue;
+
+		m_ppTextures[UI_TEXTURE_TEAM_HP_BASE]->UpdateShaderVariables(pd3dCommandList);
+		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
+	}
+
+	if (m_bGameEnd)
+	{
+		if (m_pd3dPipelineStateCustomUI) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateCustomUI);
+
+		XMFLOAT2 xmf2Scale(2.0f, 2.0f);
+		UpdateCustomUIShaderVariable(pd3dCommandList, xmf2Scale);
+
+		if (m_bWin)
+			m_ppTextures[UI_TEXTURE_TEXT_WIN]->UpdateShaderVariables(pd3dCommandList);
+		else
+			m_ppTextures[UI_TEXTURE_TEXT_LOSE]->UpdateShaderVariables(pd3dCommandList);
+
+		m_ppUIRects[UI_RECT_BATTLE_NOTIFY]->Render(pd3dCommandList, 0);
 	}
 
 	// Draw Team HP or Respwan
@@ -3542,32 +3570,6 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 
 	// Draw Base UI
-	if (m_pd3dPipelineState) pd3dCommandList->SetPipelineState(m_pd3dPipelineState);
-
-	if (m_ppTextures[UI_TEXTURE_BASE])
-	{
-		m_ppTextures[UI_TEXTURE_BASE]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_BASE]->Render(pd3dCommandList, 0);
-	}
-
-	if (m_bZoomIn)
-	{
-		if (m_ppTextures[UI_TEXTURE_SCOPE])
-		{
-			m_ppTextures[UI_TEXTURE_SCOPE]->UpdateShaderVariables(pd3dCommandList);
-			m_ppUIRects[UI_RECT_SCOPE]->Render(pd3dCommandList, 0);
-		}
-	}
-
-	// Draw Team HP Base
-	for(int i = 0; i < m_vppTeamObject.size(); i++)
-	{
-		if (!(*m_vppTeamObject[i])) continue;
-
-		m_ppTextures[UI_TEXTURE_TEAM_HP_BASE]->UpdateShaderVariables(pd3dCommandList);
-		m_ppUIRects[UI_RECT_TEAM_HP_1 + i]->Render(pd3dCommandList, 0);
-	}
-
 	// Draw HP BAR
 	if (m_pd3dPipelineStateBar) pd3dCommandList->SetPipelineState(m_pd3dPipelineStateBar);
 	UpdateShaderVariables(pd3dCommandList, m_pd3dcbPlayerHP, m_pcbMappedPlayerHP, m_pPlayer->GetMaxHitPoint(), m_pPlayer->GetHitPoint());

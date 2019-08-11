@@ -133,6 +133,7 @@ protected:
 	static int m_nMyTeam;
 	static wchar_t m_pwstrMyName[10];
 	static bool	m_bInitName;
+	static int m_nCurrentScene;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
