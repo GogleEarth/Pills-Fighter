@@ -324,7 +324,7 @@ int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix, int id)
 	}
 	if (type == OBJECT_TYPE_SABER)
 	{
-		hp = 15;
+		hp = 25;
 		lifetime = 0.0f;
 		speed = 0.0f;
 	}
@@ -348,14 +348,14 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	OBJECT_TYPE type;
 	if (weapon == WEAPON_TYPE_MACHINE_GUN)
 	{
-		hp = 3;
+		hp = 10;
 		life_time = 1.5f;
 		speed = 1200.0f;
 		type = OBJECT_TYPE_MACHINE_BULLET;
 	}
 	else if (weapon == WEAPON_TYPE_BAZOOKA)
 	{
-		hp = 15;
+		hp = 35;
 		life_time = 2.5f;
 		speed = 800.0f;
 		type = OBJECT_TYPE_BZK_BULLET;
@@ -384,7 +384,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	EFFECT_TYPE eftype;
 	if (weapon == WEAPON_TYPE_BEAM_RIFLE)
 	{
-		hp = 21;
+		hp = 25;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
@@ -393,7 +393,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	}
 	else if (weapon == WEAPON_TYPE_GM_GUN)
 	{
-		hp = 5;
+		hp = 4;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
