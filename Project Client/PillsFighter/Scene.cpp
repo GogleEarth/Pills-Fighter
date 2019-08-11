@@ -902,10 +902,14 @@ int CTitleScene::MouseClick()
 			char strIP[32];
 			::ZeroMemory(strIP, sizeof(strIP));
 
+			FILE *file;
+			fopen_s(&file, "Server.txt", "r");
+			fscanf(file, "%s", strIP);
+
 			SOCKADDR_IN serveraddr;
 			ZeroMemory(&serveraddr, sizeof(serveraddr));
 			serveraddr.sin_family = AF_INET;
-			serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
+			serveraddr.sin_addr.s_addr = inet_addr(strIP);
 			serveraddr.sin_port = htons(SERVERPORT);
 
 			if (connect(gSocket, (SOCKADDR *)&serveraddr, sizeof(serveraddr)) == SOCKET_ERROR)
