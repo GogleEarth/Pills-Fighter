@@ -771,15 +771,15 @@ void CGameFramework::WaitForGpuComplete()
 
 void CGameFramework::FrameAdvance()
 {
+	m_GameTimer.Tick(60.0f);
+	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
+
 #ifdef ON_NETWORKING
-	if (m_pPlayer /*&& m_bSend_Complete*/)
+	if (m_pPlayer)
 	{
 		if (IsZero(m_fElapsedTime)) return;
 		SendToServer();
 	}
-#else
-	m_GameTimer.Tick(60.0f);
-	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 #endif
 	
 	ProcessInput();
@@ -945,7 +945,7 @@ void CGameFramework::ProcessPacket()
 	{
 		PKT_TIME_INFO *pPacket = (PKT_TIME_INFO*)m_pPacketBuffer;
 
-		m_fElapsedTime += pPacket->elapsedtime;
+		//m_fElapsedTime += pPacket->elapsedtime;
 		break;
 	}
 	case PKT_ID_PLAYER_LIFE:
