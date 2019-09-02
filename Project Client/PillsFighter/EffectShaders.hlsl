@@ -694,7 +694,7 @@ void GSParticleDraw(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_P
 	}
 }
 
-PS_EFFECT_OUTPUT PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET1
+PS_EFFECT_OUTPUT PSParticleDraw(GS_PARTICLE_OUTPUT input) : SV_TARGET
 {
 	PS_EFFECT_OUTPUT output;
 	output.color = output.glow = gtxtTexture[0].Sample(gssWrap, input.uv)* input.color;

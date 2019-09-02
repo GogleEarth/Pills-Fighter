@@ -138,10 +138,10 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 	int nSamples = 0;
 	for (int i = 1; i < SAMPLES; ++i, texcoord -= du)
 	{
-		if (texcoord.x >= 0.9999f) break;
-		if (texcoord.y >= 0.9999f) break;
-		if (texcoord.x <= 0.0001f) break;
-		if (texcoord.y <= 0.0001f) break;
+		if (texcoord.x >= 1.0f) break;
+		if (texcoord.y >= 1.0f) break;
+		if (texcoord.x <= 0.0f) break;
+		if (texcoord.y <= 0.0f) break;
 
 		int2 nIndex = int2(texcoord.x * gnWidth, texcoord.y * gnHeight);
 

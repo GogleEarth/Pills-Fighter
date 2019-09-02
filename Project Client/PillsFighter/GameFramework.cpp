@@ -71,7 +71,6 @@ bool CGameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	::SetCapture(hMainWnd);
 	::GetCursorPos(&m_ptOldCursorPos);
 
-
 	return(true);
 }
 
