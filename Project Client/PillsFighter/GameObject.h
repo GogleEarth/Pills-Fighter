@@ -24,9 +24,9 @@ struct MATERIAL
 
 #define WORLD_WIDTH 1000
 #define WORLD_HEIGHT 470
-#define SEPARATION 5
+#define SEPARATION 3
 #define INVASION_ROOF 20
-#define INVASION 6
+#define INVASION 3
 
 struct CB_GAMEOBJECT_INFO
 {

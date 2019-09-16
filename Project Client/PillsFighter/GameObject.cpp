@@ -265,6 +265,7 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 		{
 			if (m_xmAABB.Intersects(xmAABB))
 			{
+
 				XMFLOAT3 worldObjectPos = pObject->GetPosition();
 
 				XMFLOAT3 worldObjectAABBExtent = Vector3::Add(xmAABB.Center, xmAABB.Extents);
@@ -281,18 +282,18 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 					newPosition.y = xmAABB.Center.y + xmAABB.Extents.y ;
 				}
 				if (separateCenterMinus.x > worldObjectAABBExtent.x - INVASION && separateCenterMinus.x < worldObjectAABBExtent.x ) {
-					newPosition.x = xmAABB.Center.x + xmAABB.Extents.x + SEPARATION;
+					newPosition.x = worldObjectAABBExtent.x + SEPARATION;
 				}
 				if (separateCenterPlus.x < worldObjectAABBReverseExtent.x + INVASION && separateCenterPlus.x > worldObjectAABBReverseExtent.x) {
-					newPosition.x = xmAABB.Center.x - xmAABB.Extents.x - SEPARATION;
+					newPosition.x = worldObjectAABBReverseExtent.x - SEPARATION;
 				}
 				if (separateCenterMinus.z > worldObjectAABBExtent.z - INVASION && separateCenterMinus.z < worldObjectAABBExtent.z ) {
-					newPosition.z = xmAABB.Center.z + xmAABB.Extents.z + SEPARATION;
+					newPosition.z = worldObjectAABBExtent.z + SEPARATION;
 				}
 				if (separateCenterPlus.z < worldObjectAABBReverseExtent.z + INVASION && separateCenterPlus.z > worldObjectAABBReverseExtent.z ) {
-					newPosition.z = xmAABB.Center.z - xmAABB.Extents.z - SEPARATION;
+					newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION;
 				}
-				SetPosition(XMFLOAT3(newPosition.x, newPosition.y, newPosition.z));
+				SetPosition(newPosition);
 
 				//std::cout << "Position: " << m_xmf3Position.x << ", " << m_xmf3Position.y << ", " << m_xmf3Position.z << std::endl;
 			}
