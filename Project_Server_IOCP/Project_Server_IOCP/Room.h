@@ -61,18 +61,26 @@ public:
 
 	inline bool get_is_use() { return in_use_; }
 	inline void set_is_use(bool use) { in_use_ = use; };
+
 	inline void set_map(int map) { using_scene_ = map; }
 	inline int get_map() { return using_scene_; }
+
 	inline void set_blue_score(char score) { blue_score_ = score; }
 	inline char get_blue_score() { return scenes_[using_scene_]->get_blue_score(); }
+
 	inline void set_red_score(char score) { red_score_ = score; }
 	inline char get_red_score() { return scenes_[using_scene_]->get_red_score(); }
+
 	inline Player* get_players() { return players_; }
 	inline bool get_playing() { return is_playing_; }
+
 	inline GameObject* get_object(int id) { return scenes_[using_scene_]->get_object(id); }
+
 	void set_player_slot(int id, char slot);
 	inline char get_player_slot(int id) { return players_[id].get_slot(); }
+
 	inline char get_player_team(int id) { return players_[id].get_team(); }
+
 	inline void set_game_end(bool end) { game_end_ = end; }
 	inline bool get_game_end() { return game_end_; }
 
@@ -86,12 +94,13 @@ public:
 	XMFLOAT3 get_respawn_point(int id);
 	XMFLOAT4X4 get_player_worldmatrix(int id);
 	XMFLOAT4X4 make_matrix();
+
 	void set_player_worldmatrix(int id, XMFLOAT4X4 matrix);
 	void set_player_is_play(int id, bool play);
 	void set_object_id(int id);
 
 	int get_num_player_in_room();
-	void init(CRepository* repository);
+	void init(Repository* repository);
 	void init();
 	void end_game();
 	bool search_client(SOCKET client);

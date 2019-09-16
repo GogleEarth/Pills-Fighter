@@ -1,53 +1,46 @@
 #pragma once
 
-class CMesh
+class Mesh
 {
 protected:
-	UINT							m_nVertices = 0;
+	UINT vertices_ = 0;
 
-	XMFLOAT3						*m_pxmf3Positions = NULL;
-	XMFLOAT4						*m_pxmf4Colors = NULL;
-	XMFLOAT3						*m_pxmf3Normals = NULL;
-	XMFLOAT3						*m_pxmf3Tangents = NULL;
-	XMFLOAT3						*m_pxmf3Binormals = NULL;
-	XMFLOAT2						*m_pxmf2TextureCoords0 = NULL;
-	XMFLOAT2						*m_pxmf2TextureCoords1 = NULL;
-	int								*m_pnMaterialIndices = NULL;
+	XMFLOAT3* positions_ = NULL;
 
-	int								m_nSubMeshes = 0;
-	int								*m_pnSubSetIndices = NULL;
-	UINT							**m_ppnSubSetIndices = NULL;
+	int submeshes_ = 0;
+	int* subsetindices_ = NULL;
+	UINT** subsetindices_array_ = NULL;
 
-	char							m_pstrName[64] = { 0 };
-	int								m_nType = 0x00;
+	char name_[64] = { 0 };
+	int type_ = 0x00;
 
 public:
-	CMesh();
-	virtual ~CMesh();
+	Mesh();
+	virtual ~Mesh();
 
-	BoundingBox m_xmAABB;
-	void SetAABB(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { m_xmAABB = BoundingBox(xmCenter, xmExtents); }
-	void SetAABB(BoundingBox xmAABB) { m_xmAABB = xmAABB; }
-	XMFLOAT3& GetExtents() { return m_xmAABB.Extents; }
-	XMFLOAT3& GetCenter() { return m_xmAABB.Center; }
+	BoundingBox aabbs_;
+	void set_aabb(XMFLOAT3& xmCenter, XMFLOAT3& xmExtents) { aabbs_ = BoundingBox(xmCenter, xmExtents); }
+	void set_aabb(BoundingBox xmAABB) { aabbs_ = xmAABB; }
+	XMFLOAT3& get_extents() { return aabbs_.Extents; }
+	XMFLOAT3& get_center() { return aabbs_.Center; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CCubeMesh : public CMesh
+class Cube_mesh : public Mesh
 {
 public:
-	CCubeMesh(XMFLOAT3 xmf3Center, XMFLOAT3 xmf3Extents);
-	virtual ~CCubeMesh();
+	Cube_mesh(XMFLOAT3 xmf3Center, XMFLOAT3 xmf3Extents);
+	~Cube_mesh();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CStandardMesh : public CMesh
+class Standard_mesh : public Mesh
 {
 public:
-	CStandardMesh();
-	virtual ~CStandardMesh();
+	Standard_mesh();
+	~Standard_mesh();
 
-	void LoadMeshFromFile(FILE *pfile);
+	void load_mesh_from_file(FILE *file);
 };

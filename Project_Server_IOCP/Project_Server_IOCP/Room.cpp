@@ -200,7 +200,7 @@ int Room::get_num_player_in_room()
 	return num;
 }
 
-void Room::init(CRepository* repository)
+void Room::init(Repository* repository)
 {
 	in_use_ = false;
 	is_playing_ = false;
@@ -210,9 +210,9 @@ void Room::init(CRepository* repository)
 	red_score_ = 0;
 
 	GroundScene* groundscene = new GroundScene();
-	groundscene->BuildObjects(repository);
+	groundscene->build_objects(repository);
 	SpaceScene* spacescene = new SpaceScene();
-	spacescene->BuildObjects(repository);
+	spacescene->build_objects(repository);
 
 	scenes_[0] = groundscene;
 	scenes_[1] = spacescene;
@@ -328,13 +328,12 @@ int Room::add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix, int id)
 		lifetime = 0.0f;
 		speed = 0.0f;
 	}
-	return scenes_[using_scene_]->AddObject(type, hp, lifetime, speed, matrix, id);
+	return scenes_[using_scene_]->add_object(type, hp, lifetime, speed, matrix, id);
 }
 
 void Room::set_player_lobby_info(int id, char selectedrobot, char team, char slot)
 {
 	players_[id].set_robot(selectedrobot);
-	//players_[id].set_team(team);
 	slots_[players_[id].get_slot()] = false;
 	players_[id].set_slot(slot);
 	slots_[slot] = true;
@@ -367,7 +366,7 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	pkt_co->Robot_Type = ROBOT_TYPE_GM;
 	pkt_co->WorldMatrix = matrix;
 	pkt_co->Object_Type = type;
-	pkt_co->Object_Index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix, id);
+	pkt_co->Object_Index = scenes_[using_scene_]->add_object(type, hp, life_time, speed, matrix, id);
 
 	return pkt_co;
 }
@@ -419,7 +418,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	pkt_ce->xmf3Position = position;
 	pkt_ce->fDistance = length;
 
-	*index = scenes_[using_scene_]->AddObject(type, hp, life_time, speed, matrix, id);
+	*index = scenes_[using_scene_]->add_object(type, hp, life_time, speed, matrix, id);
 
 	return pkt_ce;
 }
@@ -507,9 +506,7 @@ void Room::room_update(float elapsed_time)
 	spawn_healing_item();
 	spawn_ammo_item();
 
-	scenes_[using_scene_]->AnimateObjects(elapsed_time);
-
-	//std::cout << scenes_[using_scene_]->get_elapsed_game_time() << "ÃÊ Áö³²\n";
+	scenes_[using_scene_]->animate_objects(elapsed_time);
 
 	if (using_scene_ == COLONY)
 	{
@@ -576,7 +573,7 @@ void Room::room_update(float elapsed_time)
 
 		if (scenes_[using_scene_]->get_is_being_event())
 		{
-			scenes_[using_scene_]->SceneEvent(elapsed_time);
+			scenes_[using_scene_]->scene_event(elapsed_time);
 			if (((SpaceScene*)scenes_[using_scene_])->get_meteor_cooltime_duration() >= ((SpaceScene*)scenes_[using_scene_])->get_meteor_cooltime())
 			{
 				((SpaceScene*)scenes_[using_scene_])->init_meteor_cooltime_duration();
@@ -616,7 +613,7 @@ void Room::spawn_healing_item()
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
 		pkt_co->WorldMatrix = matrix;
 		pkt_co->Object_Type = OBJECT_TYPE_ITEM_HEALING;
-		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(OBJECT_TYPE_ITEM_HEALING, hp, 0.0f, 0.0f, matrix);
+		pkt_co->Object_Index = scenes_[using_scene_]->add_object(OBJECT_TYPE_ITEM_HEALING, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
 	}
@@ -634,7 +631,7 @@ void Room::spawn_ammo_item()
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
 		pkt_co->WorldMatrix = matrix;
 		pkt_co->Object_Type = OBJECT_TYPE_ITEM_AMMO;
-		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(OBJECT_TYPE_ITEM_AMMO_1, hp, 0.0f, 0.0f, matrix);
+		pkt_co->Object_Index = scenes_[using_scene_]->add_object(OBJECT_TYPE_ITEM_AMMO_1, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
 	}
@@ -649,7 +646,7 @@ void Room::spawn_ammo_item()
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
 		pkt_co->WorldMatrix = matrix;
 		pkt_co->Object_Type = OBJECT_TYPE_ITEM_AMMO;
-		pkt_co->Object_Index = scenes_[using_scene_]->AddObject(OBJECT_TYPE_ITEM_AMMO_2, hp, 0.0f, 0.0f, matrix);
+		pkt_co->Object_Index = scenes_[using_scene_]->add_object(OBJECT_TYPE_ITEM_AMMO_2, hp, 0.0f, 0.0f, matrix);
 
 		create_object_queue_.push(pkt_co);
 	}
@@ -682,7 +679,7 @@ void Room::check_collision_obstacles(int object)
 {
 	if (scenes_[using_scene_]->check_collision_obstacles(object))
 	{
-		scenes_[using_scene_]->deleteObject(object);
+		scenes_[using_scene_]->delete_object(object);
 	}
 }
 
@@ -690,7 +687,7 @@ void Room::check_collision_player(int object)
 {
 	if (scenes_[using_scene_]->check_collision_player(object))
 	{
-		scenes_[using_scene_]->deleteObject(object);
+		scenes_[using_scene_]->delete_object(object);
 	}
 }
 
@@ -698,7 +695,7 @@ void Room::check_saber_collision_player(int object)
 {
 	if (scenes_[using_scene_]->check_saber_collision_player(object))
 	{
-		scenes_[using_scene_]->deleteObject(object);
+		scenes_[using_scene_]->delete_object(object);
 	}
 }
 
@@ -706,7 +703,7 @@ void Room::check_collision_player_to_vector(int object, float len, float* dis)
 {
 	if (scenes_[using_scene_]->check_collision_player_to_vector(object, len, dis))
 	{
-		scenes_[using_scene_]->deleteObject(object);
+		scenes_[using_scene_]->delete_object(object);
 	}
 }
 

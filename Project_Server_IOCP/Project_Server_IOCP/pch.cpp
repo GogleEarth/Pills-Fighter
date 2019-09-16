@@ -7,7 +7,7 @@
 // 일반적으로 이 파일을 무시하지만 미리 컴파일된 헤더를 사용하는 경우 유지합니다.
 
 
-std::string GetFileName(const std::string strFileName)
+std::string get_file_name(const std::string strFileName)
 {
 	std::string strPathSeparator("\\");
 	std::string strSuffixSeparator(".");

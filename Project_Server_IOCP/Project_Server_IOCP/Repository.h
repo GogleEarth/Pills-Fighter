@@ -3,16 +3,14 @@
 #include"Model.h"
 
 
-class CRepository
+class Repository
 {
+	std::vector<Model*> models;
 public:
-	CRepository();
-	virtual ~CRepository();
+	Repository();
+	~Repository();
 
-	CModel* GetModel(char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName);
-
-protected:
-	std::vector<CModel*> m_vModels;
+	Model* get_model(char *file_name);
 };
 
 
