@@ -2,35 +2,35 @@
 #include "Repository.h"
 
 
-CRepository::CRepository()
+Repository::Repository()
 {
 }
 
-CRepository::~CRepository()
+Repository::~Repository()
 {
-	if (m_vModels.size())
+	if (models.size())
 	{
-		for (auto& Model = m_vModels.begin(); Model != m_vModels.end();)
+		for (auto& Model = models.begin(); Model != models.end();)
 		{
-			(*Model)->Release();
-			Model = m_vModels.erase(Model);
+			(*Model)->release();
+			Model = models.erase(Model);
 		}
 	}
 }
 
-CModel* CRepository::GetModel(char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName)
+Model* Repository::get_model(char* file_name)
 {
-	for (const auto& Model : m_vModels)
+	for (const auto& Model : models)
 	{
-		if (!strcmp(Model->GetFileName(), pstrFileName))
+		if (!strcmp(Model->get_file_name(), file_name))
 		{
 			return Model;
 		}
 	}
 
-	CModel *pModel = CModel::LoadGeometryAndAnimationFromFile(pstrFileName, pstrUpperAniFileName, pstrUnderAniFileName);
-	pModel->AddRef();
-	m_vModels.emplace_back(pModel);
+	Model *pModel = Model::load_geometry_and_animation_from_file(file_name);
+	pModel->add_ref();
+	models.emplace_back(pModel);
 
 	return pModel;
 }

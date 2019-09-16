@@ -12,85 +12,85 @@ Scene::~Scene()
 {
 }
 
-void Scene::AnimateObjects(float fTimeElapsed)
+void Scene::animate_objects(float time_elapsed)
 {
-	elapsed_game_time_ += fTimeElapsed;
+	elapsed_game_time_ += time_elapsed;
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		Objects_[i].Animate(fTimeElapsed, 0);
+		Objects_[i].animate(time_elapsed, 0);
 	}
 }
 
-void Scene::InsertObjectFromLoadInfFromBin(char * pstrFileName, int nGroup)
+void Scene::inert_objects_from_file(char* file_name, int group)
 {
-	GameObject *pObject = new GameObject();
+	GameObject *object = new GameObject();
 
-	FILE *pInFile = NULL;
-	::fopen_s(&pInFile, pstrFileName, "rb");
-	if (!pInFile) {
+	FILE *file = NULL;
+	::fopen_s(&file, file_name, "rb");
+	if (!file) {
 		std::cout << "lose bin file" << std::endl;
 	}
-	::rewind(pInFile);
+	::rewind(file);
 
-	char pstrToken[64] = { '\0' };
-	UINT nReads = 0;
-	float loadedToken = 0;
+	char token[64] = { '\0' };
+	UINT reads = 0;
+	float loaded_token = 0;
 	UINT cycle = 0;
-	XMFLOAT3 posLoader = XMFLOAT3(0, 0, 0);
-	XMFLOAT3 rotLoader = XMFLOAT3(0, 0, 0);
+	XMFLOAT3 pos_loader = XMFLOAT3(0, 0, 0);
+	XMFLOAT3 rot_loader = XMFLOAT3(0, 0, 0);
 
-	while (feof(pInFile) == 0)
+	while (feof(file) == 0)
 	{
-		ReadPosrotFromFile(pInFile, pstrToken);
+		read_posrot_from_file(file, token);
 
-		if (!strcmp(pstrToken, "m_value"))
+		if (!strcmp(token, "m_value"))
 		{
 			switch (cycle) {
 			case 0:
-				nReads = LeftByteFromFile(pInFile, 2);
-				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1);
-				posLoader.x = loadedToken;
+				reads = left_byte_from_file(file, 2);
+				loaded_token = read_float_from_file(file);
+				reads = left_byte_from_file(file, 1);
+				pos_loader.x = loaded_token;
 				++cycle;
 				break;
 			case 1:
-				nReads = LeftByteFromFile(pInFile, 2);
-				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1);
-				posLoader.y = loadedToken;
+				reads = left_byte_from_file(file, 2);
+				loaded_token = read_float_from_file(file);
+				reads = left_byte_from_file(file, 1);
+				pos_loader.y = loaded_token;
 				++cycle;
 				break;
 			case 2:
-				nReads = LeftByteFromFile(pInFile, 2);
-				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1);
-				posLoader.z = loadedToken;
+				reads = left_byte_from_file(file, 2);
+				loaded_token = read_float_from_file(file);
+				reads = left_byte_from_file(file, 1);
+				pos_loader.z = loaded_token;
 				++cycle;
 				break;
 			case 3:
-				nReads = LeftByteFromFile(pInFile, 2);
-				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1);
-				rotLoader.x = loadedToken;
+				reads = left_byte_from_file(file, 2);
+				loaded_token = read_float_from_file(file);
+				reads = left_byte_from_file(file, 1);
+				rot_loader.x = loaded_token;
 				++cycle;
 				break;
 			case 4:
-				nReads = LeftByteFromFile(pInFile, 2);
-				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1);
-				rotLoader.y = loadedToken;
+				reads = left_byte_from_file(file, 2);
+				loaded_token = read_float_from_file(file);
+				reads = left_byte_from_file(file, 1);
+				rot_loader.y = loaded_token;
 				++cycle;
 				break;
 			case 5:
-				nReads = LeftByteFromFile(pInFile, 2);
-				loadedToken = ReadFloatFromFile(pInFile);
-				nReads = LeftByteFromFile(pInFile, 1);
-				rotLoader.z = loadedToken;
-				pObject = new GameObject();
-				pObject->SetPosition(posLoader);
-				pObject->SetPrepareRotate(rotLoader.x, rotLoader.y, rotLoader.z);
-				InsertObject(pObject, nGroup, true, NULL);
+				reads = left_byte_from_file(file, 2);
+				loaded_token = read_float_from_file(file);
+				reads = left_byte_from_file(file, 1);
+				rot_loader.z = loaded_token;
+				object = new GameObject();
+				object->set_position(pos_loader);
+				object->set_prepare_rotate(rot_loader.x, rot_loader.y, rot_loader.z);
+				insert_object(object, group, true, NULL);
 				cycle = 0;
 				break;
 			}
@@ -103,40 +103,40 @@ void Scene::InsertObjectFromLoadInfFromBin(char * pstrFileName, int nGroup)
 	}
 }
 
-void Scene::init(CRepository * pRepository)
+void Scene::init(Repository * repository)
 {
-	robot_mesh_ = pRepository->GetModel("./Resource/PlayerCollisionBox.bin", NULL, NULL);
-	bullet_mesh_ = pRepository->GetModel("./Resource/Bullet/Bullet.bin", NULL, NULL);
-	saber_mesh_ = pRepository->GetModel("./Resource/SaberCollisionBox.bin", NULL, NULL);
+	robot_mesh_ = repository->get_model("./Resource/PlayerCollisionBox.bin");
+	bullet_mesh_ = repository->get_model("./Resource/Bullet/Bullet.bin");
+	saber_mesh_ = repository->get_model("./Resource/SaberCollisionBox.bin");
 
 	for (int i = 0; i < MAX_NUM_OBJECT; ++i)
 	{
-		Objects_[i].SetUse(false);
+		Objects_[i].set_use(false);
 	}
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		Objects_[i].SetObjectType(OBJECT_TYPE_PLAYER);
-		Objects_[i].SetId(i);
-		Objects_[i].SetModel(robot_mesh_);
-		Objects_[i].SetMaxHitPoint(PLAYER_HP);
-		Objects_[i].SetHitPoint(PLAYER_HP);
-		Objects_[i].SetPlay(false);
+		Objects_[i].set_object_type(OBJECT_TYPE_PLAYER);
+		Objects_[i].set_id(i);
+		Objects_[i].set_model(robot_mesh_);
+		Objects_[i].set_max_hp(PLAYER_HP);
+		Objects_[i].set_hp(PLAYER_HP);
+		Objects_[i].set_play(false);
 		Objects_[i].set_is_player(true);
 		Objects_[i].set_is_die(false);
 	}
 
-	Objects_[0].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[1].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
-	Objects_[2].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[3].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
-	Objects_[4].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
-	Objects_[5].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
-	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[0].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[1].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[2].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[3].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[4].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
+	Objects_[5].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
+	Objects_[6].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[7].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
 
 	for (auto obstacle : Obstacles_)
-		obstacle->Animate(0.016f, 0);
+		obstacle->animate(0.016f, 0);
 
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
@@ -148,27 +148,27 @@ void Scene::init()
 {
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
 	{
-		Objects_[i].Delete();
-		Objects_[i].SetUse(false);
+		Objects_[i].object_delete();
+		Objects_[i].set_use(false);
 		Objects_[i].set_elapsed_time_to_zero();
 	}
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		Objects_[i].SetHitPoint(PLAYER_HP);
-		Objects_[i].SetPlay(false);
+		Objects_[i].set_hp(PLAYER_HP);
+		Objects_[i].set_play(false);
 		Objects_[i].set_is_die(false);
 		Objects_[i].set_elapsed_time_to_zero();
 	}
 
-	Objects_[0].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[1].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
-	Objects_[2].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[3].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
-	Objects_[4].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
-	Objects_[5].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
-	Objects_[6].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
-	Objects_[7].SetWorldTransf(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[0].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[1].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[2].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[3].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, 150.0f, 1.0f });
+	Objects_[4].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, -200.0f, 1.0f });
+	Objects_[5].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 0.0f, 0.0f, 200.0f, 1.0f });
+	Objects_[6].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 0.0f, -150.0f, 1.0f });
+	Objects_[7].set_world_matrix(XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 0.0f, 150.0f, 1.0f });
 
 	while (item_queue_.size() > 0)
 		item_queue_.pop();
@@ -187,38 +187,38 @@ void Scene::init()
 	alert_ = false;
 }
 
-void Scene::InsertObject(GameObject * pObject, int nGroup, bool bPrepareRotate, void * pContext)
+void Scene::insert_object(GameObject * object, int group, bool prepare_rotate, void * context)
 {
-	pObject->SetModel(models_[nGroup]);
-	if (bPrepareRotate) pObject->AddPrepareRotate(0, 180, 0);
+	object->set_model(models_[group]);
+	if (prepare_rotate) object->add_prepare_rotate(0, 180, 0);
 
-	Obstacles_.emplace_back(pObject);
+	Obstacles_.emplace_back(object);
 }
 
-int Scene::GetIndex()
+int Scene::get_index()
 {
 	for (int i = MAX_CLIENT; i < MAX_NUM_OBJECT; ++i)
-		if (Objects_[i].GetUse() == false)
+		if (Objects_[i].get_use() == false)
 			return i;
 	return -1;
 }
 
-int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix, int id)
+int Scene::add_object(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix, int id)
 {
 	obj_lock.lock();
-	int index = GetIndex();
-	Objects_[index].SetObjectType(type);
-	Objects_[index].SetMaxHitPoint(hp);
-	Objects_[index].SetHitPoint(hp);
+	int index = get_index();
+	Objects_[index].set_object_type(type);
+	Objects_[index].set_max_hp(hp);
+	Objects_[index].set_hp(hp);
 	XMFLOAT4X4 worldmatrix = matrix;
 	if (index != -1)
 	{
-		Objects_[index].SetIndex(index);
+		Objects_[index].set_index(index);
 		if (type == OBJECT_TYPE_MACHINE_BULLET
 			|| type == OBJECT_TYPE_BZK_BULLET
 			|| type == OBJECT_TYPE_BEAM_BULLET)
 		{
-			Objects_[index].SetModel(bullet_mesh_);
+			Objects_[index].set_model(bullet_mesh_);
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
 		}
@@ -227,17 +227,17 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 			|| type == OBJECT_TYPE_ITEM_AMMO_1
 			|| type == OBJECT_TYPE_ITEM_AMMO_2)
 		{
-			Objects_[index].SetModel(bullet_mesh_);
+			Objects_[index].set_model(bullet_mesh_);
 		}
 		else if (type == OBJECT_TYPE_METEOR)
 		{
-			Objects_[index].SetModel(bullet_mesh_);
+			Objects_[index].set_model(bullet_mesh_);
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
 		}
 		else if (type == OBJECT_TYPE_SABER)
 		{
-			Objects_[index].SetModel(saber_mesh_);
+			Objects_[index].set_model(saber_mesh_);
 			Objects_[index].set_life(life_time);
 			Objects_[index].set_speed(speed);
 			XMFLOAT3 position = XMFLOAT3{ matrix._41, matrix._42, matrix._43 };
@@ -249,32 +249,31 @@ int Scene::AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMF
 		}
 	}
 	Objects_[index].set_owner_id(id);
-	Objects_[index].SetWorldTransf(worldmatrix);
-	Objects_[index].SetPrevPosition(XMFLOAT3{ worldmatrix._41, worldmatrix._42, worldmatrix._43 });
-	Objects_[index].SetUse(true);
+	Objects_[index].set_world_matrix(worldmatrix);
+	Objects_[index].set_prev_position(XMFLOAT3{ worldmatrix._41, worldmatrix._42, worldmatrix._43 });
+	Objects_[index].set_use(true);
 	obj_lock.unlock();
 	return index;
 }
 
 void Scene::set_player_team(int id, char team)
 {
-	//std::cout << id << "ÀÇ ÆÀ : " << (int)team << "\n";
 	Objects_[id].set_team(team);
 }
 
 bool Scene::check_collision_obstacles(int object)
 {
-	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
-	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
+	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].get_prev_position());
+	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].get_look());
 	float distance;
 
 	for (auto obstacle : Obstacles_)
 	{
-		for (auto playeraabb : obstacle->GetAABB())
+		for (auto playeraabb : obstacle->get_aabbs())
 		{
 			if (playeraabb.Intersects(origin, direction, distance))
 			{
-				XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
+				XMFLOAT3 length = Vector3::Subtract(Objects_[object].get_position(), Objects_[object].get_prev_position());
 				float len = Vector3::Length(length);
 				if (distance <= len)
 				{
@@ -291,23 +290,23 @@ bool Scene::check_saber_collision_player(int object)
 {
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		if (Objects_[i].GetPlay())
+		if (Objects_[i].get_play())
 		{
 			if (!Objects_[i].get_is_die())
 			{
-				for (auto objaabb : Objects_[object].GetAABB())
+				for (auto objaabb : Objects_[object].get_aabbs())
 				{
-					for (auto playeraabb : Objects_[i].GetAABB())
+					for (auto playeraabb : Objects_[i].get_aabbs())
 					{
 						if (playeraabb.Intersects(objaabb))
 						{
-							if (Objects_[object].GetObjectType() == OBJECT_TYPE_SABER)
+							if (Objects_[object].get_object_type() == OBJECT_TYPE_SABER)
 							{
 								if (i == Objects_[object].get_owner_id()) continue;
 								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 								pkt_pl->ID = i;
-								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-								pkt_pl->HP = Objects_[object].GetHitPoint();
+								Objects_[i].set_hp(Objects_[i].get_hp() - Objects_[object].get_hp());
+								pkt_pl->HP = Objects_[object].get_hp();
 								pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 								pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
@@ -316,7 +315,7 @@ bool Scene::check_saber_collision_player(int object)
 								pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
 								pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
 								pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-								auto position = Objects_[i].GetPosition();
+								auto position = Objects_[i].get_position();
 								position.y += 20.0f;
 								pkt_ce->xmf3Position = position;
 								pkt_ce->id = Objects_[object].get_owner_id();
@@ -325,7 +324,7 @@ bool Scene::check_saber_collision_player(int object)
 								create_effect_queue_.push(pkt_ce);
 								effect_lock_.unlock();
 
-								if (Objects_[i].GetHitPoint() <= 0)
+								if (Objects_[i].get_hp() <= 0)
 								{
 									if (Objects_[i].get_team() == 0)
 										red_score_ -= 5;
@@ -337,7 +336,7 @@ bool Scene::check_saber_collision_player(int object)
 									pkt_sco->RedScore = red_score_;
 									pkt_sco->BlueScore = blue_score_;
 
-									Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+									Objects_[i].set_hp(Objects_[i].get_max_hp());
 
 									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
@@ -374,35 +373,35 @@ bool Scene::check_saber_collision_player(int object)
 
 bool Scene::check_collision_player(int object)
 {
-	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPrevPosition());
-	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
+	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].get_prev_position());
+	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].get_look());
 	float distance;
 
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		if (Objects_[i].GetPlay())
+		if (Objects_[i].get_play())
 		{
 			if (!Objects_[i].get_is_die())
 			{
-				for (auto playeraabb : Objects_[i].GetAABB())
+				for (auto playeraabb : Objects_[i].get_aabbs())
 				{
 					if (playeraabb.Intersects(origin, direction, distance))
 					{
-						XMFLOAT3 length = Vector3::Subtract(Objects_[object].GetPosition(), Objects_[object].GetPrevPosition());
+						XMFLOAT3 length = Vector3::Subtract(Objects_[object].get_position(), Objects_[object].get_prev_position());
 						float len = Vector3::Length(length);
 						if (distance <= len)
 						{
 							if (i != Objects_[object].get_owner_id())
 							{
-								if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1 ||
-									Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_2)
+								if (Objects_[object].get_object_type() == OBJECT_TYPE_ITEM_AMMO_1 ||
+									Objects_[object].get_object_type() == OBJECT_TYPE_ITEM_AMMO_2)
 								{
 									PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
 									pkt_pi->PktId = PKT_ID_PICK_ITEM;
 									pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
 									pkt_pi->ID = i;
-									pkt_pi->AMMO = Objects_[object].GetHitPoint();
-									if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_AMMO_1)
+									pkt_pi->AMMO = Objects_[object].get_hp();
+									if (Objects_[object].get_object_type() == OBJECT_TYPE_ITEM_AMMO_1)
 										pkt_pi->Item_type = ITEM_TYPE_AMMO1;
 									else
 										pkt_pi->Item_type = ITEM_TYPE_AMMO2;
@@ -410,29 +409,29 @@ bool Scene::check_collision_player(int object)
 									item_queue_.push(pkt_pi);
 									item_lock.unlock();
 								}
-								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_ITEM_HEALING)
+								else if (Objects_[object].get_object_type() == OBJECT_TYPE_ITEM_HEALING)
 								{
 									PKT_PICK_ITEM* pkt_pi = new PKT_PICK_ITEM;
 									pkt_pi->PktId = PKT_ID_PICK_ITEM;
 									pkt_pi->PktSize = sizeof(PKT_PICK_ITEM);
 									pkt_pi->ID = i;
-									pkt_pi->HP = Objects_[object].GetHitPoint();
+									pkt_pi->HP = Objects_[object].get_hp();
 									pkt_pi->Item_type = ITEM_TYPE_HEALING;
 
-									Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() + 50);
+									Objects_[i].set_hp(Objects_[i].get_hp() + 50);
 
 									item_lock.lock();
 									item_queue_.push(pkt_pi);
 									item_lock.unlock();
 								}
-								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_MACHINE_BULLET ||
-									Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET ||
-									Objects_[object].GetObjectType() == OBJECT_TYPE_BZK_BULLET)
+								else if (Objects_[object].get_object_type() == OBJECT_TYPE_MACHINE_BULLET ||
+									Objects_[object].get_object_type() == OBJECT_TYPE_BEAM_BULLET ||
+									Objects_[object].get_object_type() == OBJECT_TYPE_BZK_BULLET)
 								{
 									PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 									pkt_pl->ID = i;
-									Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-									pkt_pl->HP = Objects_[object].GetHitPoint();
+									Objects_[i].set_hp(Objects_[i].get_hp() - Objects_[object].get_hp());
+									pkt_pl->HP = Objects_[object].get_hp();
 									pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 									pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
@@ -441,7 +440,7 @@ bool Scene::check_collision_player(int object)
 									pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
 									pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
 									pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-									auto position = Objects_[i].GetPosition();
+									auto position = Objects_[i].get_position();
 									position.y += 20.0f;
 									pkt_ce->xmf3Position = position;
 									pkt_ce->id = Objects_[object].get_owner_id();
@@ -450,7 +449,7 @@ bool Scene::check_collision_player(int object)
 									create_effect_queue_.push(pkt_ce);
 									effect_lock_.unlock();
 
-									if (Objects_[i].GetHitPoint() <= 0)
+									if (Objects_[i].get_hp() <= 0)
 									{
 										if (Objects_[i].get_team() == 0)
 											red_score_ -= 5;
@@ -462,7 +461,7 @@ bool Scene::check_collision_player(int object)
 										pkt_sco->RedScore = red_score_;
 										pkt_sco->BlueScore = blue_score_;
 
-										Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+										Objects_[i].set_hp(Objects_[i].get_max_hp());
 
 										PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 										pkt_pd->PktId = PKT_ID_PLAYER_DIE;
@@ -486,16 +485,16 @@ bool Scene::check_collision_player(int object)
 									life_lock.unlock();
 
 								}
-								else if (Objects_[object].GetObjectType() == OBJECT_TYPE_METEOR)
+								else if (Objects_[object].get_object_type() == OBJECT_TYPE_METEOR)
 								{
 									PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 									pkt_pl->ID = i;
-									Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-									pkt_pl->HP = Objects_[object].GetHitPoint();
+									Objects_[i].set_hp(Objects_[i].get_hp() - Objects_[object].get_hp());
+									pkt_pl->HP = Objects_[object].get_hp();
 									pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 									pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
-									if (Objects_[i].GetHitPoint() <= 0)
+									if (Objects_[i].get_hp() <= 0)
 									{
 										if (Objects_[i].get_team() == 0)
 											red_score_ -= 5;
@@ -507,7 +506,7 @@ bool Scene::check_collision_player(int object)
 										pkt_sco->RedScore = red_score_;
 										pkt_sco->BlueScore = blue_score_;
 
-										Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+										Objects_[i].set_hp(Objects_[i].get_max_hp());
 
 										PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 										pkt_pd->PktId = PKT_ID_PLAYER_DIE;
@@ -543,20 +542,20 @@ bool Scene::check_collision_player(int object)
 
 bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 {
-	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].GetPosition());
-	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].GetLook());
+	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].get_position());
+	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].get_look());
 	float distance = 1000.0f;
 	for (int i = 0; i < MAX_CLIENT; ++i)
 	{
-		if (Objects_[i].GetPlay())
+		if (Objects_[i].get_play())
 		{
 			if (!Objects_[i].get_is_die())
 			{
-				for (auto playeraabb : Objects_[i].GetAABB())
+				for (auto playeraabb : Objects_[i].get_aabbs())
 				{
 					if (playeraabb.Intersects(origin, direction, distance))
 					{
-						if (Objects_[object].GetObjectType() == OBJECT_TYPE_BEAM_BULLET)
+						if (Objects_[object].get_object_type() == OBJECT_TYPE_BEAM_BULLET)
 						{
 							if (distance <= len)
 							{
@@ -564,8 +563,8 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 
 								PKT_PLAYER_LIFE* pkt_pl = new PKT_PLAYER_LIFE;
 								pkt_pl->ID = i;
-								Objects_[i].SetHitPoint(Objects_[i].GetHitPoint() - Objects_[object].GetHitPoint());
-								pkt_pl->HP = Objects_[object].GetHitPoint();
+								Objects_[i].set_hp(Objects_[i].get_hp() - Objects_[object].get_hp());
+								pkt_pl->HP = Objects_[object].get_hp();
 								pkt_pl->PktId = PKT_ID_PLAYER_LIFE;
 								pkt_pl->PktSize = sizeof(PKT_PLAYER_LIFE);
 
@@ -578,7 +577,7 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 								pkt_ce->PktSize = sizeof(PKT_CREATE_EFFECT);
 								pkt_ce->efType = EFFECT_TYPE_HIT_FONT;
 								pkt_ce->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-								auto position = Objects_[i].GetPosition();
+								auto position = Objects_[i].get_position();
 								position.y += 20.0f;
 								pkt_ce->xmf3Position = position;
 								pkt_ce->id = Objects_[object].get_owner_id();
@@ -592,7 +591,7 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 								pkt_ce2->PktSize = sizeof(PKT_CREATE_EFFECT);
 								pkt_ce2->efType = EFFECT_TYPE_BEAM_HIT;
 								pkt_ce2->EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-								auto position2 = Objects_[i].GetPosition();
+								auto position2 = Objects_[i].get_position();
 								position2.y += 9.0f;
 								pkt_ce2->xmf3Position = position2;
 								pkt_ce2->id = Objects_[object].get_owner_id();
@@ -601,7 +600,7 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 								create_effect_queue_.push(pkt_ce2);
 								effect_lock_.unlock();
 
-								if (Objects_[i].GetHitPoint() <= 0)
+								if (Objects_[i].get_hp() <= 0)
 								{
 									if (Objects_[i].get_team() == 0)
 										red_score_ -= 5;
@@ -613,7 +612,7 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 									pkt_sco->RedScore = red_score_;
 									pkt_sco->BlueScore = blue_score_;
 
-									Objects_[i].SetHitPoint(Objects_[i].GetMaxHitPoint());
+									Objects_[i].set_hp(Objects_[i].get_max_hp());
 
 									PKT_PLAYER_DIE* pkt_pd = new PKT_PLAYER_DIE;
 									pkt_pd->PktId = PKT_ID_PLAYER_DIE;
@@ -727,47 +726,47 @@ void Scene::end_event()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void GroundScene::BuildObjects(CRepository * pRepository)
+void GroundScene::build_objects(Repository * repository)
 {
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Hangar.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_HangarSelfData.bin", 0);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Hangar.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_HangarSelfData.bin", 0);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Double_Square.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_DoubleSquareSelfData.bin", 1);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Building_Double_Square.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_DoubleSquareSelfData.bin", 1);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Octagon.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_OctagonSelfData.bin", 2);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Building_Octagon.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_OctagonSelfData.bin", 2);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_OctagonLongTier.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_OctagonLongTierSelfData.bin", 3);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Building_OctagonLongTier.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_OctagonLongTierSelfData.bin", 3);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Slope_top.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_Slope_TopSelfData.bin", 4);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Building_Slope_top.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_Slope_TopSelfData.bin", 4);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Square.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_SquareSelfData.bin", 5);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Building_Square.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_SquareSelfData.bin", 5);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Building_Steeple_top.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/B_Steeple_TopSelfData.bin", 6);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Building_Steeple_top.bin"));
+	inert_objects_from_file("./Resource/Buildings/B_Steeple_TopSelfData.bin", 6);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Wall.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/WallSelfData.bin", 7);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Wall.bin"));
+	inert_objects_from_file("./Resource/Buildings/WallSelfData.bin", 7);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/fence.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/FenceSelfData.bin", 8);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/fence.bin"));
+	inert_objects_from_file("./Resource/Buildings/FenceSelfData.bin", 8);
 
-	init(pRepository);
+	init(repository);
 	gravity_ = -9.8f;
 }
 
-void GroundScene::AnimateObjects(float fTimeElapsed)
+void GroundScene::animate_objects(float time_elapsed)
 {
-	Scene::AnimateObjects(fTimeElapsed);
+	Scene::animate_objects(time_elapsed);
 }
 
-void GroundScene::SceneEvent(float fTimeElapsed)
+void GroundScene::scene_event(float time_elapsed)
 {
-	event_time_ += fTimeElapsed;
+	event_time_ += time_elapsed;
 }
 
 void GroundScene::start_event()
@@ -785,48 +784,48 @@ void GroundScene::end_event()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void SpaceScene::BuildObjects(CRepository * pRepository)
+void SpaceScene::build_objects(Repository * repository)
 {
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids1.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_1SelfData.bin", 0);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids1.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_1SelfData.bin", 0);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids2.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_2SelfData.bin", 1);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids2.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_2SelfData.bin", 1);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids3_1.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_3SelfData.bin", 2);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids3_1.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_3SelfData.bin", 2);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids3_2.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_3-1SelfData.bin", 3);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids3_2.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_3-1SelfData.bin", 3);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids3_3.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_3-2SelfData.bin", 4);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids3_3.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_3-2SelfData.bin", 4);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids4.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_4SelfData.bin", 5);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids4.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_4SelfData.bin", 5);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/Astroids5.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_Astroid_5SelfData.bin", 6);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/Astroids5.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_Astroid_5SelfData.bin", 6);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/SpaceShip.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_SpaceShipSelfData.bin", 7);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/SpaceShip.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_SpaceShipSelfData.bin", 7);
 
-	models_.emplace_back(pRepository->GetModel("./Resource/Buildings/Space/StarShip_Light.bin", NULL, NULL));
-	InsertObjectFromLoadInfFromBin("./Resource/Buildings/Space/S_StarShipSelfData.bin", 8);
+	models_.emplace_back(repository->get_model("./Resource/Buildings/Space/StarShip_Light.bin"));
+	inert_objects_from_file("./Resource/Buildings/Space/S_StarShipSelfData.bin", 8);
 
-	init(pRepository);
+	init(repository);
 	gravity_ = 0.0f;
 }
 
-void SpaceScene::AnimateObjects(float fTimeElapsed)
+void SpaceScene::animate_objects(float time_elapsed)
 {
-	Scene::AnimateObjects(fTimeElapsed);
+	Scene::animate_objects(time_elapsed);
 }
 
-void SpaceScene::SceneEvent(float fTimeElapsed)
+void SpaceScene::scene_event(float time_elapsed)
 {
-	event_time_ += fTimeElapsed;
-	meteor_cooltime_duration_ += fTimeElapsed;
+	event_time_ += time_elapsed;
+	meteor_cooltime_duration_ += time_elapsed;
 }
 
 void SpaceScene::start_event()

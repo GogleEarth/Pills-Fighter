@@ -75,7 +75,7 @@ using Microsoft::WRL::ComPtr;
 
 #define EPSILON				1.0e-10f
 
-extern std::string GetFileName(const std::string strFileName);
+extern std::string get_file_name(const std::string strFileName);
 extern std::string GetFilePath(const std::string strFileName);
 extern XMFLOAT2 CalculateCenter(float left, float right, float top, float bottom, bool isCenter = false);
 extern XMFLOAT2 CalculateSize(float left, float right, float top, float bottom, bool isCenter = false);

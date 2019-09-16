@@ -7,35 +7,32 @@
 class GameObject
 {
 protected:
-	XMFLOAT4X4 m_xmf4x4World;
+	XMFLOAT4X4 world_matrix_;
 
-	XMFLOAT3 m_xmf3Position;
-	XMFLOAT3 m_xmf3PrevPosition;
-	XMFLOAT3 m_xmf3Right;
-	XMFLOAT3 m_xmf3Up;
-	XMFLOAT3 m_xmf3Look;
+	XMFLOAT3 position_;
+	XMFLOAT3 prev_position_;
+	XMFLOAT3 right_;
+	XMFLOAT3 up_;
+	XMFLOAT3 look_;
 
-	OBJECT_TYPE	Object_Type_;
+	OBJECT_TYPE	object_type_;
 
 	int id_;
 	int index_;
 
-	float m_fPitch;
-	float m_fYaw;
-	float m_fRoll;
+	float pitch_;
+	float yaw_;
+	float roll_;
 
-	// 렌더링 하기 전 오브젝트 회전 설정
-	float m_fPreparePitch;
-	float m_fPrepareYaw;
-	float m_fPrepareRoll;
-
-	float moving_speed_;
+	float prepare_pitch_;
+	float prepate_yaw_;
+	float prepare_roll;
 
 	bool in_used_ = false;
 	bool play_ = false;
 
-	CModel *model_ = NULL;
-	std::vector<BoundingBox> aabb_;
+	Model *model_ = NULL;
+	std::vector<BoundingBox> aabbs_;
 
 	bool delete_ = false;
 	int	num_meshes_ = 0;
@@ -43,9 +40,9 @@ protected:
 	int	hp_;
 	int	max_hp_;
 
-	float MovingSpeed_;
-	float DurationTime_;
-	float ElapsedTime_;
+	float moving_speed_;
+	float duration_time_;
+	float elapsed_time_;
 
 	char team_;
 	int owner_id_;
@@ -57,70 +54,76 @@ public:
 	GameObject();
 	~GameObject();
 
-	void SetModel(CModel *pModel);
-	void SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh);
+	void set_model(Model *model);
+	void set_mesh(Mesh *mesh, Cube_mesh *cube_mesh);
 
-	void Animate(float fTimeElapsed, char map);
-	void OnPrepareRender();
+	void animate(float time_elapsed, char map);
+	void on_prepare();
 
-	bool CollisionCheck(GameObject* object);
+	bool collsion_check(GameObject* object);
 
 	//게임 객체의 월드 변환 행렬에서 위치 벡터와 방향(x-축, y-축, z-축) 벡터를 반환한다. 
-	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
-	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }
-	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
-	void SetWorldTransf(XMFLOAT4X4& xmf4x4World);
-	XMFLOAT3 GetPosition() { return m_xmf3Position; }
-	XMFLOAT3 GetPrevPosition() { return m_xmf3PrevPosition; }
-	XMFLOAT3 GetLook() { return m_xmf3Look; }
-	XMFLOAT3 GetUp() { return m_xmf3Up; }
-	XMFLOAT3 GetRight() { return m_xmf3Right; }
-	XMFLOAT4X4 GetWorldTransf();
+	inline void set_look(XMFLOAT3 look) { look_ = look; }
+	inline void set_up(XMFLOAT3 up) { up_ = up; }
+	inline void set_right(XMFLOAT3 right) { right_ = right; }
 
-	//게임 객체의 위치를 설정한다.
-	void SetPosition(float x, float y, float z);
-	void SetPosition(XMFLOAT3& xmf3Position);
-	void SetPrevPosition(XMFLOAT3& xmf3Position);
+	void set_world_matrix(XMFLOAT4X4& world);
+	XMFLOAT4X4 get_world_matrix();
 
-	void SetPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch = Pitch; m_fPrepareYaw = Yaw; m_fPrepareRoll = Roll; }
-	void AddPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch += Pitch; m_fPrepareYaw += Yaw; m_fPrepareRoll += Roll; }
+	inline XMFLOAT3 get_position() { return position_; }
+	inline XMFLOAT3 get_prev_position() { return prev_position_; }
+	inline XMFLOAT3 get_look() { return look_; }
+	inline XMFLOAT3 get_up() { return up_; }
+	inline XMFLOAT3 get_right() { return right_; }
 
-	//게임 객체를 로컬 x-축, y-축, z-축 방향으로 이동한다.
-	void MoveStrafe(float fDistance = 1.0f);
-	void MoveUp(float fDistance = 1.0f);
-	void MoveForward(float fDistance = 1.0f);
-	void Move(XMFLOAT3 xmf3Direction, float fDistance = 1.0f);
+	void set_position(float x, float y, float z);
+	void set_position(XMFLOAT3& position);
+	void set_prev_position(XMFLOAT3& position);
 
-	//게임 객체를 회전(x-축, y-축, z-축)한다. 
-	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
+	inline void set_prepare_rotate(float pitch, float yaw, float roll) { prepare_pitch_ = pitch; prepate_yaw_ = yaw; prepare_roll = roll; }
+	inline void add_prepare_rotate(float pitch, float yaw, float roll) { prepare_pitch_ += pitch; prepate_yaw_ += yaw; prepare_roll += roll; }
 
-	void UpdateWorldTransform();
+	void move_strafe(float distance);
+	void move_up(float distance);
+	void move_forward(float distance);
+	void move(XMFLOAT3 direction, float distance);
 
-	inline std::vector<BoundingBox>& GetAABB() { return aabb_; }
-	inline int GetNumAABB() { return num_meshes_; }
-	inline void Delete() { delete_ = true; }
-	inline bool IsDelete() { return delete_; }
-	inline void CallBackPosition() { m_xmf3Position = m_xmf3PrevPosition; }
+	void rotate(float pitch, float yaw, float roll);
 
-	inline int GetHitPoint() { return hp_; }
-	inline int GetMaxHitPoint() { return max_hp_; }
-	inline void SetMaxHitPoint(int nMaxHitPoint) { max_hp_ = nMaxHitPoint; }
-	void SetHitPoint(int nHitPoint);
+	void update_world_transform();
 
-	inline void SetId(int id) { id_ = id; }
-	inline int GetId() { return id_; }
-	inline void SetIndex(int index) { index_ = index; }
-	inline int GetIndex() { return index_; }
-	void SetUse(bool use);
-	inline bool GetUse() { return in_used_; }
-	inline void SetPlay(bool play) { play_ = play; }
-	inline bool GetPlay() { return play_; }
-	inline void SetObjectType(OBJECT_TYPE type) { Object_Type_ = type; }
-	inline OBJECT_TYPE GetObjectType() { return Object_Type_; }
+	inline std::vector<BoundingBox>& get_aabbs() { return aabbs_; }
+	inline int get_num_aabbs() { return aabbs_.size(); }
 
-	inline void set_speed(float speed) { MovingSpeed_ = speed; }
-	inline float get_speed() { return MovingSpeed_; }
-	inline void set_life(float life) { DurationTime_ = life; }
+	inline void object_delete() { delete_ = true; }
+	inline bool is_delete() { return delete_; }
+	inline void callback_position() { position_ = prev_position_; }
+
+	inline void set_max_hp(int max_hp) { max_hp_ = max_hp; }
+	inline int get_max_hp() { return max_hp_; }
+
+	void set_hp(int hp);
+	inline int get_hp() { return hp_; }
+
+	inline void set_id(int id) { id_ = id; }
+	inline int get_id() { return id_; }
+
+	inline void set_index(int index) { index_ = index; }
+	inline int get_index() { return index_; }
+
+	void set_use(bool use);
+	inline bool get_use() { return in_used_; }
+
+	inline void set_play(bool play) { play_ = play; }
+	inline bool get_play() { return play_; }
+
+	inline void set_object_type(OBJECT_TYPE type) { object_type_ = type; }
+	inline OBJECT_TYPE get_object_type() { return object_type_; }
+
+	inline void set_speed(float speed) { moving_speed_ = speed; }
+	inline float get_speed() { return moving_speed_; }
+
+	inline void set_life(float life) { duration_time_ = life; }
 
 	inline void set_team(char team) { team_ = team; }
 	inline char get_team() { return team_; }
@@ -130,11 +133,10 @@ public:
 
 	inline void set_is_player(bool is_player) { is_player_ = is_player; }
 	inline bool get_is_player() { return is_player_; }
+
 	inline void set_is_die(bool is_die) { is_die_ = is_die; }
 	inline bool get_is_die() { return is_die_; }
 
-	inline void set_elapsed_time_to_zero() { ElapsedTime_ = 0.0f; }
+	inline void set_elapsed_time_to_zero() { elapsed_time_ = 0.0f; }
 
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -12,10 +12,10 @@
 class Scene
 {
 protected:
-	CModel*	bullet_mesh_;
-	CModel*	robot_mesh_;
-	CModel* saber_mesh_;
-	std::vector<CModel*> models_;
+	Model*	bullet_mesh_;
+	Model*	robot_mesh_;
+	Model* saber_mesh_;
+	std::vector<Model*> models_;
 
 	std::mutex obj_lock;
 	GameObject Objects_[MAX_NUM_OBJECT];
@@ -43,45 +43,45 @@ protected:
 
 public:
 	Scene();
-	~Scene();
+	virtual ~Scene();
 
-	virtual void BuildObjects(CRepository* pRepository) = 0;
-	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent(float fTimeElapsed) = 0;
+	virtual void build_objects(Repository* repository) = 0;
+	virtual void animate_objects(float time_elapsed);
+	virtual void scene_event(float time_elapsed) = 0;
 
 	virtual void start_event();
 	virtual void end_event();
 
-	void InsertObjectFromLoadInfFromBin(char *pstrFileName, int nGroup);
+	void inert_objects_from_file(char *file_name, int group);
 
-	float ReadFloatFromFile(FILE *pInFile) {
-		float fValue = 0;
-		UINT nReads = (UINT)::fread(&fValue, sizeof(float), 1, pInFile);
-		return(fValue);
+	float read_float_from_file(FILE *file) {
+		float value = 0;
+		UINT reads = (UINT)::fread(&value, sizeof(float), 1, file);
+		return(value);
 	}
-	BYTE LeftByteFromFile(FILE *pInFile, int byte) {
-		UINT nReads = 0;
+	BYTE left_byte_from_file(FILE *file, int byte) {
+		UINT reads = 0;
 		char waste[64] = { '\0' };
-		nReads = (UINT)::fread(waste, sizeof(char), byte, pInFile);
+		reads = (UINT)::fread(waste, sizeof(char), byte, file);
 
-		return(nReads);
+		return(reads);
 	}
-	BYTE ReadPosrotFromFile(FILE *pInFile, char *pstrToken) {
-		BYTE nStrLength = 41;
-		BYTE m_value = 7;
-		UINT nReads = 0;
-		nReads = (UINT)::fread(pstrToken, sizeof(char), nStrLength, pInFile);
-		nReads = (UINT)::fread(pstrToken, sizeof(char), m_value, pInFile);
-		pstrToken[m_value] = '\0';
+	BYTE read_posrot_from_file(FILE *file, char *token) {
+		BYTE str_len = 41;
+		BYTE value = 7;
+		UINT reads = 0;
+		reads = (UINT)::fread(token, sizeof(char), str_len, file);
+		reads = (UINT)::fread(token, sizeof(char), value, file);
+		token[value] = '\0';
 
-		return(nReads);
+		return(reads);
 	}
 
-	void init(CRepository* pRepository);
+	void init(Repository* repository);
 	void init();
-	void InsertObject(GameObject* pObject, int nGroup, bool bPrepareRotate, void *pContext);
-	int GetIndex();
-	int AddObject(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix, int id = -1);
+	void insert_object(GameObject* object, int group, bool prepare_rotate, void *context);
+	int get_index();
+	int add_object(OBJECT_TYPE type, int hp, float life_time, float speed, XMFLOAT4X4 matrix, int id = -1);
 	void set_player_team(int id, char team);
 
 	bool check_collision_obstacles(int object);
@@ -96,13 +96,13 @@ public:
 	PKT_PLAYER_DIE* player_die_dequeue();
 
 
-	inline void releaseObject(int index) { Objects_[index].SetUse(false); }
-	inline void deleteObject(int index) { Objects_[index].Delete(); }
+	inline void release_object(int index) { Objects_[index].set_use(false); }
+	inline void delete_object(int index) { Objects_[index].object_delete(); }
 
-	inline void set_player_worldmatrix(int id, XMFLOAT4X4 matrix) { Objects_[id].SetWorldTransf(matrix); }
-	inline void set_player_is_play(int id, bool play) { Objects_[id].SetPlay(play); }
-	inline void set_object_id(int id) { Objects_[id].SetId(id); }
-	inline XMFLOAT4X4 get_player_worldmatrix(int id) { return Objects_[id].GetWorldTransf(); }
+	inline void set_player_worldmatrix(int id, XMFLOAT4X4 matrix) { Objects_[id].set_world_matrix(matrix); }
+	inline void set_player_is_play(int id, bool play) { Objects_[id].set_play(play); }
+	inline void set_object_id(int id) { Objects_[id].set_id(id); }
+	inline XMFLOAT4X4 get_player_worldmatrix(int id) { return Objects_[id].get_world_matrix(); }
 	inline GameObject* get_object(int id) { return &Objects_[id]; }
 	inline float get_elapsed_game_time() { return elapsed_game_time_; }
 	inline float get_event_time() { return event_time_; }
@@ -125,9 +125,9 @@ public:
 	GroundScene() {}
 	~GroundScene() {}
 
-	virtual void BuildObjects(CRepository* pRepository);
-	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent(float fTimeElapsed);
+	virtual void build_objects(Repository* repository);
+	virtual void animate_objects(float time_elapsed);
+	virtual void scene_event(float time_elapsed);
 	virtual void start_event();
 	virtual void end_event();
 };
@@ -142,9 +142,9 @@ public:
 	SpaceScene() {}
 	~SpaceScene() {}
 
-	virtual void BuildObjects(CRepository* pRepository);
-	virtual void AnimateObjects(float fTimeElapsed);
-	virtual void SceneEvent(float fTimeElapsed);
+	virtual void build_objects(Repository* repository);
+	virtual void animate_objects(float time_elapsed);
+	virtual void scene_event(float time_elapsed);
 	virtual void start_event();
 	virtual void end_event();
 	

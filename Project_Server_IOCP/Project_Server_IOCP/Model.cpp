@@ -3,240 +3,241 @@
 #include "Mesh.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-CModel::CModel()
+Model::Model()
 {
-	m_xmf4x4World = Matrix4x4::Identity();
+	world_matrix_ = Matrix4x4::Identity();
 }
 
-CModel::~CModel()
+Model::~Model()
 {
-	if (m_pMesh)
+	if (meshes_)
 	{
-		delete m_pMesh;
-		if (m_pCubeMesh) delete m_pCubeMesh;
+		delete meshes_;
+		if (cube_meshes_) delete cube_meshes_;
 	}
 }
 
-void CModel::AddRef()
+void Model::add_ref()
 {
-	m_nReferences++;
+	references_++;
 
-	if (m_pSibling) m_pSibling->AddRef();
-	if (m_pChild) m_pChild->AddRef();
+	if (sibling_) sibling_->add_ref();
+	if (child_) child_->add_ref();
 }
 
-void CModel::Release()
+void Model::release()
 {
-	if (m_pSibling) m_pSibling->Release();
-	if (m_pChild) m_pChild->Release();
+	if (sibling_) sibling_->release();
+	if (child_) child_->release();
 
-	if (--m_nReferences <= 0) delete this;
+	if (--references_ <= 0) delete this;
 }
 
-void CModel::SetChild(CModel * pChild, bool bAddReference)
+void Model::set_child(Model * child, bool add_reference)
 {
-	pChild->m_pParent = this;
-	if (bAddReference) pChild->AddRef();
+	child->parent_ = this;
+	if (add_reference) child->add_ref();
 
-	if (m_pChild)
+	if (child_)
 	{
-		pChild->m_pSibling = m_pChild->m_pSibling;
-		m_pChild->m_pSibling = pChild;
+		child->sibling_ = child_->sibling_;
+		child_->sibling_ = child;
 	}
-	else m_pChild = pChild;
+	else child_ = child;
 }
 
-void CModel::SetMesh(CMesh *pMesh, CCubeMesh *pCubeMesh, bool bIsSkinned)
+void Model::set_mesh(Mesh *mesh, Cube_mesh *cube_mesh, bool Is_skinned)
 {
-	if (!m_pMesh)
+	if (!meshes_)
 	{
-		m_nMeshes++;
+		num_meshes_++;
 	}
 
-	m_pMesh = pMesh;
-	m_pCubeMesh = pCubeMesh;
+	meshes_ = mesh;
+	cube_meshes_ = cube_mesh;
 }
 
-void CModel::GetMeshes(int *pnMeshes, int *pnSkinnedMeshes)
+void Model::get_num_meshes(int *meshes, int *skinned_meshes)
 {
-	(*pnMeshes) += m_nMeshes;
+	(*meshes) += num_meshes_;
 
-	if (m_pSibling) m_pSibling->GetMeshes(pnMeshes, pnSkinnedMeshes);
-	if (m_pChild) m_pChild->GetMeshes(pnMeshes, pnSkinnedMeshes);
+	if (sibling_) sibling_->get_num_meshes(meshes, skinned_meshes);
+	if (child_) child_->get_num_meshes(meshes, skinned_meshes);
 }
 
-void CModel::UpdateCollisionBox(std::vector<BoundingBox>& vxmAABB, int *pnIndex)
+void Model::update_collision_box(std::vector<BoundingBox>& aabbs, int *index)
 {
-	if ((*pnIndex) == vxmAABB.size())
+	if ((*index) == aabbs.size())
 		return;
 
-	if (m_pMesh) m_pMesh->m_xmAABB.Transform(vxmAABB[(*pnIndex)++], XMLoadFloat4x4(&m_xmf4x4World));
+	if (meshes_) meshes_->aabbs_.Transform(aabbs[(*index)++], XMLoadFloat4x4(&world_matrix_));
 
-	if (m_pSibling) m_pSibling->UpdateCollisionBox(vxmAABB, pnIndex);
-	if (m_pChild) m_pChild->UpdateCollisionBox(vxmAABB, pnIndex);
+	if (sibling_) sibling_->update_collision_box(aabbs, index);
+	if (child_) child_->update_collision_box(aabbs, index);
 }
 
-void CModel::UpdateWorldTransform(XMFLOAT4X4 *pxmf4x4Parent)
+void Model::update_world_transform(XMFLOAT4X4 *parent)
 {
-	m_xmf4x4World = (pxmf4x4Parent) ? Matrix4x4::Multiply(m_xmf4x4ToParent, *pxmf4x4Parent) : m_xmf4x4ToParent;
+	world_matrix_ = (parent) ? Matrix4x4::Multiply(to_parent_matrix_, *parent) : to_parent_matrix_;
 
-	if (m_pSibling) m_pSibling->UpdateWorldTransform(pxmf4x4Parent);
-	if (m_pChild) m_pChild->UpdateWorldTransform(&m_xmf4x4World);
+	if (sibling_) sibling_->update_world_transform(parent);
+	if (child_) child_->update_world_transform(&world_matrix_);
 }
 
-CModel* CModel::LoadGeometryAndAnimationFromFile(char *pstrFileName, char *pstrUpperAniFileName, char *pstrUnderAniFileName)
+Model* Model::load_geometry_and_animation_from_file(char *file_name)
 {
-	FILE *pFile;
-	fopen_s(&pFile, pstrFileName, "rb");
-	printf("File : %s\n", pstrFileName);
+	FILE *file;
+	fopen_s(&file, file_name, "rb");
+	printf("File : %s\n", file_name);
 
-	std::string pstrFilePath = ::GetFilePath(pstrFileName);
-	printf("File Path : %s\n", pstrFilePath.c_str());
+	std::string file_path = ::GetFilePath(file_name);
+	printf("File Path : %s\n", file_path.c_str());
 
-	CModel *pRootModel = CModel::LoadModelFromFile(pFile, pstrFileName, pstrFilePath.c_str());
-	int nMeshes = 0, nSkinnedMeshes = 0;
-	pRootModel->GetMeshes(&nMeshes, &nSkinnedMeshes);
-	pRootModel->SetModelMeshCount(nMeshes, nSkinnedMeshes);
+	Model *root_model = Model::load_model_from_file(file, file_name, file_path.c_str());
+	int meshes = 0, skinned_meshes = 0;
+	root_model->get_num_meshes(&meshes, &skinned_meshes);
+	root_model->set_model_mesh_count(meshes, skinned_meshes);
 
-	return pRootModel;
+	return root_model;
 }
 
-CModel* CModel::LoadModelFromFile(FILE *pfile, const char *pstrFileName, const char *pstrFilePath)
+Model* Model::load_model_from_file(FILE *file, const char *file_name, const char *file_path)
 {
-	CModel *pModel = NULL;
+	Model *model = NULL;
 
 	while (true)
 	{
-		BYTE nstrLength;
-		char pstrToken[64] = { 0 };
-		fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-		fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
-		pstrToken[nstrLength] = '\0';
+		BYTE ste_len;
+		char token[64] = { 0 };
+		fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+		fread_s(token, sizeof(char) * 64, sizeof(char), ste_len, file);
+		token[ste_len] = '\0';
 
-		if (!strcmp(pstrToken, "<Frame>:"))
+		if (!strcmp(token, "<Frame>:"))
 		{
-			pModel = new CModel();
-			pModel->SetFileName(pstrFileName);
+			model = new Model();
+			model->set_file_name(file_name);
 
-			fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-			fread_s(pModel->m_pstrModelName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+			fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+			fread_s(model->model_name_, sizeof(char) * 64, sizeof(char), ste_len, file);
 		}
-		else if (!strcmp(pstrToken, "<TransformMatrix>:"))
+		else if (!strcmp(token, "<TransformMatrix>:"))
 		{
-			fread_s(&pModel->m_xmf4x4ToParent, sizeof(XMFLOAT4X4), sizeof(XMFLOAT4X4), 1, pfile);
+			fread_s(&model->to_parent_matrix_, sizeof(XMFLOAT4X4), sizeof(XMFLOAT4X4), 1, file);
 		}
-		else if (!strcmp(pstrToken, "<Mesh>:"))
+		else if (!strcmp(token, "<Mesh>:"))
 		{
-			CStandardMesh *pMesh = new CStandardMesh();
-			pMesh->LoadMeshFromFile(pfile);
-			CCubeMesh *pCubeMesh = new CCubeMesh(pMesh->GetCenter(), pMesh->GetExtents());
-			pModel->SetMesh(pMesh, pCubeMesh, false);
+			Standard_mesh *pMesh = new Standard_mesh();
+			pMesh->load_mesh_from_file(file);
+			Cube_mesh *pCubeMesh = new Cube_mesh(pMesh->get_center(), pMesh->get_extents());
+			model->set_mesh(pMesh, pCubeMesh, false);
 		}
-		else if (!strcmp(pstrToken, "<Materials>:"))
+		else if (!strcmp(token, "<Materials>:"))
 		{
-			fread_s(&pModel->m_nMaterials, sizeof(int), sizeof(int), 1, pfile);
+			fread_s(&model->materials_, sizeof(int), sizeof(int), 1, file);
 
-			if (pModel->m_nMaterials > 0)
+			if (model->materials_ > 0)
 			{
 
-				for (int i = 0; i < pModel->m_nMaterials; i++)
+				for (int i = 0; i < model->materials_; i++)
 				{
-					fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-					fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
-					pstrToken[nstrLength] = '\0';
+					fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+					fread_s(token, sizeof(char) * 64, sizeof(char), ste_len, file);
+					token[ste_len] = '\0';
 
-					if (!strcmp(pstrToken, "<Material>:"))
+					if (!strcmp(token, "<Material>:"))
 					{
-						XMFLOAT4						m_xmf4DiffuseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-						XMFLOAT4						m_xmf4EmissiveColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-						XMFLOAT4						m_xmf4SpecularColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-						XMFLOAT4						m_xmf4AmbientColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-						XMFLOAT4						m_xmf4ReflectionColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-						float							m_fShininess = 0.0f;
-						float							m_fTransparency = 0.0f;
+						XMFLOAT4 diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+						XMFLOAT4 emissive = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+						XMFLOAT4 specular = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+						XMFLOAT4 ambient = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+						XMFLOAT4 reflection = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+						float shininess = 0.0f;
+						float transparency = 0.0f;
 
-						float							m_fSmoothness = 0.0f;
-						float							m_fSpecularHighlight = 0.0f;
-						float							m_fMetallic = 0.0f;
-						float							m_fGlossyReflection = 0.0f;
+						float smoothness = 0.0f;
+						float specular_highlight = 0.0f;
+						float metallic = 0.0f;
+						float glossy_reflection = 0.0f;
+
 						while (true)
 						{
-							fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-							fread_s(pstrToken, sizeof(char) * 64, sizeof(char), nstrLength, pfile);  // <Transforms>:
-							pstrToken[nstrLength] = '\0';
+							fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+							fread_s(token, sizeof(char) * 64, sizeof(char), ste_len, file);  // <Transforms>:
+							token[ste_len] = '\0';
 
-							if (!strcmp(pstrToken, "<AmbientColor>:"))
+							if (!strcmp(token, "<AmbientColor>:"))
 							{
-								fread_s(&m_xmf4AmbientColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
+								fread_s(&ambient, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<DiffuseColor>:"))
+							else if (!strcmp(token, "<DiffuseColor>:"))
 							{
-								fread_s(&m_xmf4DiffuseColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
+								fread_s(&diffuse, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<EmissiveColor>:"))
+							else if (!strcmp(token, "<EmissiveColor>:"))
 							{
-								fread_s(&m_xmf4EmissiveColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
+								fread_s(&emissive, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<ReflectionColor>:"))
+							else if (!strcmp(token, "<ReflectionColor>:"))
 							{
-								fread_s(&m_xmf4ReflectionColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
+								fread_s(&reflection, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<SpecularColor>:"))
+							else if (!strcmp(token, "<SpecularColor>:"))
 							{
-								fread_s(&m_xmf4SpecularColor, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, pfile);
+								fread_s(&specular, sizeof(XMFLOAT4), sizeof(XMFLOAT4), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<ReflectionFactor>:"))
+							else if (!strcmp(token, "<ReflectionFactor>:"))
 							{
-								fread_s(&m_xmf4ReflectionColor.w, sizeof(float), sizeof(float), 1, pfile);
+								fread_s(&reflection.w, sizeof(float), sizeof(float), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<Shininess>:"))
+							else if (!strcmp(token, "<Shininess>:"))
 							{
-								fread_s(&m_fShininess, sizeof(float), sizeof(float), 1, pfile);
+								fread_s(&shininess, sizeof(float), sizeof(float), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<SpecularFactor>:"))
+							else if (!strcmp(token, "<SpecularFactor>:"))
 							{
-								fread_s(&m_xmf4SpecularColor.w, sizeof(float), sizeof(float), 1, pfile);
+								fread_s(&specular.w, sizeof(float), sizeof(float), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<Transparency>:"))
+							else if (!strcmp(token, "<Transparency>:"))
 							{
-								fread_s(&m_fTransparency, sizeof(float), sizeof(float), 1, pfile);
+								fread_s(&transparency, sizeof(float), sizeof(float), 1, file);
 							}
-							else if (!strcmp(pstrToken, "<DiffuseMap>:"))
+							else if (!strcmp(token, "<DiffuseMap>:"))
 							{
-								char pstrFileName[64] = { 0 };
-								fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-								fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+								char file_name[64] = { 0 };
+								fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+								fread_s(file_name, sizeof(char) * 64, sizeof(char), ste_len, file);
 
-								if (!strcmp(pstrFileName, "null")) continue;
-
-							}
-							else if (!strcmp(pstrToken, "<NormalMap>:"))
-							{
-								char pstrFileName[64] = { 0 };
-								fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-								fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
-
-								if (!strcmp(pstrFileName, "null")) continue;
+								if (!strcmp(file_name, "null")) continue;
 
 							}
-							else if (!strcmp(pstrToken, "<SpecularFactorMap>:"))
+							else if (!strcmp(token, "<NormalMap>:"))
 							{
-								char pstrFileName[64] = { 0 };
-								fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-								fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+								char file_name[64] = { 0 };
+								fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+								fread_s(file_name, sizeof(char) * 64, sizeof(char), ste_len, file);
 
-								if (!strcmp(pstrFileName, "null")) continue;
+								if (!strcmp(file_name, "null")) continue;
 
 							}
-							else if (!strcmp(pstrToken, "<SpecularMap>:"))
+							else if (!strcmp(token, "<SpecularFactorMap>:"))
 							{
-								char pstrFileName[64] = { 0 };
-								fread_s(&nstrLength, sizeof(BYTE), sizeof(BYTE), 1, pfile);
-								fread_s(pstrFileName, sizeof(char) * 64, sizeof(char), nstrLength, pfile);
+								char file_name[64] = { 0 };
+								fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+								fread_s(file_name, sizeof(char) * 64, sizeof(char), ste_len, file);
 
-								if (!strcmp(pstrFileName, "null")) continue;
+								if (!strcmp(file_name, "null")) continue;
+
 							}
-							else if (!strcmp(pstrToken, "</Material>"))
+							else if (!strcmp(token, "<SpecularMap>:"))
+							{
+								char file_name[64] = { 0 };
+								fread_s(&ste_len, sizeof(BYTE), sizeof(BYTE), 1, file);
+								fread_s(file_name, sizeof(char) * 64, sizeof(char), ste_len, file);
+
+								if (!strcmp(file_name, "null")) continue;
+							}
+							else if (!strcmp(token, "</Material>"))
 							{
 								break;
 							}
@@ -245,26 +246,26 @@ CModel* CModel::LoadModelFromFile(FILE *pfile, const char *pstrFileName, const c
 				}
 			}
 		}
-		else if (!strcmp(pstrToken, "<Children>:"))
+		else if (!strcmp(token, "<Children>:"))
 		{
-			int nChild = 0;
-			fread_s(&nChild, sizeof(int), sizeof(int), 1, pfile);
+			int num_children = 0;
+			fread_s(&num_children, sizeof(int), sizeof(int), 1, file);
 
-			if (nChild > 0)
+			if (num_children > 0)
 			{
-				for (int i = 0; i < nChild; i++)
+				for (int i = 0; i < num_children; i++)
 				{
-					CModel *pChild = CModel::LoadModelFromFile(pfile, pstrFileName, pstrFilePath);
-					if (pChild) pModel->SetChild(pChild);
+					Model *child = Model::load_model_from_file(file, file_name, file_path);
+					if (child) model->set_child(child);
 				}
 			}
 
 		}
-		else if (!strcmp(pstrToken, "</Frame>"))
+		else if (!strcmp(token, "</Frame>"))
 		{
 			break;
 		}
 	}
 
-	return pModel;
+	return model;
 }

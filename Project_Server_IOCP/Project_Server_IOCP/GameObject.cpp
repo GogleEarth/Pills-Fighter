@@ -4,19 +4,19 @@
 
 GameObject::GameObject()
 {
-	m_xmf4x4World = Matrix4x4::Identity();
-	m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	world_matrix_ = Matrix4x4::Identity();
+	right_ = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	up_ = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	look_ = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	position_ = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-	m_fPitch = 0.0f;
-	m_fRoll = 0.0f;
-	m_fYaw = 0.0f;
+	pitch_ = 0.0f;
+	roll_ = 0.0f;
+	yaw_ = 0.0f;
 
-	SetPrepareRotate(0.0f, 0.0f, 0.0f);
+	set_prepare_rotate(0.0f, 0.0f, 0.0f);
 
-	ElapsedTime_ = 0.0f;
+	elapsed_time_ = 0.0f;
 	respawn_time_ = 5.0f;
 	is_die_ = false;
 	is_player_ = false;
@@ -27,250 +27,249 @@ GameObject::~GameObject()
 {
 }
 
-void GameObject::SetModel(CModel * pModel)
+void GameObject::set_model(Model * model)
 {
-	if (model_) model_->Release();
+	if (model_) model_->release();
 
-	if (pModel)
+	if (model)
 	{
-		model_ = pModel;
-		model_->AddRef();
+		model_ = model;
+		model_->add_ref();
 
-		aabb_.clear();
+		aabbs_.clear();
 
-		num_meshes_ = pModel->GetMeshes();
-		for (int i = 0; i < num_meshes_; i++) aabb_.emplace_back(BoundingBox());
+		num_meshes_ = model->get_num_meshes();
+		for (int i = 0; i < num_meshes_; i++) aabbs_.emplace_back(BoundingBox());
 	}
 }
 
-void GameObject::SetMesh(CMesh * pMesh, CCubeMesh * pCubeMesh)
+void GameObject::set_mesh(Mesh * mesh, Cube_mesh * cube_mesh)
 {
 	if (!model_)
 	{
-		CModel *pModel = new CModel();
-		pModel->SetMesh(pMesh, pCubeMesh, false);
+		Model *pModel = new Model();
+		pModel->set_mesh(mesh, cube_mesh, false);
 
-		SetModel(pModel);
+		set_model(pModel);
 	}
 	else
-		model_->SetMesh(pMesh, pCubeMesh, false);
+		model_->set_mesh(mesh, cube_mesh, false);
 }
 
-void GameObject::Animate(float fTimeElapsed, char map)
+void GameObject::animate(float time_elapsed, char map)
 {
-	if (Object_Type_ == OBJECT_TYPE_MACHINE_BULLET
-		|| Object_Type_ == OBJECT_TYPE_BZK_BULLET
-		|| Object_Type_ == OBJECT_TYPE_BEAM_BULLET)
+	if (object_type_ == OBJECT_TYPE_MACHINE_BULLET
+		|| object_type_ == OBJECT_TYPE_BZK_BULLET
+		|| object_type_ == OBJECT_TYPE_BEAM_BULLET)
 	{
-		if (m_xmf3Position.y <= 0.0f && map == 0)
+		if (position_.y <= 0.0f && map == 0)
 		{
-			Delete();
+			object_delete();
 		}
-		else if (ElapsedTime_ >= DurationTime_)
+		else if (elapsed_time_ >= duration_time_)
 		{
-			Delete();
+			object_delete();
 		}
 		else
 		{
-			MoveForward(MovingSpeed_ * fTimeElapsed);
-			ElapsedTime_ += fTimeElapsed;
+			move_forward(moving_speed_ * time_elapsed);
+			elapsed_time_ += time_elapsed;
 		}
 	}
-	else if (Object_Type_ == OBJECT_TYPE_METEOR)
+	else if (object_type_ == OBJECT_TYPE_METEOR)
 	{
-		if (ElapsedTime_ >= DurationTime_)
+		if (elapsed_time_ >= duration_time_)
 		{
-			Delete();
+			object_delete();
 		}
 		else
 		{
-			MoveForward(MovingSpeed_ * fTimeElapsed);
-			ElapsedTime_ += fTimeElapsed;
+			move_forward(moving_speed_ * time_elapsed);
+			elapsed_time_ += time_elapsed;
 		}
 	}
-	else if (Object_Type_ == OBJECT_TYPE_SABER)
+	else if (object_type_ == OBJECT_TYPE_SABER)
 	{
-		Delete();
+		object_delete();
 	}
 
 	if (is_player_)
 	{
 		if (is_die_)
 		{
-			ElapsedTime_ += fTimeElapsed;
-			//std::cout << 5.0f - ElapsedTime_ << "초 후 부활\n";
-			if (ElapsedTime_ >= respawn_time_)
+			elapsed_time_ += time_elapsed;
+			if (elapsed_time_ >= respawn_time_)
 			{
 				is_die_ = false;
-				ElapsedTime_ = 0.0f;
+				elapsed_time_ = 0.0f;
 			}
 		}
 	}
 
 	if (model_)
 	{
-		OnPrepareRender();
-		UpdateWorldTransform();
+		on_prepare();
+		update_world_transform();
 		int i = 0;
-		model_->UpdateCollisionBox(aabb_, &i);
+		model_->update_collision_box(aabbs_, &i);
 	}
 }
 
-void GameObject::OnPrepareRender()
+void GameObject::on_prepare()
 {
-	m_xmf4x4World._11 = m_xmf3Right.x;
-	m_xmf4x4World._12 = m_xmf3Right.y;
-	m_xmf4x4World._13 = m_xmf3Right.z;
-	m_xmf4x4World._21 = m_xmf3Up.x;
-	m_xmf4x4World._22 = m_xmf3Up.y;
-	m_xmf4x4World._23 = m_xmf3Up.z;
-	m_xmf4x4World._31 = m_xmf3Look.x;
-	m_xmf4x4World._32 = m_xmf3Look.y;
-	m_xmf4x4World._33 = m_xmf3Look.z;
-	m_xmf4x4World._41 = m_xmf3Position.x;
-	m_xmf4x4World._42 = m_xmf3Position.y;
-	m_xmf4x4World._43 = m_xmf3Position.z;
+	world_matrix_._11 = right_.x;
+	world_matrix_._12 = right_.y;
+	world_matrix_._13 = right_.z;
+	world_matrix_._21 = up_.x;
+	world_matrix_._22 = up_.y;
+	world_matrix_._23 = up_.z;
+	world_matrix_._31 = look_.x;
+	world_matrix_._32 = look_.y;
+	world_matrix_._33 = look_.z;
+	world_matrix_._41 = position_.x;
+	world_matrix_._42 = position_.y;
+	world_matrix_._43 = position_.z;
 
-	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_fPreparePitch), XMConvertToRadians(m_fPrepareYaw), XMConvertToRadians(m_fPrepareRoll));
-	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, m_xmf4x4World);
+	XMMATRIX rotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(prepare_pitch_), XMConvertToRadians(prepate_yaw_), XMConvertToRadians(prepare_roll));
+	world_matrix_ = Matrix4x4::Multiply(rotate, world_matrix_);
 }
 
-bool GameObject::CollisionCheck(GameObject* object)
+bool GameObject::collsion_check(GameObject* object)
 {
-	auto AABB = (object->GetAABB())[0];
+	auto aabb = (object->get_aabbs())[0];
 
-	if (!object->IsDelete())
+	if (!object->is_delete())
 	{
-		if (aabb_[0].Intersects(AABB))
+		if (aabbs_[0].Intersects(aabb))
 			return true;
 	}
 
 	return false;
 }
 
-void GameObject::SetWorldTransf(XMFLOAT4X4 & xmf4x4World)
+void GameObject::set_world_matrix(XMFLOAT4X4& world)
 {
-	m_xmf3Right = XMFLOAT3(xmf4x4World._11, xmf4x4World._12, xmf4x4World._13);
-	m_xmf3Up = XMFLOAT3(xmf4x4World._21, xmf4x4World._22, xmf4x4World._23);
-	m_xmf3Look = XMFLOAT3(xmf4x4World._31, xmf4x4World._32, xmf4x4World._33);
-	m_xmf3Position = XMFLOAT3(xmf4x4World._41, xmf4x4World._42, xmf4x4World._43);
+	right_ = XMFLOAT3(world._11, world._12, world._13);
+	up_ = XMFLOAT3(world._21, world._22, world._23);
+	look_ = XMFLOAT3(world._31, world._32, world._33);
+	position_ = XMFLOAT3(world._41, world._42, world._43);
 }
 
-XMFLOAT4X4 GameObject::GetWorldTransf()
+XMFLOAT4X4 GameObject::get_world_matrix()
 {
-	XMFLOAT4X4 xmf4x4World;
-	xmf4x4World = XMFLOAT4X4{
-		m_xmf3Right.x,		m_xmf3Right.y,		m_xmf3Right.z, 0.0f,
-		m_xmf3Up.x,			m_xmf3Up.y,			m_xmf3Up.z, 0.0f,
-		m_xmf3Look.x,		m_xmf3Look.y,		m_xmf3Look.z, 0.0f,
-		m_xmf3Position.x,	m_xmf3Position.y,	m_xmf3Position.z, 0.0f,
+	XMFLOAT4X4 world;
+	world = XMFLOAT4X4{
+		right_.x,		right_.y,		right_.z, 0.0f,
+		up_.x,			up_.y,			up_.z, 0.0f,
+		look_.x,		look_.y,		look_.z, 0.0f,
+		position_.x,	position_.y,	position_.z, 0.0f,
 	};
 
-	return xmf4x4World;
+	return world;
 }
 
-void GameObject::SetPosition(float x, float y, float z)
+void GameObject::set_position(float x, float y, float z)
 {
-	m_xmf3PrevPosition.x = m_xmf3Position.x;
-	m_xmf3PrevPosition.y = m_xmf3Position.y;
-	m_xmf3PrevPosition.z = m_xmf3Position.z;
+	prev_position_.x = position_.x;
+	prev_position_.y = position_.y;
+	prev_position_.z = position_.z;
 
-	m_xmf3Position.x = x;
-	m_xmf3Position.y = y;
-	m_xmf3Position.z = z;
+	position_.x = x;
+	position_.y = y;
+	position_.z = z;
 }
 
-void GameObject::SetPosition(XMFLOAT3 & xmf3Position)
+void GameObject::set_position(XMFLOAT3 & position)
 {
-	SetPosition(xmf3Position.x, xmf3Position.y, xmf3Position.z);
+	set_position(position.x, position.y, position.z);
 }
 
-void GameObject::SetPrevPosition(XMFLOAT3 & xmf3Position)
+void GameObject::set_prev_position(XMFLOAT3 & position)
 {
-	m_xmf3PrevPosition.x = xmf3Position.x;
-	m_xmf3PrevPosition.y = xmf3Position.y;
-	m_xmf3PrevPosition.z = xmf3Position.z;
+	prev_position_.x = position.x;
+	prev_position_.y = position.y;
+	prev_position_.z = position.z;
 }
 
-void GameObject::MoveStrafe(float fDistance)
+void GameObject::move_strafe(float distance)
 {
-	XMFLOAT3 xmf3Position = GetPosition();
-	XMFLOAT3 xmf3Right = GetRight();
-	xmf3Position = Vector3::Add(xmf3Position, xmf3Right, fDistance);
-	SetPosition(xmf3Position);
+	XMFLOAT3 position = get_position();
+	XMFLOAT3 right = get_right();
+	position = Vector3::Add(position, right, distance);
+	set_position(position);
 }
 
-void GameObject::MoveUp(float fDistance)
+void GameObject::move_up(float distance)
 {
-	XMFLOAT3 xmf3Position = GetPosition();
-	XMFLOAT3 xmf3Up = GetUp();
-	xmf3Position = Vector3::Add(xmf3Position, xmf3Up, fDistance);
-	SetPosition(xmf3Position);
+	XMFLOAT3 position = get_position();
+	XMFLOAT3 up = get_up();
+	position = Vector3::Add(position, up, distance);
+	set_position(position);
 }
 
-void GameObject::MoveForward(float fDistance)
+void GameObject::move_forward(float distance)
 {
-	XMFLOAT3 xmf3Position = GetPosition();
-	XMFLOAT3 xmf3Look = GetLook();
-	xmf3Position = Vector3::Add(xmf3Position, xmf3Look, fDistance);
-	SetPosition(xmf3Position);
+	XMFLOAT3 position = get_position();
+	XMFLOAT3 look = get_look();
+	position = Vector3::Add(position, look, distance);
+	set_position(position);
 }
 
-void GameObject::Move(XMFLOAT3 xmf3Direction, float fDistance)
+void GameObject::move(XMFLOAT3 direction, float distance)
 {
-	XMFLOAT3 xmf3Position = GetPosition();
-	xmf3Position = Vector3::Add(xmf3Position, xmf3Direction, fDistance);
-	SetPosition(xmf3Position);
+	XMFLOAT3 position = get_position();
+	position = Vector3::Add(position, direction, distance);
+	set_position(position);
 }
 
-void GameObject::Rotate(float fPitch, float fYaw, float fRoll)
+void GameObject::rotate(float pitch, float yaw, float roll)
 {
-	if (fPitch != 0.0f)
+	if (pitch != 0.0f)
 	{
-		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Right),
-			XMConvertToRadians(fPitch));
-		m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
-		m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, xmmtxRotate);
+		XMMATRIX rotate = XMMatrixRotationAxis(XMLoadFloat3(&right_),
+			XMConvertToRadians(pitch));
+		look_ = Vector3::TransformNormal(look_, rotate);
+		up_ = Vector3::TransformNormal(up_, rotate);
 	}
-	if (fYaw != 0.0f)
+	if (yaw != 0.0f)
 	{
-		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up),
-			XMConvertToRadians(fYaw));
-		m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
-		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
+		XMMATRIX rotate = XMMatrixRotationAxis(XMLoadFloat3(&up_),
+			XMConvertToRadians(yaw));
+		look_ = Vector3::TransformNormal(look_, rotate);
+		right_ = Vector3::TransformNormal(right_, rotate);
 	}
-	if (fRoll != 0.0f)
+	if (roll != 0.0f)
 	{
-		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Look),
-			XMConvertToRadians(fRoll));
-		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
-		m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, xmmtxRotate);
+		XMMATRIX rotate = XMMatrixRotationAxis(XMLoadFloat3(&look_),
+			XMConvertToRadians(roll));
+		right_ = Vector3::TransformNormal(right_, rotate);
+		up_ = Vector3::TransformNormal(up_, rotate);
 	}
 
-	m_xmf3Look = Vector3::Normalize(m_xmf3Look);
-	m_xmf3Right = Vector3::CrossProduct(m_xmf3Up, m_xmf3Look, true);
-	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
+	look_ = Vector3::Normalize(look_);
+	right_ = Vector3::CrossProduct(up_, look_, true);
+	up_ = Vector3::CrossProduct(look_, right_, true);
 }
 
-void GameObject::UpdateWorldTransform()
+void GameObject::update_world_transform()
 {
-	if (model_) model_->UpdateWorldTransform(&m_xmf4x4World);
+	if (model_) model_->update_world_transform(&world_matrix_);
 }
 
-void GameObject::SetHitPoint(int nHitPoint)
+void GameObject::set_hp(int hp)
 {
-	if (nHitPoint >= max_hp_)
+	if (hp >= max_hp_)
 		hp_ = max_hp_;
 	else
-		hp_ = nHitPoint;
+		hp_ = hp;
 }
 
-void GameObject::SetUse(bool use)
+void GameObject::set_use(bool use)
 {
 	 in_used_ = use; 
 	 if (use)
 	 {
 		 delete_ = false;
-		 ElapsedTime_ = 0.0f;
+		 elapsed_time_ = 0.0f;
 	 }
 }

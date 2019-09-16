@@ -15,10 +15,10 @@ void Framawork::init()
 {
 	iocp_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
 
-	repository_ = new CRepository();
+	repository_ = new Repository();
 
 	for (int i = 0; i < 1000; i++)
-		clients_[i].in_use = false;
+		clients_[i].in_use_ = false;
 
 	for (int i = 0; i < 10; ++i)
 		rooms_[i].init(repository_);
@@ -28,154 +28,143 @@ int Framawork::thread_process()
 {
 	while (true) {
 		DWORD io_byte;
-		ULONGLONG l_key;
-		OVER_EX *over_ex;
-		int is_error = GetQueuedCompletionStatus(iocp_, &io_byte,
-			&l_key, reinterpret_cast<LPWSAOVERLAPPED *>(&over_ex),
+		ULONGLONG key;
+		Overlapped *overlapped;
+		bool is_error = GetQueuedCompletionStatus(iocp_, &io_byte,
+			&key, reinterpret_cast<LPWSAOVERLAPPED *>(&overlapped),
 			INFINITE);
-		int key = static_cast<int>(l_key);
-		if (0 == is_error) {
+		int index = static_cast<int>(key);
+		if (false == is_error) {
 			int err_no = WSAGetLastError();
 			if (64 == err_no) {
-				disconnect_client(key);
-				clients_[key].in_room = false;
-				lstrcpynW(clients_[key].name, L"라마바", MAX_NAME_LENGTH);
-				std::cout << "플레이어 접속 종료\n";
+				disconnect_client(index);
+				std::wcout << clients_[index].name_ << L" 접속 종료\n";
+				lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
 				continue;
 			}
 			else error_display("GQCS : ", err_no);
 		}
 
 		if (0 == io_byte) {
-			disconnect_client(key);
-			clients_[key].in_room = false;
-			lstrcpynW(clients_[key].name, L"라마바", MAX_NAME_LENGTH);
-			std::cout << "플레이어 접속 종료\n";
+			disconnect_client(index);
+			std::wcout << clients_[index].name_ << L" 접속 종료\n";
+			lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
 			continue;
 		}
 
-		if (EVENT_TYPE_RECV == over_ex->event_t) {
-			//std::wcout << "Packet from Client:" << key << std::endl;
+		if (EVENT_TYPE_RECV == overlapped->event_type_) {
 			int rest = io_byte;
-			char *ptr = over_ex->messageBuffer;
+			char *buffer = overlapped->packet_buffer_;
 			char packet_size = 0;
-			if (0 < clients_[key].prev_size)
-				packet_size = clients_[key].packet_buffer[0];
-			while (0 < rest) {
-				if (0 == packet_size) packet_size = ptr[0];
-				int required = packet_size - clients_[key].prev_size;
+			if (clients_[index].prev_size_ > 0)
+				packet_size = clients_[index].buffer_[0];
+			while (rest > 0) {
+				if (packet_size == 0) packet_size = buffer[0];
+				int required = packet_size - clients_[index].prev_size_;
 				if (required <= rest) {
-					memcpy(clients_[key].packet_buffer + clients_[key].prev_size,
-						ptr, required);
-					process_packet(key, clients_[key].packet_buffer);
+					memcpy(clients_[index].buffer_ + clients_[index].prev_size_,
+						buffer, required);
+					process_packet(index, clients_[index].buffer_);
 					rest -= required;
-					ptr += required;
+					buffer += required;
 					packet_size = 0;
-					clients_[key].prev_size = 0;
+					clients_[index].prev_size_ = 0;
 				}
 				else {
-					memcpy(clients_[key].packet_buffer + clients_[key].prev_size,
-						ptr, rest);
+					memcpy(clients_[index].buffer_ + clients_[index].prev_size_,
+						buffer, rest);
 					rest = 0;
-					clients_[key].prev_size += rest;
+					clients_[index].prev_size_ += rest;
 				}
 			}
-			do_recv(key);
+			do_recv(index);
 		}
-		else if (EVENT_TYPE_SEND == over_ex->event_t) 
+		else if (EVENT_TYPE_SEND == overlapped->event_type_) 
 		{
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_ROOM_UPDATE == over_ex->event_t)
+		else if (EVENT_TYPE_ROOM_UPDATE == overlapped->event_type_)
 		{
-			using namespace std;
-			using namespace chrono;
+			using namespace std::chrono;
 			float elapsed_time;
 
-			if (over_ex->elapsed_time <= 0.001f)
+			if (overlapped->elapsed_time_ <= 0.001f)
 				elapsed_time = 0.016f;
 			else
-				elapsed_time = over_ex->elapsed_time;
+				elapsed_time = overlapped->elapsed_time_;
 
-			PKT_TIME_INFO pkt_ti;
-			pkt_ti.PktId = PKT_ID_TIME_INFO;
-			pkt_ti.PktSize = sizeof(PKT_TIME_INFO);
-			pkt_ti.elapsedtime = elapsed_time;
-			send_packet_to_room_player(key, (char*)&pkt_ti);
-
-			if (!rooms_[key].get_game_end())
+			if (!rooms_[index].get_game_end())
 			{
-				rooms_[key].room_update(elapsed_time);
+				rooms_[index].room_update(elapsed_time);
 
 				while (true)
 				{
-					auto data = rooms_[key].create_object_dequeue();
+					auto data = rooms_[index].create_object_dequeue();
 					if (data == nullptr) break;
 					if (data->Object_Type == OBJECT_TYPE_METEOR)
 					{
-						data->Object_Index = rooms_[key].add_object(data->Object_Type, data->WorldMatrix);
-						add_timer(data->Object_Index, key, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+						data->Object_Index = rooms_[index].add_object(data->Object_Type, data->WorldMatrix);
+						add_event(data->Object_Index, index, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
 					}
 					else if (data->Object_Type == OBJECT_TYPE_ITEM_AMMO || data->Object_Type == OBJECT_TYPE_ITEM_HEALING)
 					{
-						add_timer(data->Object_Index, key, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
+						add_event(data->Object_Index, index, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
 					}
-					send_packet_to_room_player(key, (char*)data);
+					send_packet_to_room_player(index, (char*)data);
 					delete data;
 				}
 
 				while (true)
 				{
-					auto data = rooms_[key].map_event_dequeue();
+					auto data = rooms_[index].map_event_dequeue();
 					if (data == nullptr) break;
 					if (data->type == MAP_EVENT_TYPE_ALERT)
-						std::cout << key << "번방 이벤트 경고\n";
+						std::cout << index << "번방 이벤트 경고\n";
 					if (data->type == MAP_EVENT_TYPE_START)
-						std::cout << key << "번방 이벤트 시작\n";
+						std::cout << index << "번방 이벤트 시작\n";
 					if (data->type == MAP_EVENT_TYPE_END)
-						std::cout << key << "번방 이벤트 끝\n";
-					send_packet_to_room_player(key, (char*)data);
+						std::cout << index << "번방 이벤트 끝\n";
+					send_packet_to_room_player(index, (char*)data);
 					delete data;
 				}
 
 				while (true)
 				{
-					auto data = rooms_[key].player_life_dequeue();
+					auto data = rooms_[index].player_life_dequeue();
 					if (data == nullptr) break;
-					send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
+					send_packet_to_team_player(index, (char*)data, rooms_[index].get_player_team(data->ID));
 					delete data;
 				}
 
 				while (true)
 				{
-					auto data = rooms_[key].player_die_dequeue();
+					auto data = rooms_[index].player_die_dequeue();
 					if (data == nullptr) break;
-					send_packet_to_room_player(key, (char*)data);
-					using namespace std;
-					using namespace chrono;
-					add_timer(data->id, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
+					send_packet_to_room_player(index, (char*)data);
+					using namespace std::chrono;
+					add_event(data->id, overlapped->room_num_, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
 					delete data;
 				}
 
 				while (true)
 				{
-					auto data = rooms_[key].score_dequeue();
+					auto data = rooms_[index].score_dequeue();
 					if (data == nullptr) break;
-					send_packet_to_room_player(key, (char*)data);
+					send_packet_to_room_player(index, (char*)data);
 
-					if (rooms_[key].get_blue_score() <= 0 || rooms_[key].get_red_score() <= 0)
+					if (rooms_[index].get_blue_score() <= 0 || rooms_[index].get_red_score() <= 0)
 					{
 						PKT_GAME_END pkt_ge;
 						pkt_ge.PktId = PKT_ID_GAME_END;
 						pkt_ge.PktSize = sizeof(PKT_GAME_END);
-						if (rooms_[key].get_blue_score() <= 0)
+						if (rooms_[index].get_blue_score() <= 0)
 							pkt_ge.WinTeam = 0;
 						else
 							pkt_ge.WinTeam = 1;
 
-						rooms_[key].set_game_end(true);
+						rooms_[index].set_game_end(true);
 
-						send_packet_to_room_player(key, (char*)&pkt_ge);
+						send_packet_to_room_player(index, (char*)&pkt_ge);
 					}
 
 					delete data;
@@ -183,58 +172,58 @@ int Framawork::thread_process()
 
 				while (true)
 				{
-					auto data = rooms_[key].create_effect_dequeue();
+					auto data = rooms_[index].create_effect_dequeue();
 					if (data == nullptr) break;
 					if (data->efType == EFFECT_TYPE_BEAM_HIT)
-						send_packet_to_room_player(key, (char*)data);
+						send_packet_to_room_player(index, (char*)data);
 					else
-						send_packet_to_player(rooms_[key].get_player(data->id)->get_serverid(), (char*)data);
+						send_packet_to_player(rooms_[index].get_player(data->id)->get_serverid(), (char*)data);
 					delete data;
 				}
 
 				while (true)
 				{
-					auto data = rooms_[key].item_dequeue();
+					auto data = rooms_[index].item_dequeue();
 					if (data == nullptr) break;
 					if (data->Item_type == ITEM_TYPE_AMMO1 || data->Item_type == ITEM_TYPE_AMMO2)
 						data->Item_type = ITEM_TYPE_AMMO;
-					send_packet_to_team_player(key, (char*)data, rooms_[key].get_player_team(data->ID));
+					send_packet_to_team_player(index, (char*)data, rooms_[index].get_player_team(data->ID));
 					delete data;
 				}
 			}
 			
-			if (rooms_[key].get_num_player_in_room() > 0)
-				add_timer(key, key, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+			if (rooms_[index].get_num_player_in_room() > 0)
+				add_event(index, index, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 			else
-				rooms_[key].init();
+				rooms_[index].init();
 
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_OBJECT_MOVE == over_ex->event_t)
+		else if (EVENT_TYPE_OBJECT_MOVE == overlapped->event_type_)
 		{
-			if (rooms_[over_ex->room_num].get_playing())
+			if (rooms_[overlapped->room_num_].get_playing())
 			{
-				auto object = rooms_[over_ex->room_num].get_object(key);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (overlapped->elapsed_time_ <= 0.001f)
 					elapsed_time = 0.016f;
 				else
-					elapsed_time = over_ex->elapsed_time;
+					elapsed_time = overlapped->elapsed_time_;
 
-				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
-				rooms_[over_ex->room_num].check_collision_obstacles(key);
-				rooms_[over_ex->room_num].check_collision_player(key);
+				object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
+				rooms_[overlapped->room_num_].check_collision_obstacles(index);
+				rooms_[overlapped->room_num_].check_collision_player(index);
 
-				if (object->IsDelete())
+				if (object->is_delete())
 				{
 					PKT_DELETE_OBJECT pkt_do;
 					pkt_do.PktId = PKT_ID_DELETE_OBJECT;
 					pkt_do.PktSize = sizeof(PKT_DELETE_OBJECT);
-					pkt_do.Object_Index = key;
-					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_do);
+					pkt_do.Object_Index = index;
+					send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_do);
 
-					OBJECT_TYPE type = object->GetObjectType();
+					OBJECT_TYPE type = object->get_object_type();
 					if (type == OBJECT_TYPE_MACHINE_BULLET
 						|| type == OBJECT_TYPE_BZK_BULLET
 						|| type == OBJECT_TYPE_BEAM_BULLET
@@ -249,239 +238,232 @@ int Framawork::thread_process()
 						else
 							pktCE.efType = EFFECT_TYPE_HIT;
 						pktCE.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-						pktCE.xmf3Position = object->GetPosition();
-						send_packet_to_room_player(over_ex->room_num, (char*)&pktCE);
+						pktCE.xmf3Position = object->get_position();
+						send_packet_to_room_player(overlapped->room_num_, (char*)&pktCE);
 					}
-					object->SetUse(false);
+					object->set_use(false);
 				}
 				else
 				{
 					PKT_UPDATE_OBJECT pkt_uo;
 					pkt_uo.PktId = PKT_ID_UPDATE_OBJECT;
 					pkt_uo.PktSize = sizeof(PKT_UPDATE_OBJECT);
-					pkt_uo.Object_Index = key;
-					pkt_uo.Object_Position = object->GetPosition();
+					pkt_uo.Object_Index = index;
+					pkt_uo.Object_Position = object->get_position();
 
-					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_uo);
+					send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_uo);
 
-					using namespace std;
-					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
 				}
 			}
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_ITEM == over_ex->event_t)
+		else if (EVENT_TYPE_ITEM == overlapped->event_type_)
 		{
-			if(rooms_[over_ex->room_num].get_playing())
+			if(rooms_[overlapped->room_num_].get_playing())
 			{
-				auto object = rooms_[over_ex->room_num].get_object(key);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (overlapped->elapsed_time_ <= 0.001f)
 					elapsed_time = 0.016f;
 				else
-					elapsed_time = over_ex->elapsed_time;
+					elapsed_time = overlapped->elapsed_time_;
 
-				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
-				rooms_[over_ex->room_num].check_collision_player(key);
+				object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
+				rooms_[overlapped->room_num_].check_collision_player(index);
 
-				if (object->IsDelete())
+				if (object->is_delete())
 				{
 					PKT_DELETE_OBJECT pkt_do;
 					pkt_do.PktId = PKT_ID_DELETE_OBJECT;
 					pkt_do.PktSize = sizeof(PKT_DELETE_OBJECT);
-					pkt_do.Object_Index = key;
-					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_do);
+					pkt_do.Object_Index = index;
+					send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_do);
 
-					object->SetUse(false);
+					object->set_use(false);
 				}
 				else
 				{
-					using namespace std;
-					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_ITEM, high_resolution_clock::now() + 16ms);
 				}
 			}
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_BEAM_RIFLE == over_ex->event_t)
+		else if (EVENT_TYPE_BEAM_RIFLE == overlapped->event_type_)
 		{
-			if (rooms_[over_ex->room_num].get_playing())
+			if (rooms_[overlapped->room_num_].get_playing())
 			{
-				auto object = rooms_[over_ex->room_num].get_object(key);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (overlapped->elapsed_time_ <= 0.001f)
 					elapsed_time = 0.016f;
 				else
-					elapsed_time = over_ex->elapsed_time;
+					elapsed_time = overlapped->elapsed_time_;
 
-				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+				object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
 
 				float distance = 1000.0f;
-				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 1000.0f, &distance);
+				rooms_[overlapped->room_num_].check_collision_player_to_vector(index, 1000.0f, &distance);
 				
 				PKT_CREATE_EFFECT pkt_ce;
 				pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
 				pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
 				pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 				pkt_ce.efType = EFFECT_TYPE_BEAM_RIFLE;
-				pkt_ce.xmf3Look = object->GetLook();
-				pkt_ce.xmf3Position = object->GetPosition();
+				pkt_ce.xmf3Look = object->get_look();
+				pkt_ce.xmf3Position = object->get_position();
 				pkt_ce.fDistance = distance;
 
-				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_ce);
+				send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_ce);
 
-				if (object->IsDelete())
+				if (object->is_delete())
 				{
-					object->SetUse(false);
+					object->set_use(false);
 				}
 				else
 				{
-					using namespace std;
-					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
 				}
 			}
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_GM_GUN == over_ex->event_t)
+		else if (EVENT_TYPE_GM_GUN == overlapped->event_type_)
 		{
-			if (rooms_[over_ex->room_num].get_playing())
+			if (rooms_[overlapped->room_num_].get_playing())
 			{
-				auto object = rooms_[over_ex->room_num].get_object(key);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (overlapped->elapsed_time_ <= 0.001f)
 					elapsed_time = 0.016f;
 				else
-					elapsed_time = over_ex->elapsed_time;
+					elapsed_time = overlapped->elapsed_time_;
 
-				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+				object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
 
 				float distance = 600.0f;
-				rooms_[over_ex->room_num].check_collision_player_to_vector(key, 600.0f, &distance);
+				rooms_[overlapped->room_num_].check_collision_player_to_vector(index, 600.0f, &distance);
 
 				PKT_CREATE_EFFECT pkt_ce;
 				pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
 				pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
 				pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 				pkt_ce.efType = EFFECT_TYPE_GM_GUN;
-				pkt_ce.xmf3Look = object->GetLook();
-				pkt_ce.xmf3Position = object->GetPosition();
+				pkt_ce.xmf3Look = object->get_look();
+				pkt_ce.xmf3Position = object->get_position();
 				pkt_ce.fDistance = distance;
 
-				send_packet_to_room_player(over_ex->room_num, (char*)&pkt_ce);
+				send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_ce);
 
-				if (object->IsDelete())
+				if (object->is_delete())
 				{
-					object->SetUse(false);
+					object->set_use(false);
 				}
 				else
 				{
-					using namespace std;
-					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
 				}
 			}
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_SABER == over_ex->event_t)
+		else if (EVENT_TYPE_SABER == overlapped->event_type_)
 		{
-			if (rooms_[over_ex->room_num].get_playing())
+			if (rooms_[overlapped->room_num_].get_playing())
 			{
-				auto object = rooms_[over_ex->room_num].get_object(key);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
 				float elapsed_time;
 
-				if (over_ex->elapsed_time <= 0.001f)
+				if (overlapped->elapsed_time_ <= 0.001f)
 					elapsed_time = 0.016f;
 				else
-					elapsed_time = over_ex->elapsed_time;
+					elapsed_time = overlapped->elapsed_time_;
 
-				object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
-				rooms_[over_ex->room_num].check_saber_collision_player(key);
+				object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
+				rooms_[overlapped->room_num_].check_saber_collision_player(index);
 
-				if (object->IsDelete())
+				if (object->is_delete())
 				{
-					object->SetUse(false);
+					object->set_use(false);
 				}
 				else
 				{
-					using namespace std;
-					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 				}
 			}
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_RESPAWN == over_ex->event_t)
+		else if (EVENT_TYPE_RESPAWN == overlapped->event_type_)
 		{
-			if (rooms_[over_ex->room_num].get_playing())
+			if (rooms_[overlapped->room_num_].get_playing())
 			{
-				auto object = rooms_[over_ex->room_num].get_object(key);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
 
 				if (!object->get_is_die())
 				{
 					PKT_PLAYER_RESPAWN pkt_rp;
 					pkt_rp.PktId = PKT_ID_PLAYER_RESPAWN;
 					pkt_rp.PktSize = sizeof(PKT_PLAYER_RESPAWN);
-					pkt_rp.id = key;
-					pkt_rp.hp = object->GetMaxHitPoint();
-					pkt_rp.point = rooms_[over_ex->room_num].get_respawn_point(key);
+					pkt_rp.id = index;
+					pkt_rp.hp = object->get_max_hp();
+					pkt_rp.point = rooms_[overlapped->room_num_].get_respawn_point(index);
 					pkt_rp.team = object->get_team();
 
-					send_packet_to_room_player(over_ex->room_num, (char*)&pkt_rp);
+					send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_rp);
 				}
 				else
 				{
-					using namespace std;
-					using namespace chrono;
-					add_timer(key, over_ex->room_num, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
 				}
 			}
-			delete over_ex;
+			delete overlapped;
 		}
-		else if (EVENT_TYPE_BEAM_SNIPER == over_ex->event_t)
+		else if (EVENT_TYPE_BEAM_SNIPER == overlapped->event_type_)
 		{
-		if (rooms_[over_ex->room_num].get_playing())
+		if (rooms_[overlapped->room_num_].get_playing())
 		{
-			auto object = rooms_[over_ex->room_num].get_object(key);
+			auto object = rooms_[overlapped->room_num_].get_object(index);
 			float elapsed_time;
 
-			if (over_ex->elapsed_time <= 0.001f)
+			if (overlapped->elapsed_time_ <= 0.001f)
 				elapsed_time = 0.016f;
 			else
-				elapsed_time = over_ex->elapsed_time;
+				elapsed_time = overlapped->elapsed_time_;
 
-			object->Animate(elapsed_time, rooms_[over_ex->room_num].get_map());
+			object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
 
 			float distance = 2000.0f;
-			rooms_[over_ex->room_num].check_collision_player_to_vector(key, 2000.0f, &distance);
+			rooms_[overlapped->room_num_].check_collision_player_to_vector(index, 2000.0f, &distance);
 			
 			PKT_CREATE_EFFECT pkt_ce;
 			pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
 			pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
 			pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
 			pkt_ce.efType = EFFECT_TYPE_BEAM_SNIPER;
-			pkt_ce.xmf3Look = object->GetLook();
-			pkt_ce.xmf3Position = object->GetPosition();
+			pkt_ce.xmf3Look = object->get_look();
+			pkt_ce.xmf3Position = object->get_position();
 			pkt_ce.fDistance = distance;
 
-			send_packet_to_room_player(over_ex->room_num, (char*)&pkt_ce);
+			send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_ce);
 
-			if (object->IsDelete())
+			if (object->is_delete())
 			{
-				object->SetUse(false);
+				object->set_use(false);
 			}
 			else
 			{
-				using namespace std;
-				using namespace chrono;
-				add_timer(key, over_ex->room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
+				using namespace std::chrono;
+				add_event(index, overlapped->room_num_, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
 			}
 		}
-		delete over_ex;
+		delete overlapped;
 		}
 		else
 		{
@@ -493,15 +475,15 @@ int Framawork::thread_process()
 
 int Framawork::accept_process()
 {
-	WSADATA WSAData;
-	if (WSAStartup(MAKEWORD(2, 2), &WSAData) != 0)
+	WSADATA wsadata;
+	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
 	{
 		std::cout << "Error - Can not load 'winsock.dll' file\n";
 		return 1;
 	}
 
-	SOCKET listenSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	if (listenSocket == INVALID_SOCKET)
+	SOCKET listen_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	if (listen_socket == INVALID_SOCKET)
 	{
 		std::cout << "Error - Invalid socket\n";
 		return 1;
@@ -513,33 +495,33 @@ int Framawork::accept_process()
 	serverAddr.sin_port = htons(SERVERPORT);
 	serverAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 
-	if (::bind(listenSocket, (struct sockaddr*)&serverAddr,
+	if (::bind(listen_socket, (struct sockaddr*)&serverAddr,
 		sizeof(SOCKADDR_IN)) == SOCKET_ERROR)
 	{
 		std::cout << "Error - Fail bind\n";
-		closesocket(listenSocket);
+		closesocket(listen_socket);
 		WSACleanup();
 		return 1;
 	}
 
-	if (listen(listenSocket, 5) == SOCKET_ERROR)
+	if (listen(listen_socket, 5) == SOCKET_ERROR)
 	{
 		std::cout << "Error - Fail listen\n";
-		closesocket(listenSocket);
+		closesocket(listen_socket);
 		WSACleanup();
 		return 1;
 	}
 
-	SOCKADDR_IN clientAddr;
-	int addrLen = sizeof(SOCKADDR_IN);
-	memset(&clientAddr, 0, addrLen);
-	SOCKET clientSocket;
+	SOCKADDR_IN client_addr;
+	int addr_len = sizeof(SOCKADDR_IN);
+	memset(&client_addr, 0, addr_len);
+	SOCKET client_socket;
 	DWORD flags;
 
 	while (1)
 	{
-		clientSocket = accept(listenSocket, (struct sockaddr *)&clientAddr, &addrLen);
-		if (clientSocket == INVALID_SOCKET)
+		client_socket = accept(listen_socket, (struct sockaddr *)&client_addr, &addr_len);
+		if (client_socket == INVALID_SOCKET)
 		{
 			std::cout << "Error - Accept Failure\n";
 			return 1;
@@ -548,7 +530,7 @@ int Framawork::accept_process()
 		accept_l.lock();
 		int new_id = -1;
 		for (int i = 0; i < MAX_USER; ++i)
-			if (false == clients_[i].in_use) {
+			if (false == clients_[i].in_use_) {
 				new_id = i;
 				break;
 			}
@@ -561,20 +543,20 @@ int Framawork::accept_process()
 
 		std::cout << "플레이어 접속\n";
 
-		clients_[new_id].socket = clientSocket;
-		clients_[new_id].prev_size = 0;
-		clients_[new_id].in_use = true;
-		ZeroMemory(&clients_[new_id].over_ex.over,
-			sizeof(clients_[new_id].over_ex.over));
+		clients_[new_id].socket_ = client_socket;
+		clients_[new_id].prev_size_ = 0;
+		clients_[new_id].in_use_ = true;
+		ZeroMemory(&clients_[new_id].over_ex.overlapped_,
+			sizeof(clients_[new_id].over_ex.overlapped_));
 		flags = 0;
 
-		CreateIoCompletionPort(reinterpret_cast<HANDLE>(clientSocket),
+		CreateIoCompletionPort(reinterpret_cast<HANDLE>(client_socket),
 			iocp_, new_id, 0);
 
 		PKT_CHANGE_NAME pkt_cn;
 		pkt_cn.PktId = PKT_ID_CHANGE_NAME;
 		pkt_cn.PktSize = sizeof(PKT_CHANGE_NAME);
-		lstrcpynW(pkt_cn.name, clients_[new_id].name, MAX_NAME_LENGTH);
+		lstrcpynW(pkt_cn.name, clients_[new_id].name_, MAX_NAME_LENGTH);
 
 		send_packet_to_player(new_id, (char*)&pkt_cn);
 
@@ -602,7 +584,7 @@ int Framawork::accept_process()
 		do_recv(new_id);
 	}
 
-	closesocket(listenSocket);
+	closesocket(listen_socket);
 
 	WSACleanup();
 
@@ -612,8 +594,7 @@ int Framawork::accept_process()
 int Framawork::timer_process()
 {
 	while (true) {
-		using namespace std;
-		using namespace chrono;
+		using namespace std::chrono;
 		std::this_thread::sleep_for(16ms);
 		while (true) {
 			timer_l.lock();
@@ -621,28 +602,28 @@ int Framawork::timer_process()
 				timer_l.unlock();
 				break;
 			}
-			EVENT_ST ev = timer_queue.top();
+			Event event = timer_queue.top();
 
-			if (ev.start_time > std::chrono::high_resolution_clock::now()) {
+			if (event.start_time_ > std::chrono::high_resolution_clock::now()) {
 				timer_l.unlock();
 				break;
 			}
 			timer_queue.pop();
 			timer_l.unlock();
-			OVER_EX *over_ex = new OVER_EX;
-			over_ex->event_t = ev.type;
-			over_ex->elapsed_time = (float)(duration_cast<milliseconds>(std::chrono::high_resolution_clock::now() - ev.start_time).count()) / 1000.0f;
-			over_ex->room_num = ev.room_num;
-			PostQueuedCompletionStatus(iocp_, 1, ev.obj_id, &over_ex->over);
+			Overlapped *over_ex = new Overlapped;
+			over_ex->event_type_ = event.type_;
+			over_ex->elapsed_time_ = (float)(duration_cast<milliseconds>(std::chrono::high_resolution_clock::now() - event.start_time_).count()) / 1000.0f;
+			over_ex->room_num_ = event.room_num_;
+			PostQueuedCompletionStatus(iocp_, 1, event.object_index_, &over_ex->overlapped_);
 		}
 	}
 	return 0;
 }
 
-void Framawork::add_timer(int obj_id, int room_num, EVENT_TYPE et, std::chrono::high_resolution_clock::time_point start_time)
+void Framawork::add_event(int obj_id, int room_num, EVENT_TYPE et, std::chrono::high_resolution_clock::time_point start_time)
 {
 	timer_l.lock();
-	timer_queue.emplace(EVENT_ST{ obj_id, room_num, et, start_time });
+	timer_queue.emplace(Event{ obj_id, room_num, et, start_time });
 	timer_l.unlock();
 }
 
@@ -650,12 +631,12 @@ void Framawork::do_recv(int id)
 {
 	DWORD flags = 0;
 
-	if (WSARecv(clients_[id].socket, &clients_[id].over_ex.dataBuffer, 1,
-		NULL, &flags, &(clients_[id].over_ex.over), 0))
+	if (WSARecv(clients_[id].socket_, &clients_[id].over_ex.wsa_buffer_, 1,
+		NULL, &flags, &(clients_[id].over_ex.overlapped_), 0))
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			std::cout << "Error - IO pending Failure\n";
+			std::cout << "Recv_Error\n";
 			while (true);
 		}
 	}
@@ -677,16 +658,16 @@ void Framawork::error_display(const char *mess, int err_no)
 
 void Framawork::disconnect_client(int id)
 {
-	int room_num = search_client_in_room(clients_[id].socket);
+	int room_num = search_client_in_room(clients_[id].socket_);
 
 	if (room_num != -1)
 	{
 		PKT_PLAYER_OUT packet;
-		packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+		packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket_);
 		packet.PktId = PKT_ID_PLAYER_OUT;
 		packet.PktSize = sizeof(PKT_PLAYER_OUT);
 		send_packet_to_room_player(room_num, (char*)&packet);
-		rooms_[room_num].disconnect_client(clients_[id].socket);
+		rooms_[room_num].disconnect_client(clients_[id].socket_);
 
 		if (rooms_[room_num].get_num_player_in_room() <= 0)
 		{
@@ -709,8 +690,9 @@ void Framawork::disconnect_client(int id)
 		}
 	}
 
-	closesocket(clients_[id].socket);
-	clients_[id].in_use = false;
+	closesocket(clients_[id].socket_);
+	clients_[id].in_use_ = false;
+	clients_[id].in_room_ = false;
 }
 
 int Framawork::search_client_in_room(SOCKET socket)
@@ -732,10 +714,10 @@ void Framawork::process_packet(int id, char* packet)
 	{
 	case PKT_ID_PLAYER_INFO:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
-			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket_);
 			if (rooms_[room_num].get_playing())
 			{
 				rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
@@ -746,32 +728,23 @@ void Framawork::process_packet(int id, char* packet)
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
 						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
 						{
-							//std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
-							//std::cout << "1번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-							using namespace std;
-							using namespace chrono;
-							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+							using namespace std::chrono;
+							add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 						}
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
 						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
 						{
-							//std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
-							//std::cout << "2번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-							using namespace std;
-							using namespace chrono;
-							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+							using namespace std::chrono;
+							add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 						}
 					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
 						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.52f)
 						{
-							//std::cout << ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition << "\n";
-							//std::cout << "3번 판정 생성\n";
 							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-							using namespace std;
-							using namespace chrono;
-							add_timer(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+							using namespace std::chrono;
+							add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
 						}
 				}
 				send_packet_to_room_player(room_num, packet);
@@ -781,11 +754,11 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_LOAD_COMPLETE:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
 			std::cout << room_num << "번방의 " << id << "번 플레이어" << "로드완료\n";
-			rooms_[room_num].player_load_complete(clients_[id].socket);
+			rooms_[room_num].player_load_complete(clients_[id].socket_);
 			if (rooms_[room_num].all_load_complete())
 			{
 				PKT_LOAD_COMPLETE pktgamestate;
@@ -828,7 +801,7 @@ void Framawork::process_packet(int id, char* packet)
 						pkt_rp.PktId = PKT_ID_PLAYER_RESPAWN;
 						pkt_rp.PktSize = sizeof(PKT_PLAYER_RESPAWN);
 						pkt_rp.id = i;
-						pkt_rp.hp = rooms_[room_num].get_object(i)->GetMaxHitPoint();
+						pkt_rp.hp = rooms_[room_num].get_object(i)->get_max_hp();
 						pkt_rp.point = rooms_[room_num].get_respawn_point(i);
 						pkt_rp.team = rooms_[room_num].get_object(i)->get_team();
 						send_packet_to_player(players[i].get_serverid(), (char*)&pkt_rp);
@@ -859,10 +832,10 @@ void Framawork::process_packet(int id, char* packet)
 
 			send_packet_to_player(id, (char*)&pkt_cro);
 			rooms_[room_num].set_is_use(true);
-			rooms_[room_num].add_player(id, clients_[id].socket, 0);
+			rooms_[room_num].add_player(id, clients_[id].socket_, 0);
 			rooms_[room_num].set_map(4);
 			rooms_[room_num].set_name(reinterpret_cast<PKT_CREATE_ROOM*>(packet)->name);
-			clients_[id].in_room = true;
+			clients_[id].in_room_ = true;
 
 			PKT_ADD_ROOM pkt_ar;
 			pkt_ar.PktId = PKT_ID_ADD_ROOM;
@@ -899,9 +872,9 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_rio.map = rooms_[room_num].get_map();
 			char empty_slot = rooms_[room_num].get_empty_slot();
 			pkt_rio.slot = empty_slot;
-			rooms_[room_num].add_player(id, clients_[id].socket, empty_slot);
+			rooms_[room_num].add_player(id, clients_[id].socket_, empty_slot);
 			send_packet_to_player(id, (char*)&pkt_rio);
-			clients_[id].in_room = true;
+			clients_[id].in_room_ = true;
 
 			// 새로들어온 애한테 원래있던애들 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
@@ -917,7 +890,7 @@ void Framawork::process_packet(int id, char* packet)
 					pkt_pin.Team = player->get_team();
 					pkt_pin.robot = player->get_robot();
 					pkt_pin.slot = player->get_slot();
-					lstrcpynW(pkt_pin.name, clients_[player->get_serverid()].name, MAX_NAME_LENGTH);
+					lstrcpynW(pkt_pin.name, clients_[player->get_serverid()].name_, MAX_NAME_LENGTH);
 
 					send_packet_to_player(id, (char*)&pkt_pin);
 				}
@@ -930,7 +903,7 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_pin.Team = pkt_rio.slot % 2;
 			pkt_pin.robot = ROBOT_TYPE_GM;
 			pkt_pin.slot = pkt_rio.slot;
-			lstrcpynW(pkt_pin.name, clients_[id].name, MAX_NAME_LENGTH);
+			lstrcpynW(pkt_pin.name, clients_[id].name_, MAX_NAME_LENGTH);
 
 			// 원래있던애들한테 새로들어온애 알려주기
 			for (int i = 0; i < MAX_CLIENT; ++i)
@@ -957,11 +930,10 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_SHOOT:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
-			using namespace std;
-			using namespace chrono;
+			using namespace std::chrono;
 
 			if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_GM_GUN)
 			{
@@ -969,7 +941,7 @@ void Framawork::process_packet(int id, char* packet)
 				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 600.0f, &index);
-				add_timer(index, room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
+				add_event(index, room_num, EVENT_TYPE_GM_GUN, high_resolution_clock::now() + 16ms);
 				delete pkt_ce;
 			}
 			else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_RIFLE)
@@ -978,7 +950,7 @@ void Framawork::process_packet(int id, char* packet)
 				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 1000.0f, &index);
-				add_timer(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
+				add_event(index, room_num, EVENT_TYPE_BEAM_RIFLE, high_resolution_clock::now() + 16ms);
 				delete pkt_ce;
 			}
 			else if (reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon == WEAPON_TYPE_BEAM_SNIPER)
@@ -987,7 +959,7 @@ void Framawork::process_packet(int id, char* packet)
 				auto pkt_ce = rooms_[room_num].shoot(reinterpret_cast<PKT_SHOOT*>(packet)->ID,
 					reinterpret_cast<PKT_SHOOT*>(packet)->BulletWorldMatrix,
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon, 2000.0f, &index);
-				add_timer(index, room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
+				add_event(index, room_num, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
 				delete pkt_ce;
 			}
 			else
@@ -997,7 +969,7 @@ void Framawork::process_packet(int id, char* packet)
 					reinterpret_cast<PKT_SHOOT*>(packet)->Player_Weapon);
 
 				send_packet_to_room_player(room_num, (char*)pkt_co);
-				add_timer(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
+				add_event(pkt_co->Object_Index, room_num, EVENT_TYPE_OBJECT_MOVE, high_resolution_clock::now() + 16ms);
 				delete pkt_co;
 			}
 		}
@@ -1005,7 +977,7 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
 			rooms_[room_num].set_player_lobby_info(reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->id, reinterpret_cast<PKT_LOBBY_PLAYER_INFO*>(packet)->selected_robot,
@@ -1017,7 +989,7 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_CHANGE_MAP:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
 			rooms_[room_num].set_map(reinterpret_cast<PKT_CHANGE_MAP*>(packet)->map);
@@ -1040,7 +1012,7 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_GAME_START:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
 			PKT_GAME_START pkt_gs;
@@ -1051,25 +1023,24 @@ void Framawork::process_packet(int id, char* packet)
 
 			rooms_[room_num].start_game();
 
-			using namespace std;
-			using namespace chrono;
-			add_timer(room_num, room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
+			using namespace std::chrono;
+			add_event(room_num, room_num, EVENT_TYPE_ROOM_UPDATE, high_resolution_clock::now() + 16ms);
 		}
 		break;
 	}
 	case PKT_ID_LEAVE_ROOM:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
 			PKT_PLAYER_OUT packet;
-			packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+			packet.id = rooms_[room_num].find_player_by_socket(clients_[id].socket_);
 			packet.PktId = PKT_ID_PLAYER_OUT;
 			packet.PktSize = sizeof(PKT_PLAYER_OUT);
 			send_packet_to_room_player(room_num, (char*)&packet);
 
-			rooms_[room_num].disconnect_client(clients_[id].socket);
-			clients_[id].in_room = false;
+			rooms_[room_num].disconnect_client(clients_[id].socket_);
+			clients_[id].in_room_ = false;
 
 			if (rooms_[room_num].get_num_player_in_room() > 0)
 			{
@@ -1116,10 +1087,10 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_MOVE_TEAM:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
-			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket);
+			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket_);
 			rooms_[room_num].change_team(player, reinterpret_cast<PKT_MOVE_TEAM*>(packet)->team);
 
 			auto player_data = rooms_[room_num].get_player(player);
@@ -1138,17 +1109,17 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_CHANGE_NAME:
 	{
 		PKT_CHANGE_NAME* pkt_cn = reinterpret_cast<PKT_CHANGE_NAME*>(packet);
-		std::wcout << id << L"번 플레이어의 이름을 " << clients_[id].name << L"에서 " << pkt_cn->name << L"로 변경\n";
-		lstrcpynW(clients_[id].name, pkt_cn->name, MAX_NAME_LENGTH);
+		std::wcout << id << L"번 플레이어의 이름을 " << clients_[id].name_ << L"에서 " << pkt_cn->name << L"로 변경\n";
+		lstrcpynW(clients_[id].name_, pkt_cn->name, MAX_NAME_LENGTH);
 		break;
 	}
 	case PKT_ID_MOVE_TO_MAIN_LOBBY:
 	{
-		int room_num = search_client_in_room(clients_[id].socket);
+		int room_num = search_client_in_room(clients_[id].socket_);
 		if (room_num != -1)
 		{
-			rooms_[room_num].disconnect_client(clients_[id].socket);
-			clients_[id].in_room = false;
+			rooms_[room_num].disconnect_client(clients_[id].socket_);
+			clients_[id].in_room_ = false;
 
 			for (int i = 0; i < 10; ++i)
 			{
@@ -1203,21 +1174,20 @@ void Framawork::process_packet(int id, char* packet)
 void Framawork::send_packet_to_player(int id, char* packet)
 {
 	char *p = reinterpret_cast<char *>(packet);
-	OVER_EX *ov = new OVER_EX;
-	ov->dataBuffer.len = p[0];
-	ov->dataBuffer.buf = ov->messageBuffer;
-	ov->event_t = EVENT_TYPE_SEND;
-	memcpy(ov->messageBuffer, p, p[0]);
-	ZeroMemory(&ov->over, sizeof(ov->over));
-	int error = WSASend(clients_[id].socket, &ov->dataBuffer, 1, 0, 0,
-		&ov->over, NULL);
+	Overlapped *ov = new Overlapped;
+	ov->wsa_buffer_.len = p[0];
+	ov->wsa_buffer_.buf = ov->packet_buffer_;
+	ov->event_type_ = EVENT_TYPE_SEND;
+	memcpy(ov->packet_buffer_, p, p[0]);
+	ZeroMemory(&ov->overlapped_, sizeof(ov->overlapped_));
+	int error = WSASend(clients_[id].socket_, &ov->wsa_buffer_, 1, 0, 0,
+		&ov->overlapped_, NULL);
 	if (0 != error) {
 		int err_no = WSAGetLastError();
 		if (err_no != WSA_IO_PENDING)
 		{
-			std::cout << "Error - IO pending Failure\n";
+			std::cout << "Send_Error\n";
 			error_display("WSASend in send_packet()  ", err_no);
-			//while (true);
 		}
 	}
 }
@@ -1226,8 +1196,8 @@ void Framawork::send_packet_to_all_player(char* packet)
 {
 	for (int i = 0; i < 1000; ++i)
 	{
-		if (!clients_[i].in_use) continue;
-		if (clients_[i].in_room) continue;
+		if (!clients_[i].in_use_) continue;
+		if (clients_[i].in_room_) continue;
 		send_packet_to_player(i, packet);
 	}
 }
@@ -1250,7 +1220,6 @@ void Framawork::send_packet_to_team_player(int room, char * packet, char team)
 		if (!player->get_use()) continue;
 		if (player->get_team() != team) continue;
 		send_packet_to_player(player->get_serverid(), packet);
-		//std::cout << (int)team << "팀의 " << i << "번째 플레이어에게 보냄\n";
 	}
 }
 
