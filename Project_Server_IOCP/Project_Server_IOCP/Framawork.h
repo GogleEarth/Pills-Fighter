@@ -18,7 +18,8 @@ enum EVENT_TYPE {
 #define MAX_BUFFER 1024
 #define MAX_USER 1000
 
-struct Overlapped {
+struct Overlapped 
+{
 	WSAOVERLAPPED	overlapped_;
 	WSABUF			wsa_buffer_;
 	char			packet_buffer_[MAX_BUFFER];

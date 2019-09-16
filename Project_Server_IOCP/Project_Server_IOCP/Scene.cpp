@@ -373,7 +373,9 @@ bool Scene::check_saber_collision_player(int object)
 
 bool Scene::check_collision_player(int object)
 {
+	// 오브젝트의 이전위치
 	FXMVECTOR origin = XMLoadFloat3(&Objects_[object].get_prev_position());
+	// 오브젝트의 진행방향
 	FXMVECTOR direction = XMLoadFloat3(&Objects_[object].get_look());
 	float distance;
 
@@ -385,10 +387,16 @@ bool Scene::check_collision_player(int object)
 			{
 				for (auto playeraabb : Objects_[i].get_aabbs())
 				{
+					// 오브젝트의 이전위치에서 진행방향으로 광선을 쏘아 플레이어의 AABB와 충돌 검사를 한다.
+					// 충돌검사 결과가 true이면 distance에 광선이 충돌된 위치까지의 거리가 반환된다.
 					if (playeraabb.Intersects(origin, direction, distance))
 					{
+						// 오브젝트의 이전위치와 현재위치사이의 거리(len)를 구한다.
 						XMFLOAT3 length = Vector3::Subtract(Objects_[object].get_position(), Objects_[object].get_prev_position());
 						float len = Vector3::Length(length);
+
+						// len이 distance보다 크다면 오브젝트의 이전위치와 현재위치 사이에 플레이어가 있었던것이므로 충돌처리를 한다.
+						// distance가 len보다 크다면 오브젝트는 아직 플레이어와 충돌하지 않은 상태이다.
 						if (distance <= len)
 						{
 							if (i != Objects_[object].get_owner_id())
