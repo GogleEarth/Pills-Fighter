@@ -112,30 +112,22 @@ void MotionBlurCS(int3 vDispatchThreadID : SV_DispatchThreadID)
 	oriTex.y = float(vDispatchThreadID.y) / float(gnHeight);
 
 	float4 H = float4(oriTex.x * 2.0f - 1.0f, (1.0f - oriTex.y) * 2.0f - 1.0f, zOverW, 1.0f);
-
 	float4 D = mul(gmtxInverseViewProjection, H);
-
 	float4 worldPos = D / D.w;
-
 	float4 currPos = H;
-
 	float4 prevPos = mul(gmtxPrevViewProjection, worldPos);
-
 	prevPos /= prevPos.w;
-
 	float2 velocity = (currPos - prevPos).xy * 1.5f;
 
 	float dt = T / fFPS;
-
 	velocity *= dt;
+	float2 du = velocity / SAMPLES;
+	float2 texcoord = oriTex + du;
 
 	float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	float2 du = velocity / SAMPLES;
-
-	float2 texcoord = oriTex + du;
-
 	int nSamples = 0;
+
 	for (int i = 1; i < SAMPLES; ++i, texcoord -= du)
 	{
 		if (texcoord.x >= 1.0f) break;

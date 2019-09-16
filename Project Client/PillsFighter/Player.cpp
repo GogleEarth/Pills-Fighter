@@ -690,9 +690,12 @@ void CPlayer::ProcessBoosterConsume(float fElapsedTime)
 	{
 		if (m_fTimeForConsumeBoosterGauge >= INTERVAL_BOOSTER_GAUGE_CONSUME)
 		{
+			int nCousumCount = static_cast<int>(m_fTimeForConsumeBoosterGauge / INTERVAL_BOOSTER_GAUGE_CONSUME);
+			int nConsumeVal = nCousumCount * BOOSTER_GAUGE_CONSUME_VALUE;
+
 			m_fTimeForConsumeBoosterGauge = fmod(m_fTimeForConsumeBoosterGauge, INTERVAL_BOOSTER_GAUGE_CONSUME);
 
-			m_nBoosterGauge = m_nBoosterGauge - BOOSTER_GAUGE_CONSUME_VALUE < 0 ? 0 : m_nBoosterGauge - BOOSTER_GAUGE_CONSUME_VALUE;
+			m_nBoosterGauge = m_nBoosterGauge - nConsumeVal < 0 ? 0 : m_nBoosterGauge - nConsumeVal;
 		}
 		else
 		{
