@@ -862,7 +862,7 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_ROOM_IN:
 	{
 		int room_num = reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num;
-		if (rooms_[room_num].get_num_player_in_room() < MAX_CLIENT && !rooms_[room_num].get_playing())
+		if (rooms_[room_num].get_is_use() && rooms_[room_num].get_num_player_in_room() < MAX_CLIENT && !rooms_[room_num].get_playing())
 		{
 			PKT_ROOM_IN_OK pkt_rio;
 			pkt_rio.PktId = PKT_ID_ROOM_IN_OK;
@@ -922,10 +922,10 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_cmi.map = rooms_[room_num].get_map();
 			send_packet_to_all_player((char*)&pkt_cmi);
 
-			std::cout << id << "번 플레이어" << room_num << "번 방 입장\n";
+		//	std::cout << id << "번 플레이어" << room_num << "번 방 입장\n";
 		}
-		else
-			std::cout << id << "번 플레이어" << reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 참가 실패\n";
+		//else
+		//	std::cout << id << "번 플레이어" << (int)reinterpret_cast<PKT_ROOM_IN*>(packet)->Room_num << "번 방에 참가 실패\n";
 		break;
 	}
 	case PKT_ID_SHOOT:
@@ -1109,7 +1109,7 @@ void Framawork::process_packet(int id, char* packet)
 	case PKT_ID_CHANGE_NAME:
 	{
 		PKT_CHANGE_NAME* pkt_cn = reinterpret_cast<PKT_CHANGE_NAME*>(packet);
-		std::wcout << id << L"번 플레이어의 이름을 " << clients_[id].name_ << L"에서 " << pkt_cn->name << L"로 변경\n";
+		//std::wcout << id << L"번 플레이어의 이름을 " << clients_[id].name_ << L"에서 " << pkt_cn->name << L"로 변경\n";
 		lstrcpynW(clients_[id].name_, pkt_cn->name, MAX_NAME_LENGTH);
 		break;
 	}
@@ -1166,7 +1166,7 @@ void Framawork::process_packet(int id, char* packet)
 		break;
 	}
 	default:
-		std::wcout << L"정의되지 않은 패킷 도착 오류!!\n";
+		std::wcout << L"정의되지 않은 패킷 도착 오류!! 패킷아이디 : " << (int)packet[1] <<"\n";
 		break;
 	}
 }
