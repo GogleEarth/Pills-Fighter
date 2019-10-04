@@ -2632,7 +2632,8 @@ void CBattleScene::SetAfterBuildObject(ID3D12Device *pd3dDevice, ID3D12GraphicsC
 	CreateCubeMapCamera(pd3dDevice, pd3dCommandList);
 	CreateShadowMap(pd3dDevice, pd3dCommandList, 4096 * 2, 4096 * 2);
 
-	CreateNameTextures(pd3dDevice, pd3dCommandList);
+	if(m_vTeamIndex.size() > 0)
+		CreateNameTextures(pd3dDevice, pd3dCommandList);
 
 #ifndef ON_NETWORKING
 	m_pUserInterface->BattleNotifyStart();

@@ -31,14 +31,15 @@ struct Overlapped
 class Client
 {
 public:
-	std::atomic_bool in_use_;
+	bool in_use_;
 	Overlapped over_ex;
 	SOCKET socket_;
 	char buffer_[MAX_BUFFER];
 	int	prev_size_;
-	std::atomic_bool in_room_;
+	bool in_room_;
 	wchar_t name_[MAX_NAME_LENGTH];
 	Client() {
+		socket_ = INVALID_SOCKET;
 		in_use_ = false;
 		over_ex.wsa_buffer_.len = MAX_BUFFER;
 		over_ex.wsa_buffer_.buf = over_ex.packet_buffer_;

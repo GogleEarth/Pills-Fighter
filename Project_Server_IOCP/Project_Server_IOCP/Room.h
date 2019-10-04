@@ -13,7 +13,7 @@ class Player
 	int serverid_;
 	char robot_;
 	char team_;
-	bool load_;
+	std::atomic_bool load_;
 	bool send_;
 	char slot_;
 public:

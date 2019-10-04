@@ -37,18 +37,24 @@ int Framawork::thread_process()
 		if (false == is_error) {
 			int err_no = WSAGetLastError();
 			if (64 == err_no) {
-				disconnect_client(index);
-				std::wcout << index << L"번 플레이어 접속 종료\n";
-				lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
+				if (clients_[index].socket_ != INVALID_SOCKET)
+				{
+					disconnect_client(index);
+					std::wcout << index << L"번 플레이어 접속 종료\n";
+					lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
+				}
 				continue;
 			}
 			else error_display("GQCS : ", err_no);
 		}
 
 		if (0 == io_byte) {
-			disconnect_client(index);
-			std::wcout << index << L"번 플레이어 접속 종료\n";
-			lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
+			if (clients_[index].socket_ != INVALID_SOCKET)
+			{
+				disconnect_client(index);
+				std::wcout << index << L"번 플레이어 접속 종료\n";
+				lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
+			}
 			continue;
 		}
 
@@ -719,7 +725,8 @@ int Framawork::search_client_in_room(SOCKET socket)
 
 void Framawork::process_packet(int id, char* packet)
 {
-	switch (packet[1])
+	int packet_id = packet[1];
+	switch (packet_id)
 	{
 	case PKT_ID_PLAYER_INFO:
 	{
@@ -1187,7 +1194,7 @@ void Framawork::process_packet(int id, char* packet)
 
 void Framawork::send_packet_to_player(int id, char* packet)
 {
-	char *p = reinterpret_cast<char *>(packet);
+	char *p = packet;
 	if (clients_[id].socket_ != INVALID_SOCKET)
 	{
 		Overlapped *ov = new Overlapped;
