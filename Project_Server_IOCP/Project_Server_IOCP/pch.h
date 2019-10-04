@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <memory.h>
 #include <wrl.h>
+#include <atomic>
 
 #pragma comment(lib, "ws2_32")
 #include <WinSock2.h>

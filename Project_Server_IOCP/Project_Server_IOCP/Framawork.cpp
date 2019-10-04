@@ -38,7 +38,7 @@ int Framawork::thread_process()
 			int err_no = WSAGetLastError();
 			if (64 == err_no) {
 				disconnect_client(index);
-				std::wcout << clients_[index].name_ << L" 접속 종료\n";
+				std::wcout << index << L"번 플레이어 접속 종료\n";
 				lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
 				continue;
 			}
@@ -47,7 +47,7 @@ int Framawork::thread_process()
 
 		if (0 == io_byte) {
 			disconnect_client(index);
-			std::wcout << clients_[index].name_ << L" 접속 종료\n";
+			std::wcout << index << L"번 플레이어 접속 종료\n";
 			lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
 			continue;
 		}
@@ -541,7 +541,7 @@ int Framawork::accept_process()
 			continue;
 		}
 
-		std::cout << "플레이어 접속\n";
+		//std::cout << "플레이어 접속\n";
 
 		clients_[new_id].socket_ = client_socket;
 		clients_[new_id].prev_size_ = 0;
@@ -631,13 +631,16 @@ void Framawork::do_recv(int id)
 {
 	DWORD flags = 0;
 
-	if (WSARecv(clients_[id].socket_, &clients_[id].over_ex.wsa_buffer_, 1,
-		NULL, &flags, &(clients_[id].over_ex.overlapped_), 0))
+	if (clients_[id].socket_ != INVALID_SOCKET)
 	{
-		if (WSAGetLastError() != WSA_IO_PENDING)
+		if (WSARecv(clients_[id].socket_, &clients_[id].over_ex.wsa_buffer_, 1,
+			NULL, &flags, &(clients_[id].over_ex.overlapped_), 0))
 		{
-			std::cout << "Recv_Error\n";
-			while (true);
+			if (WSAGetLastError() != WSA_IO_PENDING)
+			{
+				std::cout << "Recv_Error\n";
+				while (true);
+			}
 		}
 	}
 }
@@ -689,8 +692,14 @@ void Framawork::disconnect_client(int id)
 			send_packet_to_all_player((char*)&pkt_cri);
 		}
 	}
+	
+	PKT_LOG_OUT_OK packet;
+	packet.PktId = PKT_ID_LOG_OUT_OK;
+	packet.PktSize = sizeof(PKT_LOG_OUT_OK);
+	send_packet_to_player(id, (char*)&packet);
 
 	closesocket(clients_[id].socket_);
+	clients_[id].socket_ = INVALID_SOCKET;
 	clients_[id].in_use_ = false;
 	clients_[id].in_room_ = false;
 }
@@ -1165,6 +1174,11 @@ void Framawork::process_packet(int id, char* packet)
 		}
 		break;
 	}
+	case PKT_ID_LOG_OUT:
+	{
+		disconnect_client(id);
+		break;
+	}
 	default:
 		std::wcout << L"정의되지 않은 패킷 도착 오류!! 패킷아이디 : " << (int)packet[1] <<"\n";
 		break;
@@ -1174,20 +1188,20 @@ void Framawork::process_packet(int id, char* packet)
 void Framawork::send_packet_to_player(int id, char* packet)
 {
 	char *p = reinterpret_cast<char *>(packet);
-	Overlapped *ov = new Overlapped;
-	ov->wsa_buffer_.len = p[0];
-	ov->wsa_buffer_.buf = ov->packet_buffer_;
-	ov->event_type_ = EVENT_TYPE_SEND;
-	memcpy(ov->packet_buffer_, p, p[0]);
-	ZeroMemory(&ov->overlapped_, sizeof(ov->overlapped_));
-	int error = WSASend(clients_[id].socket_, &ov->wsa_buffer_, 1, 0, 0,
-		&ov->overlapped_, NULL);
-	if (0 != error) {
-		int err_no = WSAGetLastError();
-		if (err_no != WSA_IO_PENDING)
-		{
-			std::cout << "Send_Error\n";
-			error_display("WSASend in send_packet()  ", err_no);
+	if (clients_[id].socket_ != INVALID_SOCKET)
+	{
+		Overlapped *ov = new Overlapped;
+		ov->wsa_buffer_.len = p[0];
+		ov->wsa_buffer_.buf = ov->packet_buffer_;
+		ov->event_type_ = EVENT_TYPE_SEND;
+		memcpy(ov->packet_buffer_, p, p[0]);
+		ZeroMemory(&ov->overlapped_, sizeof(ov->overlapped_));
+		int error = WSASend(clients_[id].socket_, &ov->wsa_buffer_, 1, 0, 0,
+			&ov->overlapped_, NULL);
+		if (0 != error) {
+			int err_no = WSAGetLastError();
+			if (err_no != WSA_IO_PENDING)
+				error_display("WSASend in send_packet_to_player()  ", err_no);
 		}
 	}
 }

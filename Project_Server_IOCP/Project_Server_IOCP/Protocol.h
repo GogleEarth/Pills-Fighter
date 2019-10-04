@@ -50,7 +50,9 @@ typedef enum PKT_ID
 	PKT_ID_PLAYER_DIE,
 	PKT_ID_CHANGE_NAME,
 	PKT_ID_PLAYER_RESPAWN,
-	PKT_ID_MOVE_TO_MAIN_LOBBY
+	PKT_ID_MOVE_TO_MAIN_LOBBY,
+	PKT_ID_LOG_OUT,
+	PKT_ID_LOG_OUT_OK
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -424,5 +426,11 @@ struct PKT_MOVE_TO_MAIN_LOBBY
 };
 
 ///////////////////////////////////////////////////////////
+
+typedef struct PKT_LOG_OUT
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+}PKT_LOG_OUT_OK;
 
 #pragma pack(pop)

@@ -9,7 +9,7 @@
 class Player
 {
 	SOCKET socket_;
-	bool used_;
+	std::atomic_bool used_;
 	int serverid_;
 	char robot_;
 	char team_;
@@ -41,7 +41,7 @@ public:
 class Room
 {
 	Player players_[8];
-	bool slots_[8];
+	std::atomic_bool slots_[8];
 	Scene* scenes_[2];
 	int	using_scene_;
 	bool in_use_;

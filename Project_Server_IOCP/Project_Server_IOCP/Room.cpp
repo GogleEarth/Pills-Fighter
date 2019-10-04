@@ -284,6 +284,7 @@ void Room::disconnect_client(SOCKET client)
 {
 	int index = find_player_by_socket(client);
 	players_[index].set_use(false);
+	scenes_[using_scene_]->set_player_is_play(index, false);
 	slots_[players_[index].get_slot()] = false;
 }
 

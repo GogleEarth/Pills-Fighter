@@ -15,7 +15,7 @@ enum EVENT_TYPE {
 	EVENT_TYPE_BEAM_SNIPER
 };
 
-#define MAX_BUFFER 1024
+#define MAX_BUFFER 255
 #define MAX_USER 1000
 
 struct Overlapped 
@@ -31,12 +31,12 @@ struct Overlapped
 class Client
 {
 public:
-	bool in_use_;
+	std::atomic_bool in_use_;
 	Overlapped over_ex;
 	SOCKET socket_;
 	char buffer_[MAX_BUFFER];
 	int	prev_size_;
-	bool in_room_;
+	std::atomic_bool in_room_;
 	wchar_t name_[MAX_NAME_LENGTH];
 	Client() {
 		in_use_ = false;
