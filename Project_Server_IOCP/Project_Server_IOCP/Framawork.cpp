@@ -815,6 +815,8 @@ void Framawork::process_packet(int id, char* packet)
 						pkt_rp.point = rooms_[room_num].get_respawn_point(i);
 						pkt_rp.team = rooms_[room_num].get_object(i)->get_team();
 						send_packet_to_player(players[i].get_serverid(), (char*)&pkt_rp);
+
+						std::cout << i << "번째 플레이어 정보 보냄\n";
 					}
 				}
 

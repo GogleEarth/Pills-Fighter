@@ -117,6 +117,8 @@ protected: // for Network
 	std::vector<int> m_vnEnemyIndices;
 	std::vector<wchar_t*> m_vpwstrNames;
 
+	bool	m_bLoadAll = false;
+
 public:
 	void recvn();
 	void ProcessPacket();

@@ -774,7 +774,7 @@ void CGameFramework::FrameAdvance()
 	m_fElapsedTime = m_GameTimer.GetTimeElapsed();
 
 #ifdef ON_NETWORKING
-	if (m_pPlayer)
+	if (m_pPlayer && m_bLoadAll)
 	{
 		if (IsZero(m_fElapsedTime)) return;
 		SendToServer();
@@ -1022,6 +1022,8 @@ void CGameFramework::ProcessPacket()
 	case PKT_ID_LOAD_COMPLETE_ALL:
 	{
 		m_pScene->ApplyRecvInfo(PKT_ID_LOAD_COMPLETE_ALL, (LPVOID)m_pPacketBuffer);
+		std::cout << "전원 로드 완료\n";
+		m_bLoadAll = true;
 		break;
 	}
 	case PKT_ID_LOBBY_PLAYER_INFO:
