@@ -645,7 +645,7 @@ void Framawork::do_recv(int id)
 			if (WSAGetLastError() != WSA_IO_PENDING)
 			{
 				std::cout << "Recv_Error\n";
-				while (true);
+				disconnect_client(id);
 			}
 		}
 	}
@@ -698,14 +698,8 @@ void Framawork::disconnect_client(int id)
 			send_packet_to_all_player((char*)&pkt_cri);
 		}
 	}
-	
-	PKT_LOG_OUT_OK packet;
-	packet.PktId = PKT_ID_LOG_OUT_OK;
-	packet.PktSize = sizeof(PKT_LOG_OUT_OK);
-	send_packet_to_player(id, (char*)&packet);
 
 	closesocket(clients_[id].socket_);
-	clients_[id].socket_ = INVALID_SOCKET;
 	clients_[id].in_use_ = false;
 	clients_[id].in_room_ = false;
 }
