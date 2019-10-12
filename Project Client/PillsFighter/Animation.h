@@ -4,9 +4,6 @@
 #define ANIMATION_TYPE_LOOP			1
 #define ANIMATION_TYPE_PINGPONG		2
 
-class CModel;
-class CSound;
-
 #define ANIMATION_CALLBACK_EPSILON	0.01f
 
 constexpr int CALLBACK_TYPE_SOUND = 1;
@@ -17,6 +14,9 @@ constexpr int CALLBACK_POSITION_MIDDLE = 2;
 
 constexpr int CALLBACK_TYPE_SOUND_MOVE = 1;
 constexpr int CALLBACK_TYPE_SOUND_SABER_ATTACK = 2;
+
+class CModel;
+class CSound;
 
 struct CALLBACKDATA
 {

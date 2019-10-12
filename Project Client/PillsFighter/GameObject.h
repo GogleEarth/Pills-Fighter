@@ -54,16 +54,12 @@ protected:
 	float m_fYaw;
 	float m_fRoll;
 
-	// 렌더링 하기 전 오브젝트 회전 설정
 	float m_fPreparePitch;
 	float m_fPrepareYaw;
 	float m_fPrepareRoll;
 
-	// 이동 속력
 	float m_MovingSpeed;
-	
-	// 중력가속도
-	float				m_fVelocityY = 0.0f;
+	float m_fVelocityY = 0.0f;
 
 public:
 	void SetModel(CModel *pModel);
@@ -83,7 +79,6 @@ public:
 	virtual void BuildMaterials(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList) { }
 	virtual void ReleaseUploadBuffers();
 
-	//게임 객체의 월드 변환 행렬에서 위치 벡터와 방향(x-축, y-축, z-축) 벡터를 반환한다. 
 	void SetLook(XMFLOAT3 xmf3Look) { m_xmf3Look = xmf3Look; }
 	void SetUp(XMFLOAT3 xmf3Up) { m_xmf3Up = xmf3Up; }
 	void SetRight(XMFLOAT3 xmf3Right) { m_xmf3Right = xmf3Right; }
@@ -95,7 +90,6 @@ public:
 	float GetMovingSpeed() { return(m_MovingSpeed); }
 	XMFLOAT4X4 GetWorldTransf();
 
-	//게임 객체의 위치를 설정한다.
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3& xmf3Position);
 	void SetMovingSpeed(float MovingSpeed) { m_MovingSpeed = MovingSpeed; }
@@ -103,13 +97,11 @@ public:
 	void SetPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch = Pitch; m_fPrepareYaw = Yaw; m_fPrepareRoll = Roll; }
 	void AddPrepareRotate(float Pitch, float Yaw, float Roll) { m_fPreparePitch += Pitch; m_fPrepareYaw += Yaw; m_fPrepareRoll += Roll; }
 
-	//게임 객체를 로컬 x-축, y-축, z-축 방향으로 이동한다.
 	void MoveStrafe(float fDistance = 1.0f);
 	void MoveUp(float fDistance = 1.0f);
 	void MoveForward(float fDistance = 1.0f);
 	void Move(XMFLOAT3 xmf3Direction, float fDistance = 1.0f);
 
-	//게임 객체를 회전(x-축, y-축, z-축)한다. 
 	void Rotate(float fPitch = 10.0f, float fYaw = 10.0f, float fRoll = 10.0f);
 	
 	void Delete() { m_Delete = TRUE; }
@@ -128,7 +120,7 @@ public:
 	int GetHitPoint() { return m_nHitPoint; }
 	int GetMaxHitPoint() { return m_nMaxHitPoint; }
 	void SetMaxHitPoint(int nMaxHitPoint) { m_nMaxHitPoint = nMaxHitPoint; }
-	void SetHitPoint(int nHitPoint);
+	virtual void SetHitPoint(int nHitPoint);
 	virtual void OnPrepareAnimate() {};
 
 public:
@@ -260,7 +252,7 @@ public:
 	virtual void Animate(float fTimeElapsed, CCamera *pCamera = NULL);
 
 private:
-	float m_RotateSpeed; // 회전 속도 ( 초당 회전할 각도 Angle )
+	float m_RotateSpeed;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,8 +267,8 @@ public:
 
 private:
 	float m_RotationSpeed;
-	float m_DurationTime; // 발사 후 생존?시간
-	float m_ElapsedTime; // 행동한 시간
+	float m_DurationTime;
+	float m_ElapsedTime;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1936,7 +1936,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Sword_Hit.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 16, 0.5f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT] = new CSprite(pd3dDevice, pd3dCommandList, 4, 4, 16, 0.35f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//
@@ -1944,7 +1944,7 @@ void CSpriteShader::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandLi
 	m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2]->LoadTextureFromFile(pd3dDevice, pd3dCommandList, L"./Resource/Effect/Sword_Hit2.dds", 0);
 	CScene::CreateShaderResourceViews(pd3dDevice, m_ppTextures[SPRITE_EFFECT_INDEX_SWORD_HIT_2], ROOT_PARAMETER_INDEX_DIFFUSE_TEXTURE_ARRAY, false, false);
 
-	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.3f);
+	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2] = new CSprite(pd3dDevice, pd3dCommandList, 5, 2, 6, 0.2f);
 	m_ppEffects[SPRITE_EFFECT_INDEX_SWORD_HIT_2]->CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//

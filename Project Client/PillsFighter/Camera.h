@@ -1,6 +1,9 @@
 #pragma once
 
 #define ASPECT_RATIO (float(FRAME_BUFFER_WIDTH) / float(FRAME_BUFFER_HEIGHT))
+#define SK_CYCLE 15.0f
+#define SK_SCALE 10.0f
+#define SK_AMP 2.0f
 
 class CPlayer;
 
@@ -42,6 +45,10 @@ protected:
 	float							m_fFarPlaneDistance;
 	float							m_fAspectRatio;
 	float							m_fFOVAngle;
+	
+	bool							m_bShake = false;
+	float							m_fShakeScale = 0.0f;
+	float							m_fShakeTime = 0.0f;
 
 public:
 	CCamera();
@@ -96,6 +103,7 @@ public:
 
 	void ZoomIn(float fFOV);
 	void ZoomOut();
+	void SetShake() { m_bShake = true; };
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

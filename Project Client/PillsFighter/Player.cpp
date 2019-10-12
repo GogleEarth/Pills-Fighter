@@ -129,6 +129,15 @@ CCamera *CPlayer::SetCamera(float fTimeElapsed)
 	return(m_pCamera);
 }
 
+void CPlayer::SetHitPoint(int nHitPoint)
+{
+	int before = m_nHitPoint;
+	CGameObject::SetHitPoint(nHitPoint);
+	int after = m_nHitPoint;
+
+	if (before > after) m_pCamera->SetShake();
+}
+
 void CPlayer::Move(ULONG dwDirection, float fDistance)
 {
 	if (m_bDie) return;

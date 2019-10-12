@@ -111,10 +111,14 @@ void CCamera::GenerateViewMatrix()
 	m_xmf4x4View._21 = m_xmf3Right.y; m_xmf4x4View._22 = m_xmf3Up.y; m_xmf4x4View._23 =	m_xmf3Look.y;
 	m_xmf4x4View._31 = m_xmf3Right.z; m_xmf4x4View._32 = m_xmf3Up.z; m_xmf4x4View._33 =	m_xmf3Look.z;
 
+	XMFLOAT3 xmf3Position = m_xmf3Position;
 
-	m_xmf4x4View._41 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Right);
-	m_xmf4x4View._42 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Up);
-	m_xmf4x4View._43 = -Vector3::DotProduct(m_xmf3Position, m_xmf3Look);
+	XMFLOAT3 xmf3Move = Vector3::ScalarProduct(m_xmf3Right, m_fShakeScale, false);
+	xmf3Position = Vector3::Add(xmf3Position, xmf3Move);
+
+	m_xmf4x4View._41 = -Vector3::DotProduct(xmf3Position, m_xmf3Right);
+	m_xmf4x4View._42 = -Vector3::DotProduct(xmf3Position, m_xmf3Up);
+	m_xmf4x4View._43 = -Vector3::DotProduct(xmf3Position, m_xmf3Look);
 
 	m_xmf4x4ViewProjection = Matrix4x4::Multiply(m_xmf4x4View, m_xmf4x4Projection);
 }
@@ -207,6 +211,21 @@ void CCamera::Update(float fTimeElapsed)
 		m_xmf3Position.x = xmf4x4Rotate._41 + xmf3PlayerPos.x;
 		m_xmf3Position.y = xmf4x4Rotate._42 + xmf3PlayerPos.y;
 		m_xmf3Position.z = xmf4x4Rotate._43 + xmf3PlayerPos.z;
+
+		if (m_bShake)
+		{
+			m_fShakeTime += fTimeElapsed;
+			float s = sin(SK_CYCLE * XM_2PI * m_fShakeTime);
+			float p = pow(0.5f, m_fShakeTime * SK_AMP);
+			m_fShakeScale = s * p;
+
+			if (m_fShakeTime > 0.25f)
+			{
+				m_fShakeTime = 0.0f;
+				m_bShake = false;
+				m_fShakeScale = 0.0f;
+			}
+		}
 	}
 }
 

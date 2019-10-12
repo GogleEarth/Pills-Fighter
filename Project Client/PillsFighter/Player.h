@@ -38,6 +38,7 @@ public:
 	void DashMove(ULONG dwDirection, float fDistance);
 	virtual void Rotate(float x, float y, float z);
 	virtual void CameraReset() { m_pCamera->CameraReset(); }
+	virtual void SetHitPoint(int nHitPoint);
 
 	void Update(float fTimeElapsed);
 
