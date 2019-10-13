@@ -296,31 +296,30 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 					if (separateCenterPlus.z < worldObjectAABBReverseExtent.z + INVASION && separateCenterPlus.z > worldObjectAABBReverseExtent.z) {
 						newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION;
 					}
+
+					// 이미 건물내부로 들어와버린 경우 이전 프레임 위치 비교해서 들어온 곳으로 나가도록
+					if (m_xmf3Position.x > worldObjectAABBReverseExtent.x + INVASION
+						&& m_xmf3Position.x < worldObjectAABBExtent.x - INVASION
+						&& m_xmf3Position.z > worldObjectAABBReverseExtent.z + INVASION
+						&& m_xmf3Position.z < worldObjectAABBExtent.z - INVASION)
+					{
+						float result;
+						float xMax = abs(m_xmf3PrevPosition.x - worldObjectAABBExtent.x);
+						float xMin = abs(m_xmf3PrevPosition.x - worldObjectAABBReverseExtent.x);
+						float zMax = abs(m_xmf3PrevPosition.z - worldObjectAABBExtent.z);
+						float zMin = abs(m_xmf3PrevPosition.z - worldObjectAABBReverseExtent.z);
+
+						result = xMax;
+						if (result > xMin) { result = xMin; }
+						if (result > zMax) { result = zMax; }
+						if (result > zMin) { result = zMin; }
+
+						if (result == xMax) { newPosition.x = worldObjectAABBExtent.x + SEPARATION; }
+						else if (result == xMin) { newPosition.x = worldObjectAABBReverseExtent.x - SEPARATION; }
+						else if (result == zMax) { newPosition.z = worldObjectAABBExtent.z + SEPARATION; }
+						else if (result == zMin) { newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION; }
+					}
 				}
-
-				// 이미 건물내부로 들어와버린 경우 이전 프레임 위치 비교해서 들어온 곳으로 나가도록
-				if (m_xmf3Position.x > worldObjectAABBReverseExtent.x + INVASION
-					&& m_xmf3Position.x < worldObjectAABBExtent.x - INVASION
-					&& m_xmf3Position.z > worldObjectAABBReverseExtent.z + INVASION
-					&& m_xmf3Position.z < worldObjectAABBExtent.z - INVASION) 
-				{
-					float result;
-					float xMax = abs(m_xmf3PrevPosition.x - worldObjectAABBExtent.x);
-					float xMin = abs(m_xmf3PrevPosition.x - worldObjectAABBReverseExtent.x);
-					float zMax = abs(m_xmf3PrevPosition.z - worldObjectAABBExtent.z);
-					float zMin = abs(m_xmf3PrevPosition.z - worldObjectAABBReverseExtent.z);
-
-					result = xMax;
-					if (result > xMin) { result = xMin; }
-					if (result > zMax) { result = zMax; }
-					if (result > zMin) { result = zMin; }
-
-					if (result == xMax) { newPosition.x = worldObjectAABBExtent.x + SEPARATION; }
-					else if (result == xMin) { newPosition.x = worldObjectAABBReverseExtent.x - SEPARATION; }
-					else if (result == zMax) { newPosition.z = worldObjectAABBExtent.z + SEPARATION; }
-					else if (result == zMin) { newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION; }
-				}
-
 				SetPosition(newPosition);
 			}
 		}
