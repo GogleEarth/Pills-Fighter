@@ -2,7 +2,7 @@
 
 #define ASPECT_RATIO (float(FRAME_BUFFER_WIDTH) / float(FRAME_BUFFER_HEIGHT))
 #define SK_CYCLE 15.0f
-#define SK_SCALE 10.0f
+#define SK_SCALE 0.5f
 #define SK_AMP 2.0f
 
 class CPlayer;

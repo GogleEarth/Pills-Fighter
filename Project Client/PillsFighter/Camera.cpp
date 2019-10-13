@@ -113,8 +113,10 @@ void CCamera::GenerateViewMatrix()
 
 	XMFLOAT3 xmf3Position = m_xmf3Position;
 
-	XMFLOAT3 xmf3Move = Vector3::ScalarProduct(m_xmf3Right, m_fShakeScale, false);
-	xmf3Position = Vector3::Add(xmf3Position, xmf3Move);
+	XMFLOAT3 xmf3XMove = Vector3::ScalarProduct(m_xmf3Right, m_fShakeScale, false);
+	XMFLOAT3 xmf3YMove = Vector3::ScalarProduct(m_xmf3Up, m_fShakeScale, false);
+	xmf3Position = Vector3::Add(xmf3Position, xmf3XMove);
+	xmf3Position = Vector3::Add(xmf3Position, xmf3YMove);
 
 	m_xmf4x4View._41 = -Vector3::DotProduct(xmf3Position, m_xmf3Right);
 	m_xmf4x4View._42 = -Vector3::DotProduct(xmf3Position, m_xmf3Up);
@@ -217,12 +219,12 @@ void CCamera::Update(float fTimeElapsed)
 			m_fShakeTime += fTimeElapsed;
 			float s = sin(SK_CYCLE * XM_2PI * m_fShakeTime);
 			float p = pow(0.5f, m_fShakeTime * SK_AMP);
-			m_fShakeScale = s * p;
+			m_fShakeScale = s * p * SK_SCALE;
 
 			if (m_fShakeTime > 0.25f)
 			{
-				m_fShakeTime = 0.0f;
 				m_bShake = false;
+				m_fShakeTime = 0.0f;
 				m_fShakeScale = 0.0f;
 			}
 		}
