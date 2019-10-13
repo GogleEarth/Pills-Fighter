@@ -104,6 +104,7 @@ void CGun::Initialize()
 
 	SetReloadTime();
 	SetMaxReloadAmmo();
+	m_nReloadedAmmo = m_nMaxReloadAmmo;
 }
 
 void CGun::OnPrepareAnimate()
@@ -209,13 +210,6 @@ CGimGun::~CGimGun()
 {
 }
 
-void CGimGun::Initialize()
-{
-	CGun::Initialize();
-
-	m_nReloadedAmmo = 30;
-}
-
 void CGimGun::SetType()
 {
 	m_nType |= WEAPON_TYPE_OF_GM_GUN;
@@ -302,13 +296,6 @@ CBazooka::~CBazooka()
 {
 }
 
-void CBazooka::Initialize()
-{
-	CGun::Initialize();
-
-	m_nReloadedAmmo = 5;
-}
-
 void CBazooka::SetType()
 {
 	m_nType |= WEAPON_TYPE_OF_BAZOOKA;
@@ -341,13 +328,6 @@ CMachineGun::CMachineGun() : CGun()
 
 CMachineGun::~CMachineGun()
 {
-}
-
-void CMachineGun::Initialize()
-{
-	CGun::Initialize();
-
-	m_nReloadedAmmo = 30;
 }
 
 void CMachineGun::SetType()

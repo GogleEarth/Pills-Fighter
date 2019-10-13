@@ -255,7 +255,6 @@ struct VS_FONT_IN
 	float2 size : SIZE;
 	float2 uvPos : UVPOSITION;
 	float2 uvSize : UVSIZE;
-	float4 color : COLOR;
 	uint   texindex : TEXINDEX;
 };
 
@@ -268,7 +267,6 @@ struct GS_FONT_OUT
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD;
-	float4 color : COLOR;
 	uint   texindex : TEXINDEX;
 };
 
@@ -301,7 +299,6 @@ void GSFont(point VS_FONT_IN input[1], inout TriangleStream<GS_FONT_OUT> outStre
 
 		output.position = fVertices[i];
 		output.uv = fUvs[i];
-		output.color = input[0].color;
 		output.texindex = input[0].texindex;
 
 		outStream.Append(output);
@@ -312,7 +309,7 @@ float4 PSFont(GS_FONT_OUT input) : SV_TARGET
 {
 	float4 fColor = gtxtTexture[NonUniformResourceIndex(input.texindex)].Sample(gssWrap, input.uv);
 
-	return fColor * input.color * gf4FontColor;
+	return fColor * gf4FontColor;
 }
 
 ////////////////////////////////////////////////////////////////

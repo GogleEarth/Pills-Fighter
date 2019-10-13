@@ -968,16 +968,12 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_UPDATE_OBJECT:
 	{
-		PKT_UPDATE_OBJECT *pPacket = (PKT_UPDATE_OBJECT*)m_pPacketBuffer;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_UPDATE_OBJECT, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_DELETE_OBJECT:
 	{
-		PKT_DELETE_OBJECT *pPacket = (PKT_DELETE_OBJECT*)m_pPacketBuffer;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_DELETE_OBJECT, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_CREATE_EFFECT:
@@ -1038,9 +1034,7 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_SCORE:
 	{
-		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_SCORE, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_SCORE, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_GAME_END:
@@ -1050,9 +1044,7 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_PICK_ITEM:
 	{
-		PKT_SCORE *pPacket = (PKT_SCORE*)m_pPacketBuffer;
-
-		m_pScene->ApplyRecvInfo(PKT_ID_PICK_ITEM, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_PICK_ITEM, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_CHANGE_MAP:
@@ -1114,8 +1106,7 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_MAP_EVENT:
 	{
-		PKT_MAP_EVENT *pPacket = (PKT_MAP_EVENT*)m_pPacketBuffer;
-		m_pScene->ApplyRecvInfo(PKT_ID_MAP_EVENT, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_MAP_EVENT, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_CHANGE_NAME:
@@ -1126,14 +1117,17 @@ void CGameFramework::ProcessPacket()
 	}
 	case PKT_ID_PLAYER_DIE:
 	{
-		PKT_PLAYER_DIE *pPacket = (PKT_PLAYER_DIE*)m_pPacketBuffer;
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_DIE, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_DIE, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	case PKT_ID_PLAYER_RESPAWN:
 	{
-		PKT_PLAYER_RESPAWN *pPacket = (PKT_PLAYER_RESPAWN*)m_pPacketBuffer;
-		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_RESPAWN, (LPVOID)pPacket);
+		m_pScene->ApplyRecvInfo(PKT_ID_PLAYER_RESPAWN, (LPVOID)m_pPacketBuffer);
+		break;
+	}
+	case PKT_ID_KILL_MESSAGE:
+	{
+		m_pScene->ApplyRecvInfo(PKT_ID_KILL_MESSAGE, (LPVOID)m_pPacketBuffer);
 		break;
 	}
 	default:

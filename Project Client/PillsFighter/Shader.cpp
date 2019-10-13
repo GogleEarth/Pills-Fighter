@@ -3099,23 +3099,22 @@ void CUserInterface::SetAmmoText(int nWeaponIndex)
 
 	wchar_t wpstrNumber[5];
 
-	float fCenterX = 0.715f;
+	float fCenterX = 0.73f;
 	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 
 	if (nWeaponIndex != 0) 
 		wsprintfW(wpstrNumber, L"%d", nAmmo);
 	else 
 		wsprintfW(wpstrNumber, L"-", nAmmo);
-	m_pAmmoText = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
+	m_pAmmoText = m_pFont->SetText(wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
 
-	fCenterX -= 0.010f;
 	fCenterY += 0.095f;
 
 	if (nWeaponIndex != 0) 
 		wsprintfW(wpstrNumber, L"%d", nAmmo);
 	else
 		wsprintfW(wpstrNumber, L"-", nAmmo);
-	m_pReloadedAmmoText = m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
+	m_pReloadedAmmoText = m_pFont->SetText(wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
 }
 
 void CUserInterface::ChangeAmmoText(int nWeaponIndex)
@@ -3127,7 +3126,7 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 
 	wchar_t wpstrNumber[5];
 
-	float fCenterX = 0.715f;
+	float fCenterX = 0.73f;
 	float fCenterY = -0.9f + nWeaponIndex * 0.15f;
 
 	CGun *pGun = (CGun*)m_pPlayer->GetWeapon(nWeaponIndex);
@@ -3142,9 +3141,10 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 	}
 	else 
 		wsprintfW(wpstrNumber, L"-", nAmmo);
-	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.0f, 0.5f, 0.0f, 0.7f), RIGHT_ALIGN);
 
-	fCenterX -= 0.010f;
+	m_pAmmoText->SetPosition(XMFLOAT2(fCenterX, fCenterY));
+	m_pFont->ChangeText(m_pAmmoText, wpstrNumber, XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), RIGHT_ALIGN);
+
 	fCenterY += 0.095f;
 
 	if (nType & WEAPON_TYPE_OF_GUN)
@@ -3153,7 +3153,9 @@ void CUserInterface::ChangeAmmoText(int nWeaponIndex)
 	}
 	else 
 		wsprintfW(wpstrNumber, L"-", nAmmo);
-	m_pFont->ChangeText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 1.0f, 0.8f, 0.7f), RIGHT_ALIGN);
+
+	m_pReloadedAmmoText->SetPosition(XMFLOAT2(fCenterX, fCenterY));
+	m_pFont->ChangeText(m_pReloadedAmmoText, wpstrNumber, XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), RIGHT_ALIGN);
 }
 
 void CUserInterface::SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName)
@@ -3161,7 +3163,7 @@ void CUserInterface::SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName
 	float fCenterX = -0.77f;
 	float fCenterY = -0.905f + 0.1f * m_vpTeamNameText.size();
 
-	m_vpTeamNameText.emplace_back(m_pFont->SetText(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN));
+	m_vpTeamNameText.emplace_back(m_pFont->SetText(pstrName, XMFLOAT2(fCenterX, fCenterY), XMFLOAT2(1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.8f, 0.5f), LEFT_ALIGN));
 	m_vppTeamObject.emplace_back(ppObject);
 }
 
@@ -3187,6 +3189,32 @@ void CUserInterface::AnimateObjects(float fTimeElapsed, CCamera *pCamera)
 				m_fNotifyElapsedTime = fmod(m_fNotifyElapsedTime, m_fNotifyTime[m_nNotifyOrder]);
 				m_nNotifyOrder++;
 			}
+		}
+	}
+
+	int eCount = 0;
+	for(auto& iter = m_vKilledInfo.begin(); iter != m_vKilledInfo.end();)
+	{
+		if (iter->time < high_resolution_clock::now())
+		{
+			iter->pDie->Release();
+			iter->pKill->Release();
+			iter->pInfo->Release();
+			iter = m_vKilledInfo.erase(iter);
+			eCount++;
+			continue;
+		}
+		else
+			break;
+	}
+
+	if (eCount > 0)
+	{
+		for (auto& iter : m_vKilledInfo)
+		{
+			iter.pDie->MovePosition(XMFLOAT3(0.0f, 0.06f, 0.0f));
+			iter.pKill->MovePosition(XMFLOAT3(0.0f, 0.06f, 0.0f));
+			iter.pInfo->MovePosition(XMFLOAT3(0.0f, 0.06f, 0.0f));
 		}
 	}
 }
@@ -3416,7 +3444,7 @@ void CUserInterface::Initialize(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandL
 	xmf2Size = ::CalculateSize(fCenterX - fSizeX, fCenterX + fSizeX, fCenterY + fSizeY, fCenterY - fSizeY, true);
 	m_ppUIRects[UI_RECT_BATTLE_NOTIFY] = new CRect(pd3dDevice, pd3dCommandList, xmf2Center, xmf2Size);
 
-	m_pNotifyText = m_pFont->SetText(1280, 720, L"다른 플레이어의 접속을 기다리고 있습니다.", XMFLOAT2(-0.36f, 0.44f), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pNotifyText = m_pFont->SetText(L"다른 플레이어의 접속을 기다리고 있습니다.", XMFLOAT2(-0.36f, 0.44f), XMFLOAT2(1.75f, 1.75f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
 	m_pNotifyText->Display();
 }
 
@@ -3436,7 +3464,8 @@ void CUserInterface::BattleNotifyStart()
 	m_fNotifyElapsedTime = 0.0f;
 	m_bNotify = true;
 
-	m_pFont->ChangeText(1280, 720, m_pNotifyText, L"리스폰 대기중", XMFLOAT2(-0.10f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pFont->ChangeText(m_pNotifyText, L"리스폰 대기중", XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), LEFT_ALIGN);
+	m_pNotifyText->SetPosition(XMFLOAT2(-0.10f, -0.37f));
 	m_pNotifyText->Hide();
 }
 
@@ -3445,7 +3474,8 @@ void CUserInterface::BattleNotifyEnd(bool bWin)
 	m_bGameEnd = true;
 	m_bWin = bWin;
 
-	m_pFont->ChangeText(1280, 720, m_pNotifyText, L"Enter를 누르면 메인 로비로 돌아갑니다.", XMFLOAT2(-0.285f, -0.37f), XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(0.8f, 0.8f, 0.7f, 1.0f), LEFT_ALIGN);
+	m_pFont->ChangeText(m_pNotifyText, L"Enter를 누르면 메인 로비로 돌아갑니다.", XMFLOAT2(1.5f, 1.5f), XMFLOAT2(1.0f, 1.0f), LEFT_ALIGN);
+	m_pNotifyText->SetPosition(XMFLOAT2(-0.285f, -0.37f));
 	m_pNotifyText->Display();
 }
 
@@ -3685,6 +3715,35 @@ void CUserInterface::Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera 
 	}
 }
 
+void CUserInterface::AddKillInfo(wchar_t *pwstrKill, TEAM_TYPE killTeam, wchar_t *pwstrDie, TEAM_TYPE dieTeam)
+{
+	KILLED_INFO ki;
+
+	XMFLOAT4 killColor;
+	XMFLOAT4 dieColor;
+
+	float y = static_cast<float>(m_vKilledInfo.size()) * 0.06f;
+
+	if (killTeam == TEAM_TYPE::TEAM_TYPE_RED) killColor = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	else if(killTeam == TEAM_TYPE::TEAM_TYPE_BLUE) killColor = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	else killColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	if (dieTeam == TEAM_TYPE::TEAM_TYPE_RED) dieColor = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	else if(dieTeam == TEAM_TYPE::TEAM_TYPE_BLUE) dieColor = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	else dieColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	ki.pKill = m_pFont->SetText(pwstrKill, XMFLOAT2(-0.95f, 0.95f - y), XMFLOAT2(1.25f, 1.25f), XMFLOAT2(1.0f, 1.0f), killColor, LEFT_ALIGN);
+
+	float x = ki.pKill->GetEndPointX() + 0.01f;
+	ki.pInfo = m_pFont->SetText(L"Killed", XMFLOAT2(-0.95f + x, 0.95f - y), XMFLOAT2(1.25f, 1.25f), XMFLOAT2(1.0f, 1.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), LEFT_ALIGN);
+
+	x += ki.pInfo->GetEndPointX() + 0.01f;
+	ki.pDie = m_pFont->SetText(pwstrDie, XMFLOAT2(-0.95f + x, 0.95f - y), XMFLOAT2(1.25f, 1.25f), XMFLOAT2(1.0f, 1.0f), dieColor, LEFT_ALIGN);
+	ki.time = high_resolution_clock::now() + milliseconds(4000ms);
+
+	m_vKilledInfo.emplace_back(ki);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CFontShader::CFontShader()
@@ -3713,15 +3772,14 @@ D3D12_SHADER_BYTECODE CFontShader::CreatePixelShader(ID3DBlob **ppd3dShaderBlob)
 
 D3D12_INPUT_LAYOUT_DESC CFontShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 6;
+	UINT nInputElementDescs = 5;
 	D3D12_INPUT_ELEMENT_DESC *pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	pd3dInputElementDescs[0] = { "POSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[1] = { "SIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[2] = { "UVPOSITION",	0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	pd3dInputElementDescs[3] = { "UVSIZE",		0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[4] = { "COLOR",		0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	pd3dInputElementDescs[5] = { "TEXINDEX",	0, DXGI_FORMAT_R32_UINT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	pd3dInputElementDescs[4] = { "TEXINDEX",	0, DXGI_FORMAT_R32_UINT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;

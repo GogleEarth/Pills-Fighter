@@ -661,6 +661,14 @@ struct CB_CUSTOM_UI
 	XMFLOAT2 xmf2Scale;
 };
 
+struct KILLED_INFO
+{
+	CTextObject *pKill;
+	CTextObject *pDie;
+	CTextObject *pInfo;
+	high_resolution_clock::time_point time;
+};
+
 class CUserInterface : public CShader
 {
 public:
@@ -759,6 +767,8 @@ protected:
 	std::vector<ID3D12Resource*>				m_vpd3dcbUI3DInfo;
 	std::vector<CB_UI_3D_INFO*>					m_vpcbMappedUI3DInfo;
 
+	std::vector<KILLED_INFO>			m_vKilledInfo;
+
 public:
 	void SetTeamNameTexture(ID3D12Device *pd3dDevice, ID3D12Resource *pd3dTexture, CRect *pRect);
 
@@ -772,6 +782,7 @@ public:
 	void SetTeamInfo(CGameObject **ppObject, const wchar_t *pstrName);
 	void ClientDie();
 	void ClientRespawn();
+	void AddKillInfo(wchar_t *pwstrKill, TEAM_TYPE killTeam, wchar_t *pwstrDie, TEAM_TYPE dieTeam);
 
 protected:
 // Zoom

@@ -151,8 +151,6 @@ protected:
 	float	m_fBurstCoolTime = 0.0f;
 
 public:
-	virtual void Initialize();
-
 	virtual void Shot();
 	virtual void SetReloadTime() { m_fReloadTime = GG_RELOAD_TIME; }
 	virtual void SetShotCoolTime();
@@ -179,8 +177,6 @@ public:
 	CBazooka();
 	virtual ~CBazooka();
 
-	virtual void Initialize();
-
 	virtual void Shot();
 
 	virtual void SetReloadTime() { m_fReloadTime = BZK_RELOAD_TIME; }
@@ -204,13 +200,11 @@ public:
 	CMachineGun();
 	virtual ~CMachineGun();
 
-	virtual void Initialize();
-
 	virtual void Shot();
 
 	virtual void SetReloadTime() { m_fReloadTime = MG_RELOAD_TIME; }
 	virtual void SetShotCoolTime();
-	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 30; }
+	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 50; }
 
 	virtual void SetType();
 

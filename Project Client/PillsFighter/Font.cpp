@@ -22,6 +22,7 @@ CTextObject::CTextObject(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd
 
 	m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	m_xmf4Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_fRightAlignX = 0.0f;
 }
 
 CTextObject::~CTextObject()
@@ -50,7 +51,10 @@ void CTextObject::UpdateVertexBuffer(ID3D12GraphicsCommandList *pd3dCommandList)
 
 void CTextObject::UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList)
 {
-	m_pcbMappedFontInfo->m_xmf3Position = m_xmf3Position;
+	XMFLOAT3 xmf3Position = m_xmf3Position;
+	xmf3Position.x += m_fRightAlignX;
+
+	m_pcbMappedFontInfo->m_xmf3Position = xmf3Position;
 	m_pcbMappedFontInfo->m_xmf4Color = m_xmf4Color;
 
 	D3D12_GPU_VIRTUAL_ADDRESS d3dGPUAddress = m_pd3dcbFontInfo->GetGPUVirtualAddress();
@@ -500,36 +504,26 @@ float CFont::GetKerning(wchar_t cFirst, wchar_t cSecond)
 	return 0;
 }
 
-void CFont::CreateText(int nWidth, int nHeight, int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+void CFont::CreateText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, int nType)
 {
 	float fPaddingW = (m_fLeftPadding + m_fRightPadding) * xmf2Padding.x;
 	float fPaddingH = (m_fTopPadding + m_fBottomPadding) * xmf2Padding.y;
 
 	wchar_t chPrev;
-
-	std::wstring strReverse;
-	if (nType == RIGHT_ALIGN)
-	{
-		strReverse = pstrText;
-		std::reverse(strReverse.begin(), strReverse.end());
-	}
-
-	XMFLOAT2 xmf2ChPosition = xmf2Position;
+	
+	XMFLOAT2 xmf2ChPosition = XMFLOAT2(0.0f, 0.0f);
 
 	for (int i = 0; i < nLength; i++)
 	{
 		wchar_t ch;
 
-		if (nType == LEFT_ALIGN)
-			ch = pstrText[i];
-		else if (nType == RIGHT_ALIGN)
-			ch = strReverse[i];
+		ch = pstrText[i];
 
 		if (ch == '\0') break;
 		else if (ch == '\n')
 		{
-			xmf2ChPosition.x = xmf2Position.x;
-			xmf2ChPosition.y += (m_fLineHeight / float(nHeight) + fPaddingH / float(nWidth) ) * xmf2Scale.y;
+			xmf2ChPosition.x = 0.0f;
+			xmf2ChPosition.y += (m_fLineHeight / float(FRAME_BUFFER_WIDTH) + fPaddingH / float(FRAME_BUFFER_HEIGHT) ) * xmf2Scale.y;
 
 			continue;
 		}
@@ -540,23 +534,15 @@ void CFont::CreateText(int nWidth, int nHeight, int nLength, CFontVertex* pFontV
 
 		float fKerning = 0.0f;
 
-		if (nType == LEFT_ALIGN)
-		{
-			if (i != 0) fKerning = GetKerning(chPrev, ch);
-		}
-		else if (nType == RIGHT_ALIGN)
-		{
-			if ((i + 1) != nLength)
-				fKerning = GetKerning(ch, strReverse[i + 1]);
-		}
+		if (i != 0) fKerning = GetKerning(chPrev, ch);
 
 		XMFLOAT2 xmf2Size;
-		xmf2Size.x = pFontchar->w * xmf2Scale.x / float(nWidth);
-		xmf2Size.y = pFontchar->h * xmf2Scale.y / float(nHeight);
+		xmf2Size.x = pFontchar->w * xmf2Scale.x / float(FRAME_BUFFER_WIDTH);
+		xmf2Size.y = pFontchar->h * xmf2Scale.y / float(FRAME_BUFFER_HEIGHT);
 
 		XMFLOAT2 xmf2Pos;
-		xmf2Pos.x = xmf2ChPosition.x + ((pFontchar->xOffset + fKerning) * xmf2Scale.x / float(nWidth));
-		xmf2Pos.y = xmf2ChPosition.y - (pFontchar->yOffset * xmf2Scale.y / float(nHeight));
+		xmf2Pos.x = xmf2ChPosition.x + ((pFontchar->xOffset + fKerning) * xmf2Scale.x / float(FRAME_BUFFER_WIDTH));
+		xmf2Pos.y = xmf2ChPosition.y - (pFontchar->yOffset * xmf2Scale.y / float(FRAME_BUFFER_HEIGHT));
 
 		XMFLOAT2 xmf2UVSize;
 		xmf2UVSize.x = pFontchar->tw;
@@ -570,42 +556,42 @@ void CFont::CreateText(int nWidth, int nHeight, int nLength, CFontVertex* pFontV
 		pFontVertices[i].xmf2Size = xmf2Size;
 		pFontVertices[i].xmf2UVPos = xmf2UVPos;
 		pFontVertices[i].xmf2UVSize = xmf2UVSize;
-		pFontVertices[i].xmf4Color = xmf4Color;
 		pFontVertices[i].nTexIndex = pFontchar->nTexIndex;
 
-		if(nType == LEFT_ALIGN)
-			xmf2ChPosition.x += (pFontchar->xAdvance - fPaddingW) * xmf2Scale.x / float(nWidth);
-		else if(nType == RIGHT_ALIGN)
-			xmf2ChPosition.x -= (pFontchar->xAdvance - fPaddingW) * xmf2Scale.x / float(nWidth);
+		xmf2ChPosition.x += (pFontchar->xAdvance - fPaddingW) * xmf2Scale.x / float(FRAME_BUFFER_WIDTH);
 
-		if (nType == LEFT_ALIGN)
-			chPrev = ch;
-		else if (nType == RIGHT_ALIGN)
-		{
-			if ((i + 1) != nLength)
-				chPrev = strReverse[i + 1];
-		}
+		chPrev = ch;
 	}
 }
 
-CTextObject* CFont::SetText(int nWidth, int nHeight, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+CTextObject* CFont::SetText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
 {
 	int nLength = (int)lstrlenW(pstrText);
 	CFontVertex *pFontVertices = new CFontVertex[nLength];
 
-	CreateText(nWidth, nHeight, nLength, pFontVertices, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType);
+	CreateText(nLength, pFontVertices, pstrText, xmf2Scale, xmf2Padding, nType);
 
 	CTextObject* pTextObject = m_qpTempTextObjects.front();
 	m_qpTempTextObjects.pop();
 
 	pTextObject->SetText(pstrText, pFontVertices, nLength);
+	pTextObject->SetColor(xmf4Color);
+	pTextObject->SetPosition(xmf2Position);
+
+	float x = 0.0f;
+	if (nType == RIGHT_ALIGN)
+	{
+		x = -(pFontVertices[nLength - 1].xmf2Pos.x + pFontVertices[nLength - 1].xmf2Size.x);
+	}
+	pTextObject->SetRightAlign(x);
+
 
 	m_vpTextObjects.emplace_back(pTextObject);
 
 	return pTextObject;
 }
 
-XMINT2 CFont::Create3DText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color)
+XMINT2 CFont::Create3DText(int nLength, CFontVertex* pFontVertices, const wchar_t *pstrText, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding)
 {
 	float fPaddingW = (m_fLeftPadding + m_fRightPadding) * xmf2Padding.x;
 	float fPaddingH = (m_fTopPadding + m_fBottomPadding) * xmf2Padding.y;
@@ -673,7 +659,6 @@ XMINT2 CFont::Create3DText(int nLength, CFontVertex* pFontVertices, const wchar_
 		pFontVertices[i].xmf2Size = xmf2Size;
 		pFontVertices[i].xmf2UVPos = xmf2UVPos;
 		pFontVertices[i].xmf2UVSize = xmf2UVSize;
-		pFontVertices[i].xmf4Color = xmf4Color;
 		pFontVertices[i].nTexIndex = pFontchar->nTexIndex;
 
 		xmf2ChPosition.x += (pFontchar->xAdvance - fPaddingW) * xmf2Scale.x;
@@ -716,7 +701,7 @@ CTextObject* CFont::Set3DText(int& nWidth, int& nHeight, const wchar_t *pstrText
 	int nLength = (int)lstrlenW(pstrText);
 	CFontVertex *pFontVertices = new CFontVertex[nLength];
 
-	XMINT2 xmi2Size = Create3DText(nLength, pFontVertices, pstrText, xmf2Scale, xmf2Padding, xmf4Color);
+	XMINT2 xmi2Size = Create3DText(nLength, pFontVertices, pstrText, xmf2Scale, xmf2Padding);
 	nWidth = xmi2Size.x;
 	nHeight = xmi2Size.y;
 
@@ -724,22 +709,29 @@ CTextObject* CFont::Set3DText(int& nWidth, int& nHeight, const wchar_t *pstrText
 	m_qpTempTextObjects.pop();
 
 	pTextObject->SetText(pstrText, pFontVertices, nLength);
+	pTextObject->SetColor(xmf4Color);
 
 	m_vp3DTextObjects.emplace_back(pTextObject);
 
 	return pTextObject;
 }
 
-void CFont::ChangeText(int nWidth, int nHeight, CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType)
+void CFont::ChangeText(CTextObject *pTextObject, const wchar_t *pstrText, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, int nType)
 {
 	pTextObject->FreeText();
 
 	int nLength = (int)lstrlenW(pstrText);
 	CFontVertex *pFontVertices = new CFontVertex[nLength];
-
-	CreateText(nWidth, nHeight, nLength, pFontVertices, pstrText, xmf2Position, xmf2Scale, xmf2Padding, xmf4Color, nType);
-
+	
+	CreateText(nLength, pFontVertices, pstrText, xmf2Scale, xmf2Padding, nType);
 	pTextObject->SetText(pstrText, pFontVertices, nLength);
+
+	float x = 0.0f;
+	if (nType == RIGHT_ALIGN)
+	{
+		x = -(pFontVertices[nLength - 1].xmf2Pos.x + pFontVertices[nLength - 1].xmf2Size.x);
+	}
+	pTextObject->SetRightAlign(x);
 }
 
 void CFont::Render(ID3D12GraphicsCommandList *pd3dCommandList)

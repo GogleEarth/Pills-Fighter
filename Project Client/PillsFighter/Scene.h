@@ -94,8 +94,6 @@ public:
 
 public:
 	void SetFont(ID3D12Device *pd3dDevice, CFont *pFont);
-	CTextObject* AddText(const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
-	void ChangeText(CTextObject *pTextObject,const wchar_t *pstrText, XMFLOAT2 xmf2Position, XMFLOAT2 xmf2Scale, XMFLOAT2 xmf2Padding, XMFLOAT4 xmf4Color, int nType);
 
 protected:
 	CFontShader						*m_pFontShader = NULL;
