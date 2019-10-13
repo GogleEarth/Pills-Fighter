@@ -52,7 +52,14 @@ typedef enum PKT_ID
 	PKT_ID_PLAYER_RESPAWN,
 	PKT_ID_MOVE_TO_MAIN_LOBBY,
 	PKT_ID_LOG_OUT,
-	PKT_ID_LOG_OUT_OK
+	PKT_ID_LOG_OUT_OK,
+	PKT_ID_LOG_IN,
+	PKT_ID_LOG_IN_OK,
+	PKT_ID_LOG_IN_FAIL,
+	PKT_ID_CREATE_ACCOUT,
+	PKT_ID_CREATE_ACCOUT_OK,
+	PKT_ID_CREATE_ACCOUT_FAIL,
+	PKT_ID_KILL_MESSAGE
 }PKT_ID;
 
 typedef enum OBJECT_TYPE
@@ -425,6 +432,16 @@ struct PKT_MOVE_TO_MAIN_LOBBY
 	BYTE		PktId;
 };
 
+struct PKT_KILL_MESSAGE
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	BYTE		kill_team;
+	BYTE		die_team;
+	wchar_t		kill_name[MAX_NAME_LENGTH];
+	wchar_t		die_name[MAX_NAME_LENGTH];
+};
+
 ///////////////////////////////////////////////////////////
 
 typedef struct PKT_LOG_OUT
@@ -432,5 +449,28 @@ typedef struct PKT_LOG_OUT
 	BYTE		PktSize;
 	BYTE		PktId;
 }PKT_LOG_OUT_OK;
+
+typedef struct PKT_LOG_IN
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	wchar_t		id[MAX_NAME_LENGTH];
+	wchar_t		pass[MAX_NAME_LENGTH];
+}PKT_CREATE_ACCOUNT;
+
+typedef struct PKT_LOG_IN_OK
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	wchar_t		name[MAX_NAME_LENGTH];
+}PKT_LOG_IN_FAIL;
+
+typedef struct PKT_CREATE_ACCOUNT_OK
+{
+	BYTE		PktSize;
+	BYTE		PktId;
+	wchar_t		error[MAX_NAME_LENGTH];
+}PKT_CREATE_ACCOUNT_FAIL;
+///////////////////////////////////////////////////////////
 
 #pragma pack(pop)

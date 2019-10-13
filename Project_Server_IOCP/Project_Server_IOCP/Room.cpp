@@ -302,7 +302,7 @@ int Room::findindex()
 	return num;
 }
 
-void Room::add_player(int id, SOCKET socket, char slot)
+void Room::add_player(int id, SOCKET socket, char slot, wchar_t* name)
 {
 	int num = findindex();
 	players_[num].set_use(true);
@@ -311,6 +311,7 @@ void Room::add_player(int id, SOCKET socket, char slot)
 	players_[num].set_robot(ROBOT_TYPE_GM);
 	players_[num].set_slot(slot);
 	players_[num].set_team((char)((int)slot % 2));
+	players_[num].set_name(name);
 	slots_[slot] = true;
 }
 
@@ -628,7 +629,7 @@ void Room::spawn_ammo_item()
 	{
 		item_spawn_[1] = true;
 		int hp = 100;
-		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 100.0f, 5.0f, 0.0f, 1.0f };
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -700.0f, 5.0f, -800.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
@@ -643,7 +644,7 @@ void Room::spawn_ammo_item()
 	{
 		item_spawn_[2] = true;
 		int hp = 100;
-		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -100.0f, 5.0f, 0.0f, 1.0f };
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 610.0f, 0.0f, 900.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
@@ -781,6 +782,21 @@ PKT_SCORE* Room::score_dequeue()
 PKT_PLAYER_DIE* Room::player_die_dequeue()
 {
 	return scenes_[using_scene_]->player_die_dequeue();
+}
+
+PKT_KILL_MESSAGE* Room::kill_message_dequeue()
+{
+	auto kill = scenes_[using_scene_]->kill_dequeue();
+	if (kill == nullptr) return nullptr;
+	PKT_KILL_MESSAGE* pkt_km = new PKT_KILL_MESSAGE;
+	pkt_km->PktId = PKT_ID_KILL_MESSAGE;
+	pkt_km->PktSize = sizeof(PKT_KILL_MESSAGE);
+	pkt_km->kill_team = players_[kill->kill_id].get_team();
+	pkt_km->die_team = players_[kill->die_id].get_team();
+	lstrcpynW(pkt_km->kill_name, players_[kill->kill_id].get_name(), MAX_NAME_LENGTH);
+	lstrcpynW(pkt_km->die_name, players_[kill->die_id].get_name(), MAX_NAME_LENGTH);
+	delete kill;
+	return pkt_km;
 }
 
 void Player::init()

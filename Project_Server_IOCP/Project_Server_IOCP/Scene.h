@@ -9,6 +9,12 @@
 #define EVENT_TIME_SPACE 15.0f
 #define EVENT_START_INTERVAL_SPACE 90.0f
 
+struct KILL_MESSAGE 
+{
+	int kill_id;
+	int die_id;
+};
+
 class Scene
 {
 protected:
@@ -40,6 +46,8 @@ protected:
 	std::queue<PKT_CREATE_EFFECT*> create_effect_queue_;
 	std::mutex die_lock_;
 	std::queue<PKT_PLAYER_DIE*> player_die_queue_;
+	std::mutex kill_lock_;
+	std::queue<KILL_MESSAGE*> kill_queue_;
 
 public:
 	Scene();
@@ -94,7 +102,7 @@ public:
 	PKT_SCORE* score_dequeue();
 	PKT_CREATE_EFFECT* create_effect_dequeue();
 	PKT_PLAYER_DIE* player_die_dequeue();
-
+	KILL_MESSAGE* kill_dequeue();
 
 	inline void release_object(int index) { Objects_[index].set_use(false); }
 	inline void delete_object(int index) { Objects_[index].object_delete(); }

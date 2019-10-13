@@ -16,6 +16,7 @@ class Player
 	bool load_;
 	bool send_;
 	char slot_;
+	wchar_t name_[MAX_NAME_LENGTH];
 public:
 	Player() {}
 	~Player() {}
@@ -36,6 +37,8 @@ public:
 	inline char get_team() { return team_; }
 	inline void set_slot(char slot) { slot_ = slot; }
 	inline char get_slot() { return slot_; }
+	inline void set_name(wchar_t* name) { lstrcpynW(name_, name, MAX_NAME_LENGTH); }
+	inline wchar_t* get_name() { return name_; }
 };
 
 class Room
@@ -106,7 +109,7 @@ public:
 	bool search_client(SOCKET client);
 	void disconnect_client(SOCKET client);
 	int findindex();
-	void add_player(int id, SOCKET socket, char slot);
+	void add_player(int id, SOCKET socket, char slot, wchar_t* name);
 	int add_object(OBJECT_TYPE type, XMFLOAT4X4 matrix, int id = -1);
 	void set_player_lobby_info(int id, char selectedrobot, char team, char slot);
 	PKT_CREATE_OBJECT* shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon);
@@ -137,5 +140,6 @@ public:
 	PKT_PLAYER_LIFE* player_life_dequeue();
 	PKT_SCORE* score_dequeue();
 	PKT_PLAYER_DIE* player_die_dequeue();
+	PKT_KILL_MESSAGE* kill_message_dequeue();
 };
 

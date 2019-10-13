@@ -15,7 +15,7 @@ enum EVENT_TYPE {
 	EVENT_TYPE_BEAM_SNIPER
 };
 
-#define MAX_BUFFER 255
+#define MAX_BUFFER 1024
 #define MAX_USER 1000
 
 struct Overlapped 
@@ -39,7 +39,6 @@ public:
 	bool in_room_;
 	wchar_t name_[MAX_NAME_LENGTH];
 	Client() {
-		socket_ = INVALID_SOCKET;
 		in_use_ = false;
 		over_ex.wsa_buffer_.len = MAX_BUFFER;
 		over_ex.wsa_buffer_.buf = over_ex.packet_buffer_;

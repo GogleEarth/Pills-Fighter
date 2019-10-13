@@ -37,24 +37,20 @@ int Framawork::thread_process()
 		if (false == is_error) {
 			int err_no = WSAGetLastError();
 			if (64 == err_no) {
-				if (clients_[index].socket_ != INVALID_SOCKET)
-				{
-					disconnect_client(index);
-					std::wcout << index << L"번 플레이어 접속 종료\n";
-					lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
-				}
+
+				disconnect_client(index);
+				std::wcout << index << L"번 플레이어 접속 종료\n";
+				lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
 				continue;
 			}
 			else error_display("GQCS : ", err_no);
 		}
 
 		if (0 == io_byte) {
-			if (clients_[index].socket_ != INVALID_SOCKET)
-			{
-				disconnect_client(index);
-				std::wcout << index << L"번 플레이어 접속 종료\n";
-				lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
-			}
+			disconnect_client(index);
+			std::wcout << index << L"번 플레이어 접속 종료\n";
+			lstrcpynW(clients_[index].name_, L"라마바", MAX_NAME_LENGTH);
+
 			continue;
 		}
 
@@ -149,6 +145,14 @@ int Framawork::thread_process()
 					send_packet_to_room_player(index, (char*)data);
 					using namespace std::chrono;
 					add_event(data->id, overlapped->room_num_, EVENT_TYPE_RESPAWN, high_resolution_clock::now() + 16ms);
+					delete data;
+				}
+
+				while (true)
+				{
+					auto data = rooms_[index].kill_message_dequeue();
+					if (data == nullptr) break;
+					send_packet_to_room_player(index, (char*)data);
 					delete data;
 				}
 
@@ -637,16 +641,13 @@ void Framawork::do_recv(int id)
 {
 	DWORD flags = 0;
 
-	if (clients_[id].socket_ != INVALID_SOCKET)
+	if (WSARecv(clients_[id].socket_, &clients_[id].over_ex.wsa_buffer_, 1,
+		NULL, &flags, &(clients_[id].over_ex.overlapped_), 0))
 	{
-		if (WSARecv(clients_[id].socket_, &clients_[id].over_ex.wsa_buffer_, 1,
-			NULL, &flags, &(clients_[id].over_ex.overlapped_), 0))
+		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
-			{
-				std::cout << "Recv_Error\n";
-				disconnect_client(id);
-			}
+			std::cout << "Recv_Error\n";
+			disconnect_client(id);
 		}
 	}
 }
@@ -844,7 +845,7 @@ void Framawork::process_packet(int id, char* packet)
 
 			send_packet_to_player(id, (char*)&pkt_cro);
 			rooms_[room_num].set_is_use(true);
-			rooms_[room_num].add_player(id, clients_[id].socket_, 0);
+			rooms_[room_num].add_player(id, clients_[id].socket_, 0, clients_[id].name_);
 			rooms_[room_num].set_map(4);
 			rooms_[room_num].set_name(reinterpret_cast<PKT_CREATE_ROOM*>(packet)->name);
 			clients_[id].in_room_ = true;
@@ -884,7 +885,7 @@ void Framawork::process_packet(int id, char* packet)
 			pkt_rio.map = rooms_[room_num].get_map();
 			char empty_slot = rooms_[room_num].get_empty_slot();
 			pkt_rio.slot = empty_slot;
-			rooms_[room_num].add_player(id, clients_[id].socket_, empty_slot);
+			rooms_[room_num].add_player(id, clients_[id].socket_, empty_slot, clients_[id].name_);
 			send_packet_to_player(id, (char*)&pkt_rio);
 			clients_[id].in_room_ = true;
 
@@ -1191,21 +1192,18 @@ void Framawork::process_packet(int id, char* packet)
 void Framawork::send_packet_to_player(int id, char* packet)
 {
 	char *p = packet;
-	if (clients_[id].socket_ != INVALID_SOCKET)
-	{
-		Overlapped *ov = new Overlapped;
-		ov->wsa_buffer_.len = p[0];
-		ov->wsa_buffer_.buf = ov->packet_buffer_;
-		ov->event_type_ = EVENT_TYPE_SEND;
-		memcpy(ov->packet_buffer_, p, p[0]);
-		ZeroMemory(&ov->overlapped_, sizeof(ov->overlapped_));
-		int error = WSASend(clients_[id].socket_, &ov->wsa_buffer_, 1, 0, 0,
-			&ov->overlapped_, NULL);
-		if (0 != error) {
-			int err_no = WSAGetLastError();
-			if (err_no != WSA_IO_PENDING)
-				error_display("WSASend in send_packet_to_player()  ", err_no);
-		}
+	Overlapped *ov = new Overlapped;
+	ov->wsa_buffer_.len = p[0];
+	ov->wsa_buffer_.buf = ov->packet_buffer_;
+	ov->event_type_ = EVENT_TYPE_SEND;
+	memcpy(ov->packet_buffer_, p, p[0]);
+	ZeroMemory(&ov->overlapped_, sizeof(ov->overlapped_));
+	int error = WSASend(clients_[id].socket_, &ov->wsa_buffer_, 1, 0, 0,
+		&ov->overlapped_, NULL);
+	if (0 != error) {
+		int err_no = WSAGetLastError();
+		if (err_no != WSA_IO_PENDING)
+			error_display("WSASend in send_packet_to_player()  ", err_no);
 	}
 }
 

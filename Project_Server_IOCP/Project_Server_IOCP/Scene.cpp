@@ -180,6 +180,8 @@ void Scene::init()
 		create_effect_queue_.pop();
 	while (player_die_queue_.size() > 0)
 		player_die_queue_.pop();
+	while (kill_queue_.size() > 0)
+		kill_queue_.pop();
 
 	elapsed_game_time_ = 0.0f;
 	event_time_ = 0.0f;
@@ -353,6 +355,14 @@ bool Scene::check_saber_collision_player(int object)
 									score_lock.lock();
 									score_queue_.push(pkt_sco);
 									score_lock.unlock();
+
+									KILL_MESSAGE* km = new KILL_MESSAGE;
+									km->die_id = i;
+									km->kill_id = Objects_[object].get_owner_id();
+
+									kill_lock_.lock();
+									kill_queue_.push(km);
+									kill_lock_.unlock();
 								}
 
 								life_lock.lock();
@@ -717,6 +727,20 @@ PKT_PLAYER_DIE * Scene::player_die_dequeue()
 	player_die_queue_.pop();
 	die_lock_.unlock();
 	return packet;
+}
+
+KILL_MESSAGE* Scene::kill_dequeue()
+{
+	kill_lock_.lock();
+	if (kill_queue_.empty())
+	{
+		kill_lock_.unlock();
+		return nullptr;
+	}
+	auto kill = kill_queue_.front();
+	kill_queue_.pop();
+	kill_lock_.unlock();
+	return kill;
 }
 
 void Scene::start_event()
