@@ -276,26 +276,52 @@ void CGameObject::MoveToCollision(CGameObject *pObject)
 				XMFLOAT3 separateCenterMinus = XMFLOAT3(m_xmAABB.Center.x - SEPARATION, m_xmAABB.Center.y - SEPARATION, m_xmAABB.Center.z - SEPARATION);
 				XMFLOAT3 separateCenterPlus = XMFLOAT3(m_xmAABB.Center.x + SEPARATION, 0, m_xmAABB.Center.z + SEPARATION);
 
+				// 지붕에 올라서기
 				if (m_xmf3Position.y > worldObjectAABBExtent.y - INVASION_ROOF && m_xmf3Position.y < worldObjectAABBExtent.y) {
 					m_fVelocityY = 0.0f;
 					m_nState |= OBJECT_STATE_ONGROUND;
 					newPosition.y = xmAABB.Center.y + xmAABB.Extents.y ;
 				}
-				if (separateCenterMinus.x > worldObjectAABBExtent.x - INVASION && separateCenterMinus.x < worldObjectAABBExtent.x ) {
-					newPosition.x = worldObjectAABBExtent.x + SEPARATION;
+				// x,z 충돌
+				else {
+					if (separateCenterMinus.x > worldObjectAABBExtent.x - INVASION && separateCenterMinus.x < worldObjectAABBExtent.x) {
+						newPosition.x = worldObjectAABBExtent.x + SEPARATION;
+					}
+					if (separateCenterPlus.x < worldObjectAABBReverseExtent.x + INVASION && separateCenterPlus.x > worldObjectAABBReverseExtent.x) {
+						newPosition.x = worldObjectAABBReverseExtent.x - SEPARATION;
+					}
+					if (separateCenterMinus.z > worldObjectAABBExtent.z - INVASION && separateCenterMinus.z < worldObjectAABBExtent.z) {
+						newPosition.z = worldObjectAABBExtent.z + SEPARATION;
+					}
+					if (separateCenterPlus.z < worldObjectAABBReverseExtent.z + INVASION && separateCenterPlus.z > worldObjectAABBReverseExtent.z) {
+						newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION;
+					}
 				}
-				if (separateCenterPlus.x < worldObjectAABBReverseExtent.x + INVASION && separateCenterPlus.x > worldObjectAABBReverseExtent.x) {
-					newPosition.x = worldObjectAABBReverseExtent.x - SEPARATION;
-				}
-				if (separateCenterMinus.z > worldObjectAABBExtent.z - INVASION && separateCenterMinus.z < worldObjectAABBExtent.z ) {
-					newPosition.z = worldObjectAABBExtent.z + SEPARATION;
-				}
-				if (separateCenterPlus.z < worldObjectAABBReverseExtent.z + INVASION && separateCenterPlus.z > worldObjectAABBReverseExtent.z ) {
-					newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION;
-				}
-				SetPosition(newPosition);
 
-				//std::cout << "Position: " << m_xmf3Position.x << ", " << m_xmf3Position.y << ", " << m_xmf3Position.z << std::endl;
+				// 이미 건물내부로 들어와버린 경우 이전 프레임 위치 비교해서 들어온 곳으로 나가도록
+				if (m_xmf3Position.x > worldObjectAABBReverseExtent.x + INVASION
+					&& m_xmf3Position.x < worldObjectAABBExtent.x - INVASION
+					&& m_xmf3Position.z > worldObjectAABBReverseExtent.z + INVASION
+					&& m_xmf3Position.z < worldObjectAABBExtent.z - INVASION) 
+				{
+					float result;
+					float xMax = abs(m_xmf3PrevPosition.x - worldObjectAABBExtent.x);
+					float xMin = abs(m_xmf3PrevPosition.x - worldObjectAABBReverseExtent.x);
+					float zMax = abs(m_xmf3PrevPosition.z - worldObjectAABBExtent.z);
+					float zMin = abs(m_xmf3PrevPosition.z - worldObjectAABBReverseExtent.z);
+
+					result = xMax;
+					if (result > xMin) { result = xMin; }
+					if (result > zMax) { result = zMax; }
+					if (result > zMin) { result = zMin; }
+
+					if (result == xMax) { newPosition.x = worldObjectAABBExtent.x + SEPARATION; }
+					else if (result == xMin) { newPosition.x = worldObjectAABBReverseExtent.x - SEPARATION; }
+					else if (result == zMax) { newPosition.z = worldObjectAABBExtent.z + SEPARATION; }
+					else if (result == zMin) { newPosition.z = worldObjectAABBReverseExtent.z - SEPARATION; }
+				}
+
+				SetPosition(newPosition);
 			}
 		}
 	}
@@ -549,6 +575,10 @@ void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 
 void CGameObject::SetPosition(float x, float y, float z)
 {
+	m_xmf3Position.x = m_xmf3Position.x;
+	m_xmf3Position.y = m_xmf3Position.y;
+	m_xmf3Position.z = m_xmf3Position.z;
+
 	m_xmf3Position.x = x;
 	m_xmf3Position.y = y;
 	m_xmf3Position.z = z;

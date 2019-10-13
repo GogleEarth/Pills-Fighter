@@ -26,7 +26,7 @@ struct MATERIAL
 #define WORLD_HEIGHT 470
 #define SEPARATION 3
 #define INVASION_ROOF 20
-#define INVASION 3
+#define INVASION 8
 
 struct CB_GAMEOBJECT_INFO
 {
@@ -45,6 +45,7 @@ protected:
 	XMFLOAT4X4 m_xmf4x4World;
 
 	XMFLOAT3 m_xmf3Position;
+	XMFLOAT3 m_xmf3PrevPosition;
 	XMFLOAT3 m_xmf3Right;
 	XMFLOAT3 m_xmf3Up;
 	XMFLOAT3 m_xmf3Look;

@@ -407,6 +407,8 @@ void CPlayer::Update(float fTimeElapsed)
 	XMFLOAT3 xmf3LookAt = Vector3::Add(m_xmf3Position, XMFLOAT3(0.0f, 20.0f, 0.0f));
 	m_pCamera->SetLookAt(xmf3LookAt);
 	m_pCamera->GenerateViewMatrix();
+
+	m_xmf3PrevPosition = m_xmf3Position;
 }
 
 void CPlayer::Rotate(float x, float y, float z)
