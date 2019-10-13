@@ -496,6 +496,14 @@ bool Scene::check_collision_player(int object)
 										score_lock.lock();
 										score_queue_.push(pkt_sco);
 										score_lock.unlock();
+
+										KILL_MESSAGE* km = new KILL_MESSAGE;
+										km->die_id = i;
+										km->kill_id = Objects_[object].get_owner_id();
+
+										kill_lock_.lock();
+										kill_queue_.push(km);
+										kill_lock_.unlock();
 									}
 
 									life_lock.lock();
@@ -541,6 +549,14 @@ bool Scene::check_collision_player(int object)
 										score_lock.lock();
 										score_queue_.push(pkt_sco);
 										score_lock.unlock();
+
+										KILL_MESSAGE* km = new KILL_MESSAGE;
+										km->die_id = i;
+										km->kill_id = Objects_[object].get_owner_id();
+
+										kill_lock_.lock();
+										kill_queue_.push(km);
+										kill_lock_.unlock();
 									}
 
 									life_lock.lock();
@@ -647,6 +663,14 @@ bool Scene::check_collision_player_to_vector(int object, float len, float* dis)
 									score_lock.lock();
 									score_queue_.push(pkt_sco);
 									score_lock.unlock();
+
+									KILL_MESSAGE* km = new KILL_MESSAGE;
+									km->die_id = i;
+									km->kill_id = Objects_[object].get_owner_id();
+
+									kill_lock_.lock();
+									kill_queue_.push(km);
+									kill_lock_.unlock();
 								}
 								return true;
 							}
