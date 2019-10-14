@@ -17,6 +17,7 @@ enum EVENT_TYPE {
 
 #define MAX_BUFFER 1024
 #define MAX_USER 1000
+#define DBSERVER_KEY 0
 
 struct Overlapped 
 {
@@ -38,12 +39,14 @@ public:
 	int	prev_size_;
 	bool in_room_;
 	wchar_t name_[MAX_NAME_LENGTH];
+	bool is_server_;
 	Client() {
 		in_use_ = false;
 		over_ex.wsa_buffer_.len = MAX_BUFFER;
 		over_ex.wsa_buffer_.buf = over_ex.packet_buffer_;
 		over_ex.event_type_ = EVENT_TYPE_RECV;
 		in_room_ = false;
+		is_server_ = false;
 		lstrcpynW(name_, L"¶ó¸¶¹Ù", MAX_NAME_LENGTH);
 	}
 };
@@ -70,6 +73,7 @@ class Framawork
 	std::priority_queue <Event> timer_queue;
 
 	Repository* repository_;
+	SOCKET dbserver_socket_;
 public:
 	Framawork();
 	~Framawork();

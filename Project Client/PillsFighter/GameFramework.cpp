@@ -541,6 +541,7 @@ void CGameFramework::ProcessSceneReturnVal(int n)
 		BuildScene(SCENE_TYPE_LOBBY_MAIN);
 		m_pScene->SetCursorPosition(xmf2Pos);
 
+		SendToServer(PKT_ID_LOG_IN, NULL);
 		break;
 	}
 	case LOBBY_MOUSE_CLICK_GAME_EXIT:
@@ -1354,6 +1355,18 @@ void CGameFramework::SendToServer(PKT_ID pktID, void *pData)
 		PKT_MOVE_TO_MAIN_LOBBY pktToServer;
 		pktToServer.PktId = pktID;
 		pktToServer.PktSize = sizeof(pktToServer);
+
+		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
+			printf("Send Change Map Error\n");
+		break;
+	}
+	case PKT_ID_LOG_IN:
+	{
+		PKT_LOG_IN pktToServer;
+		pktToServer.PktId = PKT_ID_LOG_IN;
+		pktToServer.PktSize = sizeof(PKT_LOG_IN);
+		lstrcpynW(pktToServer.id, L"asdf", MAX_NAME_LENGTH);
+		lstrcpynW(pktToServer.pass, L"asdf", MAX_NAME_LENGTH);
 
 		if (send(gSocket, (char*)&pktToServer, sizeof(pktToServer), 0) == SOCKET_ERROR)
 			printf("Send Change Map Error\n");

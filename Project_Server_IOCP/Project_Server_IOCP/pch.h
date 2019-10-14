@@ -71,6 +71,8 @@ using Microsoft::WRL::ComPtr;
 #define PLAYER_HP 100
 #define MAX_SCORE 20
 
+#define WITH_DATA_BASE
+
 ///////////////////////////////////////
 
 #define EPSILON				1.0e-10f

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Framawork.h"
 #include "Protocol.h"
+#include "DBServer_Protocol.h"
 
 Framawork::Framawork()
 {
@@ -22,6 +23,48 @@ void Framawork::init()
 
 	for (int i = 0; i < 10; ++i)
 		rooms_[i].init(repository_);
+
+#ifdef WITH_DATA_BASE
+	WSADATA wsa;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+	{
+		std::cout << "DBServer Connect Fail!\n";
+		return;
+	}
+
+	dbserver_socket_ = socket(AF_INET, SOCK_STREAM, 0);
+	if (dbserver_socket_ == INVALID_SOCKET)
+	{
+		std::cout << "DBServer Connect Fail!\n";
+		return;
+	}
+
+	SOCKADDR_IN serveraddr;
+	ZeroMemory(&serveraddr, sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_addr.s_addr = inet_addr(DBSERVERIP);
+	serveraddr.sin_port = htons(DBSERVERPORT);
+
+	if (connect(dbserver_socket_, (SOCKADDR *)&serveraddr, sizeof(serveraddr)) == SOCKET_ERROR)
+	{
+		std::cout << "DBServer Connect Fail!\n";
+		return;
+	}
+
+	clients_[DBSERVER_KEY].socket_ = dbserver_socket_;
+	clients_[DBSERVER_KEY].prev_size_ = 0;
+	clients_[DBSERVER_KEY].in_use_ = true;
+	clients_[DBSERVER_KEY].is_server_ = true;
+	ZeroMemory(&clients_[DBSERVER_KEY].over_ex.overlapped_,
+		sizeof(clients_[DBSERVER_KEY].over_ex.overlapped_));
+
+	CreateIoCompletionPort(reinterpret_cast<HANDLE>(clients_[DBSERVER_KEY].socket_),
+		iocp_, DBSERVER_KEY, 0);
+
+	do_recv(DBSERVER_KEY);
+
+	std::cout << "DBServer Connect OK!\n";
+#endif
 }
 
 int Framawork::thread_process()
@@ -1182,6 +1225,41 @@ void Framawork::process_packet(int id, char* packet)
 	{
 		disconnect_client(id);
 		break;
+	}		
+	case PKT_ID_LOG_IN:
+	{
+		PKT_LOG_IN* pkt_li = reinterpret_cast<PKT_LOG_IN*>(packet);
+#ifdef WITH_DATA_BASE
+		DB_PKT_SELECT_PLAYER pkt_sp;
+		pkt_sp.PktId = DB_PKT_ID_SELECT_PLAYER;
+		pkt_sp.PktSize = sizeof(DB_PKT_SELECT_PLAYER);
+		lstrcpynW(pkt_sp.id, pkt_li->id, MAX_NAME_LENGTH);
+		lstrcpynW(pkt_sp.pass, pkt_li->pass, MAX_NAME_LENGTH);
+		std::wcout << pkt_li->id << L", " << pkt_li->pass << L"\n";
+		send_packet_to_player(DBSERVER_KEY, (char*)&pkt_sp);
+#endif
+		break;
+	}
+	case PKT_ID_CREATE_ACCOUT:
+	{
+		PKT_CREATE_ACCOUNT* packet = reinterpret_cast<PKT_CREATE_ACCOUNT*>(packet);
+#ifdef WITH_DATA_BASE
+		DB_PKT_CREATE_ACCOUNT pkt_ca;
+		pkt_ca.PktId = DB_PKT_ID_CREATE_ACCOUNT;
+		pkt_ca.PktSize = sizeof(DB_PKT_CREATE_ACCOUNT);
+		lstrcpynW(pkt_ca.id, packet->id, MAX_NAME_LENGTH);
+		lstrcpynW(pkt_ca.pass, packet->pass, MAX_NAME_LENGTH);
+		send_packet_to_player(DBSERVER_KEY, (char*)&pkt_ca);
+#endif
+		break;
+	}
+	case DB_PKT_ID_SELECT_PLAYER_RESULT:
+	{
+		DB_PKT_SELECT_PLAYER_RESULT* dbpkt_spr = 
+			reinterpret_cast<DB_PKT_SELECT_PLAYER_RESULT*>(packet);
+		if (dbpkt_spr->result == RESULT_FAIL)
+			std::cout << "로그인 실패!\n";
+		break;
 	}
 	default:
 		std::wcout << L"정의되지 않은 패킷 도착 오류!! 패킷아이디 : " << (int)packet[1] <<"\n";
@@ -1213,6 +1291,7 @@ void Framawork::send_packet_to_all_player(char* packet)
 	{
 		if (!clients_[i].in_use_) continue;
 		if (clients_[i].in_room_) continue;
+		if (clients_[i].is_server_) continue;
 		send_packet_to_player(i, packet);
 	}
 }

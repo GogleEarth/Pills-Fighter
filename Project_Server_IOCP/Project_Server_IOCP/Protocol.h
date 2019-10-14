@@ -11,8 +11,6 @@
 //#define SERVERIP	"121.169.212.228" // ¹ÚÁø¼ö
 #define SERVERIP	"121.169.212.228"
 #define SERVERPORT	9000
-#define LOBBYSERVERIP	"127.0.0.1"
-#define LOBBYSERVERPORT	9001
 ////////////////////////////////////////
 
 typedef enum PKT_ID

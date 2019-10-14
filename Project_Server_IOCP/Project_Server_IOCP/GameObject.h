@@ -93,7 +93,7 @@ public:
 	void update_world_transform();
 
 	inline std::vector<BoundingBox>& get_aabbs() { return aabbs_; }
-	inline int get_num_aabbs() { return aabbs_.size(); }
+	inline int get_num_aabbs() { return (int)aabbs_.size(); }
 
 	inline void object_delete() { delete_ = true; }
 	inline bool is_delete() { return delete_; }
