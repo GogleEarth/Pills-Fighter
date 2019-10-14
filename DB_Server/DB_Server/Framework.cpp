@@ -38,7 +38,7 @@ bool Framework::init()
 			{
 				SQLSetConnectAttr(hdbc_, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
 
-				retcode = SQLConnect(hdbc_, (SQLWCHAR*)L"", SQL_NTS, (SQLWCHAR*)NULL, 0, NULL, 0);
+				retcode = SQLConnect(hdbc_, (SQLWCHAR*)L"PillsFighter_DB", SQL_NTS, (SQLWCHAR*)NULL, 0, NULL, 0);
 
 				if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 				{
@@ -132,7 +132,7 @@ void Framework::process_packet()
 
 		std::wstring query = L"EXEC select_player ";
 		query += packet->id;
-		query += L" ";
+		query += L", ";
 		query += packet->pass;
 
 		DB_PKT_SELECT_PLAYER_RESULT pkt_spr;
@@ -142,7 +142,7 @@ void Framework::process_packet()
 		SQLSMALLINT retcode = SQLExecDirect(hstmt_, (SQLWCHAR*)query.c_str(), SQL_NTS);
 		if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 		{
-			retcode = SQLBindCol(hstmt_, 1, SQL_C_CHAR, name, 10, &cbname);
+			retcode = SQLBindCol(hstmt_, 1, SQL_C_WCHAR, name, 10, &cbname);
 			retcode = SQLBindCol(hstmt_, 2, SQL_C_LONG, &win, 10, &cbwin);
 			retcode = SQLBindCol(hstmt_, 3, SQL_C_LONG, &lose, 10, &cblose);
 
@@ -186,11 +186,11 @@ void Framework::process_packet()
 
 		std::wstring query = L"EXEC update_player ";
 		query += packet->id;
-		query += L" ";
+		query += L", ";
 		query += packet->name;
-		query += L" ";
+		query += L", ";
 		query += packet->win;
-		query += L" ";
+		query += L", ";
 		query += packet->lose;
 
 		DB_PKT_UPDATE_PLAYER_RESULT pkt_spr;
@@ -200,7 +200,7 @@ void Framework::process_packet()
 		SQLSMALLINT retcode = SQLExecDirect(hstmt_, (SQLWCHAR*)query.c_str(), SQL_NTS);
 		if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 		{
-			retcode = SQLBindCol(hstmt_, 1, SQL_C_CHAR, name, 10, &cbname);
+			retcode = SQLBindCol(hstmt_, 1, SQL_C_WCHAR, name, 10, &cbname);
 			retcode = SQLBindCol(hstmt_, 2, SQL_C_LONG, &win, 10, &cbwin);
 			retcode = SQLBindCol(hstmt_, 3, SQL_C_LONG, &lose, 10, &cblose);
 
@@ -244,7 +244,7 @@ void Framework::process_packet()
 
 		std::wstring query = L"EXEC select_player ";
 		query += packet->id;
-		query += L" ";
+		query += L", ";
 		query += packet->pass;
 
 		DB_PKT_CREATE_ACCOUNT_RESULT pkt_spr;
@@ -254,7 +254,7 @@ void Framework::process_packet()
 		SQLSMALLINT retcode = SQLExecDirect(hstmt_, (SQLWCHAR*)query.c_str(), SQL_NTS);
 		if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 		{
-			retcode = SQLBindCol(hstmt_, 1, SQL_C_CHAR, name, 10, &cbname);
+			retcode = SQLBindCol(hstmt_, 1, SQL_C_WCHAR, name, 10, &cbname);
 			retcode = SQLBindCol(hstmt_, 2, SQL_C_LONG, &win, 10, &cbwin);
 			retcode = SQLBindCol(hstmt_, 3, SQL_C_LONG, &lose, 10, &cblose);
 
@@ -276,11 +276,9 @@ void Framework::process_packet()
 		}
 		else
 		{
-			show_error(hstmt_, SQL_HANDLE_STMT, retcode);
-
 			std::wstring query2 = L"EXEC create_account ";
 			query2 += packet->id;
-			query2 += L" ";
+			query2 += L", ";
 			query2 += packet->pass;
 
 			SQLSMALLINT retcode = SQLExecDirect(hstmt_, (SQLWCHAR*)query2.c_str(), SQL_NTS);
