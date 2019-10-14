@@ -2,7 +2,8 @@
 
 #define ASPECT_RATIO (float(FRAME_BUFFER_WIDTH) / float(FRAME_BUFFER_HEIGHT))
 #define SK_CYCLE 15.0f
-#define SK_SCALE 0.5f
+#define SK_HIT_SCALE 0.5f
+#define SK_ATTACK_SCALE 0.2f
 #define SK_AMP 2.0f
 
 class CPlayer;
@@ -47,6 +48,7 @@ protected:
 	float							m_fFOVAngle;
 	
 	bool							m_bShake = false;
+	float							m_fShakeValue = 0.0f;
 	float							m_fShakeScale = 0.0f;
 	float							m_fShakeTime = 0.0f;
 
@@ -103,7 +105,7 @@ public:
 
 	void ZoomIn(float fFOV);
 	void ZoomOut();
-	void SetShake() { m_bShake = true; };
+	void SetShake(float fScale) { m_bShake = true; m_fShakeScale = fScale; };
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -3781,7 +3781,7 @@ void CBattleScene::CheckCollision()
 					AddSprite(SPRITE_EFFECT_INDEX_SWORD_HIT_2, pSword->GetBladePos(), EFFECT_ANIMATION_TYPE_ONE, xmf4Color);
 
 					m_pPlayer->AddHitObject(Enemy);
-					m_pPlayer->GetCamera()->SetShake();
+					m_pPlayer->GetCamera()->SetShake(SK_ATTACK_SCALE);
 
 					gFmodSound.PlayFMODSound(gFmodSound.m_pSoundSaberHit1);
 				}
