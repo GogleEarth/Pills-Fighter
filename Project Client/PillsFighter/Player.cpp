@@ -135,7 +135,7 @@ void CPlayer::SetHitPoint(int nHitPoint)
 	CGameObject::SetHitPoint(nHitPoint);
 	int after = m_nHitPoint;
 
-	if (before > after) m_pCamera->SetShake();
+	if (before > after) m_pCamera->SetShake(SK_HIT_SCALE);
 }
 
 void CPlayer::Move(ULONG dwDirection, float fDistance)
@@ -243,25 +243,28 @@ void CPlayer::DashMove(ULONG dwDirection, float fDistance)
 	XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 	float fSpeed = fDistance;
 
+	float raSpeed = 0.4f;
+	float saSpeed = 0.5f;
+
 	if (m_nDashDirection == DIR_FORWARD)
 	{
 		xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fSpeed);
 
 		if (dwDirection & DIR_BACKWARD)
 		{
-			fSpeed = fDistance * 0.5f;
+			fSpeed = fDistance * saSpeed;
 
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fSpeed);
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fSpeed);
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fSpeed);
 		}
@@ -272,17 +275,17 @@ void CPlayer::DashMove(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_FORWARD)
 		{
-			fSpeed = fDistance * 0.5f;
+			fSpeed = fDistance * saSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fSpeed);
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fSpeed);
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fSpeed);
 		}
 	}
@@ -292,18 +295,18 @@ void CPlayer::DashMove(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_FORWARD)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fSpeed);
 		}
 		if (dwDirection & DIR_BACKWARD)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fSpeed);
 		}
 		if (dwDirection & DIR_LEFT)
 		{
-			fSpeed = fDistance * 0.5f;
+			fSpeed = fDistance * saSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fSpeed);
 		}
 	}
@@ -313,18 +316,18 @@ void CPlayer::DashMove(ULONG dwDirection, float fDistance)
 
 		if (dwDirection & DIR_FORWARD)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fSpeed);
 		}
 		if (dwDirection & DIR_BACKWARD)
 		{
-			fSpeed = fDistance * 0.25f;
+			fSpeed = fDistance * raSpeed;
 
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fSpeed);
 		}
 		if (dwDirection & DIR_RIGHT)
 		{
-			fSpeed = fDistance * 0.5f;
+			fSpeed = fDistance * saSpeed;
 			xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fSpeed);
 		}
 	}

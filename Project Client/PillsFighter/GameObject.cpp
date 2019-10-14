@@ -1137,7 +1137,9 @@ void CRobotObject::SetCallBackKeys(CModel *pModel)
 	ppAnimationControllers[ANIMATION_DOWN] = new CAnimationController(1, pModel->GetAnimationSet(ANIMATION_DOWN));
 
 	ppAnimationControllers[ANIMATION_UP]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
+	ppAnimationControllers[ANIMATION_UP]->SetTrackSpeed(0, 1.25f);
 	ppAnimationControllers[ANIMATION_DOWN]->SetTrackAnimation(0, ANIMATION_STATE_IDLE);
+	ppAnimationControllers[ANIMATION_DOWN]->SetTrackSpeed(0, 1.25f);
 
 	CAnimationCallbackHandler *pAnimationCallbackHandler = new CAnimationCallbackHandler();
 
