@@ -480,48 +480,48 @@ int Framawork::thread_process()
 		}
 		else if (EVENT_TYPE_BEAM_SNIPER == overlapped->event_type_)
 		{
-		if (rooms_[overlapped->room_num_].get_playing())
-		{
-			auto object = rooms_[overlapped->room_num_].get_object(index);
-			float elapsed_time;
-
-			if (overlapped->elapsed_time_ <= 0.001f)
-				elapsed_time = 0.016f;
-			else
-				elapsed_time = overlapped->elapsed_time_;
-
-			object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
-
-			float distance = 2000.0f;
-			rooms_[overlapped->room_num_].check_collision_player_to_vector(index, 2000.0f, &distance);
-			
-			PKT_CREATE_EFFECT pkt_ce;
-			pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
-			pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
-			pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
-			pkt_ce.efType = EFFECT_TYPE_BEAM_SNIPER;
-			pkt_ce.xmf3Look = object->get_look();
-			pkt_ce.xmf3Position = object->get_position();
-			pkt_ce.fDistance = distance;
-
-			send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_ce);
-
-			if (object->is_delete())
+			if (rooms_[overlapped->room_num_].get_playing())
 			{
-				object->set_use(false);
+				auto object = rooms_[overlapped->room_num_].get_object(index);
+				float elapsed_time;
+
+				if (overlapped->elapsed_time_ <= 0.001f)
+					elapsed_time = 0.016f;
+				else
+					elapsed_time = overlapped->elapsed_time_;
+
+				object->animate(elapsed_time, rooms_[overlapped->room_num_].get_map());
+
+				float distance = 2000.0f;
+				rooms_[overlapped->room_num_].check_collision_player_to_vector(index, 2000.0f, &distance);
+
+				PKT_CREATE_EFFECT pkt_ce;
+				pkt_ce.PktId = PKT_ID_CREATE_EFFECT;
+				pkt_ce.PktSize = sizeof(PKT_CREATE_EFFECT);
+				pkt_ce.EftAnitType = EFFECT_ANIMATION_TYPE_ONE;
+				pkt_ce.efType = EFFECT_TYPE_BEAM_SNIPER;
+				pkt_ce.xmf3Look = object->get_look();
+				pkt_ce.xmf3Position = object->get_position();
+				pkt_ce.fDistance = distance;
+
+				send_packet_to_room_player(overlapped->room_num_, (char*)&pkt_ce);
+
+				if (object->is_delete())
+				{
+					object->set_use(false);
+				}
+				else
+				{
+					using namespace std::chrono;
+					add_event(index, overlapped->room_num_, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
+				}
 			}
-			else
-			{
-				using namespace std::chrono;
-				add_event(index, overlapped->room_num_, EVENT_TYPE_BEAM_SNIPER, high_resolution_clock::now() + 16ms);
-			}
-		}
-		delete overlapped;
+			delete overlapped;
 		}
 		else
 		{
-			std::cout << "UNKNOWN EVENT\n";
-			while (true);
+			std::cout << "UNKNOWN EVENT : " << overlapped->event_type_ << "\n";
+			delete overlapped;
 		}
 	}
 }
@@ -1242,13 +1242,13 @@ void Framawork::process_packet(int id, char* packet)
 	}
 	case PKT_ID_CREATE_ACCOUT:
 	{
-		PKT_CREATE_ACCOUNT* packet = reinterpret_cast<PKT_CREATE_ACCOUNT*>(packet);
+		PKT_CREATE_ACCOUNT* dbpkt_ca = reinterpret_cast<PKT_CREATE_ACCOUNT*>(packet);
 #ifdef WITH_DATA_BASE
 		DB_PKT_CREATE_ACCOUNT pkt_ca;
 		pkt_ca.PktId = DB_PKT_ID_CREATE_ACCOUNT;
 		pkt_ca.PktSize = sizeof(DB_PKT_CREATE_ACCOUNT);
-		lstrcpynW(pkt_ca.id, packet->id, MAX_NAME_LENGTH);
-		lstrcpynW(pkt_ca.pass, packet->pass, MAX_NAME_LENGTH);
+		lstrcpynW(pkt_ca.id, dbpkt_ca->id, MAX_NAME_LENGTH);
+		lstrcpynW(pkt_ca.pass, dbpkt_ca->pass, MAX_NAME_LENGTH);
 		send_packet_to_player(DBSERVER_KEY, (char*)&pkt_ca);
 #endif
 		break;
