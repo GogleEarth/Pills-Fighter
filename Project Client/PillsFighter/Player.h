@@ -107,10 +107,10 @@ public:
 	virtual void ProcessMoveToCollision(BoundingBox *pxmAABB, BoundingBox *pxmObjAABB);
 
 protected:
-	int		m_nGmGunAmmo = 0;
-	int		m_nBazookaAmmo = 0;
-	int		m_nMachineGunAmmo = 0;
-	int		m_nSMGAmmo = 0;
+	int		m_nGmGunAmmo = 100;
+	int		m_nBazookaAmmo = 20;
+	int		m_nMachineGunAmmo = 100;
+	int		m_nSMGAmmo = 100;
 
 	bool	m_bReloading = false;
 	float	m_fReloadTime = 0.0f;
