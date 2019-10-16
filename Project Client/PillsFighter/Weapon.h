@@ -204,7 +204,7 @@ public:
 
 	virtual void SetReloadTime() { m_fReloadTime = MG_RELOAD_TIME; }
 	virtual void SetShotCoolTime();
-	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 50; }
+	virtual void SetMaxReloadAmmo() { m_nMaxReloadAmmo = 40; }
 
 	virtual void SetType();
 

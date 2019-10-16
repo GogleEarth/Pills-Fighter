@@ -1373,7 +1373,6 @@ void CPlayer::ProcessDie(float fRespawnTime)
 	m_LButtonDown = false;
 	m_RButtonDown = false;
 	m_fMouseUpTime = 0.0f;
-	ChangeWeapon(0);
 
 	for (auto& Weapon : m_vpWeapon)
 	{
@@ -1387,6 +1386,8 @@ void CPlayer::ProcessDie(float fRespawnTime)
 void CPlayer::ProcessRespawn(int nHP, XMFLOAT3 xmf3Position)
 {
 	CRobotObject::ProcessRespawn(nHP, xmf3Position);
+
+	ChangeWeapon(0);
 
 	if (m_pUI) m_pUI->ClientRespawn();
 }

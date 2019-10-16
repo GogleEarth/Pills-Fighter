@@ -4435,7 +4435,7 @@ void CBattleScene::LeavePlayer(int nServerIndex)
 
 CColonyScene::CColonyScene() : CBattleScene()
 {
-	m_fGravAcc = -9.8f;
+	m_fGravAcc = -4.9f;
 }
 
 CColonyScene::~CColonyScene()
@@ -4625,7 +4625,7 @@ void CColonyScene::StartScene(bool bBGMStop)
 {
 	if (bBGMStop) gFmodSound.StopFMODSound(gFmodSound.m_pBGMChannel);
 	gFmodSound.PlayFMODSoundLoop(gFmodSound.m_pSoundColonyBGM, &(gFmodSound.m_pBGMChannel));
-	gFmodSound.m_pBGMChannel->setVolume(0.3f);
+	//gFmodSound.m_pBGMChannel->setVolume(0.3f);
 }
 
 void CColonyScene::EndScene()
