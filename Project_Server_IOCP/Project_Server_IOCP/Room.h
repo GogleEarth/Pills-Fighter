@@ -3,8 +3,14 @@
 #include "Scene.h"
 #include "GameObject.h"
 
-#define COLONY 0
-#define SPACE 1
+constexpr int COLONY = 0;
+constexpr int SPACE = 1;
+
+constexpr int DAMAGE_MACHINEGUN = 10;
+constexpr int DAMAGE_BAZUKA = 40;
+constexpr int DAMAGE_GM_GUN = 4;
+constexpr int DAMAGE_BEAM_RIFLE = 25;
+constexpr int DAMAGE_SNIPER = 70;
 
 class Player
 {
