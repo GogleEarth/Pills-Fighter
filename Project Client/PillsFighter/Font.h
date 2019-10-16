@@ -6,7 +6,6 @@ class CFontShader;
 struct CFontCharacter
 {
 	int nId, nTexIndex;
-
 	float u, v;
 	float tw, th;
 	float w, h;

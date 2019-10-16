@@ -45,7 +45,11 @@ void CTextObject::UpdateVertexBuffer(ID3D12GraphicsCommandList *pd3dCommandList)
 {
 	for (int i = 0; i < m_nCharacter; i++)
 	{
-		memcpy(&m_pcbMappedFont[i], &m_pCharacters[i], sizeof(CFontVertex));
+		m_pcbMappedFont[i].nTexIndex = m_pCharacters[i].nTexIndex;
+		m_pcbMappedFont[i].xmf2Pos = m_pCharacters[i].xmf2Pos;
+		m_pcbMappedFont[i].xmf2Size = m_pCharacters[i].xmf2Size;
+		m_pcbMappedFont[i].xmf2UVPos = m_pCharacters[i].xmf2UVPos;
+		m_pcbMappedFont[i].xmf2UVSize = m_pCharacters[i].xmf2UVSize;
 	}
 }
 
@@ -223,20 +227,19 @@ void CFont::Destroy()
 
 void CFont::LoadDataFromFile(const char *pstrFileName)
 {
-	FILE *pFile;
-	fopen_s(&pFile, pstrFileName, "r");
+	std::ifstream in(pstrFileName);
 
 	char pstrToken[64];
 
 	while (true)
 	{
-		fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken));
+		in >> pstrToken;
 
 		if (!strncmp(pstrToken, "info", 4)) // info
 		{
 			while (true)
 			{
-				fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken));
+				in >> pstrToken;
 
 				if (!strncmp(pstrToken, "fac", 3)) // face=
 				{
@@ -303,7 +306,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 		{
 			while (true)
 			{
-				fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken));
+				in >> pstrToken;
 
 				if (!strncmp(pstrToken, "lineH", 5)) // lineHeight=
 				{
@@ -318,14 +321,14 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 				{
 					char *pstr = &pstrToken[7];
 
-					m_nTextureWidth = atoi(pstr);	
+					m_nTextureWidth = atoi(pstr);
 				}
 				else if (!strncmp(pstrToken, "scaleH", 6)) // scaleH=
 				{
 					char *pstr = &pstrToken[7];
 
 					m_nTextureHeight = atoi(pstr);
-					
+
 				}
 				else if (!strncmp(pstrToken, "pages", 5)) // pages=
 				{
@@ -342,7 +345,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 		{
 			while (true)
 			{
-				fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken));
+				in >> pstrToken;
 
 				if (!strncmp(pstrToken, "id=", 3)) // id=
 				{
@@ -362,7 +365,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 		}
 		else if (!strncmp(pstrToken, "char", 4)) // chars
 		{
-			fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken)); // count=
+			in >> pstrToken;
 
 			char *pstrCount = &pstrToken[6];
 			m_nCharacters = atoi(pstrCount);
@@ -371,11 +374,11 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 
 			for (int i = 0; i < m_nCharacters; i++)
 			{
-				fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken)); // char
+				in >> pstrToken;
 
 				while (true)
 				{
-					fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken));
+					in >> pstrToken;
 
 					if (!strncmp(pstrToken, "id", 2)) // id=
 					{
@@ -404,7 +407,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 					}
 					else if (!strncmp(pstrToken, "he", 2)) // height=
 					{
-						char *pstr = &pstrToken[7]; 
+						char *pstr = &pstrToken[7];
 
 						m_pCharacters[i].h = (float)(atof(pstr));
 						m_pCharacters[i].th = float(atof(pstr)) / float(m_nTextureHeight);
@@ -443,7 +446,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 		}
 		else if (!strncmp(pstrToken, "kern", 4)) // kernings
 		{
-			fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken)); // count=
+			in >> pstrToken;
 
 			char *pstrCount = &pstrToken[6];
 			m_nKernings = atoi(pstrCount);
@@ -454,7 +457,7 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 			{
 				while (true)
 				{
-					fscanf_s(pFile, "%s", pstrToken, (UINT)sizeof(pstrToken)); // kerning
+					in >> pstrToken;
 
 					if (!strncmp(pstrToken, "fi", 2)) // first=
 					{
@@ -480,6 +483,8 @@ void CFont::LoadDataFromFile(const char *pstrFileName)
 			break;
 		}
 	}
+
+	in.close();
 }
 
 CFontCharacter* CFont::GetChar(wchar_t c)
