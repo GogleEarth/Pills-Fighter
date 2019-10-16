@@ -4435,7 +4435,7 @@ void CBattleScene::LeavePlayer(int nServerIndex)
 
 CColonyScene::CColonyScene() : CBattleScene()
 {
-	m_fGravAcc = -4.9f;
+	m_fGravAcc = GRAVITY;
 }
 
 CColonyScene::~CColonyScene()
@@ -4660,7 +4660,7 @@ void CColonyScene::ApplyRecvInfo(PKT_ID pktID, LPVOID pktData)
 			break;
 		case MAP_EVENT_TYPE::MAP_EVENT_TYPE_END:
 			std::cout << "지상맵 이벤트 끝\n";
-			m_fGravAcc = -9.8f;
+			m_fGravAcc = GRAVITY;
 			break;
 		}
 		break;

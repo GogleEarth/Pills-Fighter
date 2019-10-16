@@ -512,6 +512,9 @@ protected:
 #define SPOT_LIGHT			2
 #define DIRECTIONAL_LIGHT	3
 
+//
+#define GRAVITY -3.0f
+
 struct LIGHT
 {
 	XMFLOAT4 m_xmf4Ambient;
