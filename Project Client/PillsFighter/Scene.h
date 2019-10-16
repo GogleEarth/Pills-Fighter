@@ -513,7 +513,7 @@ protected:
 #define DIRECTIONAL_LIGHT	3
 
 //
-#define GRAVITY -3.0f
+#define GRAVITY -4.9f
 
 struct LIGHT
 {
