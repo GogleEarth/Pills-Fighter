@@ -351,14 +351,14 @@ PKT_CREATE_OBJECT* Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon)
 	OBJECT_TYPE type;
 	if (weapon == WEAPON_TYPE_MACHINE_GUN)
 	{
-		hp = 10;
+		hp = DAMAGE_MACHINEGUN;
 		life_time = 1.5f;
 		speed = 1200.0f;
 		type = OBJECT_TYPE_MACHINE_BULLET;
 	}
 	else if (weapon == WEAPON_TYPE_BAZOOKA)
 	{
-		hp = 35;
+		hp = DAMAGE_BAZUKA;
 		life_time = 2.5f;
 		speed = 800.0f;
 		type = OBJECT_TYPE_BZK_BULLET;
@@ -387,7 +387,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	EFFECT_TYPE eftype;
 	if (weapon == WEAPON_TYPE_BEAM_RIFLE)
 	{
-		hp = 25;
+		hp = DAMAGE_BEAM_RIFLE;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
@@ -396,7 +396,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	}
 	else if (weapon == WEAPON_TYPE_GM_GUN)
 	{
-		hp = 4;
+		hp = DAMAGE_GM_GUN;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
@@ -405,7 +405,7 @@ PKT_CREATE_EFFECT * Room::shoot(int id, XMFLOAT4X4 matrix, WEAPON_TYPE weapon, f
 	}
 	else if (weapon == WEAPON_TYPE_BEAM_SNIPER)
 	{
-		hp = 50;
+		hp = DAMAGE_SNIPER;
 		life_time = 0.001f;
 		speed = 600.0;
 		type = OBJECT_TYPE_BEAM_BULLET;
@@ -494,9 +494,11 @@ void Room::start_game()
 	scenes_[using_scene_]->set_red_score(red_score_);
 	scenes_[using_scene_]->set_blue_score(blue_score_);
 
-	for (int i = 0; i < 3; ++i)
+	item_cooltime_[0] = 0.0f;
+	item_spawn_[0] = false;
+	for (int i = 1; i < 3; ++i)
 	{
-		item_cooltime_[i] = 0.0f;
+		item_cooltime_[i] = 20.0f;
 		item_spawn_[i] = false;
 	}
 }
@@ -629,7 +631,7 @@ void Room::spawn_ammo_item()
 	{
 		item_spawn_[1] = true;
 		int hp = 100;
-		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -700.0f, 5.0f, -800.0f, 1.0f };
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , -700.0f, 5.0f, -650.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
@@ -644,7 +646,7 @@ void Room::spawn_ammo_item()
 	{
 		item_spawn_[2] = true;
 		int hp = 100;
-		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 610.0f, 0.0f, 900.0f, 1.0f };
+		XMFLOAT4X4 matrix = XMFLOAT4X4{ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f , 0.0f, 0.0f, 1.0f, 0.0f , 610.0f, 5.0f, 750.0f, 1.0f };
 		PKT_CREATE_OBJECT* pkt_co = new PKT_CREATE_OBJECT();
 		pkt_co->PktId = PKT_ID_CREATE_OBJECT;
 		pkt_co->PktSize = sizeof(PKT_CREATE_OBJECT);
