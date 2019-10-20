@@ -772,34 +772,39 @@ void Framawork::process_packet(int id, char* packet)
 		if (room_num != -1)
 		{
 			int player = rooms_[room_num].find_player_by_socket(clients_[id].socket_);
+			auto object = rooms_[room_num].get_object(player);
 			if (rooms_[room_num].get_playing())
 			{
+
 				rooms_[room_num].set_player_worldmatrix(player, ((PKT_PLAYER_INFO*)packet)->WorldMatrix);
 				if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE ||
 					((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE ||
 					((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
 				{
-					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
-						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
-						{
-							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-							using namespace std::chrono;
-							add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
-						}
-					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
-						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
-						{
-							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-							using namespace std::chrono;
-							add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
-						}
-					if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
-						if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.52f)
-						{
-							int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
-							using namespace std::chrono;
-							add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
-						}
+					if (!object->get_is_die())
+					{
+						if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_1_ONE)
+							if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
+							{
+								int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+								using namespace std::chrono;
+								add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+							}
+						if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_2_ONE)
+							if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.33f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.34f)
+							{
+								int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+								using namespace std::chrono;
+								add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+							}
+						if (((PKT_PLAYER_INFO*)packet)->Player_Up_Animation == ANIMATION_TYPE_BEAM_SABER_3_ONE)
+							if (((PKT_PLAYER_INFO*)packet)->UpAnimationPosition > 0.51f && ((PKT_PLAYER_INFO*)packet)->UpAnimationPosition < 0.52f)
+							{
+								int Index = rooms_[room_num].add_object(OBJECT_TYPE_SABER, ((PKT_PLAYER_INFO*)packet)->WorldMatrix, player);
+								using namespace std::chrono;
+								add_event(Index, room_num, EVENT_TYPE_SABER, high_resolution_clock::now() + 16ms);
+							}
+					}
 				}
 				send_packet_to_room_player(room_num, packet);
 			}
