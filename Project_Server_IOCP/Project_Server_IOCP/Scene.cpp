@@ -101,6 +101,8 @@ void Scene::inert_objects_from_file(char* file_name, int group)
 			break;
 		}
 	}
+
+	::fclose(file);
 }
 
 void Scene::init(Repository * repository)

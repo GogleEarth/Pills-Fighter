@@ -18,10 +18,10 @@ void Framawork::init()
 
 	repository_ = new Repository();
 
-	for (int i = 0; i < 1000; i++)
+	for (int i = 0; i < MAX_USER; i++)
 		clients_[i].in_use_ = false;
 
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < MAX_ROOM; ++i)
 		rooms_[i].init(repository_);
 
 #ifdef WITH_DATA_BASE
@@ -613,7 +613,7 @@ int Framawork::accept_process()
 
 		send_packet_to_player(new_id, (char*)&pkt_cn);
 
-		for (int i = 0; i < 10; ++i)
+		for (int i = 0; i < MAX_ROOM; ++i)
 		{
 			if (rooms_[i].get_is_use())
 			{
@@ -751,7 +751,7 @@ void Framawork::disconnect_client(int id)
 int Framawork::search_client_in_room(SOCKET socket)
 {
 	int room_num = -1;
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < MAX_ROOM; ++i)
 	{
 		if (!rooms_[i].get_is_use()) continue;
 		if (!rooms_[i].search_client(socket)) continue;
@@ -1123,7 +1123,7 @@ void Framawork::process_packet(int id, char* packet)
 				send_packet_to_all_player((char*)&pkt_rd);
 			}
 
-			for (int i = 0; i < 10; ++i)
+			for (int i = 0; i < MAX_ROOM; ++i)
 			{
 				if (rooms_[i].get_is_use())
 				{
@@ -1182,7 +1182,7 @@ void Framawork::process_packet(int id, char* packet)
 			rooms_[room_num].disconnect_client(clients_[id].socket_);
 			clients_[id].in_room_ = false;
 
-			for (int i = 0; i < 10; ++i)
+			for (int i = 0; i < MAX_ROOM; ++i)
 			{
 				if (rooms_[i].get_is_use())
 				{
@@ -1292,7 +1292,7 @@ void Framawork::send_packet_to_player(int id, char* packet)
 
 void Framawork::send_packet_to_all_player(char* packet)
 {
-	for (int i = 0; i < 1000; ++i)
+	for (int i = 0; i < MAX_USER; ++i)
 	{
 		if (!clients_[i].in_use_) continue;
 		if (clients_[i].in_room_) continue;
@@ -1325,7 +1325,7 @@ void Framawork::send_packet_to_team_player(int room, char * packet, char team)
 int Framawork::find_empty_room()
 {
 	int room_num = -1;
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < MAX_ROOM; ++i)
 	{
 		if (rooms_[i].get_is_use()) continue;
 		room_num = i;

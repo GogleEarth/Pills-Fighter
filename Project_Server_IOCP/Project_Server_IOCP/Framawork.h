@@ -16,8 +16,9 @@ enum EVENT_TYPE {
 };
 
 #define MAX_BUFFER 1024
-#define MAX_USER 1000
+#define MAX_USER 1001
 #define DBSERVER_KEY 0
+#define MAX_ROOM 100
 
 struct Overlapped 
 {
@@ -65,7 +66,7 @@ struct Event {
 
 class Framawork
 {
-	Room rooms_[10];
+	Room rooms_[MAX_ROOM];
 	HANDLE iocp_;
 	std::mutex accept_l;
 	Client clients_[MAX_USER];
